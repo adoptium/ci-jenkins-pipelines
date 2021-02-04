@@ -1,4 +1,4 @@
-# Jenkins pipeline files for building OpenJDK
+# Jenkins pipeline files for building OpenJDK IGNORE
 
 AdoptOpenJDK makes use of these scripts to build binaries on the build farm at
 https://ci.adoptopenjdk.net
