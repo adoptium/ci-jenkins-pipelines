@@ -26,20 +26,7 @@ defines this stage is contained within [build_base_file.groovy](https://github.c
 
 #### Indiviual Build Jobs
 This are invoked by the parent pipeline job and each build creates the archives/installers for a given platform. The majority
-of this code is defined in [openjdk_build_pipeline.groovy](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/pipelines/build/common/openjdk_build_pipeline.groovy).
-
-#### Build farm scripts
-These are the entry point for the build itself when it executes on the end node. These are cross platform shell scripts
-defined in [build-farm](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/build-farm) and are kicked off by running
-[make-adopt-build-farm.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/build-farm/make-adopt-build-farm.sh).
-This load configuration/setup that is specific to the adopt build farm and the current architecture before 
-invoking the build scripts.
-
-#### Build Scripts
-These are the cross platform scripts that invoke the actual build. When inside the build farm they are executed
-from [make-adopt-build-farm.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/build-farm/make-adopt-build-farm.sh).
-The initial entry point for these scripts is [makejdk-any-platform.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/makejdk-any-platform.sh)
-and the majority of the code for this step is contained within [sbin](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/sbin).
+of this code is defined in [openjdk_build_pipeline.groovy](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/pipelines/build/common/openjdk_build_pipeline.groovy)
 
 #### adopt-shared-lib
 
