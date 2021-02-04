@@ -17,7 +17,7 @@ limitations under the License.
 node("master") {
     // Don't parameterise url as we currently have no need and the job generates its own params anyway
     String branch = "${ghprbActualCommit}"
-    String DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-build/${branch}/pipelines/defaults.json"
+    String DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/${branch}/pipelines/defaults.json"
 
     // Retrieve User defaults
     def getUser = new URL(DEFAULTS_FILE_URL).openConnection()

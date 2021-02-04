@@ -25,7 +25,7 @@ folder("${BUILD_FOLDER}")
 folder("${BUILD_FOLDER}/jobs")
 
 pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
-    description('<h1>THIS IS AN AUTOMATICALLY GENERATED JOB DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1><p>This job is defined in pipeline_job_template.groovy in the openjdk-build repo, if you wish to change it modify that.</p>')
+    description('<h1>THIS IS AN AUTOMATICALLY GENERATED JOB DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1><p>This job is defined in pipeline_job_template.groovy in the ci-jenkins-pipelines repo, if you wish to change it modify that.</p>')
     definition {
         cpsScm {
             scm {

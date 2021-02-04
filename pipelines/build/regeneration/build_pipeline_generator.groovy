@@ -5,7 +5,7 @@ import groovy.json.JsonOutput
 node('master') {
   try {
     // Pull in Adopt defaults
-    String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-build/master/pipelines/defaults.json"
+    String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-ci-jenkins-pipelines/master/pipelines/defaults.json"
     def getAdopt = new URL(ADOPT_DEFAULTS_FILE_URL).openConnection()
     Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map
     if (!ADOPT_DEFAULTS_JSON || !Map.class.isInstance(ADOPT_DEFAULTS_JSON)) {

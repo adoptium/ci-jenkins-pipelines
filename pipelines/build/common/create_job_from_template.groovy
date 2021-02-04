@@ -21,7 +21,7 @@ limitations under the License.
 
 String buildFolder = "$JOB_FOLDER"
 
-if (!binding.hasVariable('GIT_URL')) GIT_URL = "https://github.com/AdoptOpenJDK/openjdk-build.git"
+if (!binding.hasVariable('GIT_URL')) GIT_URL = "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git"
 if (!binding.hasVariable('GIT_BRANCH')) GIT_BRANCH = "master"
 
 folder(buildFolder) {
@@ -29,7 +29,7 @@ folder(buildFolder) {
 }
 
 pipelineJob("$buildFolder/$JOB_NAME") {
-    description('<h1>THIS IS AN AUTOMATICALLY GENERATED JOB DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1><p>This job is defined in create_job_from_template.groovy in the openjdk-build repo, if you wish to change it modify that</p>')
+    description('<h1>THIS IS AN AUTOMATICALLY GENERATED JOB DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1><p>This job is defined in create_job_from_template.groovy in the ci-jenkins-pipelines repo, if you wish to change it modify that</p>')
     definition {
         cpsScm {
             scm {

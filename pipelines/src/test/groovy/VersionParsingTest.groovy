@@ -24,7 +24,7 @@ OpenJDK 64-Bit Server VM AdoptOpenJDK (build 11.0.2+7, mixed mode)"""
 OpenJDK Runtime Environment AdoptOpenJDK (build 11.0.3+9-201903122221)
 OpenJDK 64-Bit Server VM AdoptOpenJDK (build 11.0.3+9-201903122221, mixed mode)"""
 
-  def getAdopt = new URL("https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-build/master/pipelines/defaults.json").openConnection()
+  def getAdopt = new URL("https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json").openConnection()
   Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map
 
     def parse(String version) {

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 
 class RepoHandlerTest {
 
-    private String fakeUserDefaults = "https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-build/master/pipelines/src/test/groovy/fakeDefaults.json"
+    private String fakeUserDefaults = "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/src/test/groovy/fakeDefaults.json"
 
     private Map testRemote = [
         "branch"  : "foo",
@@ -22,7 +22,7 @@ class RepoHandlerTest {
 
         // Repository
         Assertions.assertTrue(adoptJson.repository instanceof Map)
-        Assertions.assertEquals(adoptJson.repository.url, "https://github.com/AdoptOpenJDK/openjdk-build.git")
+        Assertions.assertEquals(adoptJson.repository.url, "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git")
         Assertions.assertEquals(adoptJson.repository.branch, "master")
 
         // Jenkins Details

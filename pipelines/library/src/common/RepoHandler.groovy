@@ -9,7 +9,7 @@ class RepoHandler {
     private final Map ADOPT_DEFAULTS_JSON
     private Map USER_DEFAULTS_JSON
 
-    private final String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-build/master/pipelines/defaults.json"
+    private final String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
 
     /*
     Constructor
