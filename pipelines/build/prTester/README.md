@@ -29,7 +29,7 @@ This group consists of [GitHub Status Checks](https://docs.github.com/en/free-pr
 #### Groovy
 
 - A relatively small job, this runs our groovy compiler, checking over the repository to ensure any new code successfully runs and conforms to our test suite.
-- Should you encounter a compile error that is caused by a missing function or error similar to the one below, then you should update our [test doubles & stubs](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/pipelines/src/main/groovy) that we use to run these tests and emulate a live jenkins environment ([link to example](https://github.com/AdoptOpenJDK/openjdk-build/commit/27064de6cb4818a8a958476784d2d9b5cb92c55d#diff-c6a79675da9c67a69aa3ee6e26748793)).
+- Should you encounter a compile error that is caused by a missing function or error similar to the one below, then you should update our [test doubles & stubs](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/tree/master/pipelines/src/main/groovy) that we use to run these tests and emulate a live jenkins environment ([link to example](https://github.com/AdoptOpenJDK/openjdk-build/commit/27064de6cb4818a8a958476784d2d9b5cb92c55d#diff-c6a79675da9c67a69aa3ee6e26748793)).
 
 ```groovy
     prTester/pr_test_pipeline.groovy: 99: [Static type checking] - Cannot find matching method PullRequestTestPipeline#downstreamCommitStatus(groovy.lang.Closure). Please check if the declared type is correct and if the method exists.
