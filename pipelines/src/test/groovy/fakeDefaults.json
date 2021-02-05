@@ -1,6 +1,7 @@
 {
     "repository"             : {
         "url"                : "1",
+        "pipeline_url"       : "19",
         "branch"             : "2"
     },
     "jenkinsDetails"         : {

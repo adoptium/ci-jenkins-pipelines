@@ -903,16 +903,6 @@ class Build {
     }
 
     /*
-    Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
-    */
-    def checkoutAdopt = { ->
-      context.checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["branch"] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["url"] ] ]
-      ])
-    }
-
-    /*
     Executed on a build node, the function checks out the repository and executes the build via ./make-adopt-build-farm.sh
     Once the build completes, it will calculate its version output, commit the first metadata writeout, and archive the build results.
     */
@@ -924,6 +914,7 @@ class Build {
         useAdoptShellScripts
     ) {
         return context.stage("build") {
+            def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
             if (cleanWorkspace) {
                 try {
 
@@ -949,7 +940,7 @@ class Build {
 
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: "HOURS") {
-                    checkoutAdopt()
+                    repoHandler.checkoutAdopt()
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
                     context.sh(script: "git clean -fdx")
@@ -971,7 +962,6 @@ class Build {
                 envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${ADOPT_DEFAULTS_JSON['repository']['branch']}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
 
                 // Execute build
-                def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
                 context.withEnv(envVars) {
                     try {
                         context.timeout(time: buildTimeouts.BUILD_JDK_TIMEOUT, unit: "HOURS") {
@@ -1154,7 +1144,8 @@ class Build {
                             if (buildConfig.DOCKER_FILE) {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: "HOURS") {
-                                        checkoutAdopt()
+                                        def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
+                                        repoHandler.checkoutAdopt()
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
                                         context.sh(script: "git clean -fdx")

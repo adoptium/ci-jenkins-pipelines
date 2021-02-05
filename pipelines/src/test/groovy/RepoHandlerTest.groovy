@@ -22,7 +22,8 @@ class RepoHandlerTest {
 
         // Repository
         Assertions.assertTrue(adoptJson.repository instanceof Map)
-        Assertions.assertEquals(adoptJson.repository.url, "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git")
+        Assertions.assertEquals(adoptJson.repository.url, "https://github.com/AdoptOpenJDK/openjdk-build.git")
+        Assertions.assertEquals(adoptJson.repository.pipeline_url, "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git")
         Assertions.assertEquals(adoptJson.repository.branch, "master")
 
         // Jenkins Details

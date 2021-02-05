@@ -29,7 +29,7 @@ node('master') {
     def checkoutAdopt = { ->
       checkout([$class: 'GitSCM',
         branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["branch"] ] ],
-        userRemoteConfigs: [ [ url: "ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"]" ] ]
+        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
       ])
     }
 
