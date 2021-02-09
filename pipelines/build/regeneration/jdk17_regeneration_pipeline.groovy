@@ -59,7 +59,7 @@ node ("master") {
     def checkoutAdopt = { ->
       checkout([$class: 'GitSCM',
         branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["branch"] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["url"] ] ]
+        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
       ])
     }
 
@@ -142,7 +142,7 @@ node ("master") {
       println "[WARNING] ${jobTemplatePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
       checkoutAdopt()
       jobTemplatePath = ADOPT_DEFAULTS_JSON['templateDirectories']['downstream']
-      println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
+      println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
       checkoutUser()
     }
 
@@ -151,7 +151,7 @@ node ("master") {
       println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
       checkoutAdopt()
       scriptPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['downstream']
-      println "[SUCCESS] The path is now ${scriptPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
+      println "[SUCCESS] The path is now ${scriptPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
       checkoutUser()
     }
 
@@ -160,7 +160,7 @@ node ("master") {
       println "[WARNING] ${baseFilePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
       checkoutAdopt()
       baseFilePath = ADOPT_DEFAULTS_JSON['baseFileDirectories']['downstream']
-      println "[SUCCESS] The path is now ${baseFilePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
+      println "[SUCCESS] The path is now ${baseFilePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
       checkoutUser()
     }
 
