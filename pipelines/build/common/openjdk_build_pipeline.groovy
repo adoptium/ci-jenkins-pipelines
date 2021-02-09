@@ -1112,21 +1112,10 @@ class Build {
         }
     }
 
-
-    def getRepoURL() {
-        context.sh "git config --get remote.origin.url > .git/remote-url"
-        return context.readFile(".git/remote-url").trim()
-    }
-
-    def getCommitSha() {
-        context.sh "git rev-parse HEAD > .git/current-commit"
-        return context.readFile(".git/current-commit").trim()
-    }
-
     def updateGithubCommitStatus(STATE, MESSAGE) {
         // workaround https://issues.jenkins-ci.org/browse/JENKINS-38674
-        def repoUrl = getRepoURL()
-        def commitSha = getCommitSha()
+        String repoUrl = USER_REMOTE_CONFIGS["remotes"]["url"]
+        String commitSha = USER_REMOTE_CONFIGS["branch"]
 
         String shortJobName = env.JOB_NAME.split('/').last()
 
