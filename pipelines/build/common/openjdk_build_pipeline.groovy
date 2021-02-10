@@ -1011,6 +1011,9 @@ class Build {
 
                 writeMetadata(versionInfo, true)
 
+            } finally {
+
+                // Always archive any artifacts including failed make logs..
                 try {
                     context.timeout(time: buildTimeouts.BUILD_ARCHIVE_TIMEOUT, unit: "HOURS") {
                         // We have already archived cross compiled artifacts, so only archive the metadata files
@@ -1028,7 +1031,7 @@ class Build {
                     }
                     throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
                 }
-            } finally {
+
                 // post-build workspace clean:
                 if (cleanWorkspaceAfter || cleanWorkspaceBuildOutputAfter) {
                     try {
