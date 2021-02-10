@@ -265,21 +265,32 @@ class Build {
 
                         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
 
+                        def testParameters = [
+                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                            context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
+                            context.string(name: 'JDK_REPO', value: jdkRepo),
+                            context.string(name: 'JDK_BRANCH', value: jdkBranch),
+                            context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                            context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
+                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+                        if (buildConfig.VARIANT == "openj9" && !buildConfig.ARCHITECTURE.contains('32')) {
+                            // PLATFORM only needs to be passed until all openj9 test platforms are mixed by default
+                            // Exclude 32bit (jdk8 win) as 32bit builds are not mixed
+                            def arch = buildConfig.ARCHITECTURE
+                            if (arch == "x64") {
+                                arch = "x86-64"
+                            }
+                            def os = buildConfig.TARGET_OS
+                            testParameters.add(context.string(name: 'PLATFORM', value: "${arch}_${os}_mixed"))
+                        }
                         // Execute test job
 						if (JobHelper.jobIsRunnable(jobName as String)) {
 							context.catchError {
 								context.build job: jobName,
 										propagate: false,
-										parameters: [
-												context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-												context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-												context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
-												context.string(name: 'JDK_REPO', value: jdkRepo),
-												context.string(name: 'JDK_BRANCH', value: jdkBranch),
-												context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-												context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-												context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
-												context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+										parameters: testParameters
 							}
 						} else {
 							context.println "[WARNING] Requested test job that does not exist or is disabled: ${jobName}"
