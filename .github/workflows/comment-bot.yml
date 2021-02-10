@@ -15,4 +15,4 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             Thank you for creating a pull request!
-            In order to run the pipeline tests I require an admin to post the following comment: `run-tests`
+            In order to run the pipeline tests I require an admin to post the following comment: `run tests`
