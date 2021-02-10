@@ -911,10 +911,10 @@ class Build {
         cleanWorkspaceAfter,
         cleanWorkspaceBuildOutputAfter,
         filename,
-        useAdoptShellScripts
+        useAdoptShellScripts,
+        repoHandler
     ) {
         return context.stage("build") {
-            def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
             if (cleanWorkspace) {
                 try {
 
@@ -949,7 +949,7 @@ class Build {
 
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: "HOURS") {
-                    repoHandler.checkoutAdopt()
+                    context.checkout context.scm
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
                     context.sh(script: "git clean -fdx")
@@ -1177,6 +1177,8 @@ class Build {
                         }
                     }
 
+                    def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
+
                     if (buildConfig.DOCKER_IMAGE) {
                         // Docker build environment
                         def label = buildConfig.NODE_LABEL + "&&dockerBuild"
@@ -1215,8 +1217,7 @@ class Build {
                             if (buildConfig.DOCKER_FILE) {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: "HOURS") {
-                                        def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
-                                        repoHandler.checkoutAdopt()
+                                        context.checkout context.scm
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
                                         context.sh(script: "git clean -fdx")
@@ -1226,7 +1227,14 @@ class Build {
                                 }
 
                                 context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside {
-                                    buildScripts(cleanWorkspace, cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter, filename, useAdoptShellScripts)
+                                    buildScripts(
+                                        cleanWorkspace,
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
+                                        filename,
+                                        useAdoptShellScripts,
+                                        repoHandler
+                                    )
                                 }
 
                             // Otherwise, pull the docker image from DockerHub
@@ -1240,7 +1248,14 @@ class Build {
                                 }
 
                                 context.docker.image(buildConfig.DOCKER_IMAGE).inside {
-                                    buildScripts(cleanWorkspace, cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter, filename, useAdoptShellScripts)
+                                    buildScripts(
+                                        cleanWorkspace,
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
+                                        filename,
+                                        useAdoptShellScripts,
+                                        repoHandler
+                                    )
                                 }
                             }
                         }
@@ -1261,10 +1276,24 @@ class Build {
                                 }
                                 context.echo("changing ${workspace}")
                                 context.ws(workspace) {
-                                    buildScripts(cleanWorkspace, cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter, filename, useAdoptShellScripts)
+                                    buildScripts(
+                                        cleanWorkspace,
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
+                                        filename,
+                                        useAdoptShellScripts,
+                                        repoHandler
+                                    )
                                 }
                             } else {
-                                buildScripts(cleanWorkspace, cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter, filename, useAdoptShellScripts)
+                                buildScripts(
+                                    cleanWorkspace,
+                                    cleanWorkspaceAfter,
+                                    cleanWorkspaceBuildOutputAfter,
+                                    filename,
+                                    useAdoptShellScripts,
+                                    repoHandler
+                                )
                             }
                         }
                         context.println "[NODE SHIFT] OUT OF JENKINS NODE (LABELNAME ${buildConfig.NODE_LABEL}!)"
