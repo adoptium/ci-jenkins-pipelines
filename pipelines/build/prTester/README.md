@@ -6,7 +6,7 @@ The demo pipelines are colloquially known as "The PR Tester" where the others ar
 
 ## When they're used
 
-Except for the [#openjdk-build-pr-tester](#openjdk-build-pr-tester), all of the [test groups](#what-they-are) are executed automatically on every PR and are defined inside the [.github/workflows directory](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/.github/workflows).
+Except for the [#openjdk-build-pr-tester](#openjdk-build-pr-tester), all of the [test groups](#what-they-are) are executed automatically on every PR and are defined inside the [.github/workflows directory](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/tree/master/.github/workflows).
 These tests lint & compile the code you have altered, as well as executing full JDK builds using your code.
 Every new pull request to this repository that alters any groovy code OR that will likely affect our Jenkins builds should have the PR tester ([#openjdk-build-pr-tester](#openjdk-build-pr-tester)) run on it at least once to verify the changes don't break anything significant inside a Jenkins build environment (documentation changes being excluded from this rule).
 
@@ -15,8 +15,6 @@ Every new pull request to this repository that alters any groovy code OR that wi
 There are four "groups" of tests that can be run on each PR:
 
 - [#Compile](#Compile)
-- [#Linter](#Linter)
-- [#Build](#Build)
 - [#openjdk-build-pr-tester](#openjdk-build-pr-tester) (**OPTIONAL, SEE [#When they're used](#When-they're-used)**)
 
 The results of these jobs will appear as [GitHub Status Check Results](https://docs.github.com/en/github/administering-a-repository/about-required-status-checks) at the bottom of the PR being tested:
@@ -37,15 +35,15 @@ This group consists of [GitHub Status Checks](https://docs.github.com/en/free-pr
                                        downstreamCommitStatus {
 ```
 
-- The job also runs our [groovy testing suite](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/pipelines/src/test/groovy). The various tests in this directory ensure that our jenkins library classes return the correct information.
+- The job also runs our [groovy testing suite](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/tree/master/pipelines/src/test/groovy). The various tests in this directory ensure that our jenkins library classes return the correct information.
 
 - **If you are making any changes to any of the following classes, we strongly recommended you update the tests to conform to your changes (adding new ones if needs be!):**
 
-  - [ParseVersion.groovy](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/pipelines/library/src/ParseVersion.groovy)
-  - [IndividualBuildConfig.groovy](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/pipelines/library/src/common/IndividualBuildConfig.groovy)
-  - [RepoHandler.groovy](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/pipelines/library/src/common/RepoHandler.groovy)
-  - [MetaData.groovy](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/pipelines/library/src/common/MetaData.groovy)
-  - [VersionInfo.groovy](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/pipelines/library/src/common/VersionInfo.groovy)
+  - [ParseVersion.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/ParseVersion.groovy)
+  - [IndividualBuildConfig.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/IndividualBuildConfig.groovy)
+  - [RepoHandler.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/RepoHandler.groovy)
+  - [MetaData.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/MetaData.groovy)
+  - [VersionInfo.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/VersionInfo.groovy)
 
 - As an example of this in action, the output of [one such test](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/pipelines/src/test/groovy/VersionParsingTest.groovy#L60-L68) can be seen below:
 
@@ -67,24 +65,6 @@ cd pipelines/
 ./gradlew --info test
 ```
 
-### Linter
-
-This group consists of [GitHub Status Checks](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-status-checks) run inside GitHub itself. They lint / analyse any changes you make to ensure they conform to our writing standards.
-
-#### Shellcheck
-
-- This job downloads and runs the [Shellcheck script analysis tool](https://www.shellcheck.net/) in order to lint and compile any changes you have made to our bash scripts. It does this via the [shellcheck.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/shellcheck.sh) script.
-- The job will fail and inform the user in the log if there are any violations of our bash scripting standards. If you feel that some of the standards are too strict or irrelevant to your changes, please raise it in [Slack:#testing](https://adoptopenjdk.slack.com/archives/C5219G28G).
-
-### Build
-
-This group is a matrix of [GitHub Status Checks](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-status-checks) run inside GitHub itself. They execute a full set of builds to various specifications, mimicking a user running a build locally
-
-- The group collects a varied mix of java versions, operating systems and VM variants that each execute [build-farm/make-adopt-build-farm.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/build-farm/make-adopt-build-farm.sh), essentially running a full JDK build as if we were setting up and testing a new Jenkins machine OR as if it was running a build locally on your machine.
-- Each job is run inside a Docker container to ensure reliability between each build. For example, Linux builds use our [centos7_build_image](https://hub.docker.com/r/adoptopenjdk/centos7_build_image) Docker container.
-- At the end of the build, the finished JDK artifact is archived to GitHub for you to download and peruse at your leisure (see [actions/upload-artifact#usage](https://github.com/actions/upload-artifact#usage) for more info).
-- Due to GitHub ratelimiting how many status checks can be run in the space of a few minutes, these checks may take a little while to complete while they're stuck in the queue. Be patient however, as some of your changes may affect one build completely differently to another build.
-
 ### openjdk-build-pr-tester
 
 - **Seen in the PR Status Checks as `pipeline-build-check`, the job is located [here](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/)**
@@ -95,7 +75,7 @@ This group is a matrix of [GitHub Status Checks](https://docs.github.com/en/free
 #### Usage
 
 The tester has it's own admin and white lists on Jenkins.
-If you are on either list, the PR tester will run against your PR whenever you comment [#run tests](#run-tests) and will also allow you access to various commands you can run on your own PR or on someone else's:
+If you are on either list, the PR tester will run against your PR whenever you comment `run tests` and will also allow you access to various commands you can run on your own PR or on someone else's:
 
 ##### `run tests`
 
@@ -106,10 +86,13 @@ If you are on either list, the PR tester will run against your PR whenever you c
   - One that is at the front of the queue and currently being tested:
   ![Image of building tester](./images/pr_tester_building.png)
 
+- When the tester begins, it will generate several downstream jobs. Each of which will have their own job status:
+  ![Image of downstream Job](./images/pr_tester_downstream.png)
+
 - When the tester is done, it will return a response comment to the PR with feedback on the testing similar to the following:
 ![Image of test result](./images/pr_tester_result.png)
 
-- The message will vary depending on the result of the test. Please remember however, that failed tests may be due to existing problems in the nightly builds, not your code. If you're unsure if the tests failed because of your changes or not, check our [issue board](https://github.com/AdoptOpenJDK/openjdk-build/issues) and our [triage doc](https://docs.google.com/document/d/1vcZgHJeR8rW8U8OD23Uob7A1dbLrtkURZUkinUp7f_w/edit?usp=sharing) for the existing error. If your job was aborted, check the log to see who aborted it.
+- The message will vary depending on the result of the test. Please remember however, that failed tests may be due to existing problems in the nightly builds, not your code. If you're unsure if the tests failed because of your changes or not, check our [issue board](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues) and our [triage doc](https://docs.google.com/document/d/1vcZgHJeR8rW8U8OD23Uob7A1dbLrtkURZUkinUp7f_w/edit?usp=sharing) for the existing error. If your job was aborted, check the log to see who aborted it.
 
   - 🟢**SUCCESS** 🟢 All the downstream jobs passed, congratulations!
   - 🟠**FAILURE** 🟠 Some of the downstream jobs failed OR the job was aborted. Check the link in the field at the bottom of the PR for the job link to see exactly where it went wrong.
