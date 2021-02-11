@@ -949,7 +949,11 @@ class Build {
 
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: "HOURS") {
-                    context.checkout context.scm
+                    if (useAdoptShellScripts) {
+                        repoHandler.checkoutAdopt()
+                    } else {
+                        context.checkout context.scm
+                    }
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
                     context.sh(script: "git clean -fdx")
@@ -1217,7 +1221,11 @@ class Build {
                             if (buildConfig.DOCKER_FILE) {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: "HOURS") {
-                                        context.checkout context.scm
+                                        if (useAdoptShellScripts) {
+                                            repoHandler.checkoutAdopt()
+                                        } else {
+                                            context.checkout context.scm
+                                        }
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
                                         context.sh(script: "git clean -fdx")
