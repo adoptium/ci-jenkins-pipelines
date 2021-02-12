@@ -987,7 +987,7 @@ class Build {
                                 repoHandler.checkoutAdopt()
                                 context.sh(script: "./build-farm/make-adopt-build-farm.sh")
                                 context.println "[CHECKOUT] Reverting pre-build AdoptOpenJDK/openjdk-build checkout..."
-                                repoHandler.checkoutUser()
+                                context.checkout context.scm
                             } else {
                                 context.println "[INFO] Executing user bash scripts..."
                                 context.sh(script: "./build-farm/make-adopt-build-farm.sh")
