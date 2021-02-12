@@ -1222,8 +1222,8 @@ class Build {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: "HOURS") {
                                         def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
-                                        // Temporarily use checkout user pending https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues/34
-                                        repoHandler.checkoutUser()
+                                        // Temporarily use checkout adopt pending https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues/34
+                                        repoHandler.checkoutAdopt()
 
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
