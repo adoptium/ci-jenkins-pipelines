@@ -914,6 +914,7 @@ class Build {
         useAdoptShellScripts
     ) {
         return context.stage("build") {
+            def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
             if (cleanWorkspace) {
                 try {
 
@@ -948,7 +949,6 @@ class Build {
 
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: "HOURS") {
-                    def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
                     if (useAdoptShellScripts) {
                         repoHandler.checkoutAdopt()
                     } else {
@@ -983,8 +983,6 @@ class Build {
                                 updateGithubCommitStatus("PENDING", "Build Started")
                             }
                             if (useAdoptShellScripts) {
-                                // Instantiate RepoHandler again as other one can't be accessed inside withEnv block
-                                def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
                                 context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build to use their bash scripts..."
                                 repoHandler.checkoutAdopt()
                                 context.sh(script: "./build-farm/make-adopt-build-farm.sh")
