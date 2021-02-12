@@ -952,7 +952,7 @@ class Build {
                     if (useAdoptShellScripts) {
                         repoHandler.checkoutAdopt()
                     } else {
-                        repoHandler.checkoutUser()
+                        context.checkout context.scm
                     }
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
