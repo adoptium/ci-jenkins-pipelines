@@ -949,7 +949,11 @@ class Build {
 
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: "HOURS") {
-                    repoHandler.checkoutAdopt()
+                    if (useAdoptShellScripts) {
+                        repoHandler.checkoutAdopt()
+                    } else {
+                        context.checkout context.scm
+                    }
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
                     context.sh(script: "git clean -fdx")
@@ -983,7 +987,7 @@ class Build {
                                 repoHandler.checkoutAdopt()
                                 context.sh(script: "./build-farm/make-adopt-build-farm.sh")
                                 context.println "[CHECKOUT] Reverting pre-build AdoptOpenJDK/openjdk-build checkout..."
-                                repoHandler.checkoutUser()
+                                context.checkout context.scm
                             } else {
                                 context.println "[INFO] Executing user bash scripts..."
                                 context.sh(script: "./build-farm/make-adopt-build-farm.sh")
@@ -1216,7 +1220,9 @@ class Build {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: "HOURS") {
                                         def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
+                                        // Temporarily use checkout adopt pending https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues/34
                                         repoHandler.checkoutAdopt()
+
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
                                         context.sh(script: "git clean -fdx")
@@ -1226,7 +1232,13 @@ class Build {
                                 }
 
                                 context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside {
-                                    buildScripts(cleanWorkspace, cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter, filename, useAdoptShellScripts)
+                                    buildScripts(
+                                        cleanWorkspace,
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
+                                        filename,
+                                        useAdoptShellScripts
+                                    )
                                 }
 
                             // Otherwise, pull the docker image from DockerHub
@@ -1240,7 +1252,13 @@ class Build {
                                 }
 
                                 context.docker.image(buildConfig.DOCKER_IMAGE).inside {
-                                    buildScripts(cleanWorkspace, cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter, filename, useAdoptShellScripts)
+                                    buildScripts(
+                                        cleanWorkspace,
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
+                                        filename,
+                                        useAdoptShellScripts
+                                    )
                                 }
                             }
                         }
@@ -1261,10 +1279,22 @@ class Build {
                                 }
                                 context.echo("changing ${workspace}")
                                 context.ws(workspace) {
-                                    buildScripts(cleanWorkspace, cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter, filename, useAdoptShellScripts)
+                                    buildScripts(
+                                        cleanWorkspace,
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
+                                        filename,
+                                        useAdoptShellScripts
+                                    )
                                 }
                             } else {
-                                buildScripts(cleanWorkspace, cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter, filename, useAdoptShellScripts)
+                                buildScripts(
+                                    cleanWorkspace,
+                                    cleanWorkspaceAfter,
+                                    cleanWorkspaceBuildOutputAfter,
+                                    filename,
+                                    useAdoptShellScripts
+                                )
                             }
                         }
                         context.println "[NODE SHIFT] OUT OF JENKINS NODE (LABELNAME ${buildConfig.NODE_LABEL}!)"
