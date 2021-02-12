@@ -86,7 +86,7 @@ If you are on either list, the PR tester will run against your PR whenever you c
   - One that is at the front of the queue and currently being tested:
   ![Image of building tester](./images/pr_tester_building.png)
 
-- When the tester begins, it will generate several downstream jobs. Each of which will have their own job status:
+- When the tester begins, it will generate several downstream jobs; each of which will have their own job status:
   ![Image of downstream Job](./images/pr_tester_downstream.png)
 
 - When the tester is done, it will return a response comment to the PR with feedback on the testing similar to the following:
