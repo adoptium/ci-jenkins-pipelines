@@ -51,7 +51,7 @@ class PullRequestTestPipeline implements Serializable {
                 defaultsJson        : DEFAULTS_JSON,
                 adoptDefaultsJson   : ADOPT_DEFAULTS_JSON,
                 CHECKOUT_CREDENTIALS: "",
-                adoptScripts        : false
+                adoptScripts        : true
         ]
     }
 
