@@ -605,6 +605,18 @@ class Builder implements Serializable {
             }
 
             def jobs = [:]
+            
+            // Get HEAD value
+            def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+            println "Querying Adopt Api for the JDK-Head number (tip_version)..."
+
+            def response = JobHelper.getAvailableReleases(this)
+            headVersion = response.getAt("tip_version")
+            println "Found Java Version Number: ${headVersion}" 
+    
+            if (javaToBuild == "jdk${headVersion}") {
+                javaToBuild = "jdk"
+            }
 
             context.echo "Java: ${javaToBuild}"
             context.echo "OS: ${targetConfigurations}"
@@ -616,7 +628,7 @@ class Builder implements Serializable {
             context.echo "Release: ${release}"
             context.echo "Tag/Branch name: ${scmReference}"
             context.echo "Keep test reportdir: ${keepTestReportDir}"
-            context.echo "Keey release logs: ${keepReleaseLogs}"
+            context.echo "Keep release logs: ${keepReleaseLogs}"
 
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
