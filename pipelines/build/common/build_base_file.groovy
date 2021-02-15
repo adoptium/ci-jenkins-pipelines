@@ -606,13 +606,13 @@ class Builder implements Serializable {
 
             def jobs = [:]
             
-            // Get HEAD value
-            def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-            println "Querying Adopt Api for the JDK-Head number (tip_version)..."
+            // Query the Adopt api to get the "tip_version"
+            def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+            context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
 
-            def response = JobHelper.getAvailableReleases(this)
-            headVersion = response.getAt("tip_version")
-            println "Found Java Version Number: ${headVersion}" 
+            def response = JobHelper.getAvailableReleases(context)
+            headVersion = (int) response.getAt("tip_version")
+            context.println "Found Java Version Number: ${headVersion}"
     
             if (javaToBuild == "jdk${headVersion}") {
                 javaToBuild = "jdk"
