@@ -247,8 +247,6 @@ node('master') {
           config.put("pipelineSchedule", target.triggerSchedule_weekly)
         }
 
-        config.JAVA_VERSION = "${javaVersion}"
-
         println "[INFO] CREATING JDK${javaVersion} WEEKLY RELEASE PIPELINE WITH NEW CONFIG VALUES:"
         println "JOB_NAME = ${config.JOB_NAME}"
         println "SCRIPT = ${config.SCRIPT}"
