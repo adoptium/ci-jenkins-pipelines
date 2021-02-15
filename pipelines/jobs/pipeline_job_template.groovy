@@ -6,6 +6,7 @@ runTests = true
 runInstaller = true
 runSigner = true
 cleanWsBuildOutput = true
+jdkVersion = "${JAVA_VERSION}"
 
 // if true means this is running in the pr builder pipeline
 if (binding.hasVariable('PR_BUILDER')) {
@@ -62,7 +63,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
     parameters {
         textParam('targetConfigurations', JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations)))
         stringParam('activeNodeTimeout', "0", 'Number of minutes we will wait for a label-matching node to become active.')
-        stringParam('jdkVersion', JAVA_VERSION, 'The JDK version of the pipeline e.g (jdk11u, jdk16, jdk8u).')
+        stringParam('jdkVersion', jdkVersion, 'The JDK version of the pipeline e.g (jdk11u, jdk16, jdk8u).')
         stringParam('dockerExcludes', "", 'Map of targetConfigurations to exclude from docker building. If a targetConfiguration (i.e. { "x64LinuxXL": [ "openj9" ], "aarch64Linux": [ "hotspot", "openj9" ] }) has been entered into this field, jenkins will build the jdk without using docker. This param overrides the dockerImage and dockerFile downstream job parameters.')
         stringParam('libraryPath', "", "Relative path to where the import_library.groovy script file is located. It contains the build configurations for each platform, architecture and variant.<br>Default: <code>${defaultsJson['importLibraryScript']}</code>")
         stringParam('baseFilePath', "", "Relative path to where the build_base_file.groovy file is located. This runs the downstream job setup and configuration retrieval services.<br>Default: <code>${defaultsJson['baseFileDirectories']['upstream']}</code>")
