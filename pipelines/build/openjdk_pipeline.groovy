@@ -21,13 +21,6 @@ Closure configureBuild = null
 def buildConfigurations = null
 Map<String, ?> DEFAULTS_JSON = null
 
-def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-println "Querying Adopt Api for the JDK-Head number (tip_version)..."
-
-def response = JobHelper.getAvailableReleases(this)
-headVersion = response.getAt("tip_version")
-println "Found Java Version Number: ${headVersion}"
-
 node ("master") {
     // Load defaultsJson. These are passed down from the build_pipeline_generator and is a JSON object containing user's default constants.
     if (!params.defaultsJson || defaultsJson == "") {
@@ -87,7 +80,13 @@ node ("master") {
         println "[WARNING] ${buildConfigFilePath} does not exist in your repository. Attempting to pull Adopt's build configs instead."
 
         checkoutAdopt()
-        buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
+        // Check if pipeline is jdk11 or jdk11u
+        def configPath =  new File("${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy")
+        if (configPath.exists()) {
+            buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
+        } else {
+            buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}u_pipeline_config.groovy")
+        }
         checkout scm
     }
 
