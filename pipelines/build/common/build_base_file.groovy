@@ -611,7 +611,7 @@ class Builder implements Serializable {
             context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
 
             def response = JobHelper.getAvailableReleases(context)
-            headVersion = (int) response.getAt("tip_version")
+            int headVersion = (int) response.getAt("tip_version")
             context.println "Found Java Version Number: ${headVersion}"
     
             if (javaToBuild == "jdk${headVersion}") {
