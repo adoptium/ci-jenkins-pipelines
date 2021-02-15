@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-def javaToBuild = "jdk14u"
+def javaToBuild = "jdk${params.jdkVersion}"
 def scmVars = null
 Closure configureBuild = null
 def buildConfigurations = null
