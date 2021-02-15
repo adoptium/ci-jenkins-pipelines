@@ -80,7 +80,7 @@ node ("master") {
     headVersion = response.getAt("tip_version")
     println "Found Java Version Number: ${headVersion}"
 
-    if (javaToBuild == headVersion) {
+    if (javaToBuild == "jdk${headVersion}") {
         javaToBuild = "jdk"
     }
 
