@@ -92,7 +92,7 @@ node ("master") {
         checkoutAdopt()
 
         // Check if pipeline is jdk11 or jdk11u
-        def configPath =  new File("${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy")
+        configPath =  new File("${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy")
         if (configPath.exists()) {
             buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
         } else {
