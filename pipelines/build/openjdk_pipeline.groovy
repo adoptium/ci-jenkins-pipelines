@@ -91,6 +91,9 @@ node ("master") {
 
         checkoutAdopt()
 
+        // Reset javaToBuild to original value before trying again. Converts 11u to 11
+        javaToBuild = javaToBuild.replaceAll("[^0-9.]", "");
+
         // Check if pipeline is jdk11 or jdk11u
         configPath =  new File("${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy")
         if (configPath.exists()) {
