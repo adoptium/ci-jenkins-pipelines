@@ -90,7 +90,7 @@ It will then evaluate the existence of that directory in the user's repository a
 00:13:31  [WARNING] pipelines/build/common/weekly_release_pipeline.groovy does not exist in your chosen repository. Updating it to use Adopt's instead
 ```
 
-NOTE: For the defaults that are paths to directories, the scripts will search for files of the same name as Adopt's. Custom named files are not currently supported (so for `defaults.json['configDirectories']['platform']`, all of the filenames in the specified folder need to be the same as [Adopt's](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/tree/master/build-farm/platform-specific-configurations) or the script will fail to pick up the user's config's and will use Adopt's instead).
+NOTE: For the defaults that are paths to directories, the scripts will search for files of the same name as Adopt's. Custom named files are not currently supported (so for `defaults.json['configDirectories']['platform']`, all of the filenames in the specified folder need to be the same as [Adopt's](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/build-farm/platform-specific-configurations) or the script will fail to pick up the user's config's and will use Adopt's instead).
 
 ### This is great, but how do I add new defaults?
 
