@@ -10,8 +10,10 @@ This file contains the default constants and paths used in the build scripts for
 {
     // Git repository details
     "repository"             : {
-        // Git Url of the current repository.
+        // Git Url of the openjdk-build repository.
         "url"                : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        // Git Url of the current repository.
+        "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git", 
         // Git branch you wish to use when running the scripts
         "branch"             : "master"
     },
@@ -82,7 +84,7 @@ As an example, take a look at the [build-pipeline-generator](https://ci.adoptope
 ![Image of the SCRIPT_FOLDER_PATH parameter in jenkins](images/scriptFolderParam.png)
 The script will use whatever has been entered into the parameter field unless it has been left empty, in which case it will use whatever is in the user's `defaults.json['scriptDirectories']['upstream']` attribute.
 
-It will then evaluate the existence of that directory in the user's repository and, if it fails to find one, will checkout to AdoptOpenJDK/openjdk-build and use Adopt's `defaults.json` (the console log will warn the user of this occuring):
+It will then evaluate the existence of that directory in the user's repository and, if it fails to find one, will checkout to AdoptOpenJDK/ci-jenkins-pipelines and use Adopt's `defaults.json` (the console log will warn the user of this occuring):
 
 ```bash
 00:13:31  [WARNING] pipelines/build/common/weekly_release_pipeline.groovy does not exist in your chosen repository. Updating it to use Adopt's instead
@@ -101,7 +103,6 @@ Once it has been approved and merged, update your scripts and/or jenkins jobs to
 ## Starting from scratch
 
 1. Create a (preferably) public repository with whatever scripts/configs you have altered. You don't need to place them in the same place as where Adopt's ones are, but they should have the same name. Currently, the list of supported files (replacing `x` with the JDK version number you want to alter, `(u)` is optional) you can modify are:
-
     - [pipelines/build/regeneration/build_pipeline_generator.groovy](pipelines/build/regeneration/build_pipeline_generator.groovy) - Main upstream generator files. This is what the [build-pipeline-generator jenkins job](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/job/build-pipeline-generator/) executes on build, generating the [upstream jobs](https://ci.adoptopenjdk.net/job/build-scripts/).
     - [pipelines/jobs/pipeline_job_template.groovy](pipelines/jobs/pipeline_job_template.groovy) - Upstream jobs dsl. This is the dsl job framework of the [openjdkxx-pipeline downstream jobs](https://ci.adoptopenjdk.net/job/build-scripts).
     - [pipelines/jobs/weekly_release_pipeline_job_template.groovy](pipelines/jobs/weekly_release_pipeline_job_template.groovy) - Upstream jobs dsl. This is the dsl job framework of the [weekly-openjdkxx-pipeline downstream jobs](https://ci.adoptopenjdk.net/job/build-scripts).

@@ -25,7 +25,7 @@ diagram of those relationships can be seen [here](https://github.com/AdoptOpenJD
 J - build-scripts/job/utils/job/build-pipeline-generator
 G   - Create openjdk*-pipeline jobs from pipelines/jobs/pipeline_job_template.groovy
 J   - openjdk11-pipeline
-G     - pipelines/build/openjdk*_pipeline.groovy
+G     - pipelines/build/openjdk_pipeline.groovy
 G       - pipelines/build/common/build_base_file.groovy
 G         - create_job_from_template.groovy (Generates e.g. jdk11u-linux-x64-hotspot)
 G       - configureBuild()
