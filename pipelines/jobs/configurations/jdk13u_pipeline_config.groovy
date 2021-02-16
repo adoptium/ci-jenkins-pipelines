@@ -84,7 +84,7 @@ class Config13 {
                 arch                : 'ppc64',
                 additionalNodeLabels: 'xlc16',
                 test                : [
-                        nightly: []
+                        nightly: [],
                         weekly: ['sanity.openjdk', 'sanity.system', 'extended.system']
                 ]
         ],
