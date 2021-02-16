@@ -74,6 +74,16 @@ node ("master") {
 
     // Load buildConfigFilePath. This is where jdkxx_pipeline_config.groovy is located. It contains the build configurations for each platform, architecture and variant.
     def buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
+
+    // Check if pipeline is jdk11 or jdk11u
+    def configPath =  new File(buildConfigFilePath)
+    if (configPath.exists()) {
+        println "Found ${buildConfigFilePath}"
+    } else {
+        javaToBuild = "${javaToBuild}u"
+        buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
+    }
+
     try {
         buildConfigurations = load "${WORKSPACE}/${buildConfigFilePath}"
     } catch (NoSuchFileException e) {
