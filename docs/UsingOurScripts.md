@@ -10,8 +10,10 @@ This file contains the default constants and paths used in the build scripts for
 {
     // Git repository details
     "repository"             : {
+        // Git Url of the openjdk-build repository.
+        "url"                : "https://github.com/AdoptOpenJDK/openjdk-build.git",
         // Git Url of the current repository.
-        "url"                : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
+        "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git", 
         // Git branch you wish to use when running the scripts
         "branch"             : "master"
     },
