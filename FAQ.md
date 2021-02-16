@@ -16,7 +16,6 @@ won't necessarily have access to see these links):
 ## How do I find my way around AdoptOpenJDK's build automation scripts?
 
 I wrote this diagram partially for my own benefit in [issue 957](https://github.com/AdoptOpenJDK/openjdk-build/issues/957) that lists the Jenkins jobs (`J`), Groovy scripts from GitHub (`G`), shell scripts (`S`) and environment scripts (`E`).
-
 I think it would be useful to incorporate this into the documentation (potentially annotated with a bit more info) so people can find their way around the myriad of script levels that we now have.
 
 Note that the "end-user" scripts start at `makejdk-any-platform.sh` and a

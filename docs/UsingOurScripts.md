@@ -89,13 +89,11 @@ It will then evaluate the existence of that directory in the user's repository a
 ```
 
 NOTE: For the defaults that are paths to directories, the scripts will search for files of the same name as Adopt's.
-
 Custom named files are not currently supported (so for `defaults.json['configDirectories']['platform']`, all of the filenames in the specified folder need to be the same as [Adopt's](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/build-farm/platform-specific-configurations) or the script will fail to pick up the user's config's and will use Adopt's instead).
 
 ### This is great, but how do I add new defaults?
 
 Create a openjdk-build PR that adds the new defaults in for what they would be for Adopt. Don't forget to update Adopt's [RepoHandlerTest.groovy](pipelines/src/test/groovy/RepoHandlerTest.groovy) and [fakeDefaults.json](pipelines/src/test/groovy/fakeDefaults.json), as well as any jenkins jobs if needs be (if you don't have configuration access, ask in Slack#build for assistance).
-
 Then update any scripts that will need to handle the new default, you will likely need to do a bit of searching through the objects mentioned in Adopt's `defaults.json` to find where Adopt's scripts will need changing.
 
 Once it has been approved and merged, update your scripts and/or jenkins jobs to handle the new default and you're done!
