@@ -1,3 +1,6 @@
+/* groovylint-disable */
+// Disable groovy lint as it thinks it's a map yet this is actually how the jobDsl plugin is supposed to look
+
 import groovy.json.JsonOutput
 
 folder("${BUILD_FOLDER}")

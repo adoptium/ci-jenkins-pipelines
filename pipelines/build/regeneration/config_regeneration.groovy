@@ -59,6 +59,7 @@ class Regeneration implements Serializable {
         Map<String, Map<String, ?>> buildConfigurations,
         Map<String, ?> targetConfigurations,
         Map<String, ?> DEFAULTS_JSON,
+        Map<String, ?> ADOPT_DEFAULTS_JSON,
         Map<String, ?> excludedBuilds,
         Integer sleepTime,
         currentBuild,
@@ -78,6 +79,7 @@ class Regeneration implements Serializable {
         this.buildConfigurations = buildConfigurations
         this.targetConfigurations = targetConfigurations
         this.DEFAULTS_JSON = DEFAULTS_JSON
+        this.ADOPT_DEFAULTS_JSON = ADOPT_DEFAULTS_JSON
         this.excludedBuilds = excludedBuilds
         this.currentBuild = currentBuild
         this.context = context
@@ -183,16 +185,16 @@ class Regeneration implements Serializable {
     This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
-        def splitUserUrl = ((String)DEFAULTS_JSON['repository']['url']).minus(".git").split('/')
+        def splitUserUrl = ((String)DEFAULTS_JSON['repositories']['url']).minus(".git").split('/')
         // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
 
         if (configuration.containsKey("platformSpecificConfigPath")) {
             // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations.linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['branch']}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -418,7 +420,6 @@ class Regeneration implements Serializable {
         def repoHandler = new RepoHandler(context, userRemoteConfigs)
 
         params.put("DEFAULTS_JSON", JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)))
-        Map ADOPT_DEFAULTS_JSON = repoHandler.getAdoptDefaultsJson()
         params.put("ADOPT_DEFAULTS_JSON", JsonOutput.prettyPrint(JsonOutput.toJson(ADOPT_DEFAULTS_JSON)))
 
         params.put("BUILD_CONFIG", config.toJson())
@@ -647,6 +648,7 @@ return {
     Map<String, Map<String, ?>> buildConfigurations,
     Map<String, ?> targetConfigurations,
     Map<String, ?> DEFAULTS_JSON,
+    Map<String, ?> ADOPT_DEFAULTS_JSON,
     String excludes,
     Integer sleepTime,
     def currentBuild,
@@ -673,6 +675,7 @@ return {
             buildConfigurations,
             targetConfigurations,
             DEFAULTS_JSON,
+            ADOPT_DEFAULTS_JSON,
             excludedBuilds,
             sleepTime,
             currentBuild,

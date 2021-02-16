@@ -22,24 +22,16 @@ String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK
 String DEFAULTS_FILE_URL = (params.DEFAULTS_URL) ?: ADOPT_DEFAULTS_FILE_URL
 
 node ("master") {
-  // Retrieve Adopt Defaults
-  def getAdopt = new URL(ADOPT_DEFAULTS_FILE_URL).openConnection()
-  Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map
-  if (!ADOPT_DEFAULTS_JSON || !Map.class.isInstance(ADOPT_DEFAULTS_JSON)) {
-    throw new Exception("[ERROR] No ADOPT_DEFAULTS_JSON found at ${ADOPT_DEFAULTS_FILE_URL} or it is not a valid JSON object. Please ensure this path is correct and leads to a JSON or Map object file. NOTE: Since this adopt's defaults and unlikely to change location, this is likely a network or GitHub issue.")
-  }
+    // Pull in Adopt defaults
+    Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(params.ADOPT_DEFAULTS_JSON) as Map
 
-  // Retrieve User Defaults
-  def getUser = new URL(DEFAULTS_FILE_URL).openConnection()
-  Map<String, ?> DEFAULTS_JSON = new JsonSlurper().parseText(getUser.getInputStream().getText()) as Map
-  if (!DEFAULTS_JSON || !Map.class.isInstance(DEFAULTS_JSON)) {
-    throw new Exception("[ERROR] No DEFAULTS_JSON found at ${DEFAULTS_FILE_URL}. Please ensure this path is correct and it leads to a JSON or Map object file.")
-  }
+    // Pull in User defaults
+    Map<String, ?> DEFAULTS_JSON = new JsonSlurper().parseText(params.DEFAULTS_JSON) as Map
 
   try {
     // Load git url and branch and gitBranch. These determine where we will be pulling configs from.
-    def repoUri = (params.REPOSITORY_URL) ?: DEFAULTS_JSON["repository"]["pipeline_url"]
-    def repoBranch = (params.REPOSITORY_BRANCH) ?: DEFAULTS_JSON["repository"]["branch"]
+    def repoUri = (params.REPOSITORY_URL) ?: DEFAULTS_JSON["repositories"]["pipeline_url"]
+    def repoBranch = (params.REPOSITORY_BRANCH) ?: DEFAULTS_JSON["repositories"]["branch"]
 
     // Load credentials to be used in checking out. This is in case we are checking out a URL that is not Adopts and they don't have their ssh key on the machine.
     def checkoutCreds = (params.CHECKOUT_CREDENTIALS) ?: ""
@@ -58,8 +50,8 @@ node ("master") {
     */
     def checkoutAdopt = { ->
       checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["branch"] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
+        branches: [ [ name: ADOPT_DEFAULTS_JSON["repositories"]["branch"] ] ],
+        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repositories"]["pipeline_url"] ] ]
       ])
     }
 
@@ -142,7 +134,7 @@ node ("master") {
       println "[WARNING] ${jobTemplatePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
       checkoutAdopt()
       jobTemplatePath = ADOPT_DEFAULTS_JSON['templateDirectories']['downstream']
-      println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+      println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repositories']['pipeline_url']}"
       checkoutUser()
     }
 
@@ -151,7 +143,7 @@ node ("master") {
       println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
       checkoutAdopt()
       scriptPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['downstream']
-      println "[SUCCESS] The path is now ${scriptPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+      println "[SUCCESS] The path is now ${scriptPath} relative to ${ADOPT_DEFAULTS_JSON['repositories']['pipeline_url']}"
       checkoutUser()
     }
 
@@ -160,13 +152,13 @@ node ("master") {
       println "[WARNING] ${baseFilePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
       checkoutAdopt()
       baseFilePath = ADOPT_DEFAULTS_JSON['baseFileDirectories']['downstream']
-      println "[SUCCESS] The path is now ${baseFilePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+      println "[SUCCESS] The path is now ${baseFilePath} relative to ${ADOPT_DEFAULTS_JSON['repositories']['pipeline_url']}"
       checkoutUser()
     }
 
     def excludes = (params.EXCLUDES_LIST) ?: ""
     def jenkinsCreds = (params.JENKINS_AUTH) ?: ""
-    Integer sleepTime = (params.SLEEP_TIME) != "" ? Integer.parseInteger(SLEEP_TIME) : 900
+    Integer sleepTime = (params.SLEEP_TIME) != "" ? Integer.parseInt(SLEEP_TIME) : 900
 
     println "[INFO] Running regeneration script with the following configuration:"
     println "VERSION: $javaVersion"
@@ -208,6 +200,7 @@ node ("master") {
           buildConfigurations,
           targetConfigurations,
           DEFAULTS_JSON,
+          ADOPT_DEFAULTS_JSON,
           excludes,
           sleepTime,
           currentBuild,
@@ -230,6 +223,7 @@ node ("master") {
         buildConfigurations,
         targetConfigurations,
         DEFAULTS_JSON,
+        ADOPT_DEFAULTS_JSON,
         excludes,
         sleepTime,
         currentBuild,

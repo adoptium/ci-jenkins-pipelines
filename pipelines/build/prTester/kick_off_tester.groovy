@@ -26,7 +26,7 @@ node("master") {
         throw new Exception("[ERROR] No DEFAULTS_JSON found at ${DEFAULTS_FILE_URL}. Please ensure this path is correct and it leads to a JSON or Map object file.")
     }
 
-    String url = DEFAULTS_JSON['repository']['pipeline_url']
+    String url = DEFAULTS_JSON['repositories']['pipeline_url']
     checkout([
         $class: 'GitSCM',
         branches: [[name: branch]],

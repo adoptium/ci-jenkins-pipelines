@@ -968,11 +968,11 @@ class Build {
                 envVars.add("FILENAME=${filename}" as String)
 
                 // Add in the adopt platform config path so it can be used if the user doesn't have one
-                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['url']).minus(".git").split('/')
+                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repositories']['url']).minus(".git").split('/')
                 // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
                 String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
                 // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${ADOPT_DEFAULTS_JSON['repository']['branch']}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
+                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${ADOPT_DEFAULTS_JSON['repositories']['branch']}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
 
                 // Execute build
                 context.withEnv(envVars) {
