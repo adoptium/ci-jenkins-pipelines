@@ -73,7 +73,7 @@ node ("master") {
     }
 
     // Load buildConfigFilePath. This is where jdkxx_pipeline_config.groovy is located. It contains the build configurations for each platform, architecture and variant.
-    def buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/jdk${javaToBuild}_pipeline_config.groovy"
+    def buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
 
     // Check if pipeline is jdk11 or jdk11u
     def configPath =  new File(buildConfigFilePath)
@@ -81,7 +81,7 @@ node ("master") {
         println "Found ${buildConfigFilePath}"
     } else {
         javaToBuild = "${javaToBuild}u"
-        buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/jdk${javaToBuild}_pipeline_config.groovy"
+        buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
     }
 
     try {
@@ -92,15 +92,15 @@ node ("master") {
         checkoutAdopt()
 
         // Reset javaToBuild to original value before trying again. Converts 11u to 11
-        javaToBuild = javaToBuild.replaceAll("[^0-9.]", "");
+        javaToBuild = javaToBuild.replaceAll("u", "")
 
         // Check if pipeline is jdk11 or jdk11u
-        configPath =  new File("${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/jdk${javaToBuild}_pipeline_config.groovy")
+        configPath =  new File("${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy")
         if (configPath.exists()) {
-            buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/jdk${javaToBuild}_pipeline_config.groovy"
+            buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
         } else {
             javaToBuild = "${javaToBuild}u"
-            buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/jdk${javaToBuild}_pipeline_config.groovy"
+            buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
         }
         checkout scm
     }
