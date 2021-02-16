@@ -104,6 +104,18 @@ class Builder implements Serializable {
     */
     IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant) {
 
+        // Query the Adopt api to get the "tip_version"
+        def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+        context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
+
+        def response = JobHelper.getAvailableReleases(context)
+        int headVersion = (int) response.getAt("tip_version")
+        context.println "Found Java Version Number: ${headVersion}"
+
+        if (javaToBuild == "jdk${headVersion}") {
+            javaToBuild = "jdk"
+        }
+
         def additionalNodeLabels = formAdditionalBuildNodeLabels(platformConfig, variant)
 
         def additionalTestLabels = formAdditionalTestLabels(platformConfig, variant)
