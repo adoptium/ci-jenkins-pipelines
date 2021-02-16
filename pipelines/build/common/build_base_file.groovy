@@ -23,7 +23,7 @@ limitations under the License.
  * Represents parameters that get past to each individual build
  */
 /**
- * This file starts a high level job, it is called from openjdk8_pipeline.groovy, openjdk9_pipeline.groovy, openjdk10_pipeline.groovy.
+ * This file starts a high level job, it is called from openjdk_pipeline.groovy.
  *
  * This:
  *
