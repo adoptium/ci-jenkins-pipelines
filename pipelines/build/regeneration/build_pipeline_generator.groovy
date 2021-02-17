@@ -154,8 +154,9 @@ node('master') {
           BRANCH              : repoBranch,
           BUILD_FOLDER        : jobRoot,
           CHECKOUT_CREDENTIALS: checkoutCreds,
+          JAVA_VERSION        : javaVersion,
           JOB_NAME            : "openjdk${javaVersion}-pipeline",
-          SCRIPT              : "${scriptFolderPath}/openjdk${javaVersion}_pipeline.groovy",
+          SCRIPT              : "${scriptFolderPath}/openjdk_pipeline.groovy",
           disableJob          : false,
           pipelineSchedule    : "0 0 31 2 0", // 31st Feb, so will never run,
           adoptScripts        : false

@@ -23,7 +23,7 @@ limitations under the License.
  * Represents parameters that get past to each individual build
  */
 /**
- * This file starts a high level job, it is called from openjdk8_pipeline.groovy, openjdk9_pipeline.groovy, openjdk10_pipeline.groovy.
+ * This file starts a high level job, it is called from openjdk_pipeline.groovy.
  *
  * This:
  *
@@ -103,6 +103,18 @@ class Builder implements Serializable {
     This overrides the default IndividualBuildConfig generated in config_regeneration.groovy.
     */
     IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant) {
+
+        // Query the Adopt api to get the "tip_version"
+        def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+        context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
+
+        def response = JobHelper.getAvailableReleases(context)
+        int headVersion = (int) response.getAt("tip_version")
+        context.println "Found Java Version Number: ${headVersion}"
+
+        if (javaToBuild == "jdk${headVersion}") {
+            javaToBuild = "jdk"
+        }
 
         def additionalNodeLabels = formAdditionalBuildNodeLabels(platformConfig, variant)
 
@@ -605,6 +617,18 @@ class Builder implements Serializable {
             }
 
             def jobs = [:]
+            
+            // Query the Adopt api to get the "tip_version"
+            def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+            context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
+
+            def response = JobHelper.getAvailableReleases(context)
+            int headVersion = (int) response.getAt("tip_version")
+            context.println "Found Java Version Number: ${headVersion}"
+    
+            if (javaToBuild == "jdk${headVersion}") {
+                javaToBuild = "jdk"
+            }
 
             context.echo "Java: ${javaToBuild}"
             context.echo "OS: ${targetConfigurations}"
@@ -616,7 +640,7 @@ class Builder implements Serializable {
             context.echo "Release: ${release}"
             context.echo "Tag/Branch name: ${scmReference}"
             context.echo "Keep test reportdir: ${keepTestReportDir}"
-            context.echo "Keey release logs: ${keepReleaseLogs}"
+            context.echo "Keep release logs: ${keepReleaseLogs}"
 
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {

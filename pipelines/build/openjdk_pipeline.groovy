@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-def javaToBuild = "jdk14u"
+def javaToBuild = "jdk${params.jdkVersion}"
 def scmVars = null
 Closure configureBuild = null
 def buildConfigurations = null
@@ -72,26 +72,36 @@ node ("master") {
         checkout scm
     }
 
-    // Get JDK head number so we can identify which config to pull in for JDK head
-    String headVersion = ""
-    if (javaToBuild == "jdk") {
-        def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-        println "Querying Adopt Api for the JDK-Head number (tip_version)..."
+    // Load buildConfigFilePath. This is where jdkxx_pipeline_config.groovy is located. It contains the build configurations for each platform, architecture and variant.
+    def buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
 
-        def response = JobHelper.getAvailableReleases(this)
-        headVersion = response.getAt("tip_version")
-        println "Found Java Version Number: ${headVersion}"
+    // Check if pipeline is jdk11 or jdk11u
+    def configPath =  new File(buildConfigFilePath)
+    if (configPath.exists()) {
+        println "Found ${buildConfigFilePath}"
+    } else {
+        javaToBuild = "${javaToBuild}u"
+        buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
     }
 
-    // Load buildConfigFilePath. This is where jdkxx_pipeline_config.groovy is located. It contains the build configurations for each platform, architecture and variant.
-    def buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}${headVersion}_pipeline_config.groovy"
     try {
         buildConfigurations = load "${WORKSPACE}/${buildConfigFilePath}"
     } catch (NoSuchFileException e) {
         println "[WARNING] ${buildConfigFilePath} does not exist in your repository. Attempting to pull Adopt's build configs instead."
 
         checkoutAdopt()
-        buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}${headVersion}_pipeline_config.groovy"
+
+        // Reset javaToBuild to original value before trying again. Converts 11u to 11
+        javaToBuild = javaToBuild.replaceAll("u", "")
+
+        // Check if pipeline is jdk11 or jdk11u
+        configPath =  new File("${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy")
+        if (configPath.exists()) {
+            buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
+        } else {
+            javaToBuild = "${javaToBuild}u"
+            buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
+        }
         checkout scm
     }
 
