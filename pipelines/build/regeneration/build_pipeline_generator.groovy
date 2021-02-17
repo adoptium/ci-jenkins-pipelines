@@ -86,7 +86,7 @@ node('master') {
         println "[WARNING] ${scriptFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
         checkoutAdopt()
         scriptFolderPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['upstream']
-        println "[SUCCESS] The path is now ${scriptFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
+        println "[SUCCESS] The path is now ${scriptFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
         checkoutUser()
       }
 
@@ -97,7 +97,7 @@ node('master') {
         println "[WARNING] ${nightlyFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
         checkoutAdopt()
         nightlyFolderPath = ADOPT_DEFAULTS_JSON['configDirectories']['nightly']
-        println "[SUCCESS] The path is now ${nightlyFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
+        println "[SUCCESS] The path is now ${nightlyFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
         checkoutUser()
       }
 
@@ -108,7 +108,7 @@ node('master') {
         println "[WARNING] ${jobTemplatePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
         checkoutAdopt()
         jobTemplatePath = ADOPT_DEFAULTS_JSON['templateDirectories']['upstream']
-        println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
+        println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
         checkoutUser()
       }
 
@@ -216,7 +216,7 @@ node('master') {
         try {
           jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: config
         } catch (Exception e) {
-          println "[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead...\n${e}"
+          println "${e}\n[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
           checkoutAdopt()
           jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['upstream'], ignoreExisting: false, additionalParameters: config
           checkoutUser()
@@ -233,7 +233,7 @@ node('master') {
           println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Updating it to use Adopt's instead"
           checkoutAdopt()
           config.SCRIPT = ADOPT_DEFAULTS_JSON['scriptDirectories']['weekly']
-          println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
+          println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
           checkoutUser()
         }
         config.PIPELINE = "openjdk${javaVersion}-pipeline"
@@ -255,7 +255,7 @@ node('master') {
         try {
           jobDsl targets: weeklyTemplatePath, ignoreExisting: false, additionalParameters: config
         } catch (Exception e) {
-          println "[WARNING] Something went wrong when creating the weekly job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead...\n${e}"
+          println "${e}\n[WARNING] Something went wrong when creating the weekly job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
           checkoutAdopt()
           jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weeklyTemplatePath'], ignoreExisting: false, additionalParameters: config
           checkoutUser()

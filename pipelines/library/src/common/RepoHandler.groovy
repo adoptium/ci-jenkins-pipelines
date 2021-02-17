@@ -9,7 +9,7 @@ class RepoHandler {
     private final Map ADOPT_DEFAULTS_JSON
     private Map USER_DEFAULTS_JSON
 
-    private final String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
+    private final String ADOPT_JENKINS_DEFAULTS_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
 
     /*
     Constructor
@@ -18,7 +18,7 @@ class RepoHandler {
         this.context = context
         this.configs = configs
 
-        def getAdopt = new URL(ADOPT_DEFAULTS_FILE_URL).openConnection()
+        def getAdopt = new URL(ADOPT_JENKINS_DEFAULTS_URL).openConnection()
         this.ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map
     }
 
@@ -52,12 +52,22 @@ class RepoHandler {
     }
 
     /*
-    Changes dir to Adopt's repo
+    Changes dir to Adopt's build script repo
     */
-    public void checkoutAdopt () {
+    public void checkoutBuildAdopt () {
         context.checkout([$class: 'GitSCM',
             branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["branch"] ] ],
-            userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["url"] ] ]
+            userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["build_url"] ] ]
+        ])
+    }
+
+    /*
+    Changes dir to Adopt's jenkins script repo
+    */
+    public void checkoutJenkinsAdopt () {
+        context.checkout([$class: 'GitSCM',
+            branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["branch"] ] ],
+            userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
         ])
     }
 

@@ -1,6 +1,6 @@
 {
     "repository"             : {
-        "url"                : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
         "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
         "branch"             : "master"
     },
