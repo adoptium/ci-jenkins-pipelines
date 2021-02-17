@@ -188,11 +188,11 @@ class Regeneration implements Serializable {
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
 
         if (configuration.containsKey("platformSpecificConfigPath")) {
             // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations.linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -444,9 +444,9 @@ class Regeneration implements Serializable {
             create = context.jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: params
         } catch (Exception e) {
             context.println "[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead. Error:\n${e}"
-            repoHandler.checkoutAdopt()
+            repoHandler.checkoutAdoptPipelines()
             create = context.jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['downstream'], ignoreExisting: false, additionalParameters: params
-            repoHandler.checkoutUser()
+            repoHandler.checkoutUserPipelines()
         }
 
         return create

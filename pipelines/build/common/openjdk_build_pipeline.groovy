@@ -249,16 +249,16 @@ class Build {
 
         testList.each { testType ->
 
-			// For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
-			try {
-				context.println "Running test: ${testType}"
-				testStages["${testType}"] = {
-					context.stage("${testType}") {
-						def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
-						if (("${testType}".contains("openjdk")) || ("${testType}".contains("jck"))) {
-							// Keep test reportdir always for JUnit targets
-							keep_test_reportdir = "true"
-						}
+            // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
+            try {
+                context.println "Running test: ${testType}"
+                testStages["${testType}"] = {
+                    context.stage("${testType}") {
+                        def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
+                        if (("${testType}".contains("openjdk")) || ("${testType}".contains("jck"))) {
+                            // Keep test reportdir always for JUnit targets
+                            keep_test_reportdir = "true"
+                        }
 
                         // example jobName: Test_openjdk11_hs_sanity.system_ppc64_aix
                         def jobName = determineTestJobName(testType)
@@ -266,29 +266,29 @@ class Build {
                         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
 
                         // Execute test job
-						if (JobHelper.jobIsRunnable(jobName as String)) {
-							context.catchError {
-								context.build job: jobName,
-										propagate: false,
-										parameters: [
-												context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-												context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-												context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
-												context.string(name: 'JDK_REPO', value: jdkRepo),
-												context.string(name: 'JDK_BRANCH', value: jdkBranch),
-												context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-												context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-												context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
-												context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
-							}
-						} else {
-							context.println "[WARNING] Requested test job that does not exist or is disabled: ${jobName}"
-						}
-					}
-				}
-			} catch (Exception e) {
-				context.println "Failed to execute test: ${e.getLocalizedMessage()}"
-			}
+                        if (JobHelper.jobIsRunnable(jobName as String)) {
+                            context.catchError {
+                                context.build job: jobName,
+                                        propagate: false,
+                                        parameters: [
+                                                context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                                context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                                context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
+                                                context.string(name: 'JDK_REPO', value: jdkRepo),
+                                                context.string(name: 'JDK_BRANCH', value: jdkBranch),
+                                                context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                                                context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
+                                                context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+                            }
+                        } else {
+                            context.println "[WARNING] Requested test job that does not exist or is disabled: ${jobName}"
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                context.println "Failed to execute test: ${e.getLocalizedMessage()}"
+            }
         }
         return testStages
     }
@@ -950,9 +950,9 @@ class Build {
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: "HOURS") {
                     if (useAdoptShellScripts) {
-                        repoHandler.checkoutAdopt()
+                        repoHandler.checkoutAdoptPipelines()
                     } else {
-                        context.checkout context.scm
+                        repoHandler.checkoutUserPipelines()
                     }
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
@@ -968,11 +968,11 @@ class Build {
                 envVars.add("FILENAME=${filename}" as String)
 
                 // Add in the adopt platform config path so it can be used if the user doesn't have one
-                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['url']).minus(".git").split('/')
+                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']).minus(".git").split('/')
                 // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
                 String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
                 // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${ADOPT_DEFAULTS_JSON['repository']['branch']}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
+                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${ADOPT_DEFAULTS_JSON['repository']['build_branch']}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
 
                 // Execute build
                 context.withEnv(envVars) {
@@ -983,14 +983,17 @@ class Build {
                                 updateGithubCommitStatus("PENDING", "Build Started")
                             }
                             if (useAdoptShellScripts) {
-                                context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build to use their bash scripts..."
-                                repoHandler.checkoutAdopt()
-                                context.sh(script: "./build-farm/make-adopt-build-farm.sh")
+                                context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build to use their shell scripts..."
+                                repoHandler.checkoutAdoptBuild()
+                                context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                 context.println "[CHECKOUT] Reverting pre-build AdoptOpenJDK/openjdk-build checkout..."
-                                context.checkout context.scm
+                                repoHandler.checkoutUserPipelines()
                             } else {
-                                context.println "[INFO] Executing user bash scripts..."
-                                context.sh(script: "./build-farm/make-adopt-build-farm.sh")
+                                context.println "[CHECKOUT] Checking out to the user's openjdk-build..."
+                                repoHandler.checkoutUserBuild()
+                                context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                context.println "[CHECKOUT] Reverting pre-build user openjdk-build checkout..."
+                                repoHandler.checkoutUserPipelines()
                             }
                         }
                     } catch (FlowInterruptedException e) {
@@ -1169,9 +1172,7 @@ class Build {
 
                 context.stage("queue") {
                     /* This loads the library containing two Helper classes, and causes them to be
-                    imported/updated from their repo. Without the library being imported here, runTests
-                    method will fail to execute the post-build test jobs for reasons unknown.
-                    */
+                    imported/updated from their repo. Without the library being imported here, runTests method will fail to execute the post-build test jobs for reasons unknown.*/
                     context.library(identifier: 'openjdk-jenkins-helper@master')
 
                     // Set Github Commit Status
@@ -1220,8 +1221,7 @@ class Build {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: "HOURS") {
                                         def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
-                                        // Temporarily use checkout adopt pending https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues/34
-                                        repoHandler.checkoutAdopt()
+                                        repoHandler.checkoutAdoptPipelines()
 
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
