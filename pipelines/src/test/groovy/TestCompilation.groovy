@@ -64,14 +64,4 @@ class TestCompilation {
         }
     }
 
-    @Test
-    void compile_build_base_fileTest() {
-        doCompile('common/build_base_file.groovy', null)
-    }
-
-    @Test
-    void openjdk_build_pipelineTest() {
-        doCompile('common/openjdk_build_pipeline.groovy', IndividualBuildConfig.class)
-    }
-
 }
