@@ -24,6 +24,11 @@ String buildFolder = "$JOB_FOLDER"
 if (!binding.hasVariable('GIT_URL')) GIT_URL = "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git"
 if (!binding.hasVariable('GIT_BRANCH')) GIT_BRANCH = "master"
 
+isLightweight = true
+if (binding.hasVariable('PR_BUILDER')) {
+    isLightweight = false
+}
+
 folder(buildFolder) {
     description 'Automatically generated build jobs.'
 }
@@ -47,6 +52,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 }
             }
             scriptPath("${SCRIPT_PATH}")
+            lightweight(isLightweight)
         }
     }
     properties {
