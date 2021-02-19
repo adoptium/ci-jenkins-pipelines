@@ -1,4 +1,3 @@
-@Library('local-lib@master')
 import common.IndividualBuildConfig
 import common.RepoHandler
 import groovy.json.JsonSlurper
