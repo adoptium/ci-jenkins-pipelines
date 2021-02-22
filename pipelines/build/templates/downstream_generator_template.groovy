@@ -55,7 +55,7 @@ pipelineJob("${GENERATION_FOLDER}/${JOB_NAME}") {
         stringParam("JOB_TEMPLATE_PATH", DOWNSTREAM_JOB_TEMPLATE, "Repository file path to where the downstream job template is located compared to the repository root.<br>Default: ${DEFAULTS_JSON['templateDirectories']['downstream']}")
         stringParam("SCRIPT_PATH", SCRIPT_PATH, "Path to where the top level downstream script is located compared to the repository root.<br>Default: ${DEFAULTS_JSON['scriptDirectories']['downstream']}")
         stringParam("BASE_FILE_PATH", BASE_FILE, "Path to where the downstream basefile script is located compared to the repository root.<br>Default: ${DEFAULTS_JSON['baseFileDirectories']['downstream']}")
-        stringParam("REGEN_SCRIPT_PATH", REGEN_FILE, "Path to where the base file generation script is located compared to the repository root. <br>Default: ${DEFAULTS_JSON['scriptDirectories']['generators']['downstreamBase']}")
+        stringParam("REGEN_SCRIPT_PATH", REGEN_FILE, "Path to where the base file generation script is located compared to the repository root. <br>Default: ${DEFAULTS_JSON['baseFileDirectories']['generation']}")
         stringParam("LIBRARY_PATH", LIBRARY_PATH, "Path to where the Adopt class library script is located compared to the repository root.<br>Default: ${DEFAULTS_JSON['importLibraryScript']}")
         stringParam("SLEEP_TIME", SLEEP_TIME, "Time (in seconds) for the job to sleep if it detects a downstream job is running.<br>Default: Default: 900 (15mins)")
         textParam("EXCLUDES_LIST", EXCLUDES_LIST, "Map of targetConfigurations to exclude from generation. In essence, if a targetConfiguration (i.e. { 'x64LinuxXL': [ 'openj9' ], 'aarch64Linux': [ 'hotspot', 'openj9' ] }) has been entered into this field, jenkins will exclude it from generation.")
@@ -71,6 +71,6 @@ pipelineJob("${GENERATION_FOLDER}/${JOB_NAME}") {
         }
         textParam("DEFAULTS_JSON", JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)), "<strong>DO NOT ALTER THIS PARAM UNLESS YOU KNOW WHAT YOU ARE DOING!</strong> This passes down the user's default constants to the downstream jobs.")
         textParam("ADOPT_DEFAULTS_JSON", JsonOutput.prettyPrint(JsonOutput.toJson(ADOPT_DEFAULTS_JSON)), "<strong>DO NOT ALTER THIS PARAM UNDER ANY CIRCUMSTANCES!</strong> This passes down adopt's default constants to the downstream jobs. NOTE: <code>defaultsJson</code> has priority, the constants contained within this param will only be used as a failsafe.")
-        textParam("JAVA_VERSION", "jdk${JAVA_VERSION}", "<strong>You shouldn't need to alter this param. All it does is inform the common script what version we are building (passed down by the seed job).</strong>")
+        stringParam("JAVA_VERSION", "jdk${JAVA_VERSION}", "<strong>You shouldn't need to alter this param. All it does is inform the common script what version we are building (passed down by the seed job).</strong>")
     }
 }

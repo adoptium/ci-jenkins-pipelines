@@ -1,3 +1,4 @@
+/* groovylint-disable JavaIoPackageAccess */
 import groovy.json.JsonSlurper
 import java.nio.file.NoSuchFileException
 

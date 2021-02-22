@@ -175,13 +175,13 @@ node ("master") {
 
     // Load regen script and execute base file
     Closure generationScript
-    def regenScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['generation']
+    def regenScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['baseFileDirectories']['generation']
     try {
       generationScript = load "${WORKSPACE}/${regenScriptPath}"
     } catch (NoSuchFileException e) {
-      println "[WARNING] ${regenScriptPath} does not exist in your chosen repository. Using adopt's script path instead"
+      println "[WARNING] ${regenScriptPath} does not exist in your chosen repository. Using adopt's script instead"
       checkoutAdopt()
-      generationScript = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['scriptDirectories']['generation']}"
+      generationScript = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['baseFileDirectories']['generation']}"
       checkoutUser()
     }
 

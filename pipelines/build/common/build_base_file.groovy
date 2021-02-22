@@ -378,7 +378,7 @@ class Builder implements Serializable {
         // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
         def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
         if (configuration.containsKey("platformSpecificConfigPath")) {
-            // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations.linux.sh
+            // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations/linux.sh
             platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['branch']}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
