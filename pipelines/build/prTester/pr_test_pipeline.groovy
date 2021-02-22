@@ -1,3 +1,4 @@
+/* groovylint-disable ParameterName, PropertyName */
 import groovy.json.JsonSlurper
 import java.nio.file.NoSuchFileException
 
@@ -16,6 +17,7 @@ limitations under the License.
 */
 
 
+/* groovylint-disable-next-line SerializableClassMustDefineSerialVersionUID */
 class PullRequestTestPipeline implements Serializable {
 
     def context

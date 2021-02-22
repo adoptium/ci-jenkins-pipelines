@@ -1,3 +1,4 @@
+/* groovylint-disable FactoryMethodName, FieldName, NestedBlockDepth, ParameterName */
 @Library('local-lib@master')
 import common.IndividualBuildConfig
 import common.RepoHandler
@@ -24,7 +25,8 @@ This file is a job that regenerates all of the build configurations in pipelines
 1) Its called from jdk<version>_generation_pipeline.groovy
 2) Attempts to create downstream job dsl's for each pipeline job configuration
 */
-class generation implements Serializable {
+/* groovylint-disable-next-line SerializableClassMustDefineSerialVersionUID */
+class Generation implements Serializable {
     private final String javaVersion
     private final Map<String, Map<String, ?>> buildConfigurations
     private final Map<String, ?> targetConfigurations
@@ -54,7 +56,7 @@ class generation implements Serializable {
     /*
     Constructor
     */
-    public generation(
+    public Generation(
         String javaVersion,
         Map<String, Map<String, ?>> buildConfigurations,
         Map<String, ?> targetConfigurations,
@@ -81,6 +83,7 @@ class generation implements Serializable {
         this.DEFAULTS_JSON = DEFAULTS_JSON
         this.ADOPT_DEFAULTS_JSON = ADOPT_DEFAULTS_JSON
         this.excludedBuilds = excludedBuilds
+        this.sleepTime = sleepTime
         this.currentBuild = currentBuild
         this.context = context
         this.jobRootDir = jobRootDir
@@ -118,7 +121,7 @@ class generation implements Serializable {
         return configureArgs
     }
 
-    def getArchLabel(Map<String, ?> configuration, String variant) {
+    def getArchLabel(Map<String, ?> configuration) {
         def archLabelVal = ""
         // Workaround for cross compiled architectures
         if (configuration.containsKey("crossCompile")) {
@@ -185,7 +188,7 @@ class generation implements Serializable {
     This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
-        def splitUserUrl = ((String)DEFAULTS_JSON['repositories']['url']).minus(".git").split('/')
+        def splitUserUrl = (DEFAULTS_JSON['repositories']['url'] - ".git").split('/')
         // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
@@ -337,7 +340,7 @@ class generation implements Serializable {
 
             def additionalTestLabels = formAdditionalTestLabels(platformConfig, variant)
 
-            def archLabel = getArchLabel(platformConfig, variant)
+            def archLabel = getArchLabel(platformConfig)
 
             def dockerImage = getDockerImage(platformConfig, variant)
 

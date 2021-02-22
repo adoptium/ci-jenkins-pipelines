@@ -7,6 +7,9 @@
         "LineLength": {
             "enabled": false
         },
+        "ParameterCount": {
+            "enabled": false
+        },
         "VariableName": {
             "enabled": false
         }

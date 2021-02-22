@@ -1,3 +1,4 @@
+/* groovylint-disable */
 package testDoubles
 
 import JobHelper
