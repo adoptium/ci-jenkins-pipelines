@@ -1,3 +1,4 @@
+/* groovylint-disable NestedBlockDepth */
 import java.nio.file.NoSuchFileException
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
@@ -161,9 +162,7 @@ node('master') {
       // Collect available JDK versions to check for generation (tip_version + 1 just in case it is out of date on a release day)
       def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
       println "Querying Adopt Api for the JDK-Head number (tip_version)..."
-
-      def response = JobHelper.getAvailableReleases(this)
-      int headVersion = (int) response.getAt("tip_version")
+      int headVersion = JobHelper.getAvailableReleases(this)['tip_version']
 
       (8..headVersion+1).each({javaVersion ->
 
@@ -207,6 +206,7 @@ node('master') {
                 target = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}u.groovy"
               } catch (NoSuchFileException e4) {
                 println "[WARNING] No config found for JDK${javaVersion} in the User's or Adopt's repository. Skipping generation..."
+                /* groovylint-disable-next-line ReturnNullFromCatchBlock */
                 return
               }
             }

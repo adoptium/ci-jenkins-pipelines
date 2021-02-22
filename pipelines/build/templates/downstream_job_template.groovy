@@ -53,10 +53,10 @@ pipelineJob("$buildFolder/$JOB_NAME") {
         }
     }
     properties {
-	    disableConcurrentBuilds()
-            copyArtifactPermission {
-                projectNames('*')
-            }
+        disableConcurrentBuilds()
+        copyArtifactPermission {
+            projectNames('*')
+        }
     }
     logRotator {
         numToKeep(30)

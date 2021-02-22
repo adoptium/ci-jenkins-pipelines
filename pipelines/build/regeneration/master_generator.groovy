@@ -16,6 +16,7 @@ limitations under the License.
 
 node('master') {
   List RETIRED_VERSIONS = [9, 10, 12, 13, 14, 15]
+  String checkoutClass = 'GitSCM'
 
   // Pull in Adopt defaults
   String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
@@ -34,23 +35,23 @@ node('master') {
   }
 
   Map remoteConfigs = [:]
-  def repoBranch = null
+  String repoBranch = null
 
   /*
   Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
   */
-  def checkoutAdopt = { ->
-    checkout([$class: 'GitSCM',
-      branches: [ [ name: ADOPT_DEFAULTS_JSON["repositories"]["branch"] ] ],
-      userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repositories"]["pipeline_url"] ] ]
+  Closure checkoutAdopt = { ->
+    checkout([$class: checkoutClass,
+      branches: [ [ name: ADOPT_DEFAULTS_JSON['repositories']['branch'] ] ],
+      userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repositories']['pipeline_url'] ] ]
     ])
   }
 
   /*
   Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
   */
-  def checkoutUser = { ->
-    checkout([$class: 'GitSCM',
+  Closure checkoutUser = { ->
+    checkout([$class: checkoutClass,
       branches: [ [ name: repoBranch ] ],
       userRemoteConfigs: [ remoteConfigs ]
     ])
@@ -59,7 +60,7 @@ node('master') {
   /*
   * Create the upstream job, using adopt's template if the user's one fails
   */
-  def generateJob = { generatorType, config ->
+  Closure generateJob = { generatorType, config ->
     /*
     COMMON PARAMS BETWEEN BOTH GENERATOR JOBS
     */
@@ -294,8 +295,7 @@ node('master') {
   // Collect available JDK versions to check for generation (tip_version + 1 just in case it is out of date on a release day)
   def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
   println "Querying Adopt Api for the JDK-Head number (tip_version)..."
-  def response = JobHelper.getAvailableReleases(this)
-  int headVersion = (int) response.getAt("tip_version")
+  int headVersion = JobHelper.getAvailableReleases(this)['tip_version']
 
   (8..headVersion+1).each({ javaVersion ->
     if (RETIRED_VERSIONS.contains(javaVersion)) {

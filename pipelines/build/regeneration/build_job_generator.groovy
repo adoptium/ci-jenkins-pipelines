@@ -17,16 +17,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-String javaVersion = params.JAVA_VERSION
-String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
-String DEFAULTS_FILE_URL = (params.DEFAULTS_URL) ?: ADOPT_DEFAULTS_FILE_URL
-
 node ("master") {
-    // Pull in Adopt defaults
-    Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(params.ADOPT_DEFAULTS_JSON) as Map
+  String javaVersion = params.JAVA_VERSION
+  // Pull in Adopt defaults
+  Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(params.ADOPT_DEFAULTS_JSON) as Map
 
-    // Pull in User defaults
-    Map<String, ?> DEFAULTS_JSON = new JsonSlurper().parseText(params.DEFAULTS_JSON) as Map
+  // Pull in User defaults
+  Map<String, ?> DEFAULTS_JSON = new JsonSlurper().parseText(params.DEFAULTS_JSON) as Map
 
   try {
     // Load git url and branch and gitBranch. These determine where we will be pulling configs from.
@@ -190,6 +187,7 @@ node ("master") {
 
     if (jenkinsCreds != "") {
       withCredentials([usernamePassword(
+          /* groovylint-disable-next-line GStringExpressionWithinString */
           credentialsId: '${JENKINS_AUTH}',
           usernameVariable: 'jenkinsUsername',
           passwordVariable: 'jenkinsToken'
