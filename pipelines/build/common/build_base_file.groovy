@@ -539,7 +539,7 @@ class Builder implements Serializable {
     }
 
     /*
-    Returns the jenkins folder of where it's assumed the downstream build jobs have been regenerated
+    Returns the jenkins folder of where it's assumed the downstream build jobs have been generated
     */
     def getJobFolder() {
         def parentDir = currentBuild.fullProjectName.substring(0, currentBuild.fullProjectName.lastIndexOf("/"))

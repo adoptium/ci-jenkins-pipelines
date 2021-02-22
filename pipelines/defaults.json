@@ -29,14 +29,14 @@
         "weekly"                  : "pipelines/build/common/weekly_release_pipeline.groovy",
         "tester"                  : "pipelines/build/prTester/pr_test_pipeline.groovy",
         "generators"              : {
-            "downstreamBase"      : "pipelines/build/regeneration/config_regeneration.groovy",
-            "downstreamGenerator" : "pipelines/build/regeneration/build_job_generator.groovy",
-            "upstreamGenerator"   : "pipelines/build/regeneration/build_pipeline_generator.groovy"
+            "downstream"          : "pipelines/build/generation/build_job_generator.groovy",
+            "upstream"            : "pipelines/build/generation/build_pipeline_generator.groovy"
         }
     },
     "baseFileDirectories"         : {
         "upstream"                : "pipelines/build/common/build_base_file.groovy",
-        "downstream"              : "pipelines/build/common/openjdk_build_pipeline.groovy"
+        "downstream"              : "pipelines/build/common/openjdk_build_pipeline.groovy",
+        "generation"            : "pipelines/build/generation/config_generation.groovy"
     },
     "importLibraryScript"         : "pipelines/build/common/import_lib.groovy"
 }

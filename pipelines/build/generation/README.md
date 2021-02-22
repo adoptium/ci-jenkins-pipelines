@@ -1,6 +1,6 @@
-# Job Regenerator
+# Job Generators
 
-To enable concurrent pipeline builds (i.e. submitting two pipelines in parallel), we have implemented a "job regeneration" system for each JDK version.
+To enable concurrent pipeline builds (i.e. submitting two pipelines in parallel), we have implemented a "job generation" system for each JDK version.
 
 ## Intro
 
@@ -24,13 +24,13 @@ There are three stages for each job regenerator.
 
 - Execute the top level job:
   - The jobs themselves are executed by Github Push on this repository. Each time there is a commit, all the pipeline regenerators are kicked off. This is so any potential changes to the [buildConfigurations](pipelines/jobs/configurations) and [targetConfigurations](pipelines/jobs/configurations) are taken into account when creating a job dsl for each downstream job.
-  - Each of the jobs executes it's corresponding [regeneration](pipelines/build/regeneration) file, passing down it's version, targeted OS/ARCH/VARIANT and specific build configurations to the main [config_regeneration](pipelines/build/regeneration/config_regeneration.groovy) file.
+  - Each of the jobs executes it's corresponding [generation](pipelines/build/generation) file, passing down it's version, targeted OS/ARCH/VARIANT and specific build configurations to the main [config_generation](pipelines/build/generation/config_generation.groovy) file.
 - Check if the corresponding pipeline is in progress:
   - Since we want to potentially avoid overwriting the job dsl's of any pipelines in progress, we use the [jenkins api](https://ci.adoptopenjdk.net/api/) to verify that there are no pipelines of that version queued or running. If there are, the job regenerator sleeps for 15mins and checks again afterwards. If not, it moves onto the next step.
-- Regenerate the downstream jobs, one at a time:
+- Generate the downstream jobs, one at a time:
   - The regenerator then iterates through the keys in the `targetConfigurations` (e.g. [jdk11u.groovy](pipelines/jobs/configurations/jdk11u.groovy)), which are the same keys used in the `buildConfiguration` file.
   After parsing each variant in them and going through various error handling stages, the job name and folder path is constructed which is the bare minimum that the job dsl needs to be created. We only need the bare minimum as the pipelines will overwrite most the configs when they run.
-  - The job dsl for that downstream job is constructed and that job is then, successfully regenerated. The result is somewhat similar to this:
+  - The job dsl for that downstream job is constructed and that job is then, successfully generated. The result is somewhat similar to this:
 
 ```bash
 [INFO] Querying adopt api to get the JDK-Head number
@@ -83,7 +83,7 @@ Unreferenced items:
     GeneratedJob{name='build-scripts/jobs/jdk/jdk-windows-x64-hotspot'}
     GeneratedJob{name='build-scripts/jobs/jdk/jdk-windows-x64-openj9'}
 [Pipeline] echo
-[SUCCESS] Regenerated configuration for job build-scripts/jobs/jdk/jdk-mac-x64-hotspot
+[SUCCESS] Generated configuration for job build-scripts/jobs/jdk/jdk-mac-x64-hotspot
 ```
 
 ## Build Pipeline Generator

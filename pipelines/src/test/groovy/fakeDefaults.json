@@ -22,7 +22,7 @@
         "upstream"           : "11",
         "downstream"         : "12",
         "weekly"             : "13",
-        "regeneration"       : "14",
+        "generation"       : "14",
         "tester"             : "15"
     },
     "baseFileDirectories": {

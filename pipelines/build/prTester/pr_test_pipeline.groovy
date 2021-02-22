@@ -75,13 +75,13 @@ class PullRequestTestPipeline implements Serializable {
         def jobs = [:]
         Boolean pipelineFailed = false
 
-        context.println "loading ${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
-        Closure regenerationScript = context.load "${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
+        context.println "loading ${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['generation']}"
+        Closure generationScript = context.load "${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['generation']}"
 
         javaVersions.each({ javaVersion ->
             // generate top level job
             generatePipelineJob(javaVersion)
-            context.println "[INFO] Running downstream jobs regeneration script..."
+            context.println "[INFO] Running downstream jobs generation script..."
 
             // Load platform specific build configs
             def buildConfigurations
@@ -100,7 +100,7 @@ class PullRequestTestPipeline implements Serializable {
             def excludedBuilds = ""
 
             // Generate downstream pipeline jobs
-            regenerationScript(
+            generationScript(
                 actualJavaVersion,
                 buildConfigurations,
                 testConfigurations,
@@ -120,7 +120,7 @@ class PullRequestTestPipeline implements Serializable {
                 null,
                 null,
                 ""
-            ).regenerate()
+            ).generate()
 
             context.println "[SUCCESS] All done!"
 

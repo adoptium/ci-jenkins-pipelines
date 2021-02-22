@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 node('master') {
-  List RETIRED_VERSIONS = [9, 10, 12, 13, 14, 15]
+  List RETIRED_VERSIONS = (params.RETIRED_VERSIONS) ?: [9, 10, 12, 13, 14, 15]
   String checkoutClass = 'GitSCM'
 
   // Pull in Adopt defaults
@@ -67,11 +67,11 @@ node('master') {
 
     // Load scriptPath. This is where the generator script is located compared to repository root.
     // TODO: THIS IS BROKEN
-    String scriptPath = (params."${generatorType.toUpperCase()}_GENERATOR_SCRIPT_PATH") ?: DEFAULTS_JSON['scriptDirectories'][generatorType]
+    String scriptPath = (params."${generatorType.toUpperCase()}_GENERATOR_SCRIPT_PATH") ?: DEFAULTS_JSON['scriptDirectories']['generators'][generatorType]
     if (!fileExists(scriptPath)) {
       println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
       checkoutAdopt()
-      scriptPath = ADOPT_DEFAULTS_JSON['scriptDirectories'][generatorType]
+      scriptPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['generators'][generatorType]
       println "[SUCCESS] The path is now ${scriptPath} relative to ${ADOPT_DEFAULTS_JSON['repositories']['pipeline_url']}"
       checkoutUser()
     }
@@ -118,7 +118,7 @@ node('master') {
       config.USE_ADOPT_SHELL_SCRIPTS = useAdoptShellScripts
 
       // Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root. These are the top level pipeline jobs.
-      String scriptFolderPath = (params.SCRIPT_FOLDER_PATH) ?: DEFAULTS_JSON["scriptDirectories"]["upstream"]
+      String scriptFolderPath = (params.UPSTREAM_SCRIPT_FOLDER_PATH) ?: DEFAULTS_JSON["scriptDirectories"]["upstream"]
       if (!fileExists(scriptFolderPath)) {
         println "[WARNING] ${scriptFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
         checkoutAdopt()
@@ -168,16 +168,16 @@ node('master') {
       }
       config.SCRIPT_PATH = downstreamScriptPath
 
-      // Load regenBaseFilePath. The location of the downstream regeneration file (called from the initial script) compared to the repository root.
-      String regenBaseFilePath = (params.REGEN_BASEFILE_PATH) ?: DEFAULTS_JSON['scriptDirectories']['generators']['downstreamBase']
-      if (!fileExists(regenBaseFilePath)) {
-        println "[WARNING] ${regenBaseFilePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
+      // Load regenBaseFilePath. The location of the downstream generation file (called from the initial script) compared to the repository root.
+      String genBaseFilePath = (params.DOWNSTREAM_GEN_BASEFILE_PATH) ?: DEFAULTS_JSON['scriptDirectories']['baseFileDirectories']['generation']
+      if (!fileExists(genBaseFilePath)) {
+        println "[WARNING] ${genBaseFilePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
         checkoutAdopt()
-        regenBaseFilePath = ADOPT_DEFAULTS_JSON['scriptDirectories']['generators']['downstreamBase']
-        println "[SUCCESS] The path is now ${regenBaseFilePath} relative to ${ADOPT_DEFAULTS_JSON['repositories']['pipeline_url']}"
+        genBaseFilePath = ADOPT_DEFAULTS_JSON['scriptDirectories']['baseFileDirectories']['generation']
+        println "[SUCCESS] The path is now ${genBaseFilePath} relative to ${ADOPT_DEFAULTS_JSON['repositories']['pipeline_url']}"
         checkoutUser()
       }
-      config.REGEN_FILE = regenBaseFilePath
+      config.REGEN_FILE = genBaseFilePath
 
       // Load credentials to be used in commuinicating with the jenkins api. This is in case the jenkins server is private. It's pulled from the template to avoid printout (hence the excessive groovylint rule ignores)
       /* groovylint-disable-next-line NoDef, UnusedVariable, VariableTypeRequired */
@@ -233,7 +233,7 @@ node('master') {
   // Checkout into user repository
   checkoutUser()
 
-  // Load jobRoot. This is where the generator job will be created at.
+  // Load genJobRoot. This is where the generator jobs will be created.
   def genJobRoot = (params.GENERATOR_JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["generatorDirectory"]
 
   // Load jobRoot. This is where the pipeline and downstream jobs will be created at.

@@ -157,7 +157,7 @@ node ("master") {
     def jenkinsCreds = (params.JENKINS_AUTH) ?: ""
     Integer sleepTime = (params.SLEEP_TIME) != "" ? Integer.parseInt(SLEEP_TIME) : 900
 
-    println "[INFO] Running regeneration script with the following configuration:"
+    println "[INFO] Running generation script with the following configuration:"
     println "VERSION: $javaVersion"
     println "REPOSITORY URL: $repoUri"
     println "REPOSITORY BRANCH: $repoBranch"
@@ -174,14 +174,14 @@ node ("master") {
     if (jenkinsCreds == "") { println "[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error codes." }
 
     // Load regen script and execute base file
-    Closure regenerationScript
-    def regenScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['regeneration']
+    Closure generationScript
+    def regenScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['generation']
     try {
-      regenerationScript = load "${WORKSPACE}/${regenScriptPath}"
+      generationScript = load "${WORKSPACE}/${regenScriptPath}"
     } catch (NoSuchFileException e) {
       println "[WARNING] ${regenScriptPath} does not exist in your chosen repository. Using adopt's script path instead"
       checkoutAdopt()
-      regenerationScript = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['scriptDirectories']['regeneration']}"
+      generationScript = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['scriptDirectories']['generation']}"
       checkoutUser()
     }
 
@@ -193,7 +193,7 @@ node ("master") {
           passwordVariable: 'jenkinsToken'
       )]) {
         String jenkinsCredentials = "$jenkinsUsername:$jenkinsToken"
-        regenerationScript(
+        generationScript(
           javaVersion,
           buildConfigurations,
           targetConfigurations,
@@ -213,10 +213,10 @@ node ("master") {
           jenkinsBuildRoot,
           jenkinsCredentials,
           checkoutCreds
-        ).regenerate()
+        ).generate()
       }
     } else {
-      regenerationScript(
+      generationScript(
         javaVersion,
         buildConfigurations,
         targetConfigurations,
@@ -236,7 +236,7 @@ node ("master") {
         jenkinsBuildRoot,
         jenkinsCreds,
         checkoutCreds
-      ).regenerate()
+      ).generate()
     }
 
     println "[SUCCESS] All done!"

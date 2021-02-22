@@ -14,7 +14,7 @@ class ContextStub {
     }
 
     class CustomScript {
-        void regenerate() {}
+        void generate() {}
     }
 
     String scm

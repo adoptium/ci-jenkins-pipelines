@@ -48,7 +48,7 @@ class RepoHandlerTest {
         Assertions.assertEquals(adoptJson.scriptDirectories.upstream, "pipelines/build")
         Assertions.assertEquals(adoptJson.scriptDirectories.downstream, "pipelines/build/common/kick_off_build.groovy")
         Assertions.assertEquals(adoptJson.scriptDirectories.weekly, "pipelines/build/common/weekly_release_pipeline.groovy")
-        Assertions.assertEquals(adoptJson.scriptDirectories.regeneration, "pipelines/build/regeneration/config_regeneration.groovy")
+        Assertions.assertEquals(adoptJson.scriptDirectories.generation, "pipelines/build/generation/config_generation.groovy")
         Assertions.assertEquals(adoptJson.scriptDirectories.tester, "pipelines/build/prTester/pr_test_pipeline.groovy")
 
         // Base files
@@ -93,7 +93,7 @@ class RepoHandlerTest {
         Assertions.assertEquals(userJson.scriptDirectories.upstream, "11")
         Assertions.assertEquals(userJson.scriptDirectories.downstream, "12")
         Assertions.assertEquals(userJson.scriptDirectories.weekly, "13")
-        Assertions.assertEquals(userJson.scriptDirectories.regeneration, "14")
+        Assertions.assertEquals(userJson.scriptDirectories.generation, "14")
         Assertions.assertEquals(userJson.scriptDirectories.tester, "15")
 
         // Base files
