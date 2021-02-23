@@ -1,6 +1,5 @@
 import common.IndividualBuildConfig
 import common.MetaData
-@Library('local-lib@master')
 import common.VersionInfo
 import common.RepoHandler
 import groovy.json.*

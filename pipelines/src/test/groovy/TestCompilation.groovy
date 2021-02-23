@@ -21,11 +21,6 @@ class TestCompilation {
 
         String code = file.getText('UTF-8');
         code = code.replaceAll(Pattern.compile("\nclass "), "\n@groovy.transform.TypeChecked(extensions = ['JenkinsTypeCheckHelperExtension']) class ")
-        code = code.replaceAll(Pattern.compile("@Library[^\n]+"), '')
-
-        code = setType(code, "currentBuild", 'testDoubles.CurrentBuildStub')
-        code = setType(code, "context", 'testDoubles.ContextStub')
-        code = setType(code, "env", 'testDoubles.EnvStub')
 
         return code
     }
@@ -51,10 +46,6 @@ class TestCompilation {
                 }
             }
 
-            shell.setVariable("currentBuild", new testDoubles.CurrentBuildStub())
-            shell.setVariable("context", new testDoubles.ContextStub())
-            shell.setVariable("env", new testDoubles.EnvStub())
-
             shell.evaluate(code, name)
         } catch (Exception e) {
             println("This test checks compilation against Stub implementations that Mimic the jenkins Environment")
@@ -62,16 +53,6 @@ class TestCompilation {
             e.printStackTrace()
             throw e
         }
-    }
-
-    @Test
-    void compile_build_base_fileTest() {
-        doCompile('common/build_base_file.groovy', null)
-    }
-
-    @Test
-    void openjdk_build_pipelineTest() {
-        doCompile('common/openjdk_build_pipeline.groovy', IndividualBuildConfig.class)
     }
 
 }
