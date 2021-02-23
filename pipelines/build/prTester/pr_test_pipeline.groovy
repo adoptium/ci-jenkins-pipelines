@@ -188,7 +188,7 @@ return {
         Map<String, ?> defaultsJson = DEFAULTS_JSON
 
         if (gitRepo == null) {
-            gitRepo = DEFAULTS_JSON['repository']['url']
+            gitRepo = DEFAULTS_JSON['repository']['pipeline_url']
         }
 
         if (testConfigurations != null) {

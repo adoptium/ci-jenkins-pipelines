@@ -38,12 +38,12 @@ def userRemoteConfigs = [:]
 def downstreamBuilder = null
 node("master") {
     /*
-    Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
+    Changes dir to Adopt's pipeline repo. Use closures as functions aren't accepted inside node blocks
     */
-    def checkoutAdopt = { ->
+    def checkoutAdoptPipelines = { ->
       checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["branch"] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["url"] ] ]
+        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["pipeline_branch"] ] ],
+        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
       ])
     }
 
@@ -57,7 +57,7 @@ node("master") {
         load "${WORKSPACE}/${libraryPath}"
     } catch (NoSuchFileException e) {
         println "[WARNING] Using Adopt's import library script as none was found at ${WORKSPACE}/${libraryPath}"
-        checkoutAdopt()
+        checkoutAdoptPipelines()
         load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['importLibraryScript']}"
         checkout scm
     }
@@ -66,7 +66,7 @@ node("master") {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
     } catch (NoSuchFileException e) {
         println "[WARNING] Using Adopt's base file script as none was found at ${baseFilePath}"
-        checkoutAdopt()
+        checkoutAdoptPipelines()
         downstreamBuilder = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['baseFileDirectories']['downstream']}"
         checkout scm
     }

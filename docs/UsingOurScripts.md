@@ -11,11 +11,13 @@ This file contains the default constants and paths used in the build scripts for
     // Git repository details
     "repository"             : {
         // Git Url of the openjdk-build repository.
-        "url"                : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        // Git branch you wish to use when running the shell scripts inside the build_url
+        "build_branch"       : "master",
         // Git Url of the current repository.
-        "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git", 
-        // Git branch you wish to use when running the scripts
-        "branch"             : "master"
+        "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
+        // Git branch you wish to use when running the groovy scripts inside the pipeline_url
+        "pipeline_branch"    : "master"
     },
     // Jenkins server details
     "jenkinsDetails"         : {
@@ -25,7 +27,7 @@ This file contains the default constants and paths used in the build scripts for
         "rootDirectory"      : "build-scripts"
     },
     // Jenkins job dsl template paths (relative to this repository root)
-    "templateDirectories" : {
+    "templateDirectories"    : {
         // Downstream job template (e.g. jdk8u-linux-x64-hotspot)
         "downstream"         : "pipelines/build/common/create_job_from_template.groovy",
         // Upstream job template (e.g. openjdk8-pipeline)
@@ -39,7 +41,7 @@ This file contains the default constants and paths used in the build scripts for
         "build"              : "pipelines/jobs/configurations",
         // Nightly configs directory containing execution frequency, weekly tags, platforms to build.
         "nightly"            : "pipelines/jobs/configurations",
-        // Bash platform script directory containing jdk downloading and toolchain setups.
+        // Bash platform script directory inside build_url containing jdk downloading and toolchain setups.
         "platform"           : "build-farm/platform-specific-configurations"
     },
     // Job script paths (relative to this repository root)
@@ -53,10 +55,12 @@ This file contains the default constants and paths used in the build scripts for
         // Base script file containing the 2nd script that is executed by the pipeline_jobs_generator_jdkxx jobs
         "regeneration"       : "pipelines/build/common/config_regeneration.groovy",
         // Base PR tester file script file containing the 2nd script that is executed by the pipeline_jobs_generator_jdkxx jobs
-        "tester"             : "pipelines/build/prTester/pr_test_pipeline.groovy"
+        "tester"             : "pipelines/build/prTester/pr_test_pipeline.groovy",
+        // Shell script that builds the adopt machine farm, pulling in platform configs and setting Boot JDK roots. Executed by the openjdk_build_pipeline.groovy
+        "buildfarm"          : "build-farm/make-adopt-build-farm.sh"
     },
     // Job base file (the main file which is called after the 1st setup script file) paths (relative to this repository root)
-    "baseFileDirectories": {
+    "baseFileDirectories"    : {
         // Upstream pipeline file script containing the 2nd script that is executed by the openjdkx-pipeline jobs
         "upstream"           : "pipelines/build/common/build_base_file.groovy",
         // Upstream pipeline file script containing the 2nd script that is executed by the jdkx-platform-arch-variant jobs
