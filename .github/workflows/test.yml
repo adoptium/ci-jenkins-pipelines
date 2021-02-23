@@ -1,11 +1,11 @@
-name: Compile
+name: Test
 
 on:
   pull_request:
     branches: [ master ]
 
 jobs:
-  compile_groovy:
+  test_groovy:
     name: Groovy
     runs-on: ubuntu-latest
 
@@ -15,8 +15,8 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: '11'
-        
-    - name: run tests
+
+    - name: Run Groovy Tests
       run: |
         cd pipelines
         ./gradlew --info test
