@@ -106,7 +106,6 @@ class Builder implements Serializable {
         // Query the Adopt api to get the "tip_version"
         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
         context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
-
         def response = JobHelper.getAvailableReleases(context)
         int headVersion = (int) response.getAt("tip_version")
         context.println "Found Java Version Number: ${headVersion}"
@@ -365,15 +364,15 @@ class Builder implements Serializable {
     This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
-        def splitUserUrl = ((String)DEFAULTS_JSON['repository']['url']).minus(".git").split('/')
+        def splitUserUrl = ((String)DEFAULTS_JSON['repository']['build_url']).minus(".git").split('/')
         // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
         if (configuration.containsKey("platformSpecificConfigPath")) {
             // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations.linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -489,6 +488,23 @@ class Builder implements Serializable {
     }
 
     /*
+    Returns the JDK head number from the Adopt API
+    */
+    Integer getHeadVersionNumber() {
+        try {
+            context.timeout(time: pipelineTimeouts.API_REQUEST_TIMEOUT, unit: "HOURS") {
+                // Query the Adopt api to get the "tip_version"
+                def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
+                def response = JobHelper.getAvailableReleases(context)
+                return (int) response.getAt("tip_version")
+            }
+        } catch (FlowInterruptedException e) {
+            throw new Exception("[ERROR] Adopt API Request timeout (${pipelineTimeouts.API_REQUEST_TIMEOUT} HOURS) has been reached. Exiting...")
+        }
+    }
+
+    /*
     Returns the java version number for this pipeline (e.g. 8, 11, 15, 16)
     */
     Integer getJavaVersionNumber() {
@@ -497,21 +513,7 @@ class Builder implements Serializable {
         if (matcher.matches()) {
             return Integer.parseInt(matcher.group('version'))
         } else if ("jdk".equalsIgnoreCase(javaToBuild.trim())) {
-            int headVersion
-            try {
-                context.timeout(time: pipelineTimeouts.API_REQUEST_TIMEOUT, unit: "HOURS") {
-                    // Query the Adopt api to get the "tip_version"
-                    def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-                    context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
-
-                    def response = JobHelper.getAvailableReleases(context)
-                    headVersion = (int) response.getAt("tip_version")
-                    context.println "Found Java Version Number: ${headVersion}"
-                }
-            } catch (FlowInterruptedException e) {
-                throw new Exception("[ERROR] Adopt API Request timeout (${pipelineTimeouts.API_REQUEST_TIMEOUT} HOURS) has been reached. Exiting...")
-            }
-            return headVersion
+            return getHeadVersionNumber()
         } else {
             throw new Exception("Failed to read java version '${javaToBuild}'")
         }
@@ -616,16 +618,9 @@ class Builder implements Serializable {
             }
 
             def jobs = [:]
-            
-            // Query the Adopt api to get the "tip_version"
-            def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-            context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
 
-            def response = JobHelper.getAvailableReleases(context)
-            int headVersion = (int) response.getAt("tip_version")
-            context.println "Found Java Version Number: ${headVersion}"
-    
-            if (javaToBuild == "jdk${headVersion}") {
+            // Special case for JDK head where the jobs are called jdk-os-arch-variant
+            if (javaToBuild == "jdk${getHeadVersionNumber()}") {
                 javaToBuild = "jdk"
             }
 
