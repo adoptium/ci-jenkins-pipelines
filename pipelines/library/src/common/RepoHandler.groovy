@@ -86,8 +86,8 @@ class RepoHandler {
     */
     public void checkoutUserBuild () {
         context.checkout([$class: 'GitSCM',
-            branches: [ [ name: DEFAULTS_JSON["repository"]["build_branch"] ] ],
-            userRemoteConfigs: [ [ url: DEFAULTS_JSON["repository"]["build_url"] ] ]
+            branches: [ [ name: USER_DEFAULTS_JSON["repository"]["build_branch"] ] ],
+            userRemoteConfigs: [ [ url: USER_DEFAULTS_JSON["repository"]["build_url"] ] ]
         ])
     }
 

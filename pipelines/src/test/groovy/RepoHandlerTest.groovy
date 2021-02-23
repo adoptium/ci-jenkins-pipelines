@@ -60,6 +60,9 @@ class RepoHandlerTest {
 
         // Import library
         Assertions.assertEquals(adoptJson.importLibraryScript, "pipelines/build/common/import_lib.groovy")
+
+        // Defaults URL
+        Assertions.assertEquals(adoptJson.defaultsUrl, "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json")
     }
 
     @Test
@@ -108,6 +111,9 @@ class RepoHandlerTest {
 
         // Import library
         Assertions.assertEquals(userJson.importLibraryScript, "18")
+
+        // Defaults URL
+        Assertions.assertEquals(userJson.defaultsUrl, "23")
     }
 
     @Test
