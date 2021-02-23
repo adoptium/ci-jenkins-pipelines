@@ -5,8 +5,6 @@ import org.junit.jupiter.api.Test
 
 class RepoHandlerTest {
 
-    private String fakeUserDefaults = "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/src/test/groovy/fakeDefaults.json"
-
     private Map testRemote = [
         "branch"  : "foo",
         "remotes" : [
@@ -68,7 +66,8 @@ class RepoHandlerTest {
     @Test
     void userDefaultsSetterAndGetterReturns() {
         RepoHandler handler = new RepoHandler(this, [:])
-        handler.setUserDefaultsJson(fakeUserDefaults)
+        String fakeDefaults = new File(System.getProperty("user.dir") + '/src/test/groovy/fakeDefaults.json').text
+        handler.setUserDefaultsJson(this, fakeDefaults)
         Map userJson = handler.getUserDefaultsJson()
 
         // Repository
