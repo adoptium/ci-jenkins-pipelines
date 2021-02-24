@@ -1,6 +1,7 @@
 package common
 
 import java.nio.file.NoSuchFileException
+import java.net.MalformedURLException
 import groovy.json.JsonSlurper
 
 class RepoHandler {
@@ -44,11 +45,16 @@ class RepoHandler {
     }
 
     /*
-    Setter to retrieve and save a user ci-jenkins-pipelines defaults json inside the object
+    Setter to retrieve and/or save a user ci-jenkins-pipelines defaults json inside the object. It can read the JSON from a remote or local source.
     */
-    public Map<String, ?> setUserDefaultsJson(String url) {
-        def getUser = new URL(url).openConnection()
-        this.USER_DEFAULTS_JSON = new JsonSlurper().parseText(getUser.getInputStream().getText()) as Map
+    public Map<String, ?> setUserDefaultsJson(def context, def content) {
+        try {
+            def getUser = new URL(content).openConnection()
+            this.USER_DEFAULTS_JSON = new JsonSlurper().parseText(getUser.getInputStream().getText()) as Map
+        } catch (MalformedURLException e) {
+            context.println "[WARNING] Given path for setUserDefaultsJson() is malformed or not valid. Attempting to parse the path as a JSON string..."
+            this.USER_DEFAULTS_JSON = new JsonSlurper().parseText(content) as Map
+        }
     }
 
     /*
@@ -86,8 +92,8 @@ class RepoHandler {
     */
     public void checkoutUserBuild () {
         context.checkout([$class: 'GitSCM',
-            branches: [ [ name: DEFAULTS_JSON["repository"]["build_branch"] ] ],
-            userRemoteConfigs: [ [ url: DEFAULTS_JSON["repository"]["build_url"] ] ]
+            branches: [ [ name: USER_DEFAULTS_JSON["repository"]["build_branch"] ] ],
+            userRemoteConfigs: [ [ url: USER_DEFAULTS_JSON["repository"]["build_url"] ] ]
         ])
     }
 

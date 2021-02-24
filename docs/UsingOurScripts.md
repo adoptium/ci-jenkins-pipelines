@@ -67,7 +67,9 @@ This file contains the default constants and paths used in the build scripts for
         "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy"
     },
     // Script to import the adopt groovy class library (relative to this repository root)
-    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy"
+    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
+    // Raw content URL of this (defaults.json) file. This is so the openjdk_build_pipeline.groovy script can set user default configs when checking out to the shell script repo
+    "defaultsUrl"            : "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }
 ```
 
@@ -100,7 +102,10 @@ Custom named files are not currently supported (so for `defaults.json['configDir
 ### This is great, but how do I add new defaults?
 
 Create a openjdk-build PR that adds the new defaults in for what they would be for Adopt. Don't forget to update Adopt's [RepoHandlerTest.groovy](pipelines/src/test/groovy/RepoHandlerTest.groovy) and [fakeDefaults.json](pipelines/src/test/groovy/fakeDefaults.json), as well as any jenkins jobs if needs be (if you don't have configuration access, ask in Slack#build for assistance).
-Then update any scripts that will need to handle the new default, you will likely need to do a bit of searching through the objects mentioned in Adopt's `defaults.json` to find where Adopt's scripts will need changing.
+
+You may find that the `RepoHandlerTest.groovy:adoptDefaultsGetterReturns()` will fail when you add new values. This is expected as the test is pulling in Adopt's master branch `defaults.json` which does not yet contain the new values. Please inform any reviewers of this in the pull request.
+
+Finally, update any scripts that will need to handle the new default, you will likely need to do a bit of searching through the objects mentioned in Adopt's `defaults.json` to find where Adopt's scripts will need changing.
 
 Once it has been approved and merged, update your scripts and/or jenkins jobs to handle the new default and you're done!
 

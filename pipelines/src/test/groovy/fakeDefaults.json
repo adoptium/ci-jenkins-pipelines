@@ -31,5 +31,6 @@
         "upstream"           : "16",
         "downstream"         : "17"
     },
-    "importLibraryScript"    : "18"
+    "importLibraryScript"    : "18",
+    "defaultsUrl"            : "23"
 }

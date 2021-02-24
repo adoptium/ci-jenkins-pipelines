@@ -913,7 +913,9 @@ class Build {
         useAdoptShellScripts
     ) {
         return context.stage("build") {
+            // Create the repo handler with the user's defaults to ensure a openjdk-build checkout is not null
             def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
+            repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
             if (cleanWorkspace) {
                 try {
 

@@ -31,5 +31,6 @@
         "upstream"           : "pipelines/build/common/build_base_file.groovy",
         "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy"
     },
-    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy"
+    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
+    "defaultsUrl"            : "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }
