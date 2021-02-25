@@ -110,7 +110,7 @@ class PullRequestTestPipeline implements Serializable {
                 currentBuild,
                 context,
                 "build-scripts-pr-tester/build-test",
-                [url: gitRepo],
+                [ url: gitRepo ],
                 branch,
                 DEFAULTS_JSON["templateDirectories"]["downstream"],
                 DEFAULTS_JSON["importLibraryScript"],
