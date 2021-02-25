@@ -56,7 +56,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
         }
     }
     properties {
-	disableConcurrentBuilds()
+    disableConcurrentBuilds()
         copyArtifactPermission {
             projectNames('*')
         }
