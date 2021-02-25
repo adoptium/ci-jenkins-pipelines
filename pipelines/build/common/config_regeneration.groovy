@@ -44,6 +44,7 @@ class Regeneration implements Serializable {
     private final def jenkinsBuildRoot
     private final def jenkinsCreds
     private final def checkoutCreds
+    private final Boolean prBuilder
 
     private String javaToBuild
     private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
@@ -71,7 +72,8 @@ class Regeneration implements Serializable {
         String scriptPath,
         String jenkinsBuildRoot,
         String jenkinsCreds,
-        String checkoutCreds
+        String checkoutCreds,
+        Boolean prBuilder
     ) {
         this.javaVersion = javaVersion
         this.buildConfigurations = buildConfigurations
@@ -90,6 +92,7 @@ class Regeneration implements Serializable {
         this.jenkinsBuildRoot = jenkinsBuildRoot
         this.jenkinsCreds = jenkinsCreds
         this.checkoutCreds = checkoutCreds
+        this.prBuilder = prBuilder
     }
 
     /*
@@ -437,6 +440,11 @@ class Regeneration implements Serializable {
             params.put("CHECKOUT_CREDENTIALS", "")
         }
 
+        // Make sure the dsl knows if we're building inside the pr tester
+        if (prBuilder) {
+            params.put("PR_BUILDER", true)
+        }
+
         // Execute job dsl, using adopt's template if the user doesn't have one
         def create = null
         try {
@@ -659,7 +667,8 @@ return {
     String scriptPath,
     String jenkinsBuildRoot,
     String jenkinsCreds,
-    String checkoutCreds
+    String checkoutCreds,
+    Boolean prBuilder
         ->
 
         def excludedBuilds = [:]
@@ -685,6 +694,7 @@ return {
             scriptPath,
             jenkinsBuildRoot,
             jenkinsCreds,
-            checkoutCreds
+            checkoutCreds,
+            prBuilder
         )
 }

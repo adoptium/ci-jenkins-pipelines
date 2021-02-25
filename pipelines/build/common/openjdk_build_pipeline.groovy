@@ -414,26 +414,24 @@ class Build {
         def filter = "**/OpenJDK*_linux_*.tar.gz"
         def nodeFilter = "${buildConfig.TARGET_OS}&&fpm"
 
-        def buildNumber = versionData.build
-
         String releaseType = "Nightly"
         if (buildConfig.RELEASE) {
             releaseType = "Release"
         }
 
         // Execute installer job
-        def installerJob = context.build job: "build-scripts/release/create_installer_linux",
-                propagate: true,
-                parameters: [
-                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                        context.string(name: 'FILTER', value: "${filter}"),
-                        context.string(name: 'RELEASE_TYPE', value: "${releaseType}"),
-                        context.string(name: 'VERSION', value: "${versionData.version}"),
-                        context.string(name: 'MAJOR_VERSION', value: "${versionData.major}"),
-                        context.string(name: 'ARCHITECTURE', value: "${buildConfig.ARCHITECTURE}"),
-                        ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
-                ]
+        context.build job: "build-scripts/release/create_installer_linux",
+            propagate: true,
+            parameters: [
+                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                    context.string(name: 'FILTER', value: "${filter}"),
+                    context.string(name: 'RELEASE_TYPE', value: "${releaseType}"),
+                    context.string(name: 'VERSION', value: "${versionData.version}"),
+                    context.string(name: 'MAJOR_VERSION', value: "${versionData.major}"),
+                    context.string(name: 'ARCHITECTURE', value: "${buildConfig.ARCHITECTURE}"),
+                    ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
+            ]
 
     }
 
@@ -542,7 +540,7 @@ class Build {
                     case "mac": context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt; done'; buildMacInstaller(versionData); break
                     case "linux": buildLinuxInstaller(versionData); break
                     case "windows": buildWindowsInstaller(versionData); break
-                    default: return; break
+                    default: break
                 }
 
                 // Archive the Mac and Windows pkg/msi
@@ -988,7 +986,13 @@ class Build {
                                 repoHandler.checkoutAdoptBuild()
                                 context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                 context.println "[CHECKOUT] Reverting pre-build AdoptOpenJDK/openjdk-build checkout..."
-                                repoHandler.checkoutUserPipelines()
+
+                                // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
+                                if (env.JOB_NAME.contains("pr-tester")) {
+                                    context.checkout context.scm
+                                } else {
+                                    repoHandler.checkoutUserPipelines()
+                                }
                             } else {
                                 context.println "[CHECKOUT] Checking out to the user's openjdk-build..."
                                 repoHandler.checkoutUserBuild()

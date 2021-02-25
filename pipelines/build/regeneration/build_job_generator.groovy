@@ -221,7 +221,8 @@ node ("master") {
           scriptPath,
           jenkinsBuildRoot,
           jenkinsCredentials,
-          checkoutCreds
+          checkoutCreds,
+          false
         ).regenerate()
       }
     } else {
@@ -243,7 +244,8 @@ node ("master") {
         scriptPath,
         jenkinsBuildRoot,
         jenkinsCreds,
-        checkoutCreds
+        checkoutCreds,
+        false
       ).regenerate()
     }
 
