@@ -96,6 +96,10 @@ class Build {
         this.env = env
     }
 
+    /* Loads the openjdk-jenkins-helper@master library. It has to be executed several times as it cannot be passed between functions */
+    def loadJobHelper() {
+        return context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+    }
 
     /*
     Returns the java version number for this job (e.g. 8, 11, 15, 16)
@@ -111,11 +115,9 @@ class Build {
             try {
                 context.timeout(time: buildTimeouts.API_REQUEST_TIMEOUT, unit: "HOURS") {
                     // Query the Adopt api to get the "tip_version"
-                    def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                    def JobHelper = loadJobHelper()
                     context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
-
-                    def response = JobHelper.getAvailableReleases(context)
-                    headVersion = (int) response.getAt("tip_version")
+                    headVersion = JobHelper.getAvailableReleases(context)["tip_version"]
                     context.println "Found Java Version Number: ${headVersion}"
                 }
             } catch (FlowInterruptedException e) {
@@ -262,7 +264,7 @@ class Build {
                         // example jobName: Test_openjdk11_hs_sanity.system_ppc64_aix
                         def jobName = determineTestJobName(testType)
 
-                        def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                        def JobHelper = loadJobHelper()
 
                         // Execute test job
                         if (JobHelper.jobIsRunnable(jobName as String)) {

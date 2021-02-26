@@ -98,7 +98,7 @@ class Builder implements Serializable {
         PUBLISH_ARTIFACTS_TIMEOUT : 3
     ]
 
-    /* Loads the openjdk-jenkins-helper@master library. It has to be executed several times as it cannot be passed between functions*/
+    /* Loads the openjdk-jenkins-helper@master library. It has to be executed several times as it cannot be passed between functions */
     def loadJobHelper() {
         return context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
     }

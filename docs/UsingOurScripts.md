@@ -23,8 +23,10 @@ This file contains the default constants and paths used in the build scripts for
     "jenkinsDetails"         : {
         // The base URL of the server, usually this is where you would end up if you opened your server from a webpage
         "rootUrl"            : "https://ci.adoptopenjdk.net",
-        // Jenkins directory where jobs will be generated and run
-        "rootDirectory"      : "build-scripts"
+        // Jenkins directory where the pipeline and downstream jobs will be generated and run
+        "rootDirectory"      : "build-scripts",
+        // Jenkins directory where the pipeline and downstream generators will be generated and run
+        "generatorDirectory" : "build-scripts/utils/generators"
     },
     // Jenkins job dsl template paths (relative to this repository root)
     "templateDirectories"    : {
@@ -33,7 +35,12 @@ This file contains the default constants and paths used in the build scripts for
         // Upstream job template (e.g. openjdk8-pipeline)
         "upstream"           : "pipelines/jobs/pipeline_job_template.groovy",
         // Weekly job template (e.g. weekly-openjdk8-pipeline)
-        "weekly"             : "pipelines/jobs/weekly_release_pipeline_job_template.groovy"
+        "weekly"             : "pipelines/jobs/weekly_release_pipeline_job_template.groovy",
+        // Map of the upstream and downstream generator template paths respectively
+        "generators"         : {
+            "downstream"     : "pipelines/build/templates/downstream_generator_template.groovy",
+            "upstream"       : "pipelines/build/templates/pipeline_generator_template.groovy"
+        }
     },
     // Job configuration file paths (relative to this repository root)
     "configDirectories"      : {
@@ -52,19 +59,24 @@ This file contains the default constants and paths used in the build scripts for
         "weekly"             : "pipelines/build/common/weekly_release_pipeline.groovy",
         // Downstream script file containing the 1st script that is executed by the jdkx-platform-arch-variant jobs.
         "downstream"         : "pipelines/build/common/kick_off_build.groovy",
-        // Base script file containing the 2nd script that is executed by the pipeline_jobs_generator_jdkxx jobs
-        "generation"       : "pipelines/build/generation/config_generation.groovy",
         // Base PR tester file script file containing the 2nd script that is executed by the pipeline_jobs_generator_jdkxx jobs
         "tester"             : "pipelines/build/prTester/pr_test_pipeline.groovy",
         // Shell script that builds the adopt machine farm, pulling in platform configs and setting Boot JDK roots. Executed by the openjdk_build_pipeline.groovy
-        "buildfarm"          : "build-farm/make-adopt-build-farm.sh"
+        "buildfarm"          : "build-farm/make-adopt-build-farm.sh",
+        // Map of initial scripts used by the upstream and downstream generators respectively
+        "generators"         : {
+            "downstream"     : "pipelines/build/generation/build_job_generator.groovy",
+            "upstream"       : "pipelines/build/generation/build_pipeline_generator.groovy"
+        }
     },
     // Job base file (the main file which is called after the 1st setup script file) paths (relative to this repository root)
     "baseFileDirectories"    : {
         // Upstream pipeline file script containing the 2nd script that is executed by the openjdkx-pipeline jobs
         "upstream"           : "pipelines/build/common/build_base_file.groovy",
         // Upstream pipeline file script containing the 2nd script that is executed by the jdkx-platform-arch-variant jobs
-        "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy"
+        "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy",
+        // Downstream generator script containing the 2nd script that is executed by the pipeline_jobs_generator_jdkxx jobs
+        "generation"       : "pipelines/build/generation/config_generation.groovy"
     },
     // Script to import the adopt groovy class library (relative to this repository root)
     "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
