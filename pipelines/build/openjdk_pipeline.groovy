@@ -38,12 +38,12 @@ node ("master") {
     }
 
     /*
-    Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
+    Changes dir to Adopt's pipeline repo. Use closures as functions aren't accepted inside node blocks
     */
-    def checkoutAdopt = { ->
+    def checkoutAdoptPipelines = { ->
       checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON["repositories"]["branch"] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repositories"]["url"] ] ]
+        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["pipeline_branch"] ] ],
+        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
       ])
     }
 
@@ -56,7 +56,7 @@ node ("master") {
     } catch (Exception e) {
         println "[WARNING] ${libraryPath} could not be loaded, likely because it does not exist in your repository. Error:\n${e}\nAttempting to pull Adopt's library script instead..."
 
-        checkoutAdopt()
+        checkoutAdoptPipelines()
         load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['importLibraryScript']}"
         checkout scm
     }
@@ -68,7 +68,7 @@ node ("master") {
     } catch (NoSuchFileException e) {
         println "[WARNING] ${baseFilePath} does not exist in your repository. Attempting to pull Adopt's base file script instead."
 
-        checkoutAdopt()
+        checkoutAdoptPipelines()
         configureBuild = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['baseFileDirectories']['upstream']}"
         checkout scm
     }
@@ -77,7 +77,7 @@ node ("master") {
     def buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
 
     // Check if pipeline is jdk11 or jdk11u
-    def configPath =  new File(buildConfigFilePath)
+    def configPath =  new File("${WORKSPACE}/${buildConfigFilePath}")
     if (configPath.exists()) {
         println "Found ${buildConfigFilePath}"
     } else {
@@ -90,7 +90,7 @@ node ("master") {
     } catch (NoSuchFileException e) {
         println "[WARNING] ${buildConfigFilePath} does not exist in your repository. Attempting to pull Adopt's build configs instead."
 
-        checkoutAdopt()
+        checkoutAdoptPipelines()
 
         // Reset javaToBuild to original value before trying again. Converts 11u to 11
         javaToBuild = javaToBuild.replaceAll("u", "")

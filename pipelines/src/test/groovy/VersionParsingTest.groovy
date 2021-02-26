@@ -1,9 +1,6 @@
 import common.IndividualBuildConfig
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import testDoubles.ContextStub
-import testDoubles.CurrentBuildStub
-import testDoubles.EnvStub
 import groovy.json.JsonSlurper
 
 class VersionParsingTest {
@@ -33,12 +30,12 @@ OpenJDK 64-Bit Server VM AdoptOpenJDK (build 11.0.3+9-201903122221, mixed mode)"
         // Use a dead map for DEFAULTS_JSON as it's not being tested here
         def build = new Build(
             config,
-            ["branch": "master", "remotes": ["url": "https://github.com/AdoptOpenJDK/openjdk-build.git"]],
+            ["branch": "master", "remotes": ["url": "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git"]],
             ADOPT_DEFAULTS_JSON,
             ADOPT_DEFAULTS_JSON,
-            new ContextStub(),
-            new EnvStub(),
-            new CurrentBuildStub()
+            this,
+            null,
+            null
         )
         return build.parseVersionOutput("=JAVA VERSION OUTPUT=\n" + version + "\n=/JAVA VERSION OUTPUT=")
     }

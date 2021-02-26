@@ -112,7 +112,7 @@ class PullRequestTestPipeline implements Serializable {
                 currentBuild,
                 context,
                 "build-scripts-pr-tester/build-test",
-                [url: gitRepo],
+                [ url: gitRepo ],
                 branch,
                 DEFAULTS_JSON["templateDirectories"]["downstream"],
                 DEFAULTS_JSON["importLibraryScript"],
@@ -121,7 +121,7 @@ class PullRequestTestPipeline implements Serializable {
                 "https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test",
                 null,
                 null,
-                ""
+                true
             ).generate()
 
             context.println "[SUCCESS] All done!"
@@ -190,7 +190,7 @@ return {
         Map<String, ?> defaultsJson = DEFAULTS_JSON
 
         if (gitRepo == null) {
-            gitRepo = DEFAULTS_JSON['repositories']['url']
+            gitRepo = DEFAULTS_JSON['repositories']['pipeline_url']
         }
 
         if (testConfigurations != null) {

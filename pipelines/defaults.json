@@ -1,8 +1,9 @@
 {
-    "repositories"                  : {
-        "url"                     : "https://github.com/AdoptOpenJDK/openjdk-build.git",
-        "pipeline_url"            : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
-        "branch"                  : "master"
+    "repository"             : {
+        "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        "build_branch"       : "master",
+        "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
+        "pipeline_branch"    : "master"
     },
     "jenkinsDetails"              : {
         "rootUrl"                 : "https://ci.adoptopenjdk.net",
@@ -23,20 +24,23 @@
         "nightly"                 : "pipelines/jobs/configurations",
         "platform"                : "build-farm/platform-specific-configurations"
     },
-    "scriptDirectories"           : {
-        "upstream"                : "pipelines/build",
-        "downstream"              : "pipelines/build/common/kick_off_build.groovy",
-        "weekly"                  : "pipelines/build/common/weekly_release_pipeline.groovy",
-        "tester"                  : "pipelines/build/prTester/pr_test_pipeline.groovy",
-        "generators"              : {
-            "downstream"          : "pipelines/build/generation/build_job_generator.groovy",
-            "upstream"            : "pipelines/build/generation/build_pipeline_generator.groovy"
+    "scriptDirectories"      : {
+        "upstream"           : "pipelines/build",
+        "downstream"         : "pipelines/build/common/kick_off_build.groovy",
+        "weekly"             : "pipelines/build/common/weekly_release_pipeline.groovy",
+        "regeneration"       : "pipelines/build/common/config_regeneration.groovy",
+        "tester"             : "pipelines/build/prTester/pr_test_pipeline.groovy",
+        "buildfarm"          : "build-farm/make-adopt-build-farm.sh",
+        "generators"         : {
+            "downstream"     : "pipelines/build/generation/build_job_generator.groovy",
+            "upstream"       : "pipelines/build/generation/build_pipeline_generator.groovy"
         }
     },
-    "baseFileDirectories"         : {
-        "upstream"                : "pipelines/build/common/build_base_file.groovy",
-        "downstream"              : "pipelines/build/common/openjdk_build_pipeline.groovy",
-        "generation"            : "pipelines/build/generation/config_generation.groovy"
+    "baseFileDirectories"    : {
+        "upstream"           : "pipelines/build/common/build_base_file.groovy",
+        "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy",
+        "generation"         : "pipelines/build/generation/config_generation.groovy"
     },
-    "importLibraryScript"         : "pipelines/build/common/import_lib.groovy"
+    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
+    "defaultsUrl"            : "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }

@@ -122,6 +122,12 @@ class Config11 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                additionalNodeLabels: [
+                        dragonwell: 'dragonwell'
+                ],
+                additionalTestLabels: [
+                        dragonwell: 'dragonwell'
+                ],
                 configureArgs       : [
                         "hotspot" : '--enable-dtrace=auto',
                         "openj9" : '--enable-dtrace=auto',

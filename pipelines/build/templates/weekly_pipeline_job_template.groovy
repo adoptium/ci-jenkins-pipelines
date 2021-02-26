@@ -19,6 +19,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
                 }
             }
             scriptPath(SCRIPT)
+            lightweight(true)
         }
     }
     disabled(disableJob)

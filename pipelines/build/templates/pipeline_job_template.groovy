@@ -9,6 +9,8 @@ runTests = true
 runInstaller = true
 runSigner = true
 cleanWsBuildOutput = true
+jdkVersion = "${JAVA_VERSION}"
+isLightweight = true
 
 // if true means this is running in the pr builder pipeline
 if (binding.hasVariable('PR_BUILDER')) {
@@ -18,6 +20,7 @@ if (binding.hasVariable('PR_BUILDER')) {
     runTests = false
     runInstaller = false
     runSigner = false
+    isLightweight = false
 }
 
 if (!binding.hasVariable('disableJob')) {
@@ -42,6 +45,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
                 }
             }
             scriptPath(SCRIPT)
+            lightweight(isLightweight)
         }
     }
     disabled(disableJob)

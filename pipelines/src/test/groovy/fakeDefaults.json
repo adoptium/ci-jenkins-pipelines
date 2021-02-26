@@ -1,8 +1,9 @@
 {
     "repository"             : {
-        "url"                : "1",
+        "build_url"          : "1",
+        "build_branch"       : "20",
         "pipeline_url"       : "19",
-        "branch"             : "2"
+        "pipeline_branch"    : "21"
     },
     "jenkinsDetails"         : {
         "rootUrl"            : "3",
@@ -22,12 +23,14 @@
         "upstream"           : "11",
         "downstream"         : "12",
         "weekly"             : "13",
-        "generation"       : "14",
-        "tester"             : "15"
+        "generation"         : "14",
+        "tester"             : "15",
+        "buildfarm"          : "22"
     },
     "baseFileDirectories": {
         "upstream"           : "16",
         "downstream"         : "17"
     },
-    "importLibraryScript"    : "18"
+    "importLibraryScript"    : "18",
+    "defaultsUrl"            : "23"
 }

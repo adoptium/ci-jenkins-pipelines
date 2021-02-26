@@ -1,5 +1,4 @@
 /* groovylint-disable NestedBlockDepth, ParameterName, PropertyName */
-@Library('local-lib@master')
 import common.IndividualBuildConfig
 import groovy.json.*
 
@@ -371,15 +370,15 @@ class Builder implements Serializable {
     This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
-        String splitUserUrl = (DEFAULTS_JSON['repositories']['url'] - '.git').split('/')
+        String splitUserUrl = (DEFAULTS_JSON['repositories']['build_url'] - '.git').split('/')
         // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
         if (configuration.containsKey("platformSpecificConfigPath")) {
             // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations/linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['build_branch']}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -627,6 +626,7 @@ class Builder implements Serializable {
             int headVersion = JobHelper.getAvailableReleases(context)['tip_version']
             context.println "Found Java Version Number: ${headVersion}"
 
+            // Special case for JDK head where the jobs are called jdk-os-arch-variant
             if (javaToBuild == "jdk${headVersion}") {
                 javaToBuild = "jdk"
             }

@@ -1,5 +1,4 @@
 /* groovylint-disable FactoryMethodName, FieldName, NestedBlockDepth, ParameterName */
-@Library('local-lib@master')
 import common.IndividualBuildConfig
 import common.RepoHandler
 import groovy.json.JsonSlurper
@@ -47,6 +46,7 @@ class Generation implements Serializable {
     private final def jenkinsBuildRoot
     private final def jenkinsCreds
     private final def checkoutCreds
+    private final Boolean prBuilder
 
     private String javaToBuild
     private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
@@ -75,7 +75,8 @@ class Generation implements Serializable {
         String scriptPath,
         String jenkinsBuildRoot,
         String jenkinsCreds,
-        String checkoutCreds
+        String checkoutCreds,
+        Boolean prBuilder
     ) {
         this.javaVersion = javaVersion
         this.buildConfigurations = buildConfigurations
@@ -96,6 +97,7 @@ class Generation implements Serializable {
         this.jenkinsBuildRoot = jenkinsBuildRoot
         this.jenkinsCreds = jenkinsCreds
         this.checkoutCreds = checkoutCreds
+        this.prBuilder = prBuilder
     }
 
     /*
@@ -188,16 +190,16 @@ class Generation implements Serializable {
     This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
-        def splitUserUrl = (DEFAULTS_JSON['repositories']['url'] - ".git").split('/')
+        def splitUserUrl = (DEFAULTS_JSON['repositories']['build_url'] - ".git").split('/')
         // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        String platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
 
         if (configuration.containsKey("platformSpecificConfigPath")) {
             // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations/linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['build_branch']}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -442,15 +444,20 @@ class Generation implements Serializable {
             params.put("CHECKOUT_CREDENTIALS", "")
         }
 
+        // Make sure the dsl knows if we're building inside the pr tester
+        if (prBuilder) {
+            params.put("PR_BUILDER", true)
+        }
+
         // Execute job dsl, using adopt's template if the user doesn't have one
         def create = null
         try {
             create = context.jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: params
         } catch (Exception e) {
             context.println "[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead. Error:\n${e}"
-            repoHandler.checkoutAdopt()
+            repoHandler.checkoutAdoptPipelines()
             create = context.jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['downstream'], ignoreExisting: false, additionalParameters: params
-            repoHandler.checkoutUser()
+            repoHandler.checkoutUserPipelines()
         }
 
         return create
@@ -665,7 +672,8 @@ return {
     String scriptPath,
     String jenkinsBuildRoot,
     String jenkinsCreds,
-    String checkoutCreds
+    String checkoutCreds,
+    Boolean prBuilder
         ->
 
         def excludedBuilds = [:]
@@ -692,6 +700,7 @@ return {
             scriptPath,
             jenkinsBuildRoot,
             jenkinsCreds,
-            checkoutCreds
+            checkoutCreds,
+            prBuilder
         )
 }
