@@ -370,12 +370,12 @@ class Builder implements Serializable {
     This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
-        String splitUserUrl = (DEFAULTS_JSON['repositories']['build_url'] - '.git').split('/')
+        def splitUserUrl = (DEFAULTS_JSON['repositories']['build_url'] - '.git').split('/')
         // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        String platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
         if (configuration.containsKey("platformSpecificConfigPath")) {
             // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations/linux.sh
             platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repositories']['build_branch']}/${configuration.platformSpecificConfigPath}"
