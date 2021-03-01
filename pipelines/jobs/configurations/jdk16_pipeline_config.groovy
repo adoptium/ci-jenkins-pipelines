@@ -7,7 +7,7 @@ class Config16 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
-        
+
         x64MacXL    : [
                 os                   : 'mac',
                 arch                 : 'x64',
@@ -36,7 +36,7 @@ class Config16 {
                         "hotspot"     : '--enable-dtrace'
                 ]
         ],
-        
+
         x64LinuxXL  : [
                 os                   : 'linux',
                 arch                 : 'x64',
@@ -70,7 +70,7 @@ class Config16 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default'
         ],
-        
+
         x64WindowsXL: [
                 os                   : 'windows',
                 arch                 : 'x64',
@@ -121,7 +121,7 @@ class Config16 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
-        
+
         s390xLinuxXL  : [
                 os                   : 'linux',
                 arch                 : 's390x',
@@ -141,7 +141,7 @@ class Config16 {
                 ]
 
         ],
-        
+
         ppc64leLinuxXL    : [
                 os                   : 'linux',
                 arch                 : 'ppc64le',
@@ -158,7 +158,7 @@ class Config16 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
-        
+
         aarch64LinuxXL    : [
                 os                   : 'linux',
                 dockerImage          : 'adoptopenjdk/centos7_build_image',

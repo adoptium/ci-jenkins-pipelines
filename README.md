@@ -12,6 +12,150 @@ documentation.
 1. The `pipelines` folder contains the Groovy pipeline scripts for Jenkins
 (e.g. build | test | checksum | release).
 
+## Configuration Files
+
+The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory contains two categories of configuration files that our jenkins pipelines use (Nicknamed [#Build Configs](#Build) and [#Nightly Configs](#Nightly) for short).
+
+To ensure both configurations are not overridden in a race condition scenario by another job, the [job generators](pipelines/build/regeneration/README.md) ensure they remain in the sync with the repository.
+
+**Generally, any new parameters/configurations that effect the jenkins environment directly should be implemented here.** If this is not the case, it would likely be better placed in [openjdk-build/platform-specific-configurations](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/build-farm/platform-specific-configurations) (for OS or `make-adopt-build-farm.sh` specific use cases) or [openjdk-build/build.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/sbin/build.sh) (for anyone, including end users and jenkins pipelines).
+
+### Build
+
+The build config files are the ones that follow the format `jdkxx(u)_pipeline_config.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a groovy class with a single `Map<String, Map<String, ?>>` property containing node labels, tests and other jenkins parameters/constants that are crucial for allowing different parts of the build pipeline to mesh together.
+
+Each architecture/platform has it's own entry similar to the one below (for JDK8 x64 mac builds). The pipelines use the parent map key (e.g. `x64Mac`) to retrieve the data. See [#Data Fields](#Datafields) for the currently available fields you can utilise.
+
+```groovy
+x64Mac        : [
+    os                   : 'mac',
+    arch                 : 'x64',
+    additionalNodeLabels : [
+            hotspot  : 'macos10.14',
+            corretto : 'build-macstadium-macos1010-1',
+            openj9   : 'macos10.14'
+    ],
+    test                 : 'default'
+]
+```
+
+### Data fields
+
+NOTE: When the `type` field implies a map, the `String` key of the inner map is the variant for that field. E.g:
+
+```groovy
+                additionalNodeLabels : [
+                        hotspot : 'xlc13&&aix710',
+                        openj9 :  'xlc13&&aix715'
+                ],
+```
+
+---
+
+| Name                       | Required? | Type                              | <div style="width:500px">Description</div> |
+| :------------------------- | :---: | :------------------------------------ | :----------------------------------------- |
+| os                         | ✅    | `String`                              | Operating system tag that will identify the job on jenkins and determine which platforms configs to pull from openjdk-build.<br>*E.g. `windows`, `solaris`* |
+| arch                       | ✅    | `String`                              | Architecture tag that will identify the job on jenkins and determine which build params to use.<br>*E.g. `x64`, `sparcv9`, `x86-32`* |
+| test                       | ❌    | `String`<br>**OR**<br>`Map<String, List>`   | Tests to run against the binary after the build has completed. A `default` tag indicates that you want to run [whatever the default test nightly/release list is](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/build/common/build_base_file.groovy#L66-L88).<br><br>Otherwise, you can [specify your own list for that paticular platform (not variant)](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/jobs/configurations/jdk16_pipeline_config.groovy#L59-L64) |
+| dockerImage                | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Builds the JDK inside a docker container. Should be a DockerHub identifier to pull from in case **dockerFile** is not specified.<br>*E.g. `adoptopenjdk/centos6_build_image`* |
+| dockerFile                 | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Builds the JDK inside a docker container using the locally stored image file. Used in conjunction with **dockerImage** to specify a particular variant to build or pull.<br>*E.g. `pipelines/build/dockerFiles/cuda.dockerfile`* |
+| dockerNode                 | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Specifies a specific jenkins docker node label to shift into to build the JDK.<br> *E.g. `sw.config.uid1000`* |
+| additionalNodeLabels       | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Appended to the default constructed jenkins node label (often used to lock variants or build configs to specific machines). Jenkins will additionally search for a node with this tag as well as the default node label.<br>*E.g. `build-macstadium-macos1010-1`, `macos10.14`* |
+| additionalTestLabels       | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Used by [openjdk-tests](https://github.com/AdoptOpenJDK/openjdk-tests/blob/2b6ee54f18021c38386cea65c552de4ea20a8d1c/buildenv/jenkins/testJobTemplate#L213) to lock specific tests to specific machine nodes (in the same manner as **additionalNodeLabels**)<br>*E.g. `!(centos6\|\|rhel6)`, `dragonwell`* |
+| configureArgs              | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Configuration arguments that will ultimately be passed to OpenJDK's `./configure`<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
+| buildArgs                  | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Build arguments that will ultimately be passed to [openjdk-build's ./makejdk-any-platform.sh](https://github.com/AdoptOpenJDK/openjdk-build#the-makejdk-any-platformsh-script) script<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
+| additionalFileNameTag      | ❌    | `String`                              | Commonly used when building [large heap versions](https://adoptopenjdk.net/faq.html#:~:text=What%20are%20the%20OpenJ9%20%22Large,XL%20in%20the%20download%20filenames) of the binary, this tag will also be included in the jenkins job name and binary file name. Include this parameter if you have an "extra" variant that requires a different tagname<br>*E.g. `linuxXL`* |
+| crossCompile               | ❌    | `String`                              | Used when building on a cross compiled system, informing jenkins to treat it differently when retrieving the version and producing the binary. This value is also used to create the jenkins node label alongside the **arch** (similarly to **additionalNodeLabels**)<br>*E.g. `x64`* |
+| bootJDK                    | ❌    | `String`                              | JDK version number to specify to openjdk-build's `make-adopt-build-farm.sh` script, informing it to utilise a [predefined location of a boot jdk](https://github.com/AdoptOpenJDK/openjdk-build/blob/2df732492b59b1606439505316c766edbb566cc2/build-farm/make-adopt-build-farm.sh#L115-L141)<br> *E.g. `8`, `11`* |
+| platformSpecificConfigPath | ❌    | `String`                              | openjdk-build repository path to pull the operating system configurations from inside [openjdk-build's set-platform-specific-configurations.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/build-farm/set-platform-specific-configurations.sh). Do not include the repo name or branch as this is prepended automatically.<br>*E.g. `pipelines/TestLocation/platform-specific-configurations`* |
+| codebuild                  | ❌    | `Boolean`                             | Setting this field will tell jenkins to spin up an Azure or [AWS cloud](https://aws.amazon.com/codebuild/) machine, allowing the build to retrieve a machine not normally available on the Jenkins server. It does this by appending a `codebuild` flag to the jenkins label. |
+| cleanWorkspaceAfterBuild   | ❌    | `Boolean`                             | Setting this field will tell jenkins to clean down the workspace after the build has completed. Particularly useful for AIX where disk space can be limited. |
+
+### Nightly
+
+The nightly config files are the ones that follow the format `jdkxx(u).groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a simple groovy script that's contents can be [loaded in](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/#load-evaluate-a-groovy-source-file-into-the-pipeline-script) and accessed by another script.
+
+#### targetConfigurations
+
+A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#Build).
+
+```groovy
+targetConfigurations = [
+        "x64Mac"        : [
+                "hotspot",
+                "openj9"
+        ],
+        "x64Linux"      : [
+                "hotspot",
+                "openj9",
+                "corretto",
+                "dragonwell"
+        ],
+        "x32Windows"    : [
+                "hotspot",
+                "openj9"
+        ],
+        "x64Windows"    : [
+                "hotspot",
+                "openj9",
+                "dragonwell"
+        ],
+        "ppc64Aix"      : [
+                "hotspot",
+                "openj9"
+        ],
+        "ppc64leLinux"  : [
+                "hotspot",
+                "openj9"
+        ],
+        "s390xLinux"    : [
+                "hotspot",
+                "openj9"
+        ],
+        "aarch64Linux"  : [
+                "hotspot",
+                "openj9",
+                "dragonwell"
+        ],
+        "arm32Linux"  : [
+                "hotspot"
+        ],
+        "sparcv9Solaris": [
+                "hotspot"
+        ]
+]
+```
+
+#### disableJob
+
+If this is present, the jenkins generators will still create the top-level pipeline and downstream jobs but will set them as disabled.
+
+```groovy
+disableJob = true
+```
+
+#### triggerSchedule_nightly / triggerSchedule_weekly
+
+[Cron expression](https://crontab.guru/) that defines when (and how often) nightly and weekly builds will be executed
+
+```groovy
+triggerSchedule_nightly="TZ=UTC\n05 18 * * 1,3,5"
+triggerSchedule_weekly="TZ=UTC\n05 12 * * 6"
+```
+
+#### weekly_release_scmReferences
+
+Source control references (e.g. tags) to use in the weekly release builds
+
+```groovy
+weekly_release_scmReferences = [
+        "hotspot"        : "jdk8u282-b07",
+        "openj9"         : "v0.24.0-release",
+        "corretto"       : "",
+        "dragonwell"     : ""
+]
+```
+
 ## Metadata
 
 Alongside the built assets a metadata file will be created with info about the build. This will be a JSON document of the form:
@@ -55,35 +199,35 @@ It is worth noting the additional tags on the semver is the adopt build number.
 
 Below are all of the keys contained in the metadata file and some example values that can be present.
 
-----
+---
 
 - `vendor:`
 Example values: [`AdoptOpenJDK`, `Alibaba`]
 
 This tag is used to identify the vendor of the JDK being built, this value is set in the [build.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/805e76acbb8a994abc1fb4b7d582486d48117ee8/sbin/build.sh#L183) file and defaults to "AdoptOpenJDK".
 
-----
+---
 
 - `os:`
 Example values: [`windows`, `mac`, `linux`, `aix`, `solaris`]
 
 This tag identifies the operating system the JDK has been built on (and should be used on).
 
-----
+---
 
 - `arch:`
 Example values: [`aarch64`, `ppc64`, `s390x`, `x64`, `x86-32`, `arm`]
 
 This tag identifies the architecture the JDK has been built on and it intended to run on.
 
-----
+---
 
 - `variant:`
 Example values: [`hotspot`, `openj9`, `corretto`, `dragonwell`]
 
 This tag identifies the JVM being used by the JDK, "dragonwell" itself is not a JVM but is currently considered a variant in its own right.
 
-----
+---
 
 - `variant_version:`
 
@@ -96,12 +240,12 @@ Example values: [`0`, `1`]
 Example values: [`22`, `23`, `24`]
 
 - `security:`
-Example values: [`0`, `1`]  
+Example values: [`0`, `1`]
 
 - `tags:`
 Example values: [`m1`, `m2`]
 
-----
+---
 
 - `version:`
 
@@ -119,7 +263,7 @@ Example Values: [`0`, `9`, `252` `272`]
 Example values: [`null`]
 
 - `adopt_build_number:`
-Example values: [`0`]  
+Example values: [`0`]
 If the `ADOPT_BUILD_NUMBER` parameter is used to build te JDK that value will appear here, otherwise a default value of 0 appears.
 
 - `major:`
@@ -129,48 +273,48 @@ Example values: [`8`, `11`, `15`, `16`]
 Example values: [`1.8.0_272-202010111709-b09`, `11.0.9+10-202010122348`, `14.0.2+11-202007272039`, `16+19-202010120348`]
 
 - `semver:`
-Example values: [`8.0.202+8.0.202008210941`, `11.0.9+10.0.202010122348`, `14.0.2+11.0.202007272039`, `16.0.0+19.0.202010120339`]  
+Example values: [`8.0.202+8.0.202008210941`, `11.0.9+10.0.202010122348`, `14.0.2+11.0.202007272039`, `16.0.0+19.0.202010120339`]
 Formed from the major, minor, security, and build number by the [formSemver()](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/805e76acbb8a994abc1fb4b7d582486d48117ee8/pipelines/library/src/common/VersionInfo.groovy#L123) function.
 
 - `build:`
-Example values: [`6`, `9`, `18`]  
+Example values: [`6`, `9`, `18`]
 The OpenJDK build number for the JDK being built.
 
 - `opt:`
 Example values: [`202008210941`, `202010120348`, `202007272039`]
 
-----
+---
 
 - `scmRef:`
-Example values: [`dragonwell-8.4.4_jdk8u262-b10`, `jdk-16+19_adopt-61198-g59e3baa94ac`, `jdk-11.0.9+10_adopt-197-g11f44f68c5`, `23f997ca1`]  
+Example values: [`dragonwell-8.4.4_jdk8u262-b10`, `jdk-16+19_adopt-61198-g59e3baa94ac`, `jdk-11.0.9+10_adopt-197-g11f44f68c5`, `23f997ca1`]
 
 A reference the the base JDK repository being build, usually including a Github commit reference, i.e. `jdk-16+19_adopt-61198-g59e3baa94ac` links to <https://github.com/AdoptOpenJDK/openjdk-jdk/commit/59e3baa94ac> via the commit SHA **59e3baa94ac**.
 
 Values that only contain a commit reference such as `23f997ca1` are OpenJ9 commits on their respective JDK repositories, for example **23f997ca1** links to the commit <https://github.com/ibmruntimes/openj9-openjdk-jdk14/commit/23f997ca1>.
 
-----
+---
 
 - `buildRef:`
-Example values: [`openjdk-build/fe0f2dba`, `openjdk-build/f412a523`]  
+Example values: [`openjdk-build/fe0f2dba`, `openjdk-build/f412a523`]
 A reference to the build tools repository used to create the JDK, uses the format **repository-name**/**commit-SHA**.
 
-----
+---
 
 - `version_data:`
 Example values: [`jdk8u`, `jdk11u`, `jdk14u`, `jdk`]
 
-----
+---
 
 - `binary_type:`
 Example values: [`jdk`, `jre`, `debugimage`, `testimage`]
 
-----
+---
 
 - `sha256:`
-Example values: [`20278aa9459e7636f6237e85fcd68deec1f42fa90c6c541a2dfa127f4156d3e2`, `2f9700bd75a807614d6d525fbd8d016c609a9ea71bf1ffd5d4839f3c1c8e4b8e`]  
+Example values: [`20278aa9459e7636f6237e85fcd68deec1f42fa90c6c541a2dfa127f4156d3e2`, `2f9700bd75a807614d6d525fbd8d016c609a9ea71bf1ffd5d4839f3c1c8e4b8e`]
 A SHA to verify the contents of the JDK.
 
-----
+---
 
 - `full_version_output:`
 Example values:
@@ -181,15 +325,15 @@ openjdk version \"1.8.0_252\"\nOpenJDK Runtime Environment (Alibaba Dragonwell 8
 
 The full output of the command `java -version` for the JDK.
 
-----
+---
 
-- `configure_arguments:`  
+- `configure_arguments:`
 The full output generated by `configure.sh` for the JDK built.
 
 ## Build status
 
 Table generated with `generateBuildMatrix.sh`
-<!-- markdownlint-disable --> 
+<!-- markdownlint-disable -->
 
 | Platform                  | Java 8 | Java 11| Java 15 | Java 16 | Java HEAD |
 | ------------------------- | ------ | ------ | ------- | ------- | --------- |
