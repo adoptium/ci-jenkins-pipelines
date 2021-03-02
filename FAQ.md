@@ -76,3 +76,11 @@ For more information, see the [PR testing documentation](pipelines/build/prTeste
 ## I want to use my own configuration files or scripts on my own Jenkins instance. How do I do it?
 
 Check out [Adopt's guide](docs/UsingOurScripts.md) to setting up your own scripts and configurations (while not having to keep up with Adopt's changes)!
+
+## I want to build code from my own fork/branch of openjdk in jenkins
+
+You will need to add some parameters to the `BUILD_ARGS` on the individual
+platform-specific pipeline (or `additionalBuildArgs` if runnibg a top level pipeline) and
+specify `--disable-adopt-branch-safety` for example:
+
+`--disable-adopt-branch-safety -r https://github.com/sxa/openjdk-jdk11u -b mybranch`
