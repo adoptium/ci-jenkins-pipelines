@@ -34,8 +34,9 @@ J           - context.build job: downstreamJobName (e.g. jdk11u/job/jdk11u-linux
 J             (Provides JAVA_TO_BUILD, ARCHITECTURE, VARIANT, TARGET_OS + tests)
 G             - openjdk_build_pipeline.groovy
 G               - context.sh make-adopt-build-farm.sh
-*See the [openjdk-build FAQ.md](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/FAQ.md#how-do-i-find-my-way-around-adoptopenjdks-build-automation-scripts) for the shell script side of the pipeline*
 ```
+
+*See the [openjdk-build FAQ.md](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/FAQ.md#how-do-i-find-my-way-around-adoptopenjdks-build-automation-scripts) for the shell script side of the pipeline*
 
 ## Adding a new major release to be built
 
