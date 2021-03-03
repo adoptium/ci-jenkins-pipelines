@@ -24,7 +24,7 @@ To ensure both configurations are not overridden in a race condition scenario by
 
 The build config files are the ones that follow the format `jdkxx(u)_pipeline_config.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a groovy class with a single `Map<String, Map<String, ?>>` property containing node labels, tests and other jenkins parameters/constants that are crucial for allowing different parts of the build pipeline to mesh together.
 
-Each architecture/platform has it's own entry similar to the one below (for JDK8 x64 mac builds). The pipelines use the parent map key (e.g. `x64Mac`) to retrieve the data. See [#Data Fields](#Datafields) for the currently available fields you can utilise.
+Each architecture/platform has it's own entry similar to the one below (for JDK8 x64 mac builds). The pipelines use the parent map key (e.g. `x64Mac`) to retrieve the data. See [#Data Fields](#data-fields) for the currently available fields you can utilise.
 
 ```groovy
 x64Mac        : [
