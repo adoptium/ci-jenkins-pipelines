@@ -13,6 +13,10 @@ limitations under the License.
 */
 
 import groovy.json.JsonSlurper
+import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 node ("master") {
   def jenkinsUrl = "${params.JENKINS_URL}"
@@ -39,61 +43,69 @@ node ("master") {
       if (build._id.buildName.contains("-pipeline")) {
         echo "Pipeline ${build._id.buildName}"
         def pipelineName = build._id.buildName
-        def pipelineUrl
-        def testJobSuccess = 0
-        def testJobUnstable = 0
-        def testJobFailure = 0
-        def testCasePassed = 0
-        def testCaseFailed = 0
-        def testCaseDisabled = 0
-        def testJobNumber = 0
-        def buildJobNumber = 0
 
-        // Find all "Done" pipeline builds started by "timer", as those are Nightlies
-        // or upstream project "build-scripts/weekly-openjdkNN-pipeline", as those are weekend weekly release jobs
+        // Find the last "Done" pipeline builds started by "timer", as that is the last Nightly
+        // or upstream project "build-scripts/weekly-openjdkNN-pipeline" started in the last 7 days, as those are weekend weekly release jobs
         def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
         def pipelineJson = new JsonSlurper().parseText(pipeline)
+        def foundNightly = false
         if (pipelineJson.size() > 0) {
-          // Find first in list started by timer or upstream weekly job
-          def pipeline_id = null
-          pipelineJson.find { job ->
-            if (job.status != null && job.status.equals("Done") && job.startBy != null && ((job.startBy.startsWith("timer")) || (job.startBy.startsWith("upstream project \"build-scripts/weekly-${pipelineName}\"")))) {
-              pipeline_id = job._id
-              pipelineUrl = job.buildUrl
-              return true
-            }
-            return false
-          }
-
-          if (pipeline_id != null) {
-            // Get all child Test jobs for this pipeline job
-            def pipelineTestJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*")
-            def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
-            if (pipelineTestJobsJson.size() > 0) {
-              testJobNumber = pipelineTestJobsJson.size()
-              pipelineTestJobsJson.each { testJob ->
-                if (testJob.buildResult.equals("SUCCESS")) {
-                  testJobSuccess += 1
-                } else if (testJob.buildResult.equals("UNSTABLE")) {
-                  testJobUnstable += 1
-                } else {
-                  testJobFailure += 1
-                }
-                if (testJob.testSummary != null) {
-                  testCasePassed += testJob.testSummary.passed
-                  testCaseFailed += testJob.testSummary.failed
-                  testCaseDisabled += testJob.testSummary.disabled
+          // Find first in list started by timer(Nightly) or all upstream weekly jobs started in last 7 days
+          pipelineJson.each { job ->
+            if (!foundNightly) {
+              def pipeline_id = null
+              def pipelineUrl
+              def testJobSuccess = 0
+              def testJobUnstable = 0
+              def testJobFailure = 0
+              def testCasePassed = 0
+              def testCaseFailed = 0
+              def testCaseDisabled = 0
+              def testJobNumber = 0
+              def buildJobNumber = 0
+              if (job.status != null && job.status.equals("Done") && job.startBy != null) {
+                if (job.startBy.startsWith("timer")) {
+                  pipeline_id = job._id
+                  pipelineUrl = job.buildUrl
+                  foundNightly = true
+                } else if (job.startBy.startsWith("upstream project \"build-scripts/weekly-${pipelineName}\"")) {
+                  // Weekend weekly, was it started in last 7 days?
+                  def build_time = LocalDateTime.ofInstant(Instant.ofEpochMilli(job.timestamp), ZoneId.of("UTC"))
+                  def now = LocalDateTime.now(ZoneId.of("UTC"))
+                  def days = ChronoUnit.DAYS.between(build_time, now)
+                  if (days < 7) { 
+                    pipeline_id = job._id
+                    pipelineUrl = job.buildUrl
+                  }
                 }
               }
-            }
-            // Get all child Build jobs for this pipeline job
-            def pipelineBuildJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^jdk.*")
-            def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
-            buildJobNumber = pipelineBuildJobsJson.size()
-          }
-        }
-
-        def testResult = [name: pipelineName, url: pipelineUrl, buildJobNumber: buildJobNumber,
+              // Was job a "match"?
+              if (pipeline_id != null) {
+                // Get all child Test jobs for this pipeline job
+                def pipelineTestJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*")
+                def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
+                if (pipelineTestJobsJson.size() > 0) {
+                  testJobNumber = pipelineTestJobsJson.size()
+                  pipelineTestJobsJson.each { testJob ->
+                    if (testJob.buildResult.equals("SUCCESS")) {
+                      testJobSuccess += 1
+                    } else if (testJob.buildResult.equals("UNSTABLE")) {
+                      testJobUnstable += 1
+                    } else {
+                      testJobFailure += 1
+                    }
+                    if (testJob.testSummary != null) {
+                      testCasePassed += testJob.testSummary.passed
+                      testCaseFailed += testJob.testSummary.failed
+                      testCaseDisabled += testJob.testSummary.disabled
+                    }
+                  }
+                }
+                // Get all child Build jobs for this pipeline job
+                def pipelineBuildJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^jdk.*")
+                def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
+                buildJobNumber = pipelineBuildJobsJson.size()
+                def testResult = [name: pipelineName, url: pipelineUrl, buildJobNumber: buildJobNumber,
                           testJobSuccess:   testJobSuccess,
                           testJobUnstable:  testJobUnstable,
                           testJobFailure:   testJobFailure,
@@ -101,7 +113,11 @@ node ("master") {
                           testCaseFailed:   testCaseFailed,
                           testCaseDisabled: testCaseDisabled,
                           testJobNumber:    testJobNumber]
-        testStats.add(testResult)
+                testStats.add(testResult)
+              }
+            }
+          }
+        }
       }
     }
   }
