@@ -141,6 +141,7 @@ class Build {
             case "openj9": variant = "j9"; break
             case "corretto": variant = "corretto"; break
             case "dragonwell": variant = "dragonwell"; break;
+            case "bisheng": variant = "bisheng"; break;
             default: variant = "hs"
         }
 
@@ -184,6 +185,8 @@ class Build {
                 jdkBranch = 'dev'
             } else if (buildConfig.VARIANT == "dragonwell") {
                 jdkBranch = 'master'
+            } else if (buildConfig.VARIANT == "bisheng") {
+                jdkBranch = 'master'
             } else {
                 throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
             }
@@ -214,6 +217,8 @@ class Build {
             suffix = "adoptopenjdk/openjdk-${buildConfig.JAVA_TO_BUILD}"
         } else if (buildConfig.VARIANT == "dragonwell") {
             suffix = "alibaba/dragonwell${javaNumber}"
+        } else if (buildConfig.VARIANT == "bisheng") {
+            suffix = "feilongjiang/bishengjdk-${javaNumber}-mirror"
         } else {
             throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
         }
