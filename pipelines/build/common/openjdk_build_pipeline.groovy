@@ -132,33 +132,39 @@ class Build {
     The test jobs all follow the same name naming pattern that is defined in the openjdk-tests repository.
     E.g. Test_openjdk11_hs_sanity.system_ppc64_aix
     */
-    def determineTestJobName(testType) {
-
-        def variant
+    def getTestJobParams(testType) {
+        def jobParams = [:]
+        def (level, group) = testType.tokenize('.')
+        jobParams.put('LEVELS', level)
+        jobParams.put('GROUPS', group)
         def number = getJavaVersionNumber()
-
+        jobParams.put('JDK_VERSIONS', number)
+        def variant
         switch (buildConfig.VARIANT) {
             case "openj9": variant = "j9"; break
             case "corretto": variant = "corretto"; break
             case "dragonwell": variant = "dragonwell"; break;
             default: variant = "hs"
         }
-
+        jobParams.put('JDK_IMPL', variant)
         def arch = buildConfig.ARCHITECTURE
         if (arch == "x64") {
             arch = "x86-64"
         }
-
-        def os = buildConfig.TARGET_OS
-
-        def jobName = "Test_openjdk${number}_${variant}_${testType}_${arch}_${os}"
-
+        def arch_os = "${arch}_${buildConfig.TARGET_OS}"    
+        def jobName = "Test_openjdk${number}_${variant}_${testType}_${arch_os}"
         if (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
             switch (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
-                case ~/.*XL.*/: jobName += "_xl"; break
+                case ~/.*XL.*/: 
+                    jobName += "_xl";
+                    arch_os += "_xl";
+                    break
             }
         }
-        return "${jobName}"
+        jobParams.put('TEST_JOB_NAME', jobName)
+        jobParams.put('ARCH_OS_LIST', arch_os)
+        jobParams.put('LIGHT_WEIGHT_CHECKOUT', true)
+        return jobParams
     }
 
     /*
@@ -259,29 +265,31 @@ class Build {
                             keep_test_reportdir = "true"
                         }
 
-                        // example jobName: Test_openjdk11_hs_sanity.system_ppc64_aix
-                        def jobName = determineTestJobName(testType)
-
+                        def jobParams = getTestJobParams(testType)
+                        def jobName = jobParams.TEST_JOB_NAME
                         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
 
-                        // Execute test job
-                        if (JobHelper.jobIsRunnable(jobName as String)) {
-                            context.catchError {
-                                context.build job: jobName,
-                                        propagate: false,
-                                        parameters: [
-                                                context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                                context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                                context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
-                                                context.string(name: 'JDK_REPO', value: jdkRepo),
-                                                context.string(name: 'JDK_BRANCH', value: jdkBranch),
-                                                context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-                                                context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
-                                                context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
-                            }
-                        } else {
-                            context.println "[WARNING] Requested test job that does not exist or is disabled: ${jobName}"
+                        // Create test job if job doesn't exist or is not runnable
+                        if (!JobHelper.jobIsRunnable(jobName as String)) {
+                            context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
+                            def templatePath = 'testJobTemplate'
+                            context.println "Test job doesn't exist, create test job: ${jobName}"
+                            jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
+                        }
+
+                        context.catchError {
+                            context.build job: jobName,
+                                    propagate: false,
+                                    parameters: [
+                                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                            context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
+                                            context.string(name: 'JDK_REPO', value: jdkRepo),
+                                            context.string(name: 'JDK_BRANCH', value: jdkBranch),
+                                            context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                            context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
+                                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
                         }
                     }
                 }
