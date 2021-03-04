@@ -1,0 +1,13 @@
+# Config file used by .github/workflows/labeler.yml
+
+# label_name:
+#   - path/to/file_or_folder
+ghActions:
+    - .github/workflows/**/*
+documentation:
+    - docs/**/*
+    - docs/*
+    - '**/*.md'
+jenkins-pipeline:
+    - pipelines/**/*
+    - pipelines/*
