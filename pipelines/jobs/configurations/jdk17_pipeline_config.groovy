@@ -56,12 +56,7 @@ class Config17 {
                 os                  : 'alpine-linux',
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : [
-                        // TODO: enable tests
-                        nightly: [],
-                        // release: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external', 'special.functional']
-                        release: []
-                ]
+                test                : 'default'
         ],
 
         x64Windows: [
@@ -80,6 +75,7 @@ class Config17 {
                 configureArgs        : '--with-noncompressedrefs'
         ],
 
+        // TODO: Enable testing (https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues/77)
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
