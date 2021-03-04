@@ -22,7 +22,7 @@ weekly_release_scmReferences=[
         "openj9"         : "",
         "corretto"       : "",
         "dragonwell"     : "",
-        "bisheng"	 : ""
+        "bisheng"        : ""
 ]
 
 return this

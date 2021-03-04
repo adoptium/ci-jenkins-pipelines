@@ -172,17 +172,17 @@ class Config11 {
         ],
         riscv64Linux      :  [
                 os                   : 'linux',
-                dockerImage       : [
+                dockerImage          : [
                         "openj9" : 'adoptopenjdk/centos6_build_image',
                 ],
                 arch                 : 'riscv64',
-                crossCompile      : [
+                crossCompile         : [
                         "openj9"     : 'x64'
                 ],
-                buildArgs         : [
+                buildArgs            : [
                         "openj9"     : '--cross-compile'
                 ],
-                configureArgs     : [
+                configureArgs        : [
                         "openj9"     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root'
                 ]
         ]
