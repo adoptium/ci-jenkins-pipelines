@@ -251,12 +251,6 @@ class Build {
 
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
-        if (buildConfig.VARIANT == "corretto") {
-            testList = buildConfig.TEST_LIST.minus(['sanity.external'])
-        } else {
-            testList = buildConfig.TEST_LIST
-        }
-
         testList.each { testType ->
 
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job

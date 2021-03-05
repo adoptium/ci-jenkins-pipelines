@@ -83,8 +83,7 @@ class Builder implements Serializable {
     final List<String> weekly = [
         'extended.openjdk',
         'extended.perf',
-        'special.functional',
-        'sanity.external'
+        'special.functional'
     ]
 
     // Declare timeouts for each critical stage (unit is HOURS)
@@ -247,8 +246,9 @@ class Builder implements Serializable {
 
             }
         }
-
+        
         testList.unique()
+
         return testList
     }
 
