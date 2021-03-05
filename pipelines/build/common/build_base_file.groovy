@@ -294,13 +294,24 @@ class Builder implements Serializable {
     }
 
     def getArchLabel(Map<String, ?> configuration, String variant) {
-        def archLabelVal = ""
+        // Default to arch
+        def archLabelVal = configuration.arch
+
         // Workaround for cross compiled architectures
         if (configuration.containsKey("crossCompile")) {
-            archLabelVal = configuration.crossCompile
-        } else {
-            archLabelVal = configuration.arch
+            def configArchLabelVal
+
+            if (isMap(configuration.crossCompile)) {
+                configArchLabelVal = (configuration.crossCompile as Map<String, ?>).get(variant)
+            } else {
+                configArchLabelVal = configuration.crossCompile
+            }
+
+            if (configArchLabelVal != null) {
+                archLabelVal = configArchLabelVal
+            }
         }
+
         return archLabelVal
     }
 
