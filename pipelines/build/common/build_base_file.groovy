@@ -247,8 +247,12 @@ class Builder implements Serializable {
 
             }
         }
-
+        
         testList.unique()
+        
+        if (testList.contains('sanity.external') && configuration.arch != 'ppc64le' && configuration.arch != 's390x' && !(configuration.os == 'linux' && configuration.arch == 'x64')) {
+            testList.remove(testList.indexOf('sanity.external'))
+        }
         return testList
     }
 
