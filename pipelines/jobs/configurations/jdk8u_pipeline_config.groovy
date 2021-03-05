@@ -38,19 +38,14 @@ class Config8 {
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: [
-                        hotspot : 'win2012',
-                        corretto: 'win2012',
-                        openj9  : 'win2012&&mingw-cygwin',
-                        dragonwell: 'win2012'
-                ],
+                additionalNodeLabels: 'win2012',
                 test                 : 'default'
         ],
 
         x64WindowsXL    : [
                 os                   : 'windows',
                 arch                 : 'x64',
-                additionalNodeLabels : 'win2012&&mingw-cygwin',
+                additionalNodeLabels : 'win2012',
                 test                 : 'default',
                 additionalFileNameTag: "windowsXL",
                 configureArgs        : '--with-noncompressedrefs'
@@ -59,11 +54,7 @@ class Config8 {
         x32Windows    : [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: [
-                        hotspot : 'win2012',
-                        corretto: 'win2012',
-                        openj9  : 'win2012&&mingw-cygwin'
-                ],
+                additionalNodeLabels: 'win2012',
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
                 ],
