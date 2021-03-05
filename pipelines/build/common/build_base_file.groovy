@@ -134,7 +134,7 @@ class Builder implements Serializable {
             buildArgs += " " + additionalBuildArgs
         }
 
-        def testList = getTestList(platformConfig)
+        def testList = getTestList(platformConfig, variant)
 
         def platformCleanWorkspaceAfterBuild = getCleanWorkspaceAfterBuild(platformConfig)
 
@@ -215,7 +215,7 @@ class Builder implements Serializable {
     Get the list of tests to run from the build configurations.
     We run different test categories depending on if this build is a release or nightly. This function parses and applies this to the individual build config.
     */
-    List<String> getTestList(Map<String, ?> configuration) {
+    List<String> getTestList(Map<String, ?> configuration, variant) {
         List<String> testList = []
         /*
         * No test key or key value is test: false  --- test disabled
@@ -250,9 +250,13 @@ class Builder implements Serializable {
         
         testList.unique()
         
-        if (testList.contains('sanity.external') && configuration.arch != 'ppc64le' && configuration.arch != 's390x' && !(configuration.os == 'linux' && configuration.arch == 'x64')) {
-            testList.remove(testList.indexOf('sanity.external'))
+        //Disable external tests on non-docker available platforms and limit external tests on hotspot and openj9 impl.
+        if (testList.contains('sanity.external')) {
+            if ((configuration.arch != 'ppc64le' && configuration.arch != 's390x' && !(configuration.os == 'linux' && configuration.arch == 'x64')) || (variant == 'corretto' || variant == 'dragonwell' || variant == 'bisheng')) {
+                testList.remove(testList.indexOf('sanity.external'))
+            }
         }
+        
         return testList
     }
 
