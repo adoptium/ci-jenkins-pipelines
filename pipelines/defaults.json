@@ -2,6 +2,7 @@
     "repository"             : {
         "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
         "build_branch"       : "master",
+        "test_dirs"          : "/test/functional",
         "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
         "pipeline_branch"    : "master"
     },
