@@ -224,7 +224,7 @@ class Build {
         } else if (buildConfig.VARIANT == "dragonwell") {
             suffix = "alibaba/dragonwell${javaNumber}"
         } else if (buildConfig.VARIANT == "bisheng") {
-            suffix = "feilongjiang/bishengjdk-${javaNumber}-mirror"
+            suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
         } else {
             throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
         }
