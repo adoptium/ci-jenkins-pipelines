@@ -47,6 +47,9 @@ labels:
   - label: "linux"
     matcher:
       title: "linux"
+  - label: "alpine-linux"
+    matcher:
+      title: "alpine"
 
   - label: "arm"
     matcher:
