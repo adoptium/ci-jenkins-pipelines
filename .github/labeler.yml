@@ -1,6 +1,6 @@
 # Config file used by .github/workflows/labeler.yml
 
-# This file matches file/folder changes to labels
+# This file matches file/folder changes to labels. See https://github.com/actions/labeler for more information.
 
 # e.g to add the test label to any changes in the /tests directory:
 
