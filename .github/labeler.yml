@@ -1,7 +1,12 @@
 # Config file used by .github/workflows/labeler.yml
 
-# label_name:
-#   - path/to/file_or_folder
+# This file matches file/folder changes to labels
+
+# e.g to add the test label to any changes in the /tests directory:
+
+# test:
+#   - tests/*
+
 ghActions:
     - .github/workflows/**/*
 documentation:
