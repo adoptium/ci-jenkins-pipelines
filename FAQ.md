@@ -38,6 +38,17 @@ G               - context.sh make-adopt-build-farm.sh
 
 *See the [openjdk-build FAQ.md](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/FAQ.md#how-do-i-find-my-way-around-adoptopenjdks-build-automation-scripts) for the shell script side of the pipeline*
 
+## How do I build more quickly?
+
+There are a couple of options that are enabled by default in the pipelines
+but slow down the build. If you're just looking for a "quick" build to test
+something then you can skip the custom cacerts generation and the creation
+of debug images as follows - it will still produce a usable JDK with these
+options:
+
+- additionalConfigureArgs `--with-native-debug-symbols=none`
+- additionalBuildArgs `--custom-cacerts false`
+
 ## Adding a new major release to be built
 
 1. Create the new release repository under GitHub.com/adoptopenjdk (generally `openjdk-jdkxx`)
