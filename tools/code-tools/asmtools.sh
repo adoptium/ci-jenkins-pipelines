@@ -14,6 +14,7 @@ function generateArtifact() {
 	tagName=$(hg tags | grep "$tag" | head -1 | awk '{ print $1 }')
 	echo "Tag: ${tagName}"
 
+	cd ..
 	rm -fr asmtools
 
 	hg clone http://hg.openjdk.java.net/code-tools/asmtools -r "${tagName}"
@@ -73,7 +74,7 @@ export BUILD_DIR=$(echo $(eval echo $(grep "BUILD_DIR = " build/build.properties
 
 generateArtifact "tip" "${PRODUCT_VERSION}"
 
-
+cd ..
 mv *.jar.sha256sum.txt asmtools
 mv *.tar.gz.sha256sum.txt asmtools
 mv *.jar asmtools
