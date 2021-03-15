@@ -26,7 +26,7 @@ function generateArtifact() {
     perl -p -i -e 's/"9"/"1.8"/g' build.xml
 
 	export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
-	
+
 	echo "Building asmtools"
 
     ant build

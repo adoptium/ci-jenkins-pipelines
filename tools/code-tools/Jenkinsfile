@@ -14,7 +14,7 @@ pipeline {
             parallel {
                 stage('asmtools') {
                     agent {
-                        label "dockerBuild&&linux&&x64"
+                        label NODE_LABEL
                     }
                     steps {
                         build('asmtools')
@@ -22,7 +22,7 @@ pipeline {
                 }
                 stage('jcov') {
                     agent {
-                        label "dockerBuild&&linux&&x64"
+                        label NODE_LABEL
                     }
                     steps {
                         build('jcov')
@@ -30,7 +30,7 @@ pipeline {
                 }
                 stage('jtharness') {
                     agent {
-                        label "dockerBuild&&linux&&x64"
+                        label NODE_LABEL
                     }
                     steps {
                         build('jtharness')
@@ -38,7 +38,7 @@ pipeline {
                 }
                 stage('sigtest') {
                     agent {
-                        label "dockerBuild&&linux&&x64"
+                        label NODE_LABEL
                     }
                     steps {
                         build('sigtest')
@@ -46,11 +46,12 @@ pipeline {
                 }
             }
         }
+
         stage('Downstream Build') {
             parallel {
                 stage("jtreg") {
                     agent {
-                        label "dockerBuild&&linux&&x64"
+                        label NODE_LABEL
                     }
                     steps {
                         build('jtreg')
