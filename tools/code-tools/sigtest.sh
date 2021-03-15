@@ -89,6 +89,9 @@ cloneSigTest() {
 }
 
 export JDK9_FOLDER_NAME=jdk-9
+
+cd sigtest
+
 BUILD_DIR=$(pwd)
 
 cloneSigTest

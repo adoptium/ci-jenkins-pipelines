@@ -14,45 +14,48 @@ pipeline {
             parallel {
                 stage('asmtools') {
                     agent {
-                        label "${NODE_LABEL}"
+                        label "dockerBuild&&linux&&x64"
                     }
                     steps {
-                        build('asmtools', '*.tar.gz, asmtools.jar, asmtools.jar.*.txt, *.tar.gz.*sum*.txt')
+                        build('asmtools')
                     }
                 }
                 stage('jcov') {
                     agent {
-                        label "${NODE_LABEL}"
+                        label "dockerBuild&&linux&&x64"
                     }
                     steps {
-                        build('jcov', 'jcov*.tar.gz, jcov*.sha256sum.txt')
+                        build('jcov')
                     }
                 }
                 stage('jtharness') {
                     agent {
-                        label "${NODE_LABEL}"
+                        label "dockerBuild&&linux&&x64"
                     }
                     steps {
-                        build('jtharness', 'jtharness*.tar.gz, *.tar.gz.sha256sum.txt')
+                        build('jtharness')
                     }
                 }
                 stage('sigtest') {
                     agent {
-                        label "${NODE_LABEL}"
+                        label "dockerBuild&&linux&&x64"
                     }
                     steps {
-                        build('sigtest', 'sigtest.tar.gz')
+                        build('sigtest')
                     }
                 }
             }
         }
-
-        stage('Jtreg Downstream Build') {
-            agent {
-                label "${NODE_LABEL}"
-            }
-            steps {
-                build('jtreg', 'jtreg*.tar.gz, jtreg*.sha256sum.txt')
+        stage('Downstream Build') {
+            parallel {
+                stage("jtreg") {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('jtreg')
+                    }
+                }
             }
         }
     }
@@ -60,11 +63,16 @@ pipeline {
 
 def build(stageName) {
     cleanWs()
-    docker.image('adoptopenjdk/centos6_build_image').inside {
-        sh "hg clone http://hg.openjdk.java.net/code-tools/${stageName}"
+    docker.image('adoptopenjdk/centos7_build_image').inside {
         checkout scm
+        sh "hg clone http://hg.openjdk.java.net/code-tools/${stageName}"
+        if (stageName == "jtreg") {
+            step([$class: 'CopyArtifact', filter: 'jcov/jcov-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jreg/'])
+            step([$class: 'CopyArtifact', filter: 'asmtools/asmtools-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jreg/'])
+            step([$class: 'CopyArtifact', filter: 'jtharness/jtharness*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jreg/'])
+        }
         sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
-        archiveArtifacts artifacts: "${archiveGlob}", followSymlinks: false
+        archiveArtifacts artifacts: "${stageName}/*.tar.gz, ${stageName}/${stageName}.jar, ${stageName}/${stageName}.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt", followSymlinks: false
         slackSend channel: 'jenkins', color: 'good', message: "${env.JOB_NAME}:${env.BUILD_NUMBER} PASSED", teamDomain: 'adoptopenjdk'
     }
 }

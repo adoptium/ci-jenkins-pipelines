@@ -8,13 +8,6 @@ pwd
 #tagName=$(hg tags | grep jt | head -1 | gawk '{ print $1 }')
 #echo "Tag:" ${tagName}
 
-cd ..
-rm -fr jtharness
-
-hg clone https://hg.openjdk.java.net/code-tools/jtharness
-
-ls -lash
-
 cd jtharness
 
 #rm -fr jh2.0
@@ -119,7 +112,7 @@ cd ..
 rm -f *.zip
 rm -f *.tar.gz
 
-artifact=${JOB_NAME}
+artifact='jtharness'
 
 
 ROOT_FOLDER=$(pwd)
