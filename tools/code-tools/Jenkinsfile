@@ -59,9 +59,11 @@ pipeline {
 }
 
 def build(stageName) {
+    cleanWs()
     docker.image('adoptopenjdk/centos6_build_image').inside {
-        checkout changelog: true, poll: true, scm: [$class: 'MercurialSCM', browser: [$class: 'HgWeb', url: "http://hg.openjdk.java.net/code-tools/${stageName}"], credentialsId: '', installation: '(Default)', source: "http://hg.openjdk.java.net/code-tools/${stageName}"]
-        sh label: "${stageName}", script: "./${stageName}.sh"
+        sh "hg clone http://hg.openjdk.java.net/code-tools/${stageName}"
+        checkout scm
+        sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
         archiveArtifacts artifacts: "*.tar.gz, ${stageName}.jar, ${stageName}.jar.*.txt, *.tar.gz.*sum*.txt", followSymlinks: false
     }
 }
