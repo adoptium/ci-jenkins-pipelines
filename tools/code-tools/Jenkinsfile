@@ -1,0 +1,69 @@
+// Build once a day
+CRON_SETTINGS = '''H H * * *'''
+
+pipeline {
+    agent none
+    triggers {
+        cron(CRON_SETTINGS)
+    }
+    stages {
+        stage('Dependency Build') {
+            parallel {
+                stage('asmtools') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('asmtools')
+                    }
+                }
+                stage('jcov') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('jcov')
+                    }
+                }
+                stage('jtharness') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('jtharness')
+                    }
+                }
+                stage('sigtest') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('sigtest')
+                    }
+                }
+            }
+        }
+        // stage('Downstream') {
+        //     parallel {
+        //         stage("jtreg") {
+        //             agent {
+        //                 label "dockerBuild&&linux&&x64"
+        //             }
+        //             steps {
+        //                 dockerManifest(8)
+        //             }
+        //         }
+        //     }
+        // }
+    }
+}
+
+def build(stageName) {
+    cleanWs()
+    docker.image('adoptopenjdk/centos6_build_image').inside {
+        sh "hg clone http://hg.openjdk.java.net/code-tools/${stageName}"
+        checkout scm
+        sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
+        archiveArtifacts artifacts: "*.tar.gz, ${stageName}.jar, ${stageName}.jar.*.txt, *.tar.gz.*sum*.txt", followSymlinks: false
+    }
+}
