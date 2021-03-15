@@ -9,7 +9,8 @@ readonly JUNIT_VERSION='4.10'
 readonly JCOMMANDER_VERSION='1.48'
 export ASMTOOLS_HOME=""
 
-export WORKSPACE
+export WORKSPACE="$WORKSPACE/jtreg"
+cd $WORKSPACE
 export JCOV_HOME
 export JTHARNESS_HOME
 
@@ -67,9 +68,6 @@ function downloadJCov()
 {
   JCOV_SHORT_VERSION="3.0"
   JCOV_FULL_VERSION="jcov-${JCOV_SHORT_VERSION}-beta-2"
-  echo 'Downloading latest jcov...'
-  rm -rf jcov*
-  wget https://ci.adoptopenjdk.net/job/jcov/lastSuccessfulBuild/artifact/${JCOV_FULL_VERSION}.tar.gz
   tar -zxvf ${JCOV_FULL_VERSION}.tar.gz
   mv JCOV_BUILD jcov
   mv jcov/jcov_${JCOV_SHORT_VERSION} jcov/lib
@@ -78,12 +76,10 @@ function downloadJCov()
 
 function downloadAsmTools()
 {
-  echo 'Downloading latest asmtools...'
-  rm -rf asmtools*
   TGZ_EXTENSION="tar.gz"
-  # shellcheck disable=SC1001
-  ASMTOOLS_ARTIFACT=$(curl https://ci.adoptopenjdk.net/job/asmtools/lastSuccessfulBuild/artifact/ | grep -o asmtools-\[0\-9\]\.\[0\.9\] | head -n 1)
-  wget "https://ci.adoptopenjdk.net/job/asmtools/lastSuccessfulBuild/artifact/${ASMTOOLS_ARTIFACT}.${TGZ_EXTENSION}"
+  ASMTOOLS_ARTIFACT=$(ls asmtools*.tar.gz)
+  ASMTOOLS_ARTIFACT=$(echo "${ASMTOOLS_ARTIFACT%.*}")
+  ASMTOOLS_ARTIFACT=$(echo "${ASMTOOLS_ARTIFACT%.*}")
   tar -xzvf "${ASMTOOLS_ARTIFACT}.${TGZ_EXTENSION}"
   ## tar contains zip for some reason:
   unzip -o "${ASMTOOLS_ARTIFACT}.zip"
@@ -93,10 +89,7 @@ function downloadAsmTools()
 
 function downloadJTHarness()
 {
-  echo 'Downloading latest jtharness...'
   export JTHARNESS=jtharness
-  rm -rf ${JTHARNESS}*
-  wget https://ci.adoptopenjdk.net/job/jtharness/lastSuccessfulBuild/artifact/${JTHARNESS}.tar.gz
   tar -zxvf ${JTHARNESS}.tar.gz
   JTHARNESS_HOME="$( cd jtharness && pwd )"
 }

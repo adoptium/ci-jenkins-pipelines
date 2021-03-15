@@ -25,11 +25,11 @@ function generateArtifact() {
 
     perl -p -i -e 's/"9"/"1.8"/g' build.xml
 
+	export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
+	
 	echo "Building asmtools"
-    #export JAVA_HOME=/usr/lib/jvm/jdk-11.0.5+10
-    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
-    ant build -Djava.home=/usr/lib/jvm/java-8-openjdk-amd64
+    ant build
 
 	# WORKSPACE/asmtools/build/BUILD_DIR
 	echo "Moving down to ${BUILD_DIR}"
@@ -67,6 +67,8 @@ function generateArtifact() {
     echo "Moving into asmtools"
 	cd asmtools
 }
+
+cd asmtools
 
 export PRODUCT_VERSION=$(grep "PRODUCT_VERSION     \= " build/productinfo.properties | awk '{print $3}')
 # shellcheck disable=SC2005,SC2046

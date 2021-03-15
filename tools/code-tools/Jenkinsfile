@@ -1,0 +1,74 @@
+// Build once a day
+CRON_SETTINGS = '''H H * * *'''
+
+pipeline {
+    agent none
+    triggers {
+        cron(CRON_SETTINGS)
+    }
+    stages {
+        stage('Dependency Build') {
+            parallel {
+                stage('asmtools') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('asmtools')
+                    }
+                }
+                stage('jcov') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('jcov')
+                    }
+                }
+                stage('jtharness') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('jtharness')
+                    }
+                }
+                stage('sigtest') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('sigtest')
+                    }
+                }
+            }
+        }
+        stage('Downstream Build') {
+            parallel {
+                stage("jtreg") {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('jtreg')
+                    }
+                }
+            }
+        }
+    }
+}
+
+def build(stageName) {
+    cleanWs()
+    docker.image('adoptopenjdk/centos7_build_image').inside {
+        checkout scm
+        sh "hg clone http://hg.openjdk.java.net/code-tools/${stageName}"
+        if (stageName == "jtreg") {
+            step([$class: 'CopyArtifact', filter: 'jcov/jcov-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jreg/'])
+            step([$class: 'CopyArtifact', filter: 'asmtools/asmtools-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jreg/'])
+            step([$class: 'CopyArtifact', filter: 'jtharness/jtharness*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jreg/'])
+        }
+        sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
+        archiveArtifacts artifacts: "${stageName}/*.tar.gz, ${stageName}/${stageName}.jar, ${stageName}/${stageName}.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt", followSymlinks: false
+    }
+}

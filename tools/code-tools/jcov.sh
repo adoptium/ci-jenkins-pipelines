@@ -5,6 +5,8 @@ set -eu
 
 echo "WORKSPACE: $WORKSPACE"
 
+cd jcov
+
 tagName=$(hg tags | grep jcov | head -1 | awk '{ print $1 }')
 echo "Tag: ${tagName}"
 
@@ -42,7 +44,7 @@ cd build
 echo "${buildVersion} ${buildNumber} ${buildMilestone}"
 
 ant clean
-ant -v build -f build.xml -Dasm.jar="${WORKSPACE}/asm-7.0/asm-7.0-beta.jar" -Dasm.tree.jar="${WORKSPACE}/asm-7.0/asm-tree-7.0-beta.jar" -Dasm.util.jar="${WORKSPACE}/asm-7.0/asm-util-7.0-beta.jar" -Djavatestjar="${WORKSPACE}/jtharness/lib/javatest.jar"
+ant -v build -f build.xml -Dasm.jar="${WORKSPACE}/jcov/asm-7.0/asm-7.0-beta.jar" -Dasm.tree.jar="${WORKSPACE}/jcov/asm-7.0/asm-tree-7.0-beta.jar" -Dasm.util.jar="${WORKSPACE}/jcov/asm-7.0/asm-util-7.0-beta.jar" -Djavatestjar="${WORKSPACE}/jcov/jtharness/lib/javatest.jar"
 cd ..
 
 rm -f *.zip
