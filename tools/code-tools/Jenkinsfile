@@ -1,0 +1,67 @@
+// Build once a day
+CRON_SETTINGS = '''H H * * *'''
+
+pipeline {
+    agent none
+    triggers {
+        cron(CRON_SETTINGS)
+    }
+    stages {
+        stage('Dependency Build') {
+            parallel {
+                stage('asmtools') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('asmtools')
+                    }
+                }
+                stage('jcov') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('jcov')
+                    }
+                }
+                stage('jtharness') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('jtharness')
+                    }
+                }
+                stage('sigtest') {
+                    agent {
+                        label "dockerBuild&&linux&&x64"
+                    }
+                    steps {
+                        build('sigtest')
+                    }
+                }
+            }
+        }
+        // stage('Downstream') {
+        //     parallel {
+        //         stage("jtreg") {
+        //             agent {
+        //                 label "dockerBuild&&linux&&x64"
+        //             }
+        //             steps {
+        //                 dockerManifest(8)
+        //             }
+        //         }
+        //     }
+        // }
+    }
+}
+
+def build(stageName) {
+    docker.image('adoptopenjdk/centos6_build_image').inside {
+        checkout changelog: true, poll: true, scm: [$class: 'MercurialSCM', browser: [$class: 'HgWeb', url: "http://hg.openjdk.java.net/code-tools/${stageName}"], credentialsId: '', installation: '(Default)', source: "http://hg.openjdk.java.net/code-tools/${stageName}"]
+        sh label: "${stageName}", script: "./${stageName}.sh"
+        archiveArtifacts artifacts: "*.tar.gz, ${stageName}.jar, ${stageName}.jar.*.txt, *.tar.gz.*sum*.txt", followSymlinks: false
+    }
+}
