@@ -1,60 +1,60 @@
 // Build once a day
 CRON_SETTINGS = '''H H * * *'''
+NODE_LABEL = "dockerBuild&&linux&&x64"
 
 pipeline {
     agent none
+
     triggers {
         cron(CRON_SETTINGS)
     }
+
     stages {
         stage('Dependency Build') {
             parallel {
                 stage('asmtools') {
                     agent {
-                        label "dockerBuild&&linux&&x64"
+                        label "${NODE_LABEL}"
                     }
                     steps {
-                        build('asmtools')
+                        build('asmtools', '*.tar.gz, asmtools.jar, asmtools.jar.*.txt, *.tar.gz.*sum*.txt')
                     }
                 }
                 stage('jcov') {
                     agent {
-                        label "dockerBuild&&linux&&x64"
+                        label "${NODE_LABEL}"
                     }
                     steps {
-                        build('jcov')
+                        build('jcov', 'jcov*.tar.gz, jcov*.sha256sum.txt')
                     }
                 }
                 stage('jtharness') {
                     agent {
-                        label "dockerBuild&&linux&&x64"
+                        label "${NODE_LABEL}"
                     }
                     steps {
-                        build('jtharness')
+                        build('jtharness', 'jtharness*.tar.gz, *.tar.gz.sha256sum.txt')
                     }
                 }
                 stage('sigtest') {
                     agent {
-                        label "dockerBuild&&linux&&x64"
+                        label "${NODE_LABEL}"
                     }
                     steps {
-                        build('sigtest')
+                        build('sigtest', 'sigtest.tar.gz')
                     }
                 }
             }
         }
-        // stage('Downstream') {
-        //     parallel {
-        //         stage("jtreg") {
-        //             agent {
-        //                 label "dockerBuild&&linux&&x64"
-        //             }
-        //             steps {
-        //                 dockerManifest(8)
-        //             }
-        //         }
-        //     }
-        // }
+
+        stage('Jtreg Downstream Build') {
+            agent {
+                label "${NODE_LABEL}"
+            }
+            steps {
+                build('jtreg', 'jtreg*.tar.gz, jtreg*.sha256sum.txt')
+            }
+        }
     }
 }
 
@@ -64,6 +64,7 @@ def build(stageName) {
         sh "hg clone http://hg.openjdk.java.net/code-tools/${stageName}"
         checkout scm
         sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
-        archiveArtifacts artifacts: "*.tar.gz, ${stageName}.jar, ${stageName}.jar.*.txt, *.tar.gz.*sum*.txt", followSymlinks: false
+        archiveArtifacts artifacts: "${archiveGlob}", followSymlinks: false
+        slackSend channel: 'jenkins', color: 'good', message: "${env.JOB_NAME}:${env.BUILD_NUMBER} PASSED", teamDomain: 'adoptopenjdk'
     }
 }
