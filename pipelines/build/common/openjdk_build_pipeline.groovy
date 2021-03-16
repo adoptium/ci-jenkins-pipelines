@@ -304,10 +304,11 @@ class Build {
     /*
     We use this function at the end of a build to parse a java version string and create a VersionInfo object for deployment in the metadata objects.
     E.g. 11.0.9+10-202010192351 would be one example of a matched string.
+    The regex would match both OpenJDK Runtime Environment and Java(TM) SE Runtime Environment.
     */
     VersionInfo parseVersionOutput(String consoleOut) {
         context.println(consoleOut)
-        Matcher matcher = (consoleOut =~ /(?ms)^.*OpenJDK Runtime Environment[^\n]*\(build (?<version>[^)]*)\).*$/)
+        Matcher matcher = (consoleOut =~ /(?ms)^.*Runtime Environment[^\n]*\(build (?<version>[^)]*)\).*$/)
         if (matcher.matches()) {
             context.println("matched")
             String versionOutput = matcher.group('version')
