@@ -5,10 +5,10 @@ set -eu
 
 cd jtharness
 
-tagName=$(git describe --tags `git rev-list --tags --max-count=1`)
+tagName=$(git describe --tags "$(git rev-list --tags --max-count=1)")
 echo "Tag: ${tagName}"
 
-git checkout ${tagName}
+git checkout "${tagName}"
 
 #rm -fr jh2.0
 if [ ! -d "jh2.0" ]; then

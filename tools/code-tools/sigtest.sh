@@ -14,11 +14,11 @@ downloadJDK() {
   if [[ -s "${JDK_TARGET_FOLDER}/${JDK_INSTALLER_FILENAME}" ]]; then
     echo "${JDK_NAME} binary installer: ${JDK_INSTALLER_FILENAME}, already exists, reusing it"
   else
-  	wget --quiet "https://ci.adoptopenjdk.net/userContent/jdk-binaries/${JDK_INSTALLER_FILENAME}" -P "${JDK_TARGET_FOLDER}"
+      wget --quiet "https://ci.adoptopenjdk.net/userContent/jdk-binaries/${JDK_INSTALLER_FILENAME}" -P "${JDK_TARGET_FOLDER}"
   fi
 
   if [[ -e "${JDK_HOME_DIR}" ]]; then
-  	echo "${JDK_TARGET_FOLDER}/${JDK_INSTALLER_FILENAME} already unpacked into ${JDK_HOME_DIR}, reusing the unpacked JDK"
+      echo "${JDK_TARGET_FOLDER}/${JDK_INSTALLER_FILENAME} already unpacked into ${JDK_HOME_DIR}, reusing the unpacked JDK"
   else
     echo "Unpacking ${JDK_INSTALLER_FILENAME}"
     unzip "${JDK_TARGET_FOLDER}/${JDK_INSTALLER_FILENAME}" -d "${JDK_TARGET_FOLDER}"
@@ -27,9 +27,9 @@ downloadJDK() {
 
   if [[ -e "${JDK_HOME_DIR}" ]]; then
     "${JDK_HOME_DIR}"/bin/java -version
-  	echo "${JDK_NAME} is available at ${JDK_HOME_DIR}"
+      echo "${JDK_NAME} is available at ${JDK_HOME_DIR}"
   else
-  	echo "For some reason, ${JDK_NAME} is NOT available at ${JDK_HOME_DIR}, check if ${JDK_INSTALLER_FILENAME} ran properly."
+      echo "For some reason, ${JDK_NAME} is NOT available at ${JDK_HOME_DIR}, check if ${JDK_INSTALLER_FILENAME} ran properly."
   fi
   "${JDK_HOME_DIR}"/bin/java -version
 }
@@ -78,10 +78,10 @@ buildSigTest()
 }
 
 cloneSigTest() {
-  tagName=$(git describe --tags `git rev-list --tags --max-count=1`)
+  tagName=$(git describe --tags "$(git rev-list --tags --max-count=1)")
   echo "Tag: ${tagName}"
 
-  git checkout ${tagName}
+  git checkout "${tagName}"
 }
 
 export JDK9_FOLDER_NAME=jdk-9

@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=SC2035
+# shellcheck disable=SC2035,SC2116
 
 set -eu
 
@@ -10,7 +10,7 @@ readonly JCOMMANDER_VERSION='1.48'
 export ASMTOOLS_HOME=""
 
 export WORKSPACE="$WORKSPACE/jtreg"
-cd $WORKSPACE
+cd "$WORKSPACE"
 export JCOV_HOME
 export JTHARNESS_HOME
 
@@ -164,32 +164,32 @@ buildJTRegTip()
 
 buildJTRegLastTag()
 {
-  tagName=$(git describe --tags `git rev-list --tags --max-count=1`)
-	echo "Tag: ${tagName}"
+  tagName=$(git describe --tags "$(git rev-list --tags --max-count=1)")
+    echo "Tag: ${tagName}"
   versionAndBuildNumber=$(echo "${tagName}"| awk '{split($0,a,"jtreg"); print a[2]}')
   versionNumber=$(echo "${versionAndBuildNumber}" | awk '{split($0,a,"-"); print a[1]}')
   buildNumber=$(echo "${versionAndBuildNumber}" | awk '{split($0,a,"-"); print a[2]}')
-  git checkout ${tagName}
+  git checkout "${tagName}"
 
   buildJTReg "last tag" "$versionNumber" "$buildNumber"
 }
 
 createChecksum() {
-	ARCHIVE_FULL_PATH=$1
+    ARCHIVE_FULL_PATH=$1
     ARCHIVE_NAME=$(basename "${ARCHIVE_FULL_PATH}")
     DESTINATION=$2
 
-	echo "Creating checksum for ${ARCHIVE_FULL_PATH} at ${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
+    echo "Creating checksum for ${ARCHIVE_FULL_PATH} at ${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
 
     sha256sum "${ARCHIVE_FULL_PATH}" > "${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
 }
 
 runBasicJtregSanityTest() {
-	make "$(pwd)"/Basic.othervm.ok "$(pwd)"/Basic.agentvm.ok
+    make "$(pwd)"/Basic.othervm.ok "$(pwd)"/Basic.agentvm.ok
 }
 
 runJtregSanitySelfTests() {
-	make -j 4 test
+    make -j 4 test
 }
 
 checkWorkspaceVar
