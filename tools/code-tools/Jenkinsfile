@@ -65,15 +65,19 @@ pipeline {
 def build(stageName) {
     cleanWs()
     docker.image('adoptopenjdk/centos7_build_image').inside {
-        checkout scm
-        sh "hg clone http://hg.openjdk.java.net/code-tools/${stageName}"
-        if (stageName == "jtreg") {
-            step([$class: 'CopyArtifact', filter: 'jcov/jcov-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
-            step([$class: 'CopyArtifact', filter: 'asmtools/asmtools-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
-            step([$class: 'CopyArtifact', filter: 'jtharness/jtharness*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
+        try {
+            checkout scm
+            sh "hg clone http://hg.openjdk.java.net/code-tools/${stageName}"
+            if (stageName == "jtreg") {
+                step([$class: 'CopyArtifact', filter: 'jcov/jcov-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
+                step([$class: 'CopyArtifact', filter: 'asmtools/asmtools-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
+                step([$class: 'CopyArtifact', filter: 'jtharness/jtharness*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
+            }
+            sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
+            archiveArtifacts artifacts: "${stageName}/*.tar.gz, ${stageName}/${stageName}.jar, ${stageName}/${stageName}.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt", followSymlinks: false
+        } catch (Exception e) {
+            slackSend channel: 'jenkins', color: 'danger', message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}", teamDomain: 'adoptopenjdk'
+            throw new Exception("[ERROR] ${stageName} FAILED\n${e}")
         }
-        sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
-        archiveArtifacts artifacts: "${stageName}/*.tar.gz, ${stageName}/${stageName}.jar, ${stageName}/${stageName}.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt", followSymlinks: false
-        slackSend channel: 'jenkins', color: 'good', message: "${env.JOB_NAME}:${env.BUILD_NUMBER} PASSED", teamDomain: 'adoptopenjdk'
     }
 }
