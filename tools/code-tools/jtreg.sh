@@ -159,19 +159,17 @@ createWin32FolderWithJTRegBinaries()
 
 buildJTRegTip()
 {
-  hg checkout tip
-  hg pull -u
-
   buildJTReg "the tip" "$TIP_VERSION" "tip"
 }
 
 buildJTRegLastTag()
 {
-  tagName=$(hg tags | grep jtreg | head -1 | awk '{ print $1 }')
+  tagName=$(git describe --tags `git rev-list --tags --max-count=1`)
+	echo "Tag: ${tagName}"
   versionAndBuildNumber=$(echo "${tagName}"| awk '{split($0,a,"jtreg"); print a[2]}')
   versionNumber=$(echo "${versionAndBuildNumber}" | awk '{split($0,a,"-"); print a[1]}')
   buildNumber=$(echo "${versionAndBuildNumber}" | awk '{split($0,a,"-"); print a[2]}')
-  hg checkout "$tagName"
+  git checkout ${tagName}
 
   buildJTReg "last tag" "$versionNumber" "$buildNumber"
 }

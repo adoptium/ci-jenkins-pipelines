@@ -11,17 +11,14 @@ function generateArtifact() {
 
 	artifact=asmtools-$version
 
-	tagName=$(hg tags | grep "$tag" | head -1 | awk '{ print $1 }')
+	tagName=$(git describe --tags `git rev-list --tags --max-count=1`)
 	echo "Tag: ${tagName}"
 
-	cd ..
-	rm -fr asmtools
-
-	hg clone http://hg.openjdk.java.net/code-tools/asmtools -r "${tagName}"
+	git checkout ${tagName}
 
 	# In WORKSPACE until here
-	echo "Moving into asmtools/build..."
-	cd asmtools/build
+	echo "Moving into build..."
+	cd build
 
     perl -p -i -e 's/"9"/"1.8"/g' build.xml
 

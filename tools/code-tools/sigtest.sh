@@ -78,14 +78,10 @@ buildSigTest()
 }
 
 cloneSigTest() {
-  ls -lash
-  tagName=$(hg tags | grep sigtest | head -1 | awk '{ print $1 }')
+  tagName=$(git describe --tags `git rev-list --tags --max-count=1`)
   echo "Tag: ${tagName}"
 
-  cd ..
-  rm -fr sigtest
-
-  hg clone http://hg.openjdk.java.net/code-tools/sigtest -r "${tagName}"
+  git checkout ${tagName}
 }
 
 export JDK9_FOLDER_NAME=jdk-9

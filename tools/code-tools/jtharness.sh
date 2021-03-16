@@ -3,12 +3,12 @@
 
 set -eu
 
-pwd
-
-#tagName=$(hg tags | grep jt | head -1 | gawk '{ print $1 }')
-#echo "Tag:" ${tagName}
-
 cd jtharness
+
+tagName=$(git describe --tags `git rev-list --tags --max-count=1`)
+echo "Tag: ${tagName}"
+
+git checkout ${tagName}
 
 #rm -fr jh2.0
 if [ ! -d "jh2.0" ]; then

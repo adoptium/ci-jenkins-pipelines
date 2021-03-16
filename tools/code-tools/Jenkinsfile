@@ -67,7 +67,7 @@ def build(stageName) {
     docker.image('adoptopenjdk/centos7_build_image').inside {
         try {
             checkout scm
-            sh "hg clone http://hg.openjdk.java.net/code-tools/${stageName}"
+            checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/openjdk/${stageName}"]]])
             if (stageName == "jtreg") {
                 step([$class: 'CopyArtifact', filter: 'jcov/jcov-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
                 step([$class: 'CopyArtifact', filter: 'asmtools/asmtools-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])

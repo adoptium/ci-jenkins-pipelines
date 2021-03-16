@@ -7,10 +7,10 @@ echo "WORKSPACE: $WORKSPACE"
 
 cd jcov
 
-tagName=$(hg tags | grep jcov | head -1 | awk '{ print $1 }')
+tagName=$(git describe --tags `git rev-list --tags --max-count=1`)
 echo "Tag: ${tagName}"
 
-hg checkout "${tagName}"
+git checkout ${tagName}
 
 fileName=build/_release.properties;
 
