@@ -9,7 +9,7 @@ if [[ -f "/tmp/build.txt" ]]; then
   echo "Removing previous /tmp/build.txt file"
   rm "/tmp/build.txt"
 fi
-for i in "jdk8u" "jdk11u" "jdk15" "jdk16" "jdk";
+for i in "jdk8u" "jdk11u" "jdk15" "jdk16u" "jdk";
 do
     curl -s "https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/${i}/" | egrep -o "job/${i}-[^\/]+" >> "/tmp/build.txt"
 done
@@ -21,7 +21,7 @@ cat "/tmp/build.txt" | cut -d'/' -f2 | sed -r 's/jdk[0-9]+u?\-//g' | sort | uniq
 do
     # buildName should be of the form: aix-ppc64-hotspot
     echo -n "| ${buildName} | "
-    for i in "jdk8u" "jdk11u" "jdk15" "jdk16" "jdk";
+    for i in "jdk8u" "jdk11u" "jdk15" "jdk16u" "jdk";
     do
         code=$(curl -s -o /dev/null -w "%{http_code}" "https://ci.adoptopenjdk.net/buildStatus/icon?job=build-scripts/jobs/${i}/${i}-${buildName}")
         if [[ ${code} = 200 ]]; then
