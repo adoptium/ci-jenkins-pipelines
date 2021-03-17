@@ -67,7 +67,6 @@ pipelineJob("$buildFolder/$JOB_NAME") {
     }
 
     parameters {
-        stringParam('NODE_LABEL', "$NODE_LABEL")
         textParam('BUILD_CONFIGURATION', "$BUILD_CONFIG", """
             <dl>
                 <dt><strong>ARCHITECTURE</strong></dt><dd>x64, ppc64, s390x...</dd>
