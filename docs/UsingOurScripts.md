@@ -66,6 +66,32 @@ This file contains the default constants and paths used in the build scripts for
         // Upstream pipeline file script containing the 2nd script that is executed by the jdkx-platform-arch-variant jobs
         "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy"
     },
+    // Test suite and inclusion details
+    "testDetails"            : {
+        // Boolean denoting whether pipeline tests will be enabled or disabled by default
+        "enableTests"            : true,
+        /*
+        Test targets triggered in 'nightly' build pipelines running 6 days per week
+        nightly + weekly to be run during a 'release' pipeline
+        */
+        "nightlyDefault"     : [
+            "sanity.openjdk",
+            "sanity.system",
+            "extended.system",
+            "sanity.perf",
+            "sanity.functional",
+            "extended.functional"
+        ],
+        /*
+        Test targets triggered in 'weekly' build pipelines running once per week
+        nightly + weekly to be run during a 'release' pipeline
+        */
+        "weeklyDefault"     : [
+            "extended.openjdk",
+            "extended.perf",
+            "special.functional"
+        ]
+    },
     // Script to import the adopt groovy class library (relative to this repository root)
     "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
     // Raw content URL of this (defaults.json) file. This is so the openjdk_build_pipeline.groovy script can set user default configs when checking out to the shell script repo

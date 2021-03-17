@@ -2,7 +2,7 @@ import groovy.json.JsonOutput
 
 gitRefSpec = ""
 propagateFailures = false
-runTests = true
+runTests = enableTests
 runInstaller = true
 runSigner = true
 cleanWsBuildOutput = true
