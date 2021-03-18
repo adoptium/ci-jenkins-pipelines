@@ -9,8 +9,9 @@ personally or at build farm scale.
 
 1. The `docs` folder contains images and utility scripts to produce up to date
 documentation.
-1. The `pipelines` folder contains the Groovy pipeline scripts for Jenkins
+2. The `pipelines` folder contains the Groovy pipeline scripts for Jenkins
 (e.g. build | test | checksum | release).
+3. The `tools` folder contains `pipelines/` analysis scripts that deliever success/failure trends and build scripts for code-tool dependancies for the build and test process (e.g. asmtools | jcov | jtharness | jtreg | sigtest).
 
 ## Configuration Files
 
