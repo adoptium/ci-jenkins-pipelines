@@ -205,6 +205,8 @@ node('master') {
           config.put("adoptScripts", true)
         }
 
+        config.put("enableTests", DEFAULTS_JSON['testDetails']['enableTests'] as Boolean)
+
         println "[INFO] JDK${javaVersion}: nightly pipelineSchedule = ${config.pipelineSchedule}"
 
         config.put("defaultsJson", DEFAULTS_JSON)

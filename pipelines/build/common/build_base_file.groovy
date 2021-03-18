@@ -63,29 +63,6 @@ class Builder implements Serializable {
     def context
     def env
 
-    /*
-    Test targets triggered in 'nightly' build pipelines running 6 days per week
-    nightly + weekly to be run during a 'release' pipeline
-    */
-    final List<String> nightly = [
-        'sanity.openjdk',
-        'sanity.system',
-        'extended.system',
-        'sanity.perf',
-        'sanity.functional',
-        'extended.functional'
-    ]
-
-    /*
-    Test targets triggered in 'weekly' build pipelines running once per week
-    nightly + weekly to be run during a 'release' pipeline
-    */
-    final List<String> weekly = [
-        'extended.openjdk',
-        'extended.perf',
-        'special.functional'
-    ]
-
     // Declare timeouts for each critical stage (unit is HOURS)
     Map pipelineTimeouts = [
         API_REQUEST_TIMEOUT : 1,
@@ -215,6 +192,8 @@ class Builder implements Serializable {
     We run different test categories depending on if this build is a release or nightly. This function parses and applies this to the individual build config.
     */
     List<String> getTestList(Map<String, ?> configuration) {
+        final List<String> nightly = DEFAULTS_JSON["testDetails"]["nightlyDefault"]
+        final List<String> weekly = DEFAULTS_JSON["testDetails"]["weeklyDefault"]
         List<String> testList = []
         /*
         * No test key or key value is test: false  --- test disabled
@@ -246,7 +225,7 @@ class Builder implements Serializable {
 
             }
         }
-        
+
         testList.unique()
 
         return testList
