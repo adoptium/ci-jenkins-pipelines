@@ -137,8 +137,9 @@ class Build {
         def (level, group) = testType.tokenize('.')
         jobParams.put('LEVELS', level)
         jobParams.put('GROUPS', group)
-        def number = getJavaVersionNumber()
-        jobParams.put('JDK_VERSIONS', number)
+        String jdkVersion = getJavaVersionNumber() as String
+        jobParams.put('JDK_VERSIONS', jdkVersion)
+        jobParams.put('JDK_IMPL', buildConfig.VARIANT)
         def variant
         switch (buildConfig.VARIANT) {
             case "openj9": variant = "j9"; break
@@ -147,13 +148,12 @@ class Build {
             case "bisheng": variant = "bisheng"; break;
             default: variant = "hs"
         }
-        jobParams.put('JDK_IMPL', variant)
         def arch = buildConfig.ARCHITECTURE
         if (arch == "x64") {
             arch = "x86-64"
         }
         def arch_os = "${arch}_${buildConfig.TARGET_OS}"    
-        def jobName = "Test_openjdk${number}_${variant}_${testType}_${arch_os}"
+        def jobName = "Test_openjdk${jdkVersion}_${variant}_${testType}_${arch_os}"
         if (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
             switch (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
                 case ~/.*XL.*/: 
@@ -275,7 +275,7 @@ class Build {
                             context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
                             def templatePath = 'testJobTemplate'
                             context.println "Test job doesn't exist, create test job: ${jobName}"
-                            jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
+                            context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                         }
 
                         context.catchError {
@@ -295,7 +295,7 @@ class Build {
                     }
                 }
             } catch (Exception e) {
-                context.println "Failed to execute test: ${e.getLocalizedMessage()}"
+                context.println "Failed to execute test: ${e.message}"
             }
         }
         return testStages
