@@ -1160,6 +1160,12 @@ class Build {
         ])
     }
 
+    def addNodeToBuildDescription() {
+        // Append to existing build description if not null
+        def tmpDesc = (context.currentBuild.description) ? context.currentBuild.description + "<br>" : ""
+        context.currentBuild.description = tmpDesc + "<a href=${context.JENKINS_URL}computer/${context.NODE_NAME}>${context.NODE_NAME}</a>"
+    }
+
     /*
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
     */
@@ -1209,6 +1215,7 @@ class Build {
 
                         context.println "[NODE SHIFT] MOVING INTO DOCKER NODE MATCHING LABELNAME ${label}..."
                         context.node(label) {
+                            addNodeToBuildDescription()
                             // Cannot clean workspace from inside docker container
                             if (cleanWorkspace) {
 
@@ -1283,6 +1290,7 @@ class Build {
                         waitForANodeToBecomeActive(buildConfig.NODE_LABEL)
                         context.println "[NODE SHIFT] MOVING INTO JENKINS NODE MATCHING LABELNAME ${buildConfig.NODE_LABEL}..."
                         context.node(buildConfig.NODE_LABEL) {
+                            addNodeToBuildDescription()
                             // This is to avoid windows path length issues.
                             context.echo("checking ${buildConfig.TARGET_OS}")
                             if (buildConfig.TARGET_OS == "windows") {
