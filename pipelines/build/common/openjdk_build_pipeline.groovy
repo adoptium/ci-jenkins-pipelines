@@ -1230,6 +1230,15 @@ class Build {
 
                             }
 
+                            // Pull the docker image from DockerHub
+                            try {
+                                context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: "HOURS") {
+                                    context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                }
+                            } catch (FlowInterruptedException e) {
+                                throw new Exception("[ERROR] Master docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
+                            }
+
                             // Use our docker file if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {
                                 try {
@@ -1255,15 +1264,7 @@ class Build {
                                     )
                                 }
 
-                            // Otherwise, pull the docker image from DockerHub
                             } else {
-                                try {
-                                    context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: "HOURS") {
-                                        context.docker.image(buildConfig.DOCKER_IMAGE).pull()
-                                    }
-                                } catch (FlowInterruptedException e) {
-                                    throw new Exception("[ERROR] Master docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
-                                }
 
                                 context.docker.image(buildConfig.DOCKER_IMAGE).inside {
                                     buildScripts(
