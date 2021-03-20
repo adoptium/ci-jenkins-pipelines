@@ -23,6 +23,8 @@ class IndividualBuildConfigTest {
                 DOCKER_IMAGE               : "o",
                 DOCKER_FILE                : "p",
                 DOCKER_NODE                : "q",
+                DOCKER_REGISTRY            : "u",
+                DOCKER_CREDENTIAL          : "v",
                 PLATFORM_CONFIG_LOCATION   : "r",
                 CONFIGURE_ARGS             : "i",
                 OVERRIDE_FILE_NAME_VERSION : "j",

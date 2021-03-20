@@ -102,6 +102,10 @@ class Builder implements Serializable {
 
         def dockerNode = getDockerNode(platformConfig, variant)
 
+        def dockerRegistry = getDockerRegistry(platformConfig, variant)
+
+        def dockerCredential = getDockerCredential(platformConfig, variant)
+
         def platformSpecificConfigPath = getPlatformSpecificConfigPath(platformConfig)
 
         def buildArgs = getBuildArgs(platformConfig, variant)
@@ -142,6 +146,8 @@ class Builder implements Serializable {
             DOCKER_IMAGE: dockerImage,
             DOCKER_FILE: dockerFile,
             DOCKER_NODE: dockerNode,
+            DOCKER_REGISTRY: dockerRegistry,
+            DOCKER_CREDENTIAL: dockerCredential,
             PLATFORM_CONFIG_LOCATION: platformSpecificConfigPath,
             CONFIGURE_ARGS: getConfigureArgs(platformConfig, additionalConfigureArgs, variant),
             OVERRIDE_FILE_NAME_VERSION: overrideFileNameVersion,
@@ -347,6 +353,39 @@ class Builder implements Serializable {
             }
         }
         return dockerNodeValue
+    }
+
+    /*
+    Retrieves the dockerRegistry attribute from the build configurations.
+    This is used to pull dockerImage from a custom registry.
+    If not specified, defaults to '' which will be DockerHub.
+    */
+    def getDockerRegistry(Map<String, ?> configuration, String variant) {
+        def dockerRegistryValue = ""
+        if (configuration.containsKey("dockerRegistry")) {
+            if (isMap(configuration.dockerRegistry)) {
+                dockerRegistryValue = (configuration.dockerRegistry as Map<String, ?>).get(variant)
+            } else {
+                dockerRegistryValue = configuration.dockerRegistry
+            }
+        }
+        return dockerRegistryValue
+    }
+
+    /*
+    Retrieves the dockerCredential attribute from the build configurations.
+    If used, this will wrap the docker pull with a docker login.
+    */
+    def getDockerCredential(Map<String, ?> configuration, String variant) {
+        def dockerCredentialValue = ""
+        if (configuration.containsKey("dockerCredential")) {
+            if (isMap(configuration.dockerCredential)) {
+                dockerCredentialValue = (configuration.dockerCredential as Map<String, ?>).get(variant)
+            } else {
+                dockerCredentialValue = configuration.dockerCredential
+            }
+        }
+        return dockerCredentialValue
     }
 
     /*
