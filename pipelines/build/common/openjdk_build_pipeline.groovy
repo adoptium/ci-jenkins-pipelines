@@ -272,12 +272,13 @@ class Build {
 
                         // Create test job if job doesn't exist or is not runnable
                         if (!JobHelper.jobIsRunnable(jobName as String)) {
-                            context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
-                            def templatePath = 'testJobTemplate'
-                            context.println "Test job doesn't exist, create test job: ${jobName}"
-                            context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
+                            context.node('master') { 
+	                            context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
+	                            def templatePath = 'testJobTemplate'
+	                            context.println "Test job doesn't exist, create test job: ${jobName}"
+	                            context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
+                            }
                         }
-
                         context.catchError {
                             context.build job: jobName,
                                     propagate: false,
