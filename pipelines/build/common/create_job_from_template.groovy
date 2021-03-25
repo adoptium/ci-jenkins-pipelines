@@ -24,6 +24,11 @@ String buildFolder = "$JOB_FOLDER"
 if (!binding.hasVariable('GIT_URL')) GIT_URL = "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git"
 if (!binding.hasVariable('GIT_BRANCH')) GIT_BRANCH = "master"
 
+isLightweight = true
+if (binding.hasVariable('PR_BUILDER')) {
+    isLightweight = false
+}
+
 folder(buildFolder) {
     description 'Automatically generated build jobs.'
 }
@@ -47,10 +52,11 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 }
             }
             scriptPath("${SCRIPT_PATH}")
+            lightweight(isLightweight)
         }
     }
     properties {
-	disableConcurrentBuilds()
+    disableConcurrentBuilds()
         copyArtifactPermission {
             projectNames('*')
         }
@@ -61,7 +67,6 @@ pipelineJob("$buildFolder/$JOB_NAME") {
     }
 
     parameters {
-        stringParam('NODE_LABEL', "$NODE_LABEL")
         textParam('BUILD_CONFIGURATION', "$BUILD_CONFIG", """
             <dl>
                 <dt><strong>ARCHITECTURE</strong></dt><dd>x64, ppc64, s390x...</dd>

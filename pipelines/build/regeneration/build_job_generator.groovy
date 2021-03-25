@@ -39,7 +39,7 @@ node ("master") {
   try {
     // Load git url and branch and gitBranch. These determine where we will be pulling configs from.
     def repoUri = (params.REPOSITORY_URL) ?: DEFAULTS_JSON["repository"]["pipeline_url"]
-    def repoBranch = (params.REPOSITORY_BRANCH) ?: DEFAULTS_JSON["repository"]["branch"]
+    def repoBranch = (params.REPOSITORY_BRANCH) ?: DEFAULTS_JSON["repository"]["pipeline_branch"]
 
     // Load credentials to be used in checking out. This is in case we are checking out a URL that is not Adopts and they don't have their ssh key on the machine.
     def checkoutCreds = (params.CHECKOUT_CREDENTIALS) ?: ""
@@ -56,9 +56,9 @@ node ("master") {
     /*
     Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
     */
-    def checkoutAdopt = { ->
+    def checkoutAdoptPipelines = { ->
       checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["branch"] ] ],
+        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["pipeline_branch"] ] ],
         userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
       ])
     }
@@ -66,14 +66,14 @@ node ("master") {
     /*
     Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
     */
-    def checkoutUser = { ->
+    def checkoutUserPipelines = { ->
       checkout([$class: 'GitSCM',
         branches: [ [ name: repoBranch ] ],
         userRemoteConfigs: [ remoteConfigs ]
       ])
     }
 
-    checkoutUser()
+    checkoutUserPipelines()
 
     // Import adopt class library. This contains groovy classes, used for carrying across metadata between jobs.
     def libraryPath = (params.LIBRARY_PATH) ?: DEFAULTS_JSON['importLibraryScript']
@@ -81,10 +81,10 @@ node ("master") {
       load "${WORKSPACE}/${libraryPath}"
     } catch (NoSuchFileException e) {
       println "[WARNING] ${libraryPath} does not exist in your repository. Attempting to pull Adopt's library script instead."
-      checkoutAdopt()
+      checkoutAdoptPipelines()
       libraryPath = ADOPT_DEFAULTS_JSON['importLibraryScript']
       load "${WORKSPACE}/${libraryPath}"
-      checkoutUser()
+      checkoutUserPipelines()
     }
 
     // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
@@ -102,14 +102,14 @@ node ("master") {
       } catch (NoSuchFileException e2) {
         println "[WARNING] U version does not exist. Likelihood is we are generating from a repository that isn't Adopt's. Pulling Adopt's build config in..."
 
-        checkoutAdopt()
+        checkoutAdoptPipelines()
         try {
           buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}_pipeline_config.groovy"
         } catch (NoSuchFileException e3) {
           buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}u_pipeline_config.groovy"
           javaVersion += "u"
         }
-        checkoutUser()
+        checkoutUserPipelines()
       }
     }
 
@@ -124,9 +124,9 @@ node ("master") {
       load targetConfigPath
     } catch (NoSuchFileException e) {
       println "[WARNING] ${targetConfigPath} does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightly config in..."
-      checkoutAdopt()
+      checkoutAdoptPipelines()
       load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}"
-      checkoutUser()
+      checkoutUserPipelines()
     }
 
     if (targetConfigurations == null) {
@@ -135,33 +135,33 @@ node ("master") {
 
     // Pull in other parametrised values (or use defaults if they're not defined)
     def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["rootDirectory"]
-    def jenkinsBuildRoot = (params.JENKINS_BUILD_ROOT) ?: "${DEFAULTS_JSON['jenkinsDetails']["rootUrl"]}/job/${jobRoot}/"
+    def jenkinsBuildRoot = (params.JENKINS_BUILD_ROOT) ?: "${DEFAULTS_JSON['jenkinsDetails']['rootUrl']}/job/${jobRoot}/"
 
     def jobTemplatePath = (params.JOB_TEMPLATE_PATH) ?: DEFAULTS_JSON["templateDirectories"]["downstream"]
     if (!fileExists(jobTemplatePath)) {
       println "[WARNING] ${jobTemplatePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-      checkoutAdopt()
+      checkoutAdoptPipelines()
       jobTemplatePath = ADOPT_DEFAULTS_JSON['templateDirectories']['downstream']
       println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
-      checkoutUser()
+      checkoutUserPipelines()
     }
 
     def scriptPath = (params.SCRIPT_PATH) ?: DEFAULTS_JSON["scriptDirectories"]["downstream"]
     if (!fileExists(scriptPath)) {
       println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-      checkoutAdopt()
+      checkoutAdoptPipelines()
       scriptPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['downstream']
       println "[SUCCESS] The path is now ${scriptPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
-      checkoutUser()
+      checkoutUserPipelines()
     }
 
     def baseFilePath = (params.BASE_FILE_PATH) ?: DEFAULTS_JSON["baseFileDirectories"]["downstream"]
     if (!fileExists(baseFilePath)) {
       println "[WARNING] ${baseFilePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-      checkoutAdopt()
+      checkoutAdoptPipelines()
       baseFilePath = ADOPT_DEFAULTS_JSON['baseFileDirectories']['downstream']
       println "[SUCCESS] The path is now ${baseFilePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
-      checkoutUser()
+      checkoutUserPipelines()
     }
 
     def excludes = (params.EXCLUDES_LIST) ?: ""
@@ -191,9 +191,9 @@ node ("master") {
       regenerationScript = load "${WORKSPACE}/${regenScriptPath}"
     } catch (NoSuchFileException e) {
       println "[WARNING] ${regenScriptPath} does not exist in your chosen repository. Using adopt's script path instead"
-      checkoutAdopt()
+      checkoutAdoptPipelines()
       regenerationScript = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['scriptDirectories']['regeneration']}"
-      checkoutUser()
+      checkoutUserPipelines()
     }
 
     if (jenkinsCreds != "") {
@@ -221,7 +221,8 @@ node ("master") {
           scriptPath,
           jenkinsBuildRoot,
           jenkinsCredentials,
-          checkoutCreds
+          checkoutCreds,
+          false
         ).regenerate()
       }
     } else {
@@ -243,7 +244,8 @@ node ("master") {
         scriptPath,
         jenkinsBuildRoot,
         jenkinsCreds,
-        checkoutCreds
+        checkoutCreds,
+        false
       ).regenerate()
     }
 

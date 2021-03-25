@@ -4,7 +4,7 @@
 ## Linter GitHub Actions ##
 ###########################
 ###########################
-name: Lint Code Base
+name: Linter
 
 #
 # Documentation:
@@ -53,7 +53,7 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Markdown lint complains about the issue templates
-          FILTER_REGEX_EXCLUDE: .github/workflows/ISSUE_TEMPLATE/*
+          FILTER_REGEX_EXCLUDE: .github/ISSUE_TEMPLATE/*
           # Lots of shellcheck errors - need fixing
           VALIDATE_BASH: false
           # Someone should investigate adding these at some point

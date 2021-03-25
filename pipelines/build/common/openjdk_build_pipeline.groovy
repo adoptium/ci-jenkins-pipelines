@@ -1,6 +1,5 @@
 import common.IndividualBuildConfig
 import common.MetaData
-@Library('local-lib@master')
 import common.VersionInfo
 import common.RepoHandler
 import groovy.json.*
@@ -133,33 +132,40 @@ class Build {
     The test jobs all follow the same name naming pattern that is defined in the openjdk-tests repository.
     E.g. Test_openjdk11_hs_sanity.system_ppc64_aix
     */
-    def determineTestJobName(testType) {
-
+    def getTestJobParams(testType) {
+        def jobParams = [:]
+        def (level, group) = testType.tokenize('.')
+        jobParams.put('LEVELS', level)
+        jobParams.put('GROUPS', group)
+        String jdkVersion = getJavaVersionNumber() as String
+        jobParams.put('JDK_VERSIONS', jdkVersion)
+        jobParams.put('JDK_IMPL', buildConfig.VARIANT)
         def variant
-        def number = getJavaVersionNumber()
-
         switch (buildConfig.VARIANT) {
             case "openj9": variant = "j9"; break
             case "corretto": variant = "corretto"; break
             case "dragonwell": variant = "dragonwell"; break;
+            case "bisheng": variant = "bisheng"; break;
             default: variant = "hs"
         }
-
         def arch = buildConfig.ARCHITECTURE
         if (arch == "x64") {
             arch = "x86-64"
         }
-
-        def os = buildConfig.TARGET_OS
-
-        def jobName = "Test_openjdk${number}_${variant}_${testType}_${arch}_${os}"
-
+        def arch_os = "${arch}_${buildConfig.TARGET_OS}"    
+        def jobName = "Test_openjdk${jdkVersion}_${variant}_${testType}_${arch_os}"
         if (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
             switch (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
-                case ~/.*XL.*/: jobName += "_xl"; break
+                case ~/.*XL.*/: 
+                    jobName += "_xl";
+                    arch_os += "_xl";
+                    break
             }
         }
-        return "${jobName}"
+        jobParams.put('TEST_JOB_NAME', jobName)
+        jobParams.put('ARCH_OS_LIST', arch_os)
+        jobParams.put('LIGHT_WEIGHT_CHECKOUT', true)
+        return jobParams
     }
 
     /*
@@ -184,6 +190,8 @@ class Build {
             } else if (buildConfig.VARIANT == "hotspot"){
                 jdkBranch = 'dev'
             } else if (buildConfig.VARIANT == "dragonwell") {
+                jdkBranch = 'master'
+            } else if (buildConfig.VARIANT == "bisheng") {
                 jdkBranch = 'master'
             } else {
                 throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
@@ -215,6 +223,8 @@ class Build {
             suffix = "adoptopenjdk/openjdk-${buildConfig.JAVA_TO_BUILD}"
         } else if (buildConfig.VARIANT == "dragonwell") {
             suffix = "alibaba/dragonwell${javaNumber}"
+        } else if (buildConfig.VARIANT == "bisheng") {
+            suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
         } else {
             throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
         }
@@ -241,54 +251,52 @@ class Build {
 
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
-        if (buildConfig.VARIANT == "corretto") {
-            testList = buildConfig.TEST_LIST.minus(['sanity.external'])
-        } else {
-            testList = buildConfig.TEST_LIST
-        }
+        testList = buildConfig.TEST_LIST
 
         testList.each { testType ->
 
-			// For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
-			try {
-				context.println "Running test: ${testType}"
-				testStages["${testType}"] = {
-					context.stage("${testType}") {
-						def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
-						if (("${testType}".contains("openjdk")) || ("${testType}".contains("jck"))) {
-							// Keep test reportdir always for JUnit targets
-							keep_test_reportdir = "true"
-						}
+            // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
+            try {
+                context.println "Running test: ${testType}"
+                testStages["${testType}"] = {
+                    context.stage("${testType}") {
+                        def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
+                        if (("${testType}".contains("openjdk")) || ("${testType}".contains("jck"))) {
+                            // Keep test reportdir always for JUnit targets
+                            keep_test_reportdir = "true"
+                        }
 
-                        // example jobName: Test_openjdk11_hs_sanity.system_ppc64_aix
-                        def jobName = determineTestJobName(testType)
-
+                        def jobParams = getTestJobParams(testType)
+                        def jobName = jobParams.TEST_JOB_NAME
                         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
 
-                        // Execute test job
-						if (JobHelper.jobIsRunnable(jobName as String)) {
-							context.catchError {
-								context.build job: jobName,
-										propagate: false,
-										parameters: [
-												context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-												context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-												context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
-												context.string(name: 'JDK_REPO', value: jdkRepo),
-												context.string(name: 'JDK_BRANCH', value: jdkBranch),
-												context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-												context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-												context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
-												context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
-							}
-						} else {
-							context.println "[WARNING] Requested test job that does not exist or is disabled: ${jobName}"
-						}
-					}
-				}
-			} catch (Exception e) {
-				context.println "Failed to execute test: ${e.getLocalizedMessage()}"
-			}
+                        // Create test job if job doesn't exist or is not runnable
+                        if (!JobHelper.jobIsRunnable(jobName as String)) {
+                            context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
+                            def templatePath = 'testJobTemplate'
+                            context.println "Test job doesn't exist, create test job: ${jobName}"
+                            context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
+                        }
+
+                        context.catchError {
+                            context.build job: jobName,
+                                    propagate: false,
+                                    parameters: [
+                                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                            context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
+                                            context.string(name: 'JDK_REPO', value: jdkRepo),
+                                            context.string(name: 'JDK_BRANCH', value: jdkBranch),
+                                            context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                            context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
+                                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                context.println "Failed to execute test: ${e.message}"
+            }
         }
         return testStages
     }
@@ -415,26 +423,24 @@ class Build {
         def filter = "**/OpenJDK*_linux_*.tar.gz"
         def nodeFilter = "${buildConfig.TARGET_OS}&&fpm"
 
-        def buildNumber = versionData.build
-
         String releaseType = "Nightly"
         if (buildConfig.RELEASE) {
             releaseType = "Release"
         }
 
         // Execute installer job
-        def installerJob = context.build job: "build-scripts/release/create_installer_linux",
-                propagate: true,
-                parameters: [
-                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                        context.string(name: 'FILTER', value: "${filter}"),
-                        context.string(name: 'RELEASE_TYPE', value: "${releaseType}"),
-                        context.string(name: 'VERSION', value: "${versionData.version}"),
-                        context.string(name: 'MAJOR_VERSION', value: "${versionData.major}"),
-                        context.string(name: 'ARCHITECTURE', value: "${buildConfig.ARCHITECTURE}"),
-                        ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
-                ]
+        context.build job: "build-scripts/release/create_installer_linux",
+            propagate: true,
+            parameters: [
+                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                    context.string(name: 'FILTER', value: "${filter}"),
+                    context.string(name: 'RELEASE_TYPE', value: "${releaseType}"),
+                    context.string(name: 'VERSION', value: "${versionData.version}"),
+                    context.string(name: 'MAJOR_VERSION', value: "${versionData.major}"),
+                    context.string(name: 'ARCHITECTURE', value: "${buildConfig.ARCHITECTURE}"),
+                    ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
+            ]
 
     }
 
@@ -540,10 +546,10 @@ class Build {
         context.node('master') {
             context.stage("installer") {
                 switch (buildConfig.TARGET_OS) {
-                    case "mac": context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt; done'; buildMacInstaller(versionData); break
+                    case "mac": context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt'; buildMacInstaller(versionData); break
                     case "linux": buildLinuxInstaller(versionData); break
                     case "windows": buildWindowsInstaller(versionData); break
-                    default: return; break
+                    default: break
                 }
 
                 // Archive the Mac and Windows pkg/msi
@@ -914,7 +920,9 @@ class Build {
         useAdoptShellScripts
     ) {
         return context.stage("build") {
+            // Create the repo handler with the user's defaults to ensure a openjdk-build checkout is not null
             def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
+            repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
             if (cleanWorkspace) {
                 try {
 
@@ -950,9 +958,9 @@ class Build {
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: "HOURS") {
                     if (useAdoptShellScripts) {
-                        repoHandler.checkoutAdopt()
+                        repoHandler.checkoutAdoptPipelines()
                     } else {
-                        context.checkout context.scm
+                        repoHandler.checkoutUserPipelines()
                     }
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
@@ -968,11 +976,11 @@ class Build {
                 envVars.add("FILENAME=${filename}" as String)
 
                 // Add in the adopt platform config path so it can be used if the user doesn't have one
-                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['url']).minus(".git").split('/')
+                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']).minus(".git").split('/')
                 // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
                 String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
                 // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${ADOPT_DEFAULTS_JSON['repository']['branch']}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
+                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${ADOPT_DEFAULTS_JSON['repository']['build_branch']}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
 
                 // Execute build
                 context.withEnv(envVars) {
@@ -983,14 +991,23 @@ class Build {
                                 updateGithubCommitStatus("PENDING", "Build Started")
                             }
                             if (useAdoptShellScripts) {
-                                context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build to use their bash scripts..."
-                                repoHandler.checkoutAdopt()
-                                context.sh(script: "./build-farm/make-adopt-build-farm.sh")
+                                context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build to use their shell scripts..."
+                                repoHandler.checkoutAdoptBuild()
+                                context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                 context.println "[CHECKOUT] Reverting pre-build AdoptOpenJDK/openjdk-build checkout..."
-                                context.checkout context.scm
+
+                                // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
+                                if (env.JOB_NAME.contains("pr-tester")) {
+                                    context.checkout context.scm
+                                } else {
+                                    repoHandler.checkoutUserPipelines()
+                                }
                             } else {
-                                context.println "[INFO] Executing user bash scripts..."
-                                context.sh(script: "./build-farm/make-adopt-build-farm.sh")
+                                context.println "[CHECKOUT] Checking out to the user's openjdk-build..."
+                                repoHandler.checkoutUserBuild()
+                                context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                context.println "[CHECKOUT] Reverting pre-build user openjdk-build checkout..."
+                                repoHandler.checkoutUserPipelines()
                             }
                         }
                     } catch (FlowInterruptedException e) {
@@ -1143,6 +1160,12 @@ class Build {
         ])
     }
 
+    def addNodeToBuildDescription() {
+        // Append to existing build description if not null
+        def tmpDesc = (context.currentBuild.description) ? context.currentBuild.description + "<br>" : ""
+        context.currentBuild.description = tmpDesc + "<a href=${context.JENKINS_URL}computer/${context.NODE_NAME}>${context.NODE_NAME}</a>"
+    }
+
     /*
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
     */
@@ -1169,9 +1192,7 @@ class Build {
 
                 context.stage("queue") {
                     /* This loads the library containing two Helper classes, and causes them to be
-                    imported/updated from their repo. Without the library being imported here, runTests
-                    method will fail to execute the post-build test jobs for reasons unknown.
-                    */
+                    imported/updated from their repo. Without the library being imported here, runTests method will fail to execute the post-build test jobs for reasons unknown.*/
                     context.library(identifier: 'openjdk-jenkins-helper@master')
 
                     // Set Github Commit Status
@@ -1194,6 +1215,7 @@ class Build {
 
                         context.println "[NODE SHIFT] MOVING INTO DOCKER NODE MATCHING LABELNAME ${label}..."
                         context.node(label) {
+                            addNodeToBuildDescription()
                             // Cannot clean workspace from inside docker container
                             if (cleanWorkspace) {
 
@@ -1215,13 +1237,21 @@ class Build {
 
                             }
 
+                            // Pull the docker image from DockerHub
+                            try {
+                                context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: "HOURS") {
+                                    context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                }
+                            } catch (FlowInterruptedException e) {
+                                throw new Exception("[ERROR] Master docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
+                            }
+
                             // Use our docker file if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: "HOURS") {
                                         def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
-                                        // Temporarily use checkout adopt pending https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues/34
-                                        repoHandler.checkoutAdopt()
+                                        repoHandler.checkoutAdoptPipelines()
 
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
@@ -1241,15 +1271,7 @@ class Build {
                                     )
                                 }
 
-                            // Otherwise, pull the docker image from DockerHub
                             } else {
-                                try {
-                                    context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: "HOURS") {
-                                        context.docker.image(buildConfig.DOCKER_IMAGE).pull()
-                                    }
-                                } catch (FlowInterruptedException e) {
-                                    throw new Exception("[ERROR] Master docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
-                                }
 
                                 context.docker.image(buildConfig.DOCKER_IMAGE).inside {
                                     buildScripts(
@@ -1269,6 +1291,7 @@ class Build {
                         waitForANodeToBecomeActive(buildConfig.NODE_LABEL)
                         context.println "[NODE SHIFT] MOVING INTO JENKINS NODE MATCHING LABELNAME ${buildConfig.NODE_LABEL}..."
                         context.node(buildConfig.NODE_LABEL) {
+                            addNodeToBuildDescription()
                             // This is to avoid windows path length issues.
                             context.echo("checking ${buildConfig.TARGET_OS}")
                             if (buildConfig.TARGET_OS == "windows") {

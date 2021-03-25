@@ -7,7 +7,7 @@ class Config16 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
-        
+
         x64MacXL    : [
                 os                   : 'mac',
                 arch                 : 'x64',
@@ -36,7 +36,7 @@ class Config16 {
                         "hotspot"     : '--enable-dtrace'
                 ]
         ],
-        
+
         x64LinuxXL  : [
                 os                   : 'linux',
                 arch                 : 'x64',
@@ -56,12 +56,7 @@ class Config16 {
                 os                  : 'alpine-linux',
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : [
-                        // TODO: enable tests
-                        nightly: [],
-                        // release: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external', 'special.functional']
-                        release: []
-                ]
+                test                : 'default'
         ],
 
         x64Windows: [
@@ -70,7 +65,7 @@ class Config16 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default'
         ],
-        
+
         x64WindowsXL: [
                 os                   : 'windows',
                 arch                 : 'x64',
@@ -80,6 +75,7 @@ class Config16 {
                 configureArgs        : '--with-noncompressedrefs'
         ],
 
+        // TODO: Enable testing (https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues/77)
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
@@ -121,7 +117,7 @@ class Config16 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
-        
+
         s390xLinuxXL  : [
                 os                   : 'linux',
                 arch                 : 's390x',
@@ -141,7 +137,7 @@ class Config16 {
                 ]
 
         ],
-        
+
         ppc64leLinuxXL    : [
                 os                   : 'linux',
                 arch                 : 'ppc64le',
@@ -158,7 +154,7 @@ class Config16 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
-        
+
         aarch64LinuxXL    : [
                 os                   : 'linux',
                 dockerImage          : 'adoptopenjdk/centos7_build_image',

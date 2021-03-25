@@ -5,8 +5,6 @@ import org.junit.jupiter.api.Test
 
 class RepoHandlerTest {
 
-    private String fakeUserDefaults = "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/src/test/groovy/fakeDefaults.json"
-
     private Map testRemote = [
         "branch"  : "foo",
         "remotes" : [
@@ -22,9 +20,10 @@ class RepoHandlerTest {
 
         // Repository
         Assertions.assertTrue(adoptJson.repository instanceof Map)
-        Assertions.assertEquals(adoptJson.repository.url, "https://github.com/AdoptOpenJDK/openjdk-build.git")
+        Assertions.assertEquals(adoptJson.repository.build_url, "https://github.com/AdoptOpenJDK/openjdk-build.git")
+        Assertions.assertEquals(adoptJson.repository.build_branch, "master")
         Assertions.assertEquals(adoptJson.repository.pipeline_url, "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git")
-        Assertions.assertEquals(adoptJson.repository.branch, "master")
+        Assertions.assertEquals(adoptJson.repository.pipeline_branch, "master")
 
         // Jenkins Details
         Assertions.assertTrue(adoptJson.jenkinsDetails instanceof Map)
@@ -50,6 +49,7 @@ class RepoHandlerTest {
         Assertions.assertEquals(adoptJson.scriptDirectories.weekly, "pipelines/build/common/weekly_release_pipeline.groovy")
         Assertions.assertEquals(adoptJson.scriptDirectories.regeneration, "pipelines/build/common/config_regeneration.groovy")
         Assertions.assertEquals(adoptJson.scriptDirectories.tester, "pipelines/build/prTester/pr_test_pipeline.groovy")
+        Assertions.assertEquals(adoptJson.scriptDirectories.buildfarm, "build-farm/make-adopt-build-farm.sh")
 
         // Base files
         Assertions.assertTrue(adoptJson.baseFileDirectories instanceof Map)
@@ -58,18 +58,29 @@ class RepoHandlerTest {
 
         // Import library
         Assertions.assertEquals(adoptJson.importLibraryScript, "pipelines/build/common/import_lib.groovy")
+
+        // Defaults URL
+        Assertions.assertEquals(adoptJson.defaultsUrl, "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json")
+
+        // Test details
+        Assertions.assertTrue(adoptJson.testDetails.enableTests instanceof Boolean)
+        Assertions.assertEquals(adoptJson.testDetails.nightlyDefault instanceof List)
+        Assertions.assertEquals(adoptJson.testDetails.weeklyDefault instanceof List)
     }
 
     @Test
     void userDefaultsSetterAndGetterReturns() {
         RepoHandler handler = new RepoHandler(this, [:])
-        handler.setUserDefaultsJson(fakeUserDefaults)
+        String fakeDefaults = new File(System.getProperty("user.dir") + '/src/test/groovy/fakeDefaults.json').text
+        handler.setUserDefaultsJson(this, fakeDefaults)
         Map userJson = handler.getUserDefaultsJson()
 
         // Repository
         Assertions.assertTrue(userJson.repository instanceof Map)
-        Assertions.assertEquals(userJson.repository.url, "1")
-        Assertions.assertEquals(userJson.repository.branch, "2")
+        Assertions.assertEquals(userJson.repository.build_url, "1")
+        Assertions.assertEquals(userJson.repository.build_branch, "20")
+        Assertions.assertEquals(userJson.repository.pipeline_url, "19")
+        Assertions.assertEquals(userJson.repository.pipeline_branch, "21")
 
         // Jenkins Details
         Assertions.assertTrue(userJson.jenkinsDetails instanceof Map)
@@ -95,6 +106,7 @@ class RepoHandlerTest {
         Assertions.assertEquals(userJson.scriptDirectories.weekly, "13")
         Assertions.assertEquals(userJson.scriptDirectories.regeneration, "14")
         Assertions.assertEquals(userJson.scriptDirectories.tester, "15")
+        Assertions.assertEquals(userJson.scriptDirectories.buildfarm, "22")
 
         // Base files
         Assertions.assertTrue(userJson.baseFileDirectories instanceof Map)
@@ -103,6 +115,15 @@ class RepoHandlerTest {
 
         // Import library
         Assertions.assertEquals(userJson.importLibraryScript, "18")
+
+        // Defaults URL
+        Assertions.assertEquals(userJson.defaultsUrl, "23")
+
+        // Test details
+        Assertions.assertTrue(userJson.testDetails.enableTests instanceof Boolean)
+        Assertions.assertTrue(userJson.testDetails.enableTests)
+        Assertions.assertEquals(adoptJson.testDetails.nightlyDefault, [ "test1", "test2", "test3" ])
+        Assertions.assertEquals(adoptJson.testDetails.weeklyDefault, [ "test4", "test5", "test6" ])
     }
 
     @Test

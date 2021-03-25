@@ -26,9 +26,9 @@ node('master') {
     /*
     Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
     */
-    def checkoutAdopt = { ->
+    def checkoutAdoptPipelines = { ->
       checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["branch"] ] ],
+        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["pipeline_branch"] ] ],
         userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
       ])
     }
@@ -36,7 +36,7 @@ node('master') {
     /*
     Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
     */
-    def checkoutUser = { ->
+    def checkoutUserPipelines = { ->
       checkout([$class: 'GitSCM',
         branches: [ [ name: repoBranch ] ],
         userRemoteConfigs: [ remoteConfigs ]
@@ -49,7 +49,7 @@ node('master') {
 
       // Load git url and branch and gitBranch. These determine where we will be pulling user configs from.
       def repoUri = (params.REPOSITORY_URL) ?: DEFAULTS_JSON["repository"]["pipeline_url"]
-      repoBranch = (params.REPOSITORY_BRANCH) ?: DEFAULTS_JSON["repository"]["branch"]
+      repoBranch = (params.REPOSITORY_BRANCH) ?: DEFAULTS_JSON["repository"]["pipeline_branch"]
 
       // Load credentials to be used in checking out. This is in case we are checking out a URL that is not Adopts and they don't have their ssh key on the machine.
       def checkoutCreds = (params.CHECKOUT_CREDENTIALS) ?: ""
@@ -62,7 +62,7 @@ node('master') {
       }
 
       // Checkout into user repository
-      checkoutUser()
+      checkoutUserPipelines()
 
       // Load the adopt class library so we can use their classes here. If we don't find an import library script in the user's repo, we checkout to openjdk-build and use the one that's present there. Finally, we check back out to the user repo.
       def libraryPath = (params.LIBRARY_PATH) ?: DEFAULTS_JSON['importLibraryScript']
@@ -71,9 +71,9 @@ node('master') {
       } catch (NoSuchFileException e) {
         println "[WARNING] ${libraryPath} does not exist in your repository. Attempting to pull Adopt's library script instead."
 
-        checkoutAdopt()
+        checkoutAdoptPipelines()
         load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['importLibraryScript']}"
-        checkoutUser()
+        checkoutUserPipelines()
       }
 
       // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
@@ -84,10 +84,10 @@ node('master') {
 
       if (!fileExists(scriptFolderPath)) {
         println "[WARNING] ${scriptFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-        checkoutAdopt()
+        checkoutAdoptPipelines()
         scriptFolderPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['upstream']
-        println "[SUCCESS] The path is now ${scriptFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
-        checkoutUser()
+        println "[SUCCESS] The path is now ${scriptFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+        checkoutUserPipelines()
       }
 
       // Load nightlyFolderPath. This is the folder where the jdkxx.groovy code is located compared to the repository root. These define what the default set of nightlies will be.
@@ -95,10 +95,10 @@ node('master') {
 
       if (!fileExists(nightlyFolderPath)) {
         println "[WARNING] ${nightlyFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-        checkoutAdopt()
+        checkoutAdoptPipelines()
         nightlyFolderPath = ADOPT_DEFAULTS_JSON['configDirectories']['nightly']
-        println "[SUCCESS] The path is now ${nightlyFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
-        checkoutUser()
+        println "[SUCCESS] The path is now ${nightlyFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+        checkoutUserPipelines()
       }
 
       // Load jobTemplatePath. This is where the pipeline_job_template.groovy code is located compared to the repository root. This actually sets up the pipeline job using the parameters above.
@@ -106,10 +106,10 @@ node('master') {
 
       if (!fileExists(jobTemplatePath)) {
         println "[WARNING] ${jobTemplatePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-        checkoutAdopt()
+        checkoutAdoptPipelines()
         jobTemplatePath = ADOPT_DEFAULTS_JSON['templateDirectories']['upstream']
-        println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
-        checkoutUser()
+        println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+        checkoutUserPipelines()
       }
 
       // Load enablePipelineSchedule. This determines whether we will be generating the pipelines with a schedule (defined in jdkxx.groovy) or not.
@@ -172,7 +172,7 @@ node('master') {
           } catch(NoSuchFileException e2) {
             println "[WARNING] jdk${javaVersion}u.groovy does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightlies in..."
 
-            checkoutAdopt()
+            checkoutAdoptPipelines()
             try {
               target = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}.groovy"
             } catch (NoSuchFileException e3) {
@@ -183,7 +183,7 @@ node('master') {
                 return
               }
             }
-            checkoutUser()
+            checkoutUserPipelines()
 
           }
         }
@@ -205,6 +205,8 @@ node('master') {
           config.put("adoptScripts", true)
         }
 
+        config.put("enableTests", DEFAULTS_JSON['testDetails']['enableTests'] as Boolean)
+
         println "[INFO] JDK${javaVersion}: nightly pipelineSchedule = ${config.pipelineSchedule}"
 
         config.put("defaultsJson", DEFAULTS_JSON)
@@ -217,10 +219,10 @@ node('master') {
         try {
           jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: config
         } catch (Exception e) {
-          println "[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead...\n${e}"
-          checkoutAdopt()
+          println "${e}\n[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
+          checkoutAdoptPipelines()
           jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['upstream'], ignoreExisting: false, additionalParameters: config
-          checkoutUser()
+          checkoutUserPipelines()
         }
 
         target.disableJob = false
@@ -232,10 +234,10 @@ node('master') {
         config.SCRIPT = (params.WEEKLY_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['weekly']
         if (!fileExists(config.SCRIPT)) {
           println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Updating it to use Adopt's instead"
-          checkoutAdopt()
+          checkoutAdoptPipelines()
           config.SCRIPT = ADOPT_DEFAULTS_JSON['scriptDirectories']['weekly']
-          println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['url']}"
-          checkoutUser()
+          println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+          checkoutUserPipelines()
         }
         config.PIPELINE = "openjdk${javaVersion}-pipeline"
         config.weekly_release_scmReferences = target.weekly_release_scmReferences
@@ -256,10 +258,10 @@ node('master') {
         try {
           jobDsl targets: weeklyTemplatePath, ignoreExisting: false, additionalParameters: config
         } catch (Exception e) {
-          println "[WARNING] Something went wrong when creating the weekly job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead...\n${e}"
-          checkoutAdopt()
+          println "${e}\n[WARNING] Something went wrong when creating the weekly job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
+          checkoutAdoptPipelines()
           jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weeklyTemplatePath'], ignoreExisting: false, additionalParameters: config
-          checkoutUser()
+          checkoutUserPipelines()
         }
 
         target.disableJob = false

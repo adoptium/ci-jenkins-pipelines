@@ -1,8 +1,9 @@
 {
     "repository"             : {
-        "url"                : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        "build_branch"       : "master",
         "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
-        "branch"             : "master"
+        "pipeline_branch"    : "master"
     },
     "jenkinsDetails"         : {
         "rootUrl"            : "https://ci.adoptopenjdk.net",
@@ -23,11 +24,29 @@
         "downstream"         : "pipelines/build/common/kick_off_build.groovy",
         "weekly"             : "pipelines/build/common/weekly_release_pipeline.groovy",
         "regeneration"       : "pipelines/build/common/config_regeneration.groovy",
-        "tester"             : "pipelines/build/prTester/pr_test_pipeline.groovy"
+        "tester"             : "pipelines/build/prTester/pr_test_pipeline.groovy",
+        "buildfarm"          : "build-farm/make-adopt-build-farm.sh"
     },
     "baseFileDirectories": {
         "upstream"           : "pipelines/build/common/build_base_file.groovy",
         "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy"
     },
-    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy"
+    "testDetails"            : {
+        "enableTests"        : true,
+        "nightlyDefault"     : [
+            "sanity.openjdk",
+            "sanity.system",
+            "extended.system",
+            "sanity.perf",
+            "sanity.functional",
+            "extended.functional"
+        ],
+        "weeklyDefault"     : [
+            "extended.openjdk",
+            "extended.perf",
+            "special.functional"
+        ]
+    },
+    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
+    "defaultsUrl"            : "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }

@@ -1,4 +1,3 @@
-@Library('local-lib@master')
 import common.IndividualBuildConfig
 import common.RepoHandler
 import groovy.json.JsonSlurper
@@ -45,6 +44,7 @@ class Regeneration implements Serializable {
     private final def jenkinsBuildRoot
     private final def jenkinsCreds
     private final def checkoutCreds
+    private final Boolean prBuilder
 
     private String javaToBuild
     private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
@@ -72,7 +72,8 @@ class Regeneration implements Serializable {
         String scriptPath,
         String jenkinsBuildRoot,
         String jenkinsCreds,
-        String checkoutCreds
+        String checkoutCreds,
+        Boolean prBuilder
     ) {
         this.javaVersion = javaVersion
         this.buildConfigurations = buildConfigurations
@@ -91,6 +92,7 @@ class Regeneration implements Serializable {
         this.jenkinsBuildRoot = jenkinsBuildRoot
         this.jenkinsCreds = jenkinsCreds
         this.checkoutCreds = checkoutCreds
+        this.prBuilder = prBuilder
     }
 
     /*
@@ -117,13 +119,24 @@ class Regeneration implements Serializable {
     }
 
     def getArchLabel(Map<String, ?> configuration, String variant) {
-        def archLabelVal = ""
+        // Default to arch
+        def archLabelVal = configuration.arch
+
         // Workaround for cross compiled architectures
         if (configuration.containsKey("crossCompile")) {
-            archLabelVal = configuration.crossCompile
-        } else {
-            archLabelVal = configuration.arch
+            def configArchLabelVal
+
+            if (isMap(configuration.crossCompile)) {
+                configArchLabelVal = (configuration.crossCompile as Map<String, ?>).get(variant)
+            } else {
+                configArchLabelVal = configuration.crossCompile
+            }
+
+            if (configArchLabelVal != null) {
+                archLabelVal = configArchLabelVal
+            }
         }
+
         return archLabelVal
     }
 
@@ -183,16 +196,16 @@ class Regeneration implements Serializable {
     This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
-        def splitUserUrl = ((String)DEFAULTS_JSON['repository']['url']).minus(".git").split('/')
+        def splitUserUrl = ((String)DEFAULTS_JSON['repository']['build_url']).minus(".git").split('/')
         // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
 
         if (configuration.containsKey("platformSpecificConfigPath")) {
             // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations.linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -374,7 +387,7 @@ class Regeneration implements Serializable {
                 RELEASE: false,
                 PUBLISH_NAME: "",
                 ADOPT_BUILD_NUMBER: "",
-                ENABLE_TESTS: true,
+                ENABLE_TESTS: DEFAULTS_JSON['testDetails']['enableTests'] as Boolean,
                 ENABLE_INSTALLERS: true,
                 ENABLE_SIGNER: true,
                 CLEAN_WORKSPACE: true,
@@ -438,15 +451,20 @@ class Regeneration implements Serializable {
             params.put("CHECKOUT_CREDENTIALS", "")
         }
 
+        // Make sure the dsl knows if we're building inside the pr tester
+        if (prBuilder) {
+            params.put("PR_BUILDER", true)
+        }
+
         // Execute job dsl, using adopt's template if the user doesn't have one
         def create = null
         try {
             create = context.jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: params
         } catch (Exception e) {
             context.println "[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead. Error:\n${e}"
-            repoHandler.checkoutAdopt()
+            repoHandler.checkoutAdoptPipelines()
             create = context.jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['downstream'], ignoreExisting: false, additionalParameters: params
-            repoHandler.checkoutUser()
+            repoHandler.checkoutUserPipelines()
         }
 
         return create
@@ -660,7 +678,8 @@ return {
     String scriptPath,
     String jenkinsBuildRoot,
     String jenkinsCreds,
-    String checkoutCreds
+    String checkoutCreds,
+    Boolean prBuilder
         ->
 
         def excludedBuilds = [:]
@@ -686,6 +705,7 @@ return {
             scriptPath,
             jenkinsBuildRoot,
             jenkinsCreds,
-            checkoutCreds
+            checkoutCreds,
+            prBuilder
         )
 }

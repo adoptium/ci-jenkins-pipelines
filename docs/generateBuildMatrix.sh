@@ -8,7 +8,7 @@ if [[ -f "/tmp/build.txt" ]]; then
   rm "/tmp/build_jobs.txt"
 fi
 
-for i in "jdk8u" "jdk11u" "jdk15u" "jdk16" "jdk";
+for i in "jdk8u" "jdk11u" "jdk15u" "jdk16u" "jdk";
 do
     curl -s "https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/${i}/" | egrep -o "job/${i}-[^\/]+" >> "/tmp/build_jobs.txt"
 done
@@ -23,7 +23,7 @@ cat "/tmp/build_jobs.txt" | cut -d'/' -f2 | sed -r 's/jdk[0-9]*u?\-//g' | sort |
 do
     # buildName should be of the form: aix-ppc64-hotspot
     echo -n "| ${buildName} | " >> "/tmp/build.txt"
-    for i in "jdk8u" "jdk11u" "jdk15u" "jdk16" "jdk";
+    for i in "jdk8u" "jdk11u" "jdk15u" "jdk16u" "jdk";
     do
         code=$(curl -L -s -o /dev/null -w "%{http_code}" "https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/${i}/job/${i}-${buildName}")
         if [[ ${code} = 200 ]]; then
