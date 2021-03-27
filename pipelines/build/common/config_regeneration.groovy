@@ -80,6 +80,7 @@ class Regeneration implements Serializable {
         this.targetConfigurations = targetConfigurations
         this.DEFAULTS_JSON = DEFAULTS_JSON
         this.excludedBuilds = excludedBuilds
+        this.sleepTime = sleepTime
         this.currentBuild = currentBuild
         this.context = context
         this.jobRootDir = jobRootDir
