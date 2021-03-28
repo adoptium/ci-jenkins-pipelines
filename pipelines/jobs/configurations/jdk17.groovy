@@ -33,6 +33,9 @@ targetConfigurations = [
                 "hotspot",
                 "openj9"
         ],
+        "armMac": [
+                "hotspot"
+        ],
         "arm32Linux"  : [
                 "hotspot"
         ]
