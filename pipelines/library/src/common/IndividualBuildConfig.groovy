@@ -19,6 +19,8 @@ class IndividualBuildConfig implements Serializable {
     final String DOCKER_IMAGE
     final String DOCKER_FILE
     final String DOCKER_NODE
+    final String DOCKER_REGISTRY
+    final String DOCKER_CREDENTIAL
     final String PLATFORM_CONFIG_LOCATION
     final String CONFIGURE_ARGS
     final String OVERRIDE_FILE_NAME_VERSION
@@ -63,6 +65,8 @@ class IndividualBuildConfig implements Serializable {
         DOCKER_IMAGE = map.get("DOCKER_IMAGE")
         DOCKER_FILE = map.get("DOCKER_FILE")
         DOCKER_NODE = map.get("DOCKER_NODE")
+        DOCKER_REGISTRY = map.get("DOCKER_REGISTRY")
+        DOCKER_CREDENTIAL = map.get("DOCKER_CREDENTIAL")
         PLATFORM_CONFIG_LOCATION = map.get("PLATFORM_CONFIG_LOCATION")
         CONFIGURE_ARGS = map.get("CONFIGURE_ARGS")
         OVERRIDE_FILE_NAME_VERSION = map.get("OVERRIDE_FILE_NAME_VERSION")
@@ -112,6 +116,8 @@ class IndividualBuildConfig implements Serializable {
                 DOCKER_IMAGE              : DOCKER_IMAGE,
                 DOCKER_FILE               : DOCKER_FILE,
                 DOCKER_NODE               : DOCKER_NODE,
+                DOCKER_REGISTRY           : DOCKER_REGISTRY,
+                DOCKER_CREDENTIAL         : DOCKER_CREDENTIAL,
                 PLATFORM_CONFIG_LOCATION  : PLATFORM_CONFIG_LOCATION,
                 CONFIGURE_ARGS            : CONFIGURE_ARGS,
                 OVERRIDE_FILE_NAME_VERSION: OVERRIDE_FILE_NAME_VERSION,

@@ -1242,7 +1242,13 @@ class Build {
                             // Pull the docker image from DockerHub
                             try {
                                 context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: "HOURS") {
-                                    context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                    if (buildConfig.DOCKER_CREDENTIAL) {
+                                        context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
+                                            context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                        }
+                                    } else {
+                                        context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                    }
                                 }
                             } catch (FlowInterruptedException e) {
                                 throw new Exception("[ERROR] Master docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
