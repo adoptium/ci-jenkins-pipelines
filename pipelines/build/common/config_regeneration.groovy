@@ -29,7 +29,7 @@ class Regeneration implements Serializable {
     private final Map<String, ?> targetConfigurations
     private final Map<String, ?> DEFAULTS_JSON
     private final Map<String, ?> excludedBuilds
-    private final Integer sleepTime
+    private Integer sleepTime
     private final def currentBuild
     private final def context
 
@@ -600,6 +600,10 @@ class Regeneration implements Serializable {
                                 }
 
                                 if (inProgress) {
+                                    // Null safety check sleep as sleeping null may cause jenkins DoS
+                                    if (!sleepTime) {
+                                        sleepTime = 900
+                                    }
                                     // Sleep for a bit, then check again...
                                     context.println "[INFO] ${pipeline} is running. Sleeping for ${sleepTime} seconds while waiting for ${pipeline} to complete..."
 
