@@ -600,6 +600,10 @@ class Regeneration implements Serializable {
                                 }
 
                                 if (inProgress) {
+                                    // Null safety check sleep as sleeping null/forever is possible
+                                    if (!sleepTime) {
+                                        sleepTime = 900
+                                    }
                                     // Sleep for a bit, then check again...
                                     context.println "[INFO] ${pipeline} is running. Sleeping for ${sleepTime} seconds while waiting for ${pipeline} to complete..."
 
