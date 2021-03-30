@@ -600,7 +600,7 @@ class Regeneration implements Serializable {
                                 }
 
                                 if (inProgress) {
-                                    // Null safety check sleep as sleeping null/forever is possible
+                                    // Null safety check sleep as sleeping null may cause jenkins DoS
                                     if (!sleepTime) {
                                         sleepTime = 900
                                     }
