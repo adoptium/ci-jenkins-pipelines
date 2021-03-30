@@ -29,7 +29,7 @@ class Regeneration implements Serializable {
     private final Map<String, ?> targetConfigurations
     private final Map<String, ?> DEFAULTS_JSON
     private final Map<String, ?> excludedBuilds
-    private final Integer sleepTime
+    private Integer sleepTime
     private final def currentBuild
     private final def context
 
