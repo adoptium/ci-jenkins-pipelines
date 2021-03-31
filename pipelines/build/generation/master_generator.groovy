@@ -1,4 +1,5 @@
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +17,10 @@ limitations under the License.
 
 node('master') {
   timestamps {
-    List RETIRED_VERSIONS = (params.RETIRED_VERSIONS) ?: [9, 10, 12, 13, 14, 15]
+    List RETIRED_VERSIONS = [9, 10, 12, 13, 14, 15]
+    if (params.RETIRED_VERSIONS) {
+      RETIRED_VERSIONS = new JsonSlurper().parseText(params.RETIRED_VERSIONS)
+    }
     String checkoutClass = 'GitSCM'
 
     // Pull in Adopt defaults
@@ -68,7 +72,7 @@ node('master') {
 
       // Load scriptPath. This is where the generator script is located compared to repository root.
       // TODO: THIS IS BROKEN
-      String scriptPath = (params."${generatorType.toUpperCase()}_GENERATOR_SCRIPT_PATH") ?: DEFAULTS_JSON['scriptDirectories']['generators'][generatorType]
+      String scriptPath = (params["${generatorType.toUpperCase()}_GENERATOR_SCRIPT_PATH"]) ?: DEFAULTS_JSON['scriptDirectories']['generators'][generatorType]
       if (!fileExists(scriptPath)) {
         println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
         checkoutAdopt()
@@ -79,7 +83,7 @@ node('master') {
       config.SCRIPT = scriptPath
 
       // Load jobTemplatePath. This is where the job template (downstream or upstream) is located compared to repository root.
-      String jobTemplatePath = (params."${generatorType.toUpperCase()}_JOB_TEMPLATE_PATH") ?: DEFAULTS_JSON['templateDirectories'][generatorType]
+      String jobTemplatePath = (params["${generatorType.toUpperCase()}_JOB_TEMPLATE_PATH"]) ?: DEFAULTS_JSON['templateDirectories'][generatorType]
       if (!fileExists(jobTemplatePath)) {
         println "[WARNING] ${jobTemplatePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
         checkoutAdopt()
@@ -90,7 +94,7 @@ node('master') {
       config["${generatorType.toUpperCase()}_JOB_TEMPLATE"] = jobTemplatePath
 
       // Load baseFilePath. The location of the downstream base file (called from the initial script) compared to the repository root.
-      String baseFilePath = (params."${generatorType.toUpperCase()}_BASEFILE_PATH") ?: DEFAULTS_JSON['baseFileDirectories'][generatorType]
+      String baseFilePath = (params["${generatorType.toUpperCase()}_BASEFILE_PATH"]) ?: DEFAULTS_JSON['baseFileDirectories'][generatorType]
       if (!fileExists(baseFilePath)) {
         println "[WARNING] ${baseFilePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
         checkoutAdopt()
@@ -147,7 +151,7 @@ node('master') {
         // Load sleepTime. This determines how long the downstream generator will sleep for before checking again if a job is running.
         Integer sleepTime = 900
         if (params.SLEEP_TIME) {
-          sleepTime = Integer.parseInt(DOWNSTREAM_SLEEP_TIME)
+          sleepTime = DOWNSTREAM_SLEEP_TIME as Integer
         }
         config.SLEEP_TIME = sleepTime
 
@@ -191,7 +195,7 @@ node('master') {
       }
 
       // Load generatorTemplatePath. This is where the generator template is located compared to repository root.
-      String generatorTemplatePath = (params."${generatorType.toUpperCase()}_GENERATOR_TEMPLATE_PATH") ?: DEFAULTS_JSON['templateDirectories']['generators'][generatorType]
+      String generatorTemplatePath = (params["${generatorType.toUpperCase()}_GENERATOR_TEMPLATE_PATH"]) ?: DEFAULTS_JSON['templateDirectories']['generators'][generatorType]
       if (!fileExists(generatorTemplatePath)) {
         println "[WARNING] ${generatorTemplatePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
         checkoutAdopt()
@@ -201,7 +205,7 @@ node('master') {
       }
       config["${generatorType.toUpperCase()}_GENERATOR_TEMPLATE"] = generatorTemplatePath
 
-      println "[INFO] FINAL CONFIG FOR ${generatorType.toUpperCase()} ${config.JOB_NAME}"
+      println "[INFO] FINAL CONFIG FOR ${generatorType.toUpperCase()} : ${config.JOB_NAME}"
       println JsonOutput.prettyPrint(JsonOutput.toJson(config))
 
       // Create job, using adopt's template if necessary
@@ -235,10 +239,10 @@ node('master') {
     checkoutUser()
 
     // Load genJobRoot. This is where the generator jobs will be created.
-    def genJobRoot = (params.GENERATOR_JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["generatorDirectory"]
+    String genJobRoot = (params.GENERATOR_JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["generatorDirectory"]
 
     // Load jobRoot. This is where the pipeline and downstream jobs will be created at.
-    def buildJobRoot = (params.BUILD_JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["rootDirectory"]
+    String buildJobRoot = (params.BUILD_JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["rootDirectory"]
 
     // Load nightlyFolderPath. This is where the pipeline scheduling details and nightly platforms are located.
     String nightlyFolderPath = (params.NIGHTLY_FOLDER_PATH) ?: DEFAULTS_JSON['configDirectories']['nightly']
