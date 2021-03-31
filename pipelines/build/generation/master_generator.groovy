@@ -173,7 +173,7 @@ node('master') {
         }
         config.SCRIPT_PATH = downstreamScriptPath
 
-        // Load regenBaseFilePath. The location of the downstream generation file (called from the initial script) compared to the repository root.
+        // Load genBaseFilePath. The location of the downstream generation file (called from the initial script) compared to the repository root.
         String genBaseFilePath = (params.DOWNSTREAM_GEN_BASEFILE_PATH) ?: DEFAULTS_JSON['scriptDirectories']['baseFileDirectories']['generation']
         if (!fileExists(genBaseFilePath)) {
           println "[WARNING] ${genBaseFilePath} does not exist in your chosen repository. Updating it to use Adopt's instead"

@@ -176,13 +176,13 @@ node ("master") {
     println "SLEEP_TIME: $sleepTime"
     if (jenkinsCreds == "") { println "[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error codes." }
 
-    // Load regen script and execute base file
+    // Load gen script and execute base file
     Closure generationScript
-    def regenScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['baseFileDirectories']['generation']
+    def genScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['baseFileDirectories']['generation']
     try {
-      generationScript = load "${WORKSPACE}/${regenScriptPath}"
+      generationScript = load "${WORKSPACE}/${genScriptPath}"
     } catch (NoSuchFileException e) {
-      println "[WARNING] ${regenScriptPath} does not exist in your chosen repository. Using adopt's script path instead"
+      println "[WARNING] ${genScriptPath} does not exist in your chosen repository. Using adopt's script path instead"
       checkoutAdopt()
       generationScript = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['baseFileDirectories']['generation']}"
       checkoutUserPipelines()

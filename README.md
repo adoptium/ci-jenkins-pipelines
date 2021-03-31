@@ -17,7 +17,7 @@ documentation.
 
 The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory contains two categories of configuration files that our jenkins pipelines use (Nicknamed [#Build Configs](#Build) and [#Nightly Configs](#Nightly) for short).
 
-To ensure both configurations are not overridden in a race condition scenario by another job, the [job generators](pipelines/build/regeneration/README.md) ensure they remain in the sync with the repository.
+To ensure both configurations are not overridden in a race condition scenario by another job, the [job generators](pipelines/build/generation/README.md) ensure they remain in the sync with the repository.
 
 **Generally, any new parameters/configurations that effect the jenkins environment directly should be implemented here.** If this is not the case, it would likely be better placed in [openjdk-build/platform-specific-configurations](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/build-farm/platform-specific-configurations) (for OS or `make-adopt-build-farm.sh` specific use cases) or [openjdk-build/build.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/sbin/build.sh) (for anyone, including end users and jenkins pipelines).
 

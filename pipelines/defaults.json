@@ -5,24 +5,24 @@
         "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
         "pipeline_branch"    : "master"
     },
-    "jenkinsDetails"              : {
-        "rootUrl"                 : "https://ci.adoptopenjdk.net",
-        "rootDirectory"           : "build-scripts",
-        "generatorDirectory"      : "build-scripts/utils/generators"
+    "jenkinsDetails"         : {
+        "rootUrl"            : "https://ci.adoptopenjdk.net",
+        "rootDirectory"      : "build-scripts",
+        "generatorDirectory" : "build-scripts/utils/generators"
     },
-    "templateDirectories"         : {
-        "downstream"              : "pipelines/build/templates/downstream_job_template.groovy",
-        "upstream"                : "pipelines/build/templates/pipeline_job_template.groovy",
-        "weekly"                  : "pipelines/build/templates/weekly_pipeline_job_template.groovy",
-        "generators"              : {
-            "upstream"            : "pipelines/build/templates/pipeline_generator_template.groovy",
-            "downstream"          : "pipelines/build/templates/downstream_generator_template.groovy"
+    "templateDirectories"    : {
+        "downstream"         : "pipelines/build/templates/downstream_job_template.groovy",
+        "upstream"           : "pipelines/build/templates/pipeline_job_template.groovy",
+        "weekly"             : "pipelines/build/templates/weekly_pipeline_job_template.groovy",
+        "generators"         : {
+            "upstream"       : "pipelines/build/templates/pipeline_generator_template.groovy",
+            "downstream"     : "pipelines/build/templates/downstream_generator_template.groovy"
         }
     },
-    "configDirectories"           : {
-        "build"                   : "pipelines/jobs/configurations",
-        "nightly"                 : "pipelines/jobs/configurations",
-        "platform"                : "build-farm/platform-specific-configurations"
+    "configDirectories"      : {
+        "build"              : "pipelines/jobs/configurations",
+        "nightly"            : "pipelines/jobs/configurations",
+        "platform"           : "build-farm/platform-specific-configurations"
     },
     "scriptDirectories"      : {
         "upstream"           : "pipelines/build",
@@ -50,7 +50,7 @@
             "sanity.functional",
             "extended.functional"
         ],
-        "weeklyDefault"     : [
+        "weeklyDefault"      : [
             "extended.openjdk",
             "extended.perf",
             "special.functional"
