@@ -65,30 +65,6 @@ class Builder implements Serializable {
     def context
     def env
 
-    /*
-    Test targets triggered in 'nightly' build pipelines running 6 days per week
-    nightly + weekly to be run during a 'release' pipeline
-    */
-    final List<String> nightly = [
-        'sanity.openjdk',
-        'sanity.system',
-        'extended.system',
-        'sanity.perf',
-        'sanity.functional',
-        'extended.functional'
-    ]
-
-    /*
-    Test targets triggered in 'weekly' build pipelines running once per week
-    nightly + weekly to be run during a 'release' pipeline
-    */
-    final List<String> weekly = [
-        'extended.openjdk',
-        'extended.perf',
-        'special.functional',
-        'sanity.external'
-    ]
-
     // Declare timeouts for each critical stage (unit is HOURS)
     Map pipelineTimeouts = [
         API_REQUEST_TIMEOUT : 1,
@@ -132,6 +108,10 @@ class Builder implements Serializable {
 
         def dockerNode = getDockerNode(platformConfig, variant)
 
+        def dockerRegistry = getDockerRegistry(platformConfig, variant)
+
+        def dockerCredential = getDockerCredential(platformConfig, variant)
+
         def platformSpecificConfigPath = getPlatformSpecificConfigPath(platformConfig)
 
         def buildArgs = getBuildArgs(platformConfig, variant)
@@ -172,6 +152,8 @@ class Builder implements Serializable {
             DOCKER_IMAGE: dockerImage,
             DOCKER_FILE: dockerFile,
             DOCKER_NODE: dockerNode,
+            DOCKER_REGISTRY: dockerRegistry,
+            DOCKER_CREDENTIAL: dockerCredential,
             PLATFORM_CONFIG_LOCATION: platformSpecificConfigPath,
             CONFIGURE_ARGS: getConfigureArgs(platformConfig, additionalConfigureArgs, variant),
             OVERRIDE_FILE_NAME_VERSION: overrideFileNameVersion,
@@ -222,6 +204,8 @@ class Builder implements Serializable {
     We run different test categories depending on if this build is a release or nightly. This function parses and applies this to the individual build config.
     */
     List<String> getTestList(Map<String, ?> configuration) {
+        final List<String> nightly = DEFAULTS_JSON["testDetails"]["nightlyDefault"]
+        final List<String> weekly = DEFAULTS_JSON["testDetails"]["weeklyDefault"]
         List<String> testList = []
         /*
         * No test key or key value is test: false  --- test disabled
@@ -255,6 +239,7 @@ class Builder implements Serializable {
         }
 
         testList.unique()
+
         return testList
     }
 
@@ -299,14 +284,25 @@ class Builder implements Serializable {
         return overrideDocker
     }
 
-    def getArchLabel(Map<String, ?> configuration) {
-        def archLabelVal = ""
+    def getArchLabel(Map<String, ?> configuration, String variant) {
+        // Default to arch
+        def archLabelVal = configuration.arch
+
         // Workaround for cross compiled architectures
         if (configuration.containsKey("crossCompile")) {
-            archLabelVal = configuration.crossCompile
-        } else {
-            archLabelVal = configuration.arch
+            def configArchLabelVal
+
+            if (isMap(configuration.crossCompile)) {
+                configArchLabelVal = (configuration.crossCompile as Map<String, ?>).get(variant)
+            } else {
+                configArchLabelVal = configuration.crossCompile
+            }
+
+            if (configArchLabelVal != null) {
+                archLabelVal = configArchLabelVal
+            }
         }
+
         return archLabelVal
     }
 
@@ -363,6 +359,39 @@ class Builder implements Serializable {
             }
         }
         return dockerNodeValue
+    }
+
+    /*
+    Retrieves the dockerRegistry attribute from the build configurations.
+    This is used to pull dockerImage from a custom registry.
+    If not specified, defaults to '' which will be DockerHub.
+    */
+    def getDockerRegistry(Map<String, ?> configuration, String variant) {
+        def dockerRegistryValue = ""
+        if (configuration.containsKey("dockerRegistry")) {
+            if (isMap(configuration.dockerRegistry)) {
+                dockerRegistryValue = (configuration.dockerRegistry as Map<String, ?>).get(variant)
+            } else {
+                dockerRegistryValue = configuration.dockerRegistry
+            }
+        }
+        return dockerRegistryValue
+    }
+
+    /*
+    Retrieves the dockerCredential attribute from the build configurations.
+    If used, this will wrap the docker pull with a docker login.
+    */
+    def getDockerCredential(Map<String, ?> configuration, String variant) {
+        def dockerCredentialValue = ""
+        if (configuration.containsKey("dockerCredential")) {
+            if (isMap(configuration.dockerCredential)) {
+                dockerCredentialValue = (configuration.dockerCredential as Map<String, ?>).get(variant)
+            } else {
+                dockerCredentialValue = configuration.dockerCredential
+            }
+        }
+        return dockerCredentialValue
     }
 
     /*

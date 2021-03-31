@@ -1,0 +1,97 @@
+# Config file used by .github/workflows/labeler.yml
+
+# This file matches issue/pr contents using regex to labels. See Multi Labeller https://github.com/marketplace/actions/multi-labeler for more information.
+
+# e.g to add the windows label to any issue/pr with a title containing the word windows:
+
+#   - label: "windows"
+#     matcher:
+#       title: "windows"
+
+# You can also regex match body, comments, commits, authors etc:
+
+#   - label: "feat"
+#     sync: true # remove label if match failed, default: false (pull_request/issue only)
+#     matcher:
+#       # Matcher will match on any 7 matcher
+#       title: "^feat:.*"
+#       body: "/feat"
+#       comment: "/feat"
+#       branch: "^feat/.*"
+#       commits: "^feat:.*"
+#       author:
+#         - github-actions
+#         - fuxingloh
+#       files:
+#         any: [ "app/*" ]
+#         all: [ "!app/config/**" ]
+#         count:
+#           gte: 1
+#           lte: 1000
+
+version: v1
+
+labels:
+  - label: "macos"
+    matcher:
+      title: "mac"
+  - label: "aix"
+    matcher:
+      title: "aix"
+  - label: "windows"
+    matcher:
+      title: "windows"
+  - label: "solaris"
+    matcher:
+      title: "solaris"
+  - label: "linux"
+    matcher:
+      title: "linux"
+  - label: "alpine-linux"
+    matcher:
+      title: "alpine"
+
+  - label: "arm"
+    matcher:
+      title: "arm"
+  - label: "aarch64"
+    matcher:
+      title: "aarch64"
+  - label: "ppc64le"
+    matcher:
+      title: "ppc64le"
+  - label: "s390x"
+    matcher:
+      title: "s390x"
+  - label: "x64"
+    matcher:
+      title: "x64"
+  - label: "sparcv9"
+    matcher:
+      title: "sparc"
+  - label: "riscv"
+    matcher:
+      title: "riscv"
+
+  - label: "hotspot"
+    matcher:
+      title: "hotspot"
+  - label: "openj9"
+    matcher:
+      title: "openj9"
+  - label: "dragonwell/alibaba"
+    matcher:
+      title: "dragonwell"
+  - label: "bisheng"
+    matcher:
+      title: "bisheng"
+
+  - label: "docker"
+    matcher:
+      title: "docker"
+  - label: "hacktoberfest"
+    matcher:
+      body: "hacktoberfest"
+  - label: "generation"
+    matcher:
+      title: "generat"

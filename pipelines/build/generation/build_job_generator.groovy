@@ -155,7 +155,10 @@ node ("master") {
 
     def excludes = (params.EXCLUDES_LIST) ?: ""
     def jenkinsCreds = (params.JENKINS_AUTH) ?: ""
-    Integer sleepTime = (params.SLEEP_TIME) != "" ? Integer.parseInt(SLEEP_TIME) : 900
+    Integer sleepTime = 900
+    if (params.SLEEP_TIME) {
+      sleepTime = SLEEP_TIME as Integer
+    }
 
     println "[INFO] Running generation script with the following configuration:"
     println "VERSION: $javaVersion"

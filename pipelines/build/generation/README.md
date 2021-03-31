@@ -93,5 +93,6 @@ It then calls [pipeline_job_template.groovy](pipelines/jobs/pipeline_job_templat
 
 ## Downstream Test Jobs
 
-The [downstream test jobs](https://ci.adoptopenjdk.net/view/Test_openjdk/) are generated separately from the build ones, via the [Test_Job_Auto_Gen](https://ci.adoptopenjdk.net/view/Test_grinder/job/Test_Job_Auto_Gen/),
-[testJobTemplate](https://github.com/AdoptOpenJDK/openjdk-tests/blob/master/buildenv/jenkins/testJobTemplate) and [testPipeline](https://github.com/AdoptOpenJDK/openjdk-tests/blob/master/buildenv/jenkins/wip/testpipeline.groovy) resources in the openjdk-tests repository.
+Existing [downstream test jobs](https://ci.adoptopenjdk.net/view/Test_openjdk/) are generated separately from the build ones, via the [Test_Job_Auto_Gen](https://ci.adoptopenjdk.net/view/Test_grinder/job/Test_Job_Auto_Gen/),
+[testJobTemplate](https://github.com/AdoptOpenJDK/openjdk-tests/blob/master/buildenv/jenkins/testJobTemplate) resources in the openjdk-tests repository.
+If a new JDK version | JVM vendor | Platform is beginning to be built | supported, a bunch of new test jobs get created on that first attempt to run testing dynamically by using same [testJobTemplate](https://github.com/AdoptOpenJDK/openjdk-tests/blob/master/buildenv/jenkins/testJobTemplate).

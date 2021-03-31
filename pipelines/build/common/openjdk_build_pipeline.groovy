@@ -134,33 +134,40 @@ class Build {
     The test jobs all follow the same name naming pattern that is defined in the openjdk-tests repository.
     E.g. Test_openjdk11_hs_sanity.system_ppc64_aix
     */
-    def determineTestJobName(testType) {
-
+    def getTestJobParams(testType) {
+        def jobParams = [:]
+        def (level, group) = testType.tokenize('.')
+        jobParams.put('LEVELS', level)
+        jobParams.put('GROUPS', group)
+        String jdkVersion = getJavaVersionNumber() as String
+        jobParams.put('JDK_VERSIONS', jdkVersion)
+        jobParams.put('JDK_IMPL', buildConfig.VARIANT)
         def variant
-        def number = getJavaVersionNumber()
-
         switch (buildConfig.VARIANT) {
             case "openj9": variant = "j9"; break
             case "corretto": variant = "corretto"; break
             case "dragonwell": variant = "dragonwell"; break;
+            case "bisheng": variant = "bisheng"; break;
             default: variant = "hs"
         }
-
         def arch = buildConfig.ARCHITECTURE
         if (arch == "x64") {
             arch = "x86-64"
         }
-
-        def os = buildConfig.TARGET_OS
-
-        def jobName = "Test_openjdk${number}_${variant}_${testType}_${arch}_${os}"
-
+        def arch_os = "${arch}_${buildConfig.TARGET_OS}"    
+        def jobName = "Test_openjdk${jdkVersion}_${variant}_${testType}_${arch_os}"
         if (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
             switch (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
-                case ~/.*XL.*/: jobName += "_xl"; break
+                case ~/.*XL.*/: 
+                    jobName += "_xl";
+                    arch_os += "_xl";
+                    break
             }
         }
-        return "${jobName}"
+        jobParams.put('TEST_JOB_NAME', jobName)
+        jobParams.put('ARCH_OS_LIST', arch_os)
+        jobParams.put('LIGHT_WEIGHT_CHECKOUT', true)
+        return jobParams
     }
 
     /*
@@ -185,6 +192,8 @@ class Build {
             } else if (buildConfig.VARIANT == "hotspot"){
                 jdkBranch = 'dev'
             } else if (buildConfig.VARIANT == "dragonwell") {
+                jdkBranch = 'master'
+            } else if (buildConfig.VARIANT == "bisheng") {
                 jdkBranch = 'master'
             } else {
                 throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
@@ -216,6 +225,8 @@ class Build {
             suffix = "adoptopenjdk/openjdk-${buildConfig.JAVA_TO_BUILD}"
         } else if (buildConfig.VARIANT == "dragonwell") {
             suffix = "alibaba/dragonwell${javaNumber}"
+        } else if (buildConfig.VARIANT == "bisheng") {
+            suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
         } else {
             throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
         }
@@ -242,11 +253,7 @@ class Build {
 
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
-        if (buildConfig.VARIANT == "corretto") {
-            testList = buildConfig.TEST_LIST.minus(['sanity.external'])
-        } else {
-            testList = buildConfig.TEST_LIST
-        }
+        testList = buildConfig.TEST_LIST
 
         testList.each { testType ->
 
@@ -262,33 +269,37 @@ class Build {
                         }
 
                         // example jobName: Test_openjdk11_hs_sanity.system_ppc64_aix
-                        def jobName = determineTestJobName(testType)
-
+                        def jobParams = getTestJobParams(testType)
+                        def jobName = jobParams.TEST_JOB_NAME
                         def JobHelper = loadJobHelper()
 
-                        // Execute test job
-                        if (JobHelper.jobIsRunnable(jobName as String)) {
-                            context.catchError {
-                                context.build job: jobName,
-                                        propagate: false,
-                                        parameters: [
-                                                context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                                context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                                context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
-                                                context.string(name: 'JDK_REPO', value: jdkRepo),
-                                                context.string(name: 'JDK_BRANCH', value: jdkBranch),
-                                                context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-                                                context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
-                                                context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+                        // Create test job if job doesn't exist or is not runnable
+                        if (!JobHelper.jobIsRunnable(jobName as String)) {
+                            context.node('master') {
+                                context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
+                                def templatePath = 'testJobTemplate'
+                                context.println "Test job doesn't exist, create test job: ${jobName}"
+                                context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                             }
-                        } else {
-                            context.println "[WARNING] Requested test job that does not exist or is disabled: ${jobName}"
+                        }
+                        context.catchError {
+                            context.build job: jobName,
+                                    propagate: false,
+                                    parameters: [
+                                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                            context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
+                                            context.string(name: 'JDK_REPO', value: jdkRepo),
+                                            context.string(name: 'JDK_BRANCH', value: jdkBranch),
+                                            context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                            context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
+                                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
                         }
                     }
                 }
             } catch (Exception e) {
-                context.println "Failed to execute test: ${e.getLocalizedMessage()}"
+                context.println "Failed to execute test: ${e.message}"
             }
         }
         return testStages
@@ -297,10 +308,11 @@ class Build {
     /*
     We use this function at the end of a build to parse a java version string and create a VersionInfo object for deployment in the metadata objects.
     E.g. 11.0.9+10-202010192351 would be one example of a matched string.
+    The regex would match both OpenJDK Runtime Environment and Java(TM) SE Runtime Environment.
     */
     VersionInfo parseVersionOutput(String consoleOut) {
         context.println(consoleOut)
-        Matcher matcher = (consoleOut =~ /(?ms)^.*OpenJDK Runtime Environment[^\n]*\(build (?<version>[^)]*)\).*$/)
+        Matcher matcher = (consoleOut =~ /(?ms)^.*Runtime Environment[^\n]*\(build (?<version>[^)]*)\).*$/)
         if (matcher.matches()) {
             context.println("matched")
             String versionOutput = matcher.group('version')
@@ -539,7 +551,7 @@ class Build {
         context.node('master') {
             context.stage("installer") {
                 switch (buildConfig.TARGET_OS) {
-                    case "mac": context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt; done'; buildMacInstaller(versionData); break
+                    case "mac": context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt'; buildMacInstaller(versionData); break
                     case "linux": buildLinuxInstaller(versionData); break
                     case "windows": buildWindowsInstaller(versionData); break
                     default: break
@@ -1153,6 +1165,12 @@ class Build {
         ])
     }
 
+    def addNodeToBuildDescription() {
+        // Append to existing build description if not null
+        def tmpDesc = (context.currentBuild.description) ? context.currentBuild.description + "<br>" : ""
+        context.currentBuild.description = tmpDesc + "<a href=${context.JENKINS_URL}computer/${context.NODE_NAME}>${context.NODE_NAME}</a>"
+    }
+
     /*
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
     */
@@ -1202,6 +1220,7 @@ class Build {
 
                         context.println "[NODE SHIFT] MOVING INTO DOCKER NODE MATCHING LABELNAME ${label}..."
                         context.node(label) {
+                            addNodeToBuildDescription()
                             // Cannot clean workspace from inside docker container
                             if (cleanWorkspace) {
 
@@ -1221,6 +1240,21 @@ class Build {
                                     throw new Exception("[ERROR] Master clean workspace timeout (${buildTimeouts.MASTER_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
 
+                            }
+
+                            // Pull the docker image from DockerHub
+                            try {
+                                context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: "HOURS") {
+                                    if (buildConfig.DOCKER_CREDENTIAL) {
+                                        context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
+                                            context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                        }
+                                    } else {
+                                        context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                    }
+                                }
+                            } catch (FlowInterruptedException e) {
+                                throw new Exception("[ERROR] Master docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
                             }
 
                             // Use our docker file if DOCKER_FILE is defined
@@ -1248,15 +1282,7 @@ class Build {
                                     )
                                 }
 
-                            // Otherwise, pull the docker image from DockerHub
                             } else {
-                                try {
-                                    context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: "HOURS") {
-                                        context.docker.image(buildConfig.DOCKER_IMAGE).pull()
-                                    }
-                                } catch (FlowInterruptedException e) {
-                                    throw new Exception("[ERROR] Master docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
-                                }
 
                                 context.docker.image(buildConfig.DOCKER_IMAGE).inside {
                                     buildScripts(
@@ -1276,6 +1302,7 @@ class Build {
                         waitForANodeToBecomeActive(buildConfig.NODE_LABEL)
                         context.println "[NODE SHIFT] MOVING INTO JENKINS NODE MATCHING LABELNAME ${buildConfig.NODE_LABEL}..."
                         context.node(buildConfig.NODE_LABEL) {
+                            addNodeToBuildDescription()
                             // This is to avoid windows path length issues.
                             context.echo("checking ${buildConfig.TARGET_OS}")
                             if (buildConfig.TARGET_OS == "windows") {

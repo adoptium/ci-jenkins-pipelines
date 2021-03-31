@@ -1,4 +1,4 @@
-# openjdk-build FAQ
+# ci-jenkins-pipelines FAQ
 
 This document covers cover how to perform various repeatable tasks in the
 repository that might not otherwise be obvious from just looking at the
@@ -15,11 +15,11 @@ won't necessarily have access to see these links):
 
 ## How do I find my way around AdoptOpenJDK's build automation scripts?
 
-I wrote this diagram partially for my own benefit in [issue 957](https://github.com/AdoptOpenJDK/openjdk-build/issues/957) that lists the Jenkins jobs (`J`), Groovy scripts from GitHub (`G`), shell scripts (`S`) and environment scripts (`E`).
+I wrote this diagram partially for my own benefit in [issue 957](https://github.com/AdoptOpenJDK/openjdk-build/issues/957) that lists the Jenkins jobs (`J`) and Groovy scripts from GitHub (`G`).
 I think it would be useful to incorporate this into the documentation (potentially annotated with a bit more info) so people can find their way around the myriad of script levels that we now have.
 
 Note that the "end-user" scripts start at `makejdk-any-platform.sh` and a
-diagram of those relationships can be seen [here](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/docs/images/AdoptOpenJDK_Build_Script_Relationships.png)
+diagram of those relationships can be seen [here](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/docs/images/AdoptOpenJDK_Build_Script_Relationships.png)
 
 ```markdown
 J - build-scripts/job/utils/job/build-pipeline-generator
@@ -34,44 +34,20 @@ J           - context.build job: downstreamJobName (e.g. jdk11u/job/jdk11u-linux
 J             (Provides JAVA_TO_BUILD, ARCHITECTURE, VARIANT, TARGET_OS + tests)
 G             - openjdk_build_pipeline.groovy
 G               - context.sh make-adopt-build-farm.sh
-S                 - set-platform-specific-configurations.sh
-E                    - sbin/common/constants.sh (DUPLICATED LATER FROM configureBuild.sh)
-E                    - platform-specific-configurations/${OPERATING_SYSTEM}.sh
-S                 - makejdk-any-platform.sh
-E                   - ${SCRIPT_DIR}/sbin/common/config_init.sh (Parse options)
-E                   - ${SCRIPT_DIR}/docker-build.sh (Runs build.sh within container)
-E                   - ${SCRIPT_DIR}/native-build.sh (Runs build.sh natively)
-E                   - ${SCRIPT_DIR}/configureBuild.sh
-E                     - ${SCRIPT_DIR}/sbin/common/constants.sh
-E                     - ${SCRIPT_DIR}/sbin/common/common.sh
-E                     - ${SCRIPT_DIR}/signalhandler.sh (rm container on SIGINT/SIGTERM)
-S                   - {buildOpenJDKViaDocker|buildOpenJDKInNativeEnvironment}
 ```
 
-There is also some documentation in [CHANGELOG.md](CHANGELOG.md)
+*See the [openjdk-build FAQ.md](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/FAQ.md#how-do-i-find-my-way-around-adoptopenjdks-build-automation-scripts) for the shell script side of the pipeline*
 
-## What are the prerequisites for a system used for builds?
+## How do I build more quickly?
 
-- The upstream OpenJDK build requirements are at <https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms>
-- The AdoptOpenJDK levels we build on are at <https://github.com/AdoptOpenJDK/openjdk-build/wiki/%5BWIP%5D-Minimum-OS-levels>
-  although anything with comparable equivalent or later C libraries should work ok (in particular we have built on most current Linux distros without issues)
+There are a couple of options that are enabled by default in the pipelines
+but slow down the build. If you're just looking for a "quick" build to test
+something then you can skip the custom cacerts generation and the creation
+of debug images as follows - it will still produce a usable JDK with these
+options:
 
-In terms of compilers, these are what we currently use for each release:
-
-| Version | OS      | Compiler |
-|---------|---------|----------|
-| JDK8    | Linux   | GCC 4.8 (HotSpot) GCC 7.6 (OpenJ9)                |
-| JDK11+  | Linux   | GCC 7.5                                           |
-| JDK8    | Windows | VS2013 (12.0) (HotSpot) or VS2010 (10.0) (OpenJ9) |
-| JDK11+  | Windows | VS2017                                            |
-| JDK8/11 | AIX     | xlC/C++ 13.1.3                                    |
-| JDK13+  | AIX     | xlC/C++ 16.1.0                                    |
-| JDK8    | macos   | GCC 4.2.1 (LLVM 2336.11.00                        |
-| JDK11   | macos   | clang-700.1.81                                    |
-| JDK13+  | macos   | clang-900.0.39.2                                  |
-
-All machines at AdoptOpenJDK are set up using the ansible playbooks from the
-[infrastructure](https://github.com/adoptopenjdk/openjdk-infrastructure) repository.
+- additionalConfigureArgs `--with-native-debug-symbols=none`
+- additionalBuildArgs `--custom-cacerts false`
 
 ## Adding a new major release to be built
 
@@ -100,19 +76,6 @@ First you will need to add support into the [pipeline files](pipelines/build) as
 For an example, see [this PR where Dragonwell was added](https://github.com/AdoptOpenJDK/openjdk-build/pull/2051/files)
 For more information on other changes required, see [this document](https://github.com/AdoptOpenJDK/TSC/wiki/Adding-a-new-build-variant)
 
-## How do I change the parameters, such as configure flags, for a Jenkins build
-
-Either:
-
-- Modify the environment files in [platform-specific-configurations](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/build-farm/platform-specific-configurations)
-- Modify the [pipeline files](pipelines/build), although this is normally only done for configuration differences such as OpenJ9 Large Heap builds
-
-[Example PR - Adding a new configure flag for OpenJ9](https://github.com/AdoptOpenJDK/openjdk-build/pull/1442/files)
-
-## How to do a new release build
-
-Since it's quite long, this is covered in a separate [RELEASING.md](RELEASING.md) document
-
 ## I've modified the build scripts - how can I test my changes?
 
 If you're making changes ensure you follow the contribution guidelines in
@@ -126,13 +89,10 @@ For more information, see the [PR testing documentation](pipelines/build/prTeste
 
 Check out [Adopt's guide](docs/UsingOurScripts.md) to setting up your own scripts and configurations (while not having to keep up with Adopt's changes)!
 
-## Which OS levels do we build on?
+## I want to build code from my own fork/branch of openjdk in jenkins
 
-The operating systems/distributions which we build or are documented in the
-[openjdk-build wiki](https://github.com/AdoptOpenJDK/openjdk-build/wiki/%5BWIP%5D-Minimum-OS-levels).
-Runtime platforms are in our [supported platforms page](https://adoptopenjdk.net/supported_platforms.html).
+You will need to add some parameters to the `BUILD_ARGS` on the individual
+platform-specific pipeline (or `additionalBuildArgs` if runnibg a top level pipeline) and
+specify `--disable-adopt-branch-safety` for example:
 
-## How to add a new build pipeline param and associated job configuration?
-
-The following PR: <https://github.com/AdoptOpenJDK/openjdk-build/pull/2416>
-demonstrates changes required to add a new build pipeline param, and also associated version/platform job configurations for setting the value when needed.
+`--disable-adopt-branch-safety -r https://github.com/sxa/openjdk-jdk11u -b mybranch`

@@ -40,6 +40,22 @@
         "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy",
         "generation"         : "pipelines/build/generation/config_generation.groovy"
     },
+    "testDetails"            : {
+        "enableTests"        : true,
+        "nightlyDefault"     : [
+            "sanity.openjdk",
+            "sanity.system",
+            "extended.system",
+            "sanity.perf",
+            "sanity.functional",
+            "extended.functional"
+        ],
+        "weeklyDefault"     : [
+            "extended.openjdk",
+            "extended.perf",
+            "special.functional"
+        ]
+    },
     "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
     "defaultsUrl"            : "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }

@@ -1,14 +1,14 @@
 targetConfigurations = [
-        "x64Mac"        : [	"hotspot",	"openj9"					],
-        "x64Linux"      : [	"hotspot",	"openj9",	"dragonwell",	"corretto"	],
-        "x64Windows"    : [	"hotspot",	"openj9",	"dragonwell"			],
-        "x32Windows"    : [	"hotspot"							],
-        "ppc64Aix"      : [	"hotspot",	"openj9"					],
-        "ppc64leLinux"  : [	"hotspot",	"openj9"					],
-        "s390xLinux"    : [	"hotspot",	"openj9"					],
-        "aarch64Linux"  : [	"hotspot",	"openj9",	"dragonwell"			],
-        "arm32Linux"    : [	"hotspot"							],
-        "riscv64Linux"  : [			"openj9"					]
+        "x64Mac"        : [    "hotspot",    "openj9"                    ],
+        "x64Linux"      : [    "hotspot",    "openj9",    "dragonwell",    "corretto"    ],
+        "x64Windows"    : [    "hotspot",    "openj9",    "dragonwell"            ],
+        "x32Windows"    : [    "hotspot"                            ],
+        "ppc64Aix"      : [    "hotspot",    "openj9"                    ],
+        "ppc64leLinux"  : [    "hotspot",    "openj9"                    ],
+        "s390xLinux"    : [    "hotspot",    "openj9"                    ],
+        "aarch64Linux"  : [    "hotspot",    "openj9",    "dragonwell"            ],
+        "arm32Linux"    : [    "hotspot"                            ],
+        "riscv64Linux"  : [			"openj9",			"bisheng"	]
 ]
 
 // 18:05 Tue, Thur
@@ -21,7 +21,8 @@ weekly_release_scmReferences=[
         "hotspot"        : "",
         "openj9"         : "",
         "corretto"       : "",
-        "dragonwell"     : ""
+        "dragonwell"     : "",
+        "bisheng"        : ""
 ]
 
 return this

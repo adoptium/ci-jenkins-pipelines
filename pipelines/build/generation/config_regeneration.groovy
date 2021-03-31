@@ -31,7 +31,7 @@ class Generation implements Serializable {
     private final Map<String, ?> targetConfigurations
     private final Map<String, ?> DEFAULTS_JSON
     private final Map<String, ?> excludedBuilds
-    private final Integer sleepTime
+    private Integer sleepTime
     private final def currentBuild
     private final def context
 
@@ -123,14 +123,25 @@ class Generation implements Serializable {
         return configureArgs
     }
 
-    def getArchLabel(Map<String, ?> configuration) {
-        def archLabelVal = ""
+    def getArchLabel(Map<String, ?> configuration, String variant) {
+        // Default to arch
+        def archLabelVal = configuration.arch
+
         // Workaround for cross compiled architectures
         if (configuration.containsKey("crossCompile")) {
-            archLabelVal = configuration.crossCompile
-        } else {
-            archLabelVal = configuration.arch
+            def configArchLabelVal
+
+            if (isMap(configuration.crossCompile)) {
+                configArchLabelVal = (configuration.crossCompile as Map<String, ?>).get(variant)
+            } else {
+                configArchLabelVal = configuration.crossCompile
+            }
+
+            if (configArchLabelVal != null) {
+                archLabelVal = configArchLabelVal
+            }
         }
+
         return archLabelVal
     }
 
@@ -183,6 +194,39 @@ class Generation implements Serializable {
             }
         }
         return dockerNodeValue
+    }
+
+    /*
+    Retrieves the dockerRegistry attribute from the build configurations.
+    This is used to pull dockerImage from a custom registry.
+    If not specified, defaults to '' which will be DockerHub.
+    */
+    def getDockerRegistry(Map<String, ?> configuration, String variant) {
+        def dockerRegistryValue = ""
+        if (configuration.containsKey("dockerRegistry")) {
+            if (isMap(configuration.dockerRegistry)) {
+                dockerRegistryValue = (configuration.dockerRegistry as Map<String, ?>).get(variant)
+            } else {
+                dockerRegistryValue = configuration.dockerRegistry
+            }
+        }
+        return dockerRegistryValue
+    }
+
+    /*
+    Retrieves the dockerCredential attribute from the build configurations.
+    If used, this will wrap the docker pull with a docker login.
+    */
+    def getDockerCredential(Map<String, ?> configuration, String variant) {
+        def dockerCredentialValue = ""
+        if (configuration.containsKey("dockerCredential")) {
+            if (isMap(configuration.dockerCredential)) {
+                dockerCredentialValue = (configuration.dockerCredential as Map<String, ?>).get(variant)
+            } else {
+                dockerCredentialValue = configuration.dockerCredential
+            }
+        }
+        return dockerCredentialValue
     }
 
     /*
@@ -350,6 +394,10 @@ class Generation implements Serializable {
 
             def dockerNode = getDockerNode(platformConfig, variant)
 
+            def dockerRegistry = getDockerRegistry(platformConfig, variant)
+
+            def dockerCredential = getDockerCredential(platformConfig, variant)
+
             def platformSpecificConfigPath = getPlatformSpecificConfigPath(platformConfig)
 
             def buildArgs = getBuildArgs(platformConfig, variant)
@@ -372,6 +420,8 @@ class Generation implements Serializable {
                 DOCKER_IMAGE: dockerImage,
                 DOCKER_FILE: dockerFile,
                 DOCKER_NODE: dockerNode,
+                DOCKER_REGISTRY: dockerRegistry,
+                DOCKER_CREDENTIAL: dockerCredential,
                 PLATFORM_CONFIG_LOCATION: platformSpecificConfigPath,
                 CONFIGURE_ARGS: getConfigureArgs(platformConfig, variant),
                 OVERRIDE_FILE_NAME_VERSION: "",
@@ -381,7 +431,7 @@ class Generation implements Serializable {
                 RELEASE: false,
                 PUBLISH_NAME: "",
                 ADOPT_BUILD_NUMBER: "",
-                ENABLE_TESTS: true,
+                ENABLE_TESTS: DEFAULTS_JSON['testDetails']['enableTests'] as Boolean,
                 ENABLE_INSTALLERS: true,
                 ENABLE_SIGNER: true,
                 CLEAN_WORKSPACE: true,
@@ -553,6 +603,10 @@ class Generation implements Serializable {
                                 }
 
                                 if (inProgress) {
+                                    // Null safety check sleep as sleeping null may cause jenkins DoS
+                                    if (!sleepTime) {
+                                        sleepTime = 900
+                                    }
                                     // Sleep for a bit, then check again...
                                     context.println "[INFO] ${pipeline} is running. Sleeping for ${sleepTime} seconds while waiting for ${pipeline} to complete..."
 

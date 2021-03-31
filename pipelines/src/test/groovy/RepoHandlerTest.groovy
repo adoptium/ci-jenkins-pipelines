@@ -61,6 +61,11 @@ class RepoHandlerTest {
 
         // Defaults URL
         Assertions.assertEquals(adoptJson.defaultsUrl, "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json")
+
+        // Test details
+        Assertions.assertTrue(adoptJson.testDetails.enableTests instanceof Boolean)
+        Assertions.assertTrue(adoptJson.testDetails.nightlyDefault instanceof List)
+        Assertions.assertTrue(adoptJson.testDetails.weeklyDefault instanceof List)
     }
 
     @Test
@@ -113,6 +118,12 @@ class RepoHandlerTest {
 
         // Defaults URL
         Assertions.assertEquals(userJson.defaultsUrl, "23")
+
+        // Test details
+        Assertions.assertTrue(userJson.testDetails.enableTests instanceof Boolean)
+        Assertions.assertTrue(userJson.testDetails.enableTests)
+        Assertions.assertEquals(userJson.testDetails.nightlyDefault, [ "test1", "test2", "test3" ])
+        Assertions.assertEquals(userJson.testDetails.weeklyDefault, [ "test4", "test5", "test6" ])
     }
 
     @Test

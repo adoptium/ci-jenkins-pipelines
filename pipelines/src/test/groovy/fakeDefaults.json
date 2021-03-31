@@ -27,9 +27,14 @@
         "tester"             : "15",
         "buildfarm"          : "22"
     },
-    "baseFileDirectories": {
+    "baseFileDirectories"    : {
         "upstream"           : "16",
         "downstream"         : "17"
+    },
+    "testDetails"            : {
+        "enableTests"        : true,
+        "nightlyDefault"     : [ "test1", "test2", "test3" ],
+        "weeklyDefault"      : [ "test4", "test5", "test6" ]
     },
     "importLibraryScript"    : "18",
     "defaultsUrl"            : "23"
