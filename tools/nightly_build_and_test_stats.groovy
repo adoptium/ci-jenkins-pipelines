@@ -179,7 +179,7 @@ node ("master") {
     echo "======> Overall Nightly Build & Test Success Rating = ${overallNightlySuccessRating} %"
 
     // Slack message:
-    slackSend(channel: slackChannel, color: 'good', message: 'AdoptOpenJDK Jenkins Nightly Build & Test Pipeline Success Rating: '+overallNightlySuccessRating+' %')
+    slackSend(channel: slackChannel, color: 'good', message: 'AdoptOpenJDK Jenkins Nightly Build & Test Pipeline Success Rating: '+overallNightlySuccessRating+' % (derived from '+totalBuildJobs+' at '+nightlyBuildSuccessRating.intValue()+' %, '+totalTestJobs+' at '+nightlyTestSuccessRating.intValue()+' %)')
   }
 }
 
