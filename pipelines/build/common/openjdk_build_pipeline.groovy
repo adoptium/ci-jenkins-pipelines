@@ -1411,19 +1411,16 @@ class Build {
                 }
                 
                 // Run Smoke Tests and AQA Tests
-                try { 
-                    runSmokeTests()
-                    if (enableTests && buildConfig.TEST_LIST.size() > 0) {
-                        try {
-                            // Run tests if we have a test list, don't use timeouts as the jobs have their own
+                if (enableTests) {
+                    try {
+                        runSmokeTests()
+                        if (buildConfig.TEST_LIST.size() > 0) {
                             def testStages = runAQATests()
                             context.parallel testStages
-                        } catch (Exception e) {
-                            context.println (e.message)
                         }
+                    } catch (Exception e) {
+                        context.println(e.message)
                     }
-                } catch (Exception e) {
-                    context.println(e.message)
                 }
 
                 //buildInstaller if needed
