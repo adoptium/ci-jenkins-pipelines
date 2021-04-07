@@ -57,7 +57,7 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 | :------------------------- | :---: | :------------------------------------ | :----------------------------------------- |
 | os                         | ✅    | `String`                              | Operating system tag that will identify the job on jenkins and determine which platforms configs to pull from openjdk-build.<br>*E.g. `windows`, `solaris`* |
 | arch                       | ✅    | `String`                              | Architecture tag that will identify the job on jenkins and determine which build params to use.<br>*E.g. `x64`, `sparcv9`, `x86-32`* |
-| test                       | ❌    | `String`<br>**OR**<br>`Map<String, List>`   | Tests to run against the binary after the build has completed. A `default` tag indicates that you want to run [whatever the default test nightly/release list is](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/build/common/build_base_file.groovy#L66-L88).<br><br>Otherwise, you can [specify your own list for that paticular platform (not variant)](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/jobs/configurations/jdk16_pipeline_config.groovy#L59-L64) |
+| test                       | ❌    | `String`<br>**OR**<br>`Map<String, List>`   | Tests to run against the binary after the build has completed. A `default` tag indicates that you want to run [whatever the default test nightly/release list is](https://github.com/adoptium/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/build/common/build_base_file.groovy#L66-L88).<br><br>Otherwise, you can [specify your own list for that paticular platform (not variant)](https://github.com/adoptium/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/jobs/configurations/jdk16_pipeline_config.groovy#L59-L64) |
 | dockerImage                | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Builds the JDK inside a docker container. Should be a DockerHub identifier to pull from in case **dockerFile** is not specified.<br>*E.g. `adoptopenjdk/centos6_build_image`* |
 | dockerFile                 | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Builds the JDK inside a docker container using the locally stored image file. Used in conjunction with **dockerImage** to specify a particular variant to build or pull.<br>*E.g. `pipelines/build/dockerFiles/cuda.dockerfile`* |
 | dockerNode                 | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Specifies a specific jenkins docker node label to shift into to build the JDK.<br> *E.g. `sw.config.uid1000`* |
@@ -196,7 +196,7 @@ Alongside the built assets a metadata file will be created with info about the b
 }
 ```
 
-The Metadata class is contained in the [Metadata.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/MetaData.groovy) file and the Json is constructed and written in the [openjdk_build_pipeline.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/build/common/openjdk_build_pipeline.groovy) file.
+The Metadata class is contained in the [Metadata.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/MetaData.groovy) file and the Json is constructed and written in the [openjdk_build_pipeline.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/common/openjdk_build_pipeline.groovy) file.
 
 It is worth noting the additional tags on the semver is the adopt build number.
 
@@ -252,7 +252,7 @@ Example values: [`m1`, `m2`]
 
 - `version:`
 
-This tag contains the full version information of the JDK built, it uses the [VersionInfo.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/VersionInfo.groovy) class and the [ParseVersion.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/ParseVersion.groovy) class.
+This tag contains the full version information of the JDK built, it uses the [VersionInfo.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/VersionInfo.groovy) class and the [ParseVersion.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/library/src/ParseVersion.groovy) class.
 
 It contains the following keys:
 
@@ -277,7 +277,7 @@ Example values: [`1.8.0_272-202010111709-b09`, `11.0.9+10-202010122348`, `14.0.2
 
 - `semver:`
 Example values: [`8.0.202+8.0.202008210941`, `11.0.9+10.0.202010122348`, `14.0.2+11.0.202007272039`, `16.0.0+19.0.202010120339`]
-Formed from the major, minor, security, and build number by the [formSemver()](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/805e76acbb8a994abc1fb4b7d582486d48117ee8/pipelines/library/src/common/VersionInfo.groovy#L123) function.
+Formed from the major, minor, security, and build number by the [formSemver()](https://github.com/adoptium/ci-jenkins-pipelines/blob/805e76acbb8a994abc1fb4b7d582486d48117ee8/pipelines/library/src/common/VersionInfo.groovy#L123) function.
 
 - `build:`
 Example values: [`6`, `9`, `18`]

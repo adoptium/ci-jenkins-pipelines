@@ -21,7 +21,7 @@ limitations under the License.
 
 String buildFolder = "$JOB_FOLDER"
 
-if (!binding.hasVariable('GIT_URL')) GIT_URL = "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git"
+if (!binding.hasVariable('GIT_URL')) GIT_URL = "https://github.com/adoptium/ci-jenkins-pipelines.git"
 if (!binding.hasVariable('GIT_BRANCH')) GIT_BRANCH = "master"
 
 isLightweight = true

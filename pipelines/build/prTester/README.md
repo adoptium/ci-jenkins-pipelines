@@ -26,15 +26,15 @@ This group consists of [GitHub Status Checks](https://docs.github.com/en/free-pr
 
 #### Groovy
 
-- The job runs our [groovy testing suite](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/tree/master/pipelines/src/test/groovy). The various tests in this directory ensure that our jenkins library classes return the correct information.
+- The job runs our [groovy testing suite](https://github.com/adoptium/ci-jenkins-pipelines/tree/master/pipelines/src/test/groovy). The various tests in this directory ensure that our jenkins library classes return the correct information.
 
 - **If you are making any changes to any of the following classes, we strongly recommended you update the tests to conform to your changes (adding new ones if needs be!):**
 
-  - [ParseVersion.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/ParseVersion.groovy)
-  - [IndividualBuildConfig.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/IndividualBuildConfig.groovy)
-  - [RepoHandler.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/RepoHandler.groovy)
-  - [MetaData.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/MetaData.groovy)
-  - [VersionInfo.groovy](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/VersionInfo.groovy)
+  - [ParseVersion.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/library/src/ParseVersion.groovy)
+  - [IndividualBuildConfig.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/IndividualBuildConfig.groovy)
+  - [RepoHandler.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/RepoHandler.groovy)
+  - [MetaData.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/MetaData.groovy)
+  - [VersionInfo.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/library/src/common/VersionInfo.groovy)
 
 - As an example of this in action, the output of [one such test](pipelines/src/test/groovy/VersionParsingTest.groovy#L60-L68) can be seen below:
 
@@ -87,7 +87,7 @@ Please be patient as the tester does not run concurrently so it may take some ti
 
 - The message will vary depending on the result of the test. Please remember however, that failed tests may be due to existing problems in the nightly builds, not your code.
 
-If you're unsure if the tests failed because of your changes or not, check our [issue board](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues) and our [triage doc](https://docs.google.com/document/d/1vcZgHJeR8rW8U8OD23Uob7A1dbLrtkURZUkinUp7f_w/edit?usp=sharing) for the existing error. If your job was aborted, check the log to see who aborted it.
+If you're unsure if the tests failed because of your changes or not, check our [issue board](https://github.com/adoptium/ci-jenkins-pipelines/issues) and our [triage doc](https://docs.google.com/document/d/1vcZgHJeR8rW8U8OD23Uob7A1dbLrtkURZUkinUp7f_w/edit?usp=sharing) for the existing error. If your job was aborted, check the log to see who aborted it.
 
 - 🟢**SUCCESS** 🟢 All the downstream jobs passed, congratulations!
 - 🟠**FAILURE** 🟠 Some of the downstream jobs failed OR the job was aborted. Check the link in the field at the bottom of the PR for the job link to see exactly where it went wrong.

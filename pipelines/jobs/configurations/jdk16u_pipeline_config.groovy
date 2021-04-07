@@ -75,7 +75,7 @@ class Config16 {
                 configureArgs        : '--with-noncompressedrefs'
         ],
 
-        // TODO: Enable testing (https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/issues/77)
+        // TODO: Enable testing (https://github.com/adoptium/ci-jenkins-pipelines/issues/77)
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',

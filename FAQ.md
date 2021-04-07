@@ -19,7 +19,7 @@ I wrote this diagram partially for my own benefit in [issue 957](https://github.
 I think it would be useful to incorporate this into the documentation (potentially annotated with a bit more info) so people can find their way around the myriad of script levels that we now have.
 
 Note that the "end-user" scripts start at `makejdk-any-platform.sh` and a
-diagram of those relationships can be seen [here](https://github.com/AdoptOpenJDK/ci-jenkins-pipelines/blob/master/docs/images/AdoptOpenJDK_Build_Script_Relationships.png)
+diagram of those relationships can be seen [here](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/docs/images/AdoptOpenJDK_Build_Script_Relationships.png)
 
 ```markdown
 J - build-scripts/job/utils/job/build-pipeline-generator
