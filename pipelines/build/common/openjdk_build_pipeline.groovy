@@ -132,14 +132,32 @@ class Build {
     The test jobs all follow the same name naming pattern that is defined in the openjdk-tests repository.
     E.g. Test_openjdk11_hs_sanity.system_ppc64_aix
     */
-    def getTestJobParams(testType) {
-        def jobParams = [:]
+     def getSmokeTestJobParams() {
+        def jobParams = getCommonTestJobParams()
+        jobParams.put('LEVELS', "extended")
+        jobParams.put('GROUPS', "functional")
+        jobParams.put('TEST_JOB_NAME', "${env.JOB_NAME}_SmokeTests")
+        jobParams.put('BUILD_LIST','functional/buildAndPackage')
+        def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
+        def vendorTestRepos = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']).minus(".git")
+        def vendorTestBranches = ADOPT_DEFAULTS_JSON['repository']['build_branch']
+        def vendorTestDirs = ADOPT_DEFAULTS_JSON['repository']['test_dirs']
+        if (!useAdoptShellScripts) {
+            vendorTestRepos = ((String)DEFAULTS_JSON['repository']['build_url']).minus(".git")
+            vendorTestBranches = DEFAULTS_JSON['repository']['build_branch']
+            vendorTestDirs = DEFAULTS_JSON['repository']['test_dirs']
+        }                     
+        jobParams.put("VENDOR_TEST_REPOS", vendorTestRepos)
+        jobParams.put("VENDOR_TEST_BRANCHES", vendorTestBranches)
+        jobParams.put("VENDOR_TEST_DIRS", vendorTestDirs)
+        return jobParams
+    }
+
+    def getAQATestJobParams(testType) {
+        def jobParams = getCommonTestJobParams()
         def (level, group) = testType.tokenize('.')
         jobParams.put('LEVELS', level)
         jobParams.put('GROUPS', group)
-        String jdkVersion = getJavaVersionNumber() as String
-        jobParams.put('JDK_VERSIONS', jdkVersion)
-        jobParams.put('JDK_IMPL', buildConfig.VARIANT)
         def variant
         switch (buildConfig.VARIANT) {
             case "openj9": variant = "j9"; break
@@ -148,26 +166,40 @@ class Build {
             case "bisheng": variant = "bisheng"; break;
             default: variant = "hs"
         }
-        def arch = buildConfig.ARCHITECTURE
-        if (arch == "x64") {
-            arch = "x86-64"
-        }
-        def arch_os = "${arch}_${buildConfig.TARGET_OS}"    
-        def jobName = "Test_openjdk${jdkVersion}_${variant}_${testType}_${arch_os}"
+        def jobName = "Test_openjdk${jobParams['JDK_VERSIONS']}_${variant}_${testType}_${jobParams['ARCH_OS_LIST']}"
         if (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
             switch (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
                 case ~/.*XL.*/: 
                     jobName += "_xl";
-                    arch_os += "_xl";
                     break
             }
         }
         jobParams.put('TEST_JOB_NAME', jobName)
+        return jobParams
+    }
+
+    def getCommonTestJobParams() {
+        def jobParams = [:]
+        String jdk_Version = getJavaVersionNumber() as String
+        jobParams.put('JDK_VERSIONS', jdk_Version)
+        jobParams.put('JDK_IMPL', buildConfig.VARIANT)
+
+        def arch = buildConfig.ARCHITECTURE
+        if (arch == "x64") {
+            arch = "x86-64"
+        }
+        def arch_os = "${arch}_${buildConfig.TARGET_OS}"
+        if (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
+            switch (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
+                case ~/.*XL.*/: 
+                    arch_os += "_xl";
+                    break
+            }
+        }
         jobParams.put('ARCH_OS_LIST', arch_os)
         jobParams.put('LIGHT_WEIGHT_CHECKOUT', true)
         return jobParams
     }
-
     /*
     Retrieve the corresponding OpenJDK source code repository branch. This is used the downstream tests to determine what source code branch the tests should run against.
     */
@@ -236,13 +268,49 @@ class Build {
 
         return jdkRepo
     }
+    /*
+    Run smoke tests, which should block the running of downstream test jobs if there are failures.
+    If a test job that doesn't exist, it will be created dynamically.
+    */
+    def runSmokeTests() {
+        def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
+        try {
+            context.println "Running smoke test"
+            context.stage("smoke test") {
+                def jobParams = getSmokeTestJobParams()
+                def jobName = jobParams.TEST_JOB_NAME
+                def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                if (!JobHelper.jobIsRunnable(jobName as String)) {
+                    context.node('master') {
+                        context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
+                        def templatePath = 'testJobTemplate'
+                        context.println "Smoke test job doesn't exist, create test job: ${jobName}"
+                        context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
+                    }
+                }
+               context.catchError {
+                    context.build job: jobName,
+                            propagate: false,
+                            parameters: [
+                                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                    context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
+                                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                    context.string(name: 'KEEP_REPORTDIR', value: "${buildConfig.KEEP_TEST_REPORTDIR}"),
+                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+                }
+            }
+        } catch (Exception e) {
+            context.println "Failed to execute test: ${e.message}"
+            throw new Exception("[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed. ")
+        }
+    }
     /*
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
-    If we try to call a test job that doesn't exist, the pipeline will not fail but it will print out a warning.
-    If you need more test jobs added, please request so in #testing on Slack.
+    If a test job doesn't exist, it will be created dynamically. 
     */
-    def runTests() {
+    def runAQATests() {
         def testStages = [:]
         List testList = []
         def jdkBranch = getJDKBranch()
@@ -266,17 +334,17 @@ class Build {
                             keep_test_reportdir = "true"
                         }
 
-                        def jobParams = getTestJobParams(testType)
+                        def jobParams = getAQATestJobParams(testType)
                         def jobName = jobParams.TEST_JOB_NAME
                         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
 
                         // Create test job if job doesn't exist or is not runnable
                         if (!JobHelper.jobIsRunnable(jobName as String)) {
-                            context.node('master') { 
-	                            context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
-	                            def templatePath = 'testJobTemplate'
-	                            context.println "Test job doesn't exist, create test job: ${jobName}"
-	                            context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
+                            context.node('master') {
+                                context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
+                                def templatePath = 'testJobTemplate'
+                                context.println "Test job doesn't exist, create test job: ${jobName}"
+                                context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                             }
                         }
                         context.catchError {
@@ -1341,14 +1409,17 @@ class Build {
                         throw new Exception("[ERROR] Sign job timeout (${buildTimeouts.SIGN_JOB_TIMEOUT} HOURS) has been reached OR the downstream sign job failed. Exiting...")
                     }
                 }
-
-                if (enableTests && buildConfig.TEST_LIST.size() > 0) {
+                
+                // Run Smoke Tests and AQA Tests
+                if (enableTests) {
                     try {
-                        // Run tests if we have a test list, don't use timeouts as the jobs have their own
-                        def testStages = runTests()
-                        context.parallel testStages
+                        runSmokeTests()
+                        if (buildConfig.TEST_LIST.size() > 0) {
+                            def testStages = runAQATests()
+                            context.parallel testStages
+                        }
                     } catch (Exception e) {
-                        context.println "Failed test: ${e}"
+                        context.println(e.message)
                     }
                 }
 

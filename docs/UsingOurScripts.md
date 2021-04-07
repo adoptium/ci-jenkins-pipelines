@@ -14,6 +14,8 @@ This file contains the default constants and paths used in the build scripts for
         "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
         // Git branch you wish to use when running the shell scripts inside the build_url
         "build_branch"       : "master",
+        // Smoke tests directory under the build repo
+        "test_dirs"          : "/test/functional",
         // Git Url of the current repository.
         "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
         // Git branch you wish to use when running the groovy scripts inside the pipeline_url
