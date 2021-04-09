@@ -3,7 +3,7 @@
         "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
         "build_branch"       : "master",
         "test_dirs"          : "/test/functional",
-        "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
+        "pipeline_url"       : "https://github.com/adoptium/ci-jenkins-pipelines.git",
         "pipeline_branch"    : "master"
     },
     "jenkinsDetails"         : {
@@ -49,5 +49,5 @@
         ]
     },
     "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
-    "defaultsUrl"            : "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
+    "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }

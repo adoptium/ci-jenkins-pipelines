@@ -22,7 +22,7 @@ class RepoHandlerTest {
         Assertions.assertTrue(adoptJson.repository instanceof Map)
         Assertions.assertEquals(adoptJson.repository.build_url, "https://github.com/AdoptOpenJDK/openjdk-build.git")
         Assertions.assertEquals(adoptJson.repository.build_branch, "master")
-        Assertions.assertEquals(adoptJson.repository.pipeline_url, "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git")
+        Assertions.assertEquals(adoptJson.repository.pipeline_url, "https://github.com/adoptium/ci-jenkins-pipelines.git")
         Assertions.assertEquals(adoptJson.repository.pipeline_branch, "master")
 
         // Jenkins Details
@@ -60,7 +60,7 @@ class RepoHandlerTest {
         Assertions.assertEquals(adoptJson.importLibraryScript, "pipelines/build/common/import_lib.groovy")
 
         // Defaults URL
-        Assertions.assertEquals(adoptJson.defaultsUrl, "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json")
+        Assertions.assertEquals(adoptJson.defaultsUrl, "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json")
 
         // Test details
         Assertions.assertTrue(adoptJson.testDetails.enableTests instanceof Boolean)

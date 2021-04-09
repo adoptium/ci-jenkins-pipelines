@@ -17,7 +17,7 @@ This file contains the default constants and paths used in the build scripts for
         // Smoke tests directory under the build repo
         "test_dirs"          : "/test/functional",
         // Git Url of the current repository.
-        "pipeline_url"       : "https://github.com/AdoptOpenJDK/ci-jenkins-pipelines.git",
+        "pipeline_url"       : "https://github.com/adoptium/ci-jenkins-pipelines.git",
         // Git branch you wish to use when running the groovy scripts inside the pipeline_url
         "pipeline_branch"    : "master"
     },
@@ -97,7 +97,7 @@ This file contains the default constants and paths used in the build scripts for
     // Script to import the adopt groovy class library (relative to this repository root)
     "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
     // Raw content URL of this (defaults.json) file. This is so the openjdk_build_pipeline.groovy script can set user default configs when checking out to the shell script repo
-    "defaultsUrl"            : "https://raw.githubusercontent.com/AdoptOpenJDK/ci-jenkins-pipelines/master/pipelines/defaults.json"
+    "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }
 ```
 
@@ -118,7 +118,7 @@ As an example, take a look at the [build-pipeline-generator](https://ci.adoptope
 ![Image of the SCRIPT_FOLDER_PATH parameter in jenkins](images/scriptFolderParam.png)
 The script will use whatever has been entered into the parameter field unless it has been left empty, in which case it will use whatever is in the user's `defaults.json['scriptDirectories']['upstream']` attribute.
 
-It will then evaluate the existence of that directory in the user's repository and, if it fails to find one, will checkout to AdoptOpenJDK/ci-jenkins-pipelines and use Adopt's `defaults.json` (the console log will warn the user of this occuring):
+It will then evaluate the existence of that directory in the user's repository and, if it fails to find one, will checkout to adoptium/ci-jenkins-pipelines and use Adopt's `defaults.json` (the console log will warn the user of this occuring):
 
 ```bash
 00:13:31  [WARNING] pipelines/build/common/weekly_release_pipeline.groovy does not exist in your chosen repository. Updating it to use Adopt's instead
