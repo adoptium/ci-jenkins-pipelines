@@ -274,7 +274,7 @@ class Build {
     */
     def runSmokeTests() {
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-
+        def smoketestJobs = [:]
         try {
             context.println "Running smoke test"
             context.stage("smoke test") {
@@ -289,22 +289,22 @@ class Build {
                         context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                     }
                 }
-               context.catchError {
-                    context.build job: jobName,
-                            propagate: false,
-                            parameters: [
-                                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                    context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
-                                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                    context.string(name: 'KEEP_REPORTDIR', value: "${buildConfig.KEEP_TEST_REPORTDIR}"),
-                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+                smoketestJobs = context.build job: jobName,
+                                    propagate: true,
+                                    parameters: [
+                                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                        context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
+                                        context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                        context.string(name: 'KEEP_REPORTDIR', value: "${buildConfig.KEEP_TEST_REPORTDIR}"),
+                                        context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
                 }
             }
         } catch (Exception e) {
             context.println "Failed to execute test: ${e.message}"
             throw new Exception("[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed. ")
         }
+        return smoketest.result.isWorseThan(Result.SUCCESS)) 
     }
     /*
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
@@ -1413,8 +1413,8 @@ class Build {
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
-                        runSmokeTests()
-                        if (buildConfig.TEST_LIST.size() > 0) {
+                        def smokeTestStatus = runSmokeTests()
+                        if ( smokeTestStatus && buildConfig.TEST_LIST.size() > 0) {
                             def testStages = runAQATests()
                             context.parallel testStages
                         }
