@@ -16,3 +16,19 @@ documentation:
 jenkins-pipeline:
     - pipelines/**/*
     - pipelines/*
+generation:
+    - pipelines/build/regeneration/*
+    - pipelines/build/common/config_regeneration.groovy
+docker:
+    - pipelines/build/dockerFiles/*
+testing:
+    - pipelines/build/prTester/*
+    - pipelines/src/test/*
+code-tools:
+    - tools/*
+gradle:
+    - pipelines/gradle/*
+    - pipelines/build.gradle
+    - pipelines/gradlew
+cross-compile:
+    - pipelines/build/common/cross_compiled_version_out.groovy
