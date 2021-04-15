@@ -5,14 +5,8 @@ NODE_LABEL = "dockerBuild&&linux&&x64"
 pipeline {
     agent none
 
-    properties {
-        pipelineTriggers {
-            triggers {
-                cron {
-                    spec(CRON_SETTINGS)
-                }
-            }
-        }
+    triggers {
+        cron(CRON_SETTINGS)
     }
 
     stages {
