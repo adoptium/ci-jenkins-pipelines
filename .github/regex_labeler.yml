@@ -32,66 +32,92 @@
 version: v1
 
 labels:
-  - label: "macos"
+  - label: "mac"
     matcher:
       title: "mac"
+      body: "mac"
   - label: "aix"
     matcher:
       title: "aix"
+      body: "aix"
   - label: "windows"
     matcher:
       title: "windows"
+      body: "windows"
   - label: "solaris"
     matcher:
       title: "solaris"
+      body: "solaris"
   - label: "linux"
     matcher:
       title: "linux"
+      body: "linux"
   - label: "alpine-linux"
     matcher:
       title: "alpine"
-
+      body: "alpine"
   - label: "arm"
     matcher:
       title: "arm"
-  - label: "aarch64"
+      body: "arm"
+  - label: "aarch"
     matcher:
-      title: "aarch64"
+      title: "aarch"
+      body: "aarch"
   - label: "ppc64le"
     matcher:
-      title: "ppc64le"
+      title: "ppc"
+      body: "plinux"
   - label: "s390x"
     matcher:
-      title: "s390x"
+      title: "s390"
+      body: "zlinux"
   - label: "x64"
     matcher:
       title: "x64"
+      body: "x64"
   - label: "sparcv9"
     matcher:
       title: "sparc"
-  - label: "riscv"
-    matcher:
-      title: "riscv"
+      body: "sparc"
 
   - label: "hotspot"
     matcher:
       title: "hotspot"
+      body: "hotspot"
   - label: "openj9"
     matcher:
-      title: "openj9"
+      title: "j9"
+      body: "j9"
   - label: "dragonwell/alibaba"
     matcher:
       title: "dragonwell"
+      body: "alibaba"
   - label: "bisheng"
     matcher:
       title: "bisheng"
-
+      body: "bisheng"
   - label: "docker"
     matcher:
       title: "docker"
-  - label: "hacktoberfest"
-    matcher:
-      body: "hacktoberfest"
+      body: "docker"
   - label: "generation"
     matcher:
       title: "generat"
+      body: "generat"
+  - label: "testing"
+    matcher:
+      title: "test"
+      body: "test"
+  - label: "installer"
+    matcher:
+      title: "install"
+      body: "installer"
+  - label: "cross-compile"
+    matcher:
+      title: "cross"
+      body: "risc"
+
+  - label: "hacktoberfest"
+    matcher:
+      body: "hacktober"
