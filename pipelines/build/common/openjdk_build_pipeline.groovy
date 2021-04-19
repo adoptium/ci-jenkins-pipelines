@@ -991,7 +991,7 @@ class Build {
     ) {
         return context.stage("build") {
             // Create the repo handler with the user's defaults to ensure a openjdk-build checkout is not null
-            def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
+            def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS)
             repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
             if (cleanWorkspace) {
                 try {
@@ -1028,9 +1028,10 @@ class Build {
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: "HOURS") {
                     if (useAdoptShellScripts) {
-                        repoHandler.checkoutAdoptPipelines()
+                        repoHandler.checkoutAdoptPipelines(context)
                     } else {
-                        repoHandler.checkoutUserPipelines()
+                        repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
+                        repoHandler.checkoutUserPipelines(context)
                     }
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
@@ -1061,8 +1062,8 @@ class Build {
                                 updateGithubCommitStatus("PENDING", "Build Started")
                             }
                             if (useAdoptShellScripts) {
-                                context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build to use their shell scripts..."
-                                repoHandler.checkoutAdoptBuild()
+                                context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build..."
+                                repoHandler.checkoutAdoptBuild(context)
                                 context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                 context.println "[CHECKOUT] Reverting pre-build AdoptOpenJDK/openjdk-build checkout..."
 
@@ -1070,14 +1071,16 @@ class Build {
                                 if (env.JOB_NAME.contains("pr-tester")) {
                                     context.checkout context.scm
                                 } else {
-                                    repoHandler.checkoutUserPipelines()
+                                    repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
+                                    repoHandler.checkoutUserPipelines(context)
                                 }
                             } else {
                                 context.println "[CHECKOUT] Checking out to the user's openjdk-build..."
-                                repoHandler.checkoutUserBuild()
+                                repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
+                                repoHandler.checkoutUserBuild(context)
                                 context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                 context.println "[CHECKOUT] Reverting pre-build user openjdk-build checkout..."
-                                repoHandler.checkoutUserPipelines()
+                                repoHandler.checkoutUserPipelines(context)
                             }
                         }
                     } catch (FlowInterruptedException e) {
@@ -1326,8 +1329,13 @@ class Build {
                             if (buildConfig.DOCKER_FILE) {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: "HOURS") {
-                                        def repoHandler = new RepoHandler(context, USER_REMOTE_CONFIGS)
-                                        repoHandler.checkoutAdoptPipelines()
+                                        def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS)
+                                        repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
+                                        if (useAdoptShellScripts) {
+                                            repoHandler.checkoutAdoptPipelines(context)
+                                        } else {
+                                            repoHandler.checkoutUserPipelines(context)
+                                        }
 
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
@@ -1409,7 +1417,7 @@ class Build {
                         throw new Exception("[ERROR] Sign job timeout (${buildTimeouts.SIGN_JOB_TIMEOUT} HOURS) has been reached OR the downstream sign job failed. Exiting...")
                     }
                 }
-                
+
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
