@@ -45,8 +45,8 @@ triggerSchedule_weekly="TZ=UTC\n30 04 * * 7"
 
 // scmReferences to use for weekly release build
 weekly_release_scmReferences=[
-        "hotspot"        : "release",
-        "openj9"         : "v0.26.0-release",
+        "hotspot"        : "",
+        "openj9"         : "",
         "corretto"       : "",
         "dragonwell"     : ""
 ]
