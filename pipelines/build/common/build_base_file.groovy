@@ -114,7 +114,7 @@ class Builder implements Serializable {
             buildArgs += " " + additionalBuildArgs
         }
 
-        def testList = getTestList(platformConfig)
+        def testList = getTestList(platformConfig, variant)
 
         def platformCleanWorkspaceAfterBuild = getCleanWorkspaceAfterBuild(platformConfig)
 
@@ -197,7 +197,7 @@ class Builder implements Serializable {
     Get the list of tests to run from the build configurations.
     We run different test categories depending on if this build is a release or nightly. This function parses and applies this to the individual build config.
     */
-    List<String> getTestList(Map<String, ?> configuration) {
+    List<String> getTestList(Map<String, ?> configuration, String variant) {
         final List<String> nightly = DEFAULTS_JSON["testDetails"]["nightlyDefault"]
         final List<String> weekly = DEFAULTS_JSON["testDetails"]["weeklyDefault"]
         List<String> testList = []
@@ -205,21 +205,41 @@ class Builder implements Serializable {
         * No test key or key value is test: false  --- test disabled
         * Key value is test: 'default' --- nightly build trigger 'nightly' test set, weekly build trigger or release build trigger 'nightly' + 'weekly' test sets
         * Key value is test: [customized map] specified nightly and weekly test lists
+        * Key value is test: [customized map] specified for different variant
         */
         if (configuration.containsKey("test") && configuration.get("test")) {
             def testJobType = "nightly"
             if (releaseType.equals("Weekly") || releaseType.equals("Release")) {
                 testJobType = "weekly"
             }
-
             if (isMap(configuration.test)) {
-
-                if ( testJobType == "nightly" ) {
-                    testList = (configuration.test as Map).get("nightly") as List<String>
+                if (configuration.test.containsKey(variant)) {
+                    //Test is enable for the variant
+                    if (configuration.test.get(variant)) {
+                        def testObj = isMap(configuration.test.get(variant))
+                        if (isMap(testObj)) {
+                            if ( testJobType == "nightly" ) {
+                                testList = (configuration.test.get(variant) as Map).get("nightly") as List<String>
+                            } else {
+                                testList = ((configuration.test.get(variant) as Map).get("nightly") as List<String>) + ((configuration.test as Map).get("weekly") as List<String>)
+                            }
+                        } else if (testObj instanceof List) {
+                            testList = (configuration.test as Map).get(variant) as List<String>
+                        } else {
+                           if ( testJobType == "nightly" ) {
+                                testList = nightly
+                            } else {
+                                testList = nightly + weekly
+                            }
+                        }
+                    }
                 } else {
-                    testList = ((configuration.test as Map).get("nightly") as List<String>) + ((configuration.test as Map).get("weekly") as List<String>)
+                    if ( testJobType == "nightly" ) {
+                        testList = (configuration.test as Map).get("nightly") as List<String>
+                    } else {
+                        testList = ((configuration.test as Map).get("nightly") as List<String>) + ((configuration.test as Map).get("weekly") as List<String>)
+                    }
                 }
-
             } else {
 
                 // Default to the test sets declared if one isn't set in the build configuration
