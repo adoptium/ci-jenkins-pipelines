@@ -213,19 +213,25 @@ class Builder implements Serializable {
                 testJobType = "weekly"
             }
             if (isMap(configuration.test)) {
+                context.println "isMap(configuration.test)..."
                 if (configuration.test.containsKey(variant)) {
+                    context.println "configuration.test.containsKey(variant)..."
                     //Test is enable for the variant
                     if (configuration.test.get(variant)) {
-                        def testObj = isMap(configuration.test.get(variant))
+                        context.println "configuration.test.get(variant)..."
+                        def testObj = configuration.test.get(variant)
                         if (isMap(testObj)) {
+                            context.println "isMap(testObj)..."
                             if ( testJobType == "nightly" ) {
                                 testList = (configuration.test.get(variant) as Map).get("nightly") as List<String>
                             } else {
                                 testList = ((configuration.test.get(variant) as Map).get("nightly") as List<String>) + ((configuration.test as Map).get("weekly") as List<String>)
                             }
                         } else if (testObj instanceof List) {
+                            context.println "testObj instanceof List..."
                             testList = (configuration.test as Map).get(variant) as List<String>
                         } else {
+                            context.println "else of testObj instanceof List..."
                            if ( testJobType == "nightly" ) {
                                 testList = nightly
                             } else {
