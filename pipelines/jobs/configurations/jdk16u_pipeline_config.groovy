@@ -152,7 +152,8 @@ class Config16 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace'
+                configureArgs       : '--enable-dtrace',
+                testDynamic          : false
         ],
 
         aarch64LinuxXL    : [
@@ -161,7 +162,8 @@ class Config16 {
                 arch                 : 'aarch64',
                 test                 : 'default',
                 additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace'
+                configureArgs        : '--with-noncompressedrefs --enable-dtrace',
+                testDynamic          : false
         ],
 
         arm32Linux    : [

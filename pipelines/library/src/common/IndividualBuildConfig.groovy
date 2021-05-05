@@ -9,6 +9,8 @@ class IndividualBuildConfig implements Serializable {
     final String VARIANT
     final String JAVA_TO_BUILD
     final List<String> TEST_LIST
+    final List<String> DYNAMIC_LIST
+    final String NUM_MACHINES
     final String SCM_REF
     final String BUILD_ARGS
     final String NODE_LABEL
@@ -55,6 +57,14 @@ class IndividualBuildConfig implements Serializable {
             TEST_LIST = []
         }
 
+        if (String.class.isInstance(map.get("DYNAMIC_LIST"))) {
+            DYNAMIC_LIST = map.get("DYNAMIC_LIST").split(",")
+        } else if (List.class.isInstance(map.get("DYNAMIC_LIST"))) {
+            DYNAMIC_LIST = map.get("DYNAMIC_LIST")
+        } else {
+            DYNAMIC_LIST = []
+        }        
+        NUM_MACHINES = map.get("NUM_MACHINES")
         SCM_REF = map.get("SCM_REF")
         BUILD_ARGS = map.get("BUILD_ARGS")
         NODE_LABEL = map.get("NODE_LABEL")
@@ -106,6 +116,8 @@ class IndividualBuildConfig implements Serializable {
                 VARIANT                   : VARIANT,
                 JAVA_TO_BUILD             : JAVA_TO_BUILD,
                 TEST_LIST                 : TEST_LIST,
+                DYNAMIC_LIST              : DYNAMIC_LIST,
+                NUM_MACHINES              : NUM_MACHINES,
                 SCM_REF                   : SCM_REF,
                 BUILD_ARGS                : BUILD_ARGS,
                 NODE_LABEL                : NODE_LABEL,

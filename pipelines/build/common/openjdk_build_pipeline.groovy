@@ -312,15 +312,15 @@ class Build {
     */
     def runAQATests() {
         def testStages = [:]
-        List testList = []
         def jdkBranch = getJDKBranch()
         def jdkRepo = getJDKRepo()
         def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == "openj9") ? buildConfig.SCM_REF : "master"
 
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
-        testList = buildConfig.TEST_LIST
-
+        List testList = buildConfig.TEST_LIST
+        List dynamicList = buildConfig.DYNAMIC_LIST
+        String numMachines = buildConfig.NUM_MACHINES
         testList.each { testType ->
 
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
@@ -335,6 +335,10 @@ class Build {
                         }
 
                         def jobParams = getAQATestJobParams(testType)
+                        def parallel = 'None'
+                        if (dynamicList.contains(testType)) {
+                            parallel = 'Dynamic'
+                        }
                         def jobName = jobParams.TEST_JOB_NAME
                         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
 
@@ -359,6 +363,8 @@ class Build {
                                             context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
                                             context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                             context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
+                                            context.string(name: 'PARALLEL', value: parallel),
+                                            context.string(name: 'NUM_MACHINES', value: numMachines),
                                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
                         }
                     }
