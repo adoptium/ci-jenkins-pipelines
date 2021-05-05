@@ -85,7 +85,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>DOCKER_FILE</strong></dt><dd>Relative path to a dockerfile to be built and used on top of the DOCKER_IMAGE</dd>
                 <dt><strong>DOCKER_REGISTRY</strong></dt><dd>Custom Docker registry to pull DOCKER_IMAGE from</dd>
                 <dt><strong>DOCKER_CREDENTIAL</strong></dt><dd>Username & Password Jenkins credential ID for Docker registry login</dd>
-                <dt><strong>PLATFORM_CONFIG_LOCATION</strong></dt><dd>Repo owner, branch name and relative path to the platform specific configuration for this paticular OS</dd>
+                <dt><strong>PLATFORM_CONFIG_LOCATION</strong></dt><dd>Repo owner, branch name and relative path to the platform specific configuration for the particular OS you are building (e.g. M-Davies/openjdk-build/my_branch/build-farm/platform-specific-configurations/linux.sh)</dd>
                 <dt><strong>CONFIGURE_ARGS</strong></dt><dd>Arguments for ./configure. Escape all speech marks used within this parameter.</dd>
                 <dt><strong>OVERRIDE_FILE_NAME_VERSION</strong></dt><dd>Set the version string on the file name</dd>
                 <dt><strong>USE_ADOPT_SHELL_SCRIPTS</strong></dt><dd>Use Adopt's make-adopt-build-farm.sh and other bash scripts</dd>
