@@ -289,6 +289,7 @@ class Build {
                         context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                     }
                 }
+                context.println "Smoketest exist or generated sucessfully"
                 smoketestJobs = context.build job: jobName,
                                     propagate: true,
                                     parameters: [
@@ -298,13 +299,20 @@ class Build {
                                         context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                         context.string(name: 'KEEP_REPORTDIR', value: "${buildConfig.KEEP_TEST_REPORTDIR}"),
                                         context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
-                }
             }
         } catch (Exception e) {
-            context.println "Failed to execute test: ${e.message}"
-            throw new Exception("[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed. ")
+            context.println "Failed to setup and execute smoketests: ${e.message}"
         }
-        return smoketest.result.isWorseThan(Result.SUCCESS)) 
+        if (smoketestJobs.resultIsWorseOrEqualTo('UNSTABLE')) {
+            if (smoketestJobs.getResult() == 'UNSTABLE' ) {
+                context.println "[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed."
+                return false
+            }
+            context.println " Somke tests build failed or aborted, which is probably test setup or infra issue. Will not block run-aqa tests as it is not test case failure"
+            return true
+        } else {
+            return true
+        }
     }
     /*
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
@@ -1413,8 +1421,8 @@ class Build {
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
-                        def smokeTestStatus = runSmokeTests()
-                        if ( smokeTestStatus && buildConfig.TEST_LIST.size() > 0) {
+                        def continueAQATest = runSmokeTests()
+                        if ( continueAQATest && buildConfig.TEST_LIST.size() > 0) {
                             def testStages = runAQATests()
                             context.parallel testStages
                         }

@@ -14,7 +14,7 @@ if (binding.hasVariable('PR_BUILDER')) {
     pipelineSchedule = "0 0 31 2 0" // 31st Feb, so will never run
     gitRefSpec = "+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/master:refs/remotes/origin/master +refs/heads/*:refs/remotes/origin/*"
     propagateFailures = true
-    runTests = false
+    runTests = true
     runInstaller = false
     runSigner = false
     isLightweight = false
