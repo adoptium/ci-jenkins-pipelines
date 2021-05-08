@@ -274,7 +274,6 @@ class Build {
     */
     def runSmokeTests() {
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-        def smoketestJobs = [:]
         try {
             context.println "Running smoke test"
             context.stage("smoke test") {
@@ -289,29 +288,19 @@ class Build {
                         context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                     }
                 }
-                context.println "Smoketest exist or generated sucessfully"
-                smoketestJobs = context.build job: jobName,
-                                    propagate: true,
-                                    parameters: [
-                                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                        context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
-                                        context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                        context.string(name: 'KEEP_REPORTDIR', value: "${buildConfig.KEEP_TEST_REPORTDIR}"),
-                                        context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+                context.build job: jobName,
+                                propagate: true,
+                                parameters: [
+                                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                    context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
+                                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                    context.string(name: 'KEEP_REPORTDIR', value: "${buildConfig.KEEP_TEST_REPORTDIR}"),
+                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
             }
         } catch (Exception e) {
-            context.println "Failed to setup and execute smoketests: ${e.message}"
-        }
-        if (smoketestJobs.resultIsWorseOrEqualTo('UNSTABLE')) {
-            if (smoketestJobs.getResult() == 'UNSTABLE' ) {
-                context.println "[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed."
-                return false
-            }
-            context.println " Somke tests build failed or aborted, which is probably test setup or infra issue. Will not block run-aqa tests as it is not test case failure"
-            return true
-        } else {
-            return true
+            context.println "SmokeTest failed: ${e}"
+            throw new Exception("[ERROR] Smoke Tests failed unexpectedly. No further tests will run until Smoke test failures are fixed. ")
         }
     }
     /*
@@ -415,7 +404,7 @@ class Build {
                 def nodeFilter = "${buildConfig.TARGET_OS}"
 
                 if (buildConfig.TARGET_OS == "windows") {
-                    filter = "**/OpenJDK*_windows_*.zip"
+                    filter = "**/OpenJDK*_windows_*.zip"s
                     certificate = "C:\\openjdk\\windows.p12"
                     nodeFilter = "${nodeFilter}&&build&&win2012"
 
@@ -1421,8 +1410,8 @@ class Build {
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
-                        def continueAQATest = runSmokeTests()
-                        if ( continueAQATest && buildConfig.TEST_LIST.size() > 0) {
+                        runSmokeTests()
+                        if ( buildConfig.TEST_LIST.size() > 0) {
                             def testStages = runAQATests()
                             context.parallel testStages
                         }

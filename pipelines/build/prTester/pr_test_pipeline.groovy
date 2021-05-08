@@ -158,12 +158,11 @@ class PullRequestTestPipeline implements Serializable {
 
 Map<String, ?> defaultTestConfigurations = [
     "x64Linux": [
-        "hotspot",
         "openj9"
     ]
 ]
 
-List<Integer> defaultJavaVersions = [8]
+List<Integer> defaultJavaVersions = [8, 11]
 
 return {
     String branch,
