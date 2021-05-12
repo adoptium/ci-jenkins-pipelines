@@ -395,27 +395,19 @@ class Build {
     */
     def sign(VersionInfo versionInfo) {
         // Sign and archive jobs if needed
-        // TODO: This version info check needs to be updated when the notarization fix gets applied to other versions.
         if (
-            buildConfig.TARGET_OS == "windows" ||
-        (buildConfig.TARGET_OS == "mac" && versionInfo.major == 8 && buildConfig.VARIANT != "openj9") || (buildConfig.TARGET_OS == "mac" && versionInfo.major == 13)
+            buildConfig.TARGET_OS == "windows" || (buildConfig.TARGET_OS == "mac" && versionInfo.major == 8)
         ) {
             context.stage("sign") {
                 def filter = ""
-                def certificate = ""
 
-                def nodeFilter = "${buildConfig.TARGET_OS}"
+                def nodeFilter = "eclipse-codesign"
 
                 if (buildConfig.TARGET_OS == "windows") {
                     filter = "**/OpenJDK*_windows_*.zip"
-                    certificate = "C:\\openjdk\\windows.p12"
-                    nodeFilter = "${nodeFilter}&&build&&win2012"
 
                 } else if (buildConfig.TARGET_OS == "mac") {
                     filter = "**/OpenJDK*_mac_*.tar.gz"
-                    certificate = "\"Developer ID Application: London Jamocha Community CIC\""
-
-                    nodeFilter = "${nodeFilter}&&macos10.14"
                 }
 
                 def params = [
@@ -423,8 +415,8 @@ class Build {
                         context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
                         context.string(name: 'OPERATING_SYSTEM', value: "${buildConfig.TARGET_OS}"),
                         context.string(name: 'VERSION', value: "${versionInfo.major}"),
+                        context.string(name: 'SIGN_TOOL', value: "eclipse"),
                         context.string(name: 'FILTER', value: "${filter}"),
-                        context.string(name: 'CERTIFICATE', value: "${certificate}"),
                         ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"],
                 ]
 
