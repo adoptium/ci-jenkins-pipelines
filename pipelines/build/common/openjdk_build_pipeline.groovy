@@ -452,7 +452,6 @@ class Build {
     */
     private void buildMacInstaller(VersionInfo versionData) {
         def filter = "**/OpenJDK*_mac_*.tar.gz"
-        def certificate = "Developer ID Installer: London Jamocha Community CIC"
 
         def nodeFilter = "${buildConfig.TARGET_OS}&&macos10.14&&xcode10"
 
@@ -465,7 +464,6 @@ class Build {
                         context.string(name: 'FILTER', value: "${filter}"),
                         context.string(name: 'FULL_VERSION', value: "${versionData.version}"),
                         context.string(name: 'MAJOR_VERSION', value: "${versionData.major}"),
-                        context.string(name: 'CERTIFICATE', value: "${certificate}"),
                         ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
                 ]
 
@@ -512,7 +510,6 @@ class Build {
     */
     private void buildWindowsInstaller(VersionInfo versionData) {
         def filter = "**/OpenJDK*jdk_*_windows*.zip"
-        def certificate = "C:\\openjdk\\windows.p12"
 
         def buildNumber = versionData.build
 
@@ -544,7 +541,6 @@ class Build {
                         context.string(name: 'MSI_PRODUCT_VERSION', value: "${versionData.msi_product_version}"),
                         context.string(name: 'PRODUCT_CATEGORY', value: "jdk"),
                         context.string(name: 'JVM', value: "${buildConfig.VARIANT}"),
-                        context.string(name: 'SIGNING_CERTIFICATE', value: "${certificate}"),
                         context.string(name: 'ARCH', value: "${INSTALLER_ARCH}"),
                         ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${buildConfig.TARGET_OS}&&wix"]
                 ]
@@ -576,7 +572,6 @@ class Build {
                             context.string(name: 'MSI_PRODUCT_VERSION', value: "${versionData.msi_product_version}"),
                             context.string(name: 'PRODUCT_CATEGORY', value: "jre"),
                             context.string(name: 'JVM', value: "${buildConfig.VARIANT}"),
-                            context.string(name: 'SIGNING_CERTIFICATE', value: "${certificate}"),
                             context.string(name: 'ARCH', value: "${INSTALLER_ARCH}"),
                             ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${buildConfig.TARGET_OS}&&wix"]
                         ]
@@ -628,6 +623,62 @@ class Build {
                 }
             }
         }
+    }
+
+    def signInstaller(VersionInfo versionData) {
+        if (versionData == null || versionData.major == null) {
+            context.println "Failed to parse version number, possibly a nightly? Skipping installer steps"
+            return
+        }
+
+        context.node('master') {
+            context.stage("sign installer") {
+                if (buildConfig.TARGET_OS == "mac" || buildConfig.TARGET_OS == "windows") {
+                    try {
+                        signInstallerJob(versionData);
+                        context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.pkg workspace/target/*.msi); do sha256sum "$file" > $file.sha256.txt ; done'
+                        writeMetadata(versionData, false)
+                        context.archiveArtifacts artifacts: "workspace/target/*"
+                    } catch (e) {
+                        context.println("Failed to build ${buildConfig.TARGET_OS} installer ${e}")
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
+        }
+    }
+
+    private void signInstallerJob(VersionInfo versionData) {
+        def filter = ""
+
+        switch (buildConfig.TARGET_OS) {
+            case "mac": filter = "**/OpenJDK*_mac_*.pkg"; break
+            case "windows": filter = "**/OpenJDK*_windows_*.msi"; break
+            default: break
+        }
+
+        def nodeFilter = "eclipse-codesign"
+
+        // Execute sign installer job
+        def installerJob = context.build job: "build-scripts/release/sign_installer",
+                propagate: true,
+                parameters: [
+                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                        context.string(name: 'FILTER', value: "${filter}"),
+                        context.string(name: 'FULL_VERSION', value: "${versionData.version}"),
+                        context.string(name: 'OPERATING_SYSTEM', value: "${buildConfig.TARGET_OS}"),
+                        context.string(name: 'MAJOR_VERSION', value: "${versionData.major}"),
+                        ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
+                ]
+
+        context.copyArtifacts(
+                projectName: "build-scripts/release/sign_installer",
+                selector: context.specific("${installerJob.getNumber()}"),
+                filter: 'workspace/target/*',
+                fingerprintArtifacts: true,
+                target: "workspace/target/",
+                flatten: true)
     }
 
 
@@ -1420,6 +1471,7 @@ class Build {
                     try {
                         // Installer job timeout managed by Jenkins job config
                         buildInstaller(versionInfo)
+                        signInstaller(versionInfo)
                     } catch (FlowInterruptedException e) {
                         throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
                     }
