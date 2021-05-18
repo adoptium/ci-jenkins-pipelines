@@ -15,7 +15,7 @@ class RepoHandlerTest {
 
     @Test
     void adoptDefaultsGetterReturns() {
-        RepoHandler handler = new RepoHandler(this, [:])
+        RepoHandler handler = new RepoHandler([:])
         Map adoptJson = handler.getAdoptDefaultsJson()
 
         // Repository
@@ -70,7 +70,7 @@ class RepoHandlerTest {
 
     @Test
     void userDefaultsSetterAndGetterReturns() {
-        RepoHandler handler = new RepoHandler(this, [:])
+        RepoHandler handler = new RepoHandler([:])
         String fakeDefaults = new File(System.getProperty("user.dir") + '/src/test/groovy/fakeDefaults.json').text
         handler.setUserDefaultsJson(this, fakeDefaults)
         Map userJson = handler.getUserDefaultsJson()
@@ -128,7 +128,7 @@ class RepoHandlerTest {
 
     @Test
     void userConfigGetterReturns() {
-        RepoHandler handler = new RepoHandler(this, testRemote)
+        RepoHandler handler = new RepoHandler(testRemote)
         Map userConfigsMap = handler.getUserRemoteConfigs()
 
         Assertions.assertEquals(userConfigsMap.branch, "foo")
