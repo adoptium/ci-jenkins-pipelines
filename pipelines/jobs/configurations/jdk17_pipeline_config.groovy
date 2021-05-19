@@ -164,9 +164,9 @@ class Config17 {
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace'
         ],
 
-        arm64Mac: [
+        aarch64Mac: [
                 os                  : 'mac',
-                arch                : 'arm64',
+                arch                : 'aarch64',
                 additionalNodeLabels: 'macos11',
                 test                : 'default'
         ],
