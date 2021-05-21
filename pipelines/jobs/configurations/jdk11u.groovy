@@ -6,9 +6,9 @@ targetConfigurations = [
         "ppc64Aix"      : [    "hotspot",    "openj9"                    ],
         "ppc64leLinux"  : [    "hotspot",    "openj9"                    ],
         "s390xLinux"    : [    "hotspot",    "openj9"                    ],
-        "aarch64Linux"  : [    "hotspot",    "openj9",    "dragonwell",    "bisheng"     ],
+        "aarch64Linux"  : [    "hotspot",    "openj9",    "dragonwell",                   "bisheng"    ],
         "arm32Linux"    : [    "hotspot"                            ],
-        "riscv64Linux"  : [			"openj9"			]
+        "riscv64Linux"  : [                  "openj9",                                    "bisheng"    ]
 ]
 
 // 18:05 Tue, Thur
@@ -21,7 +21,8 @@ weekly_release_scmReferences=[
         "hotspot"        : "",
         "openj9"         : "",
         "corretto"       : "",
-        "dragonwell"     : ""
+        "dragonwell"     : "",
+        "bisheng"        : ""
 ]
 
 return this
