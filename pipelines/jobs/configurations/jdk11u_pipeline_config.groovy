@@ -182,7 +182,7 @@ class Config11 {
                 ],
                 buildArgs            : [
                         "openj9"     : '--cross-compile',
-                        "bisheng"    : '--cross-compile'
+                        "bisheng"    : '--cross-compile --branch risc-v'
                 ],
                 configureArgs        : [
                         "openj9"     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
