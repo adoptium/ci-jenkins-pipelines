@@ -116,8 +116,8 @@ class Builder implements Serializable {
         }
 
         def testList = getTestList(platformConfig, variant)
-        def dynamicList = getDynamicParas(platformConfig, variant).get("testLists")
-        def numMachines = getDynamicParas(platformConfig, variant).get("numMachines")
+        def dynamicList = getDynamicParams(platformConfig, variant).get("testLists")
+        def numMachines = getDynamicParams(platformConfig, variant).get("numMachines")
 
         def platformCleanWorkspaceAfterBuild = getCleanWorkspaceAfterBuild(platformConfig)
 
@@ -266,7 +266,7 @@ class Builder implements Serializable {
     Get the list of tests to dynamically run  parallel builds from the build configurations.
     This function parses and applies this to the individual build config.
     */
-    Map<String, ?> getDynamicParas(Map<String, ?> configuration, String variant) {
+    Map<String, ?> getDynamicParams(Map<String, ?> configuration, String variant) {
         List<String> testLists = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["testLists"]
         String numMachines = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["numMachines"]
         if (configuration.containsKey("testDynamic")) {

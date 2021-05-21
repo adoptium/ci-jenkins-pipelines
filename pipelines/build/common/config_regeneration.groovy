@@ -336,7 +336,7 @@ class Regeneration implements Serializable {
     * Get the list of tests to dynamically run  parallel builds from the build configurations. Used as a placeholder since the pipelines overwrite this
     * @param configuration
     */
-    Map<String, ?> getDynamicParas() {
+    Map<String, ?> getDynamicParams() {
         List<String> testLists = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["testLists"]
         String numMachines = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["numMachines"]
         return ["testLists": testLists, "numMachines": numMachines]
@@ -408,9 +408,9 @@ class Regeneration implements Serializable {
 
             def testList = getTestList(platformConfig)
 
-            def dynamicList = getDynamicParas().get("testLists")
+            def dynamicList = getDynamicParams().get("testLists")
 
-            def numMachines = getDynamicParas().get("numMachines")
+            def numMachines = getDynamicParams().get("numMachines")
 
            return new IndividualBuildConfig( // final build config
                 JAVA_TO_BUILD: javaToBuild,
