@@ -1,6 +1,6 @@
 {
     "repository"             : {
-        "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        "build_url"          : "https://github.com/adoptium/temurin-build.git",
         "build_branch"       : "master",
         "test_dirs"          : "/test/functional",
         "pipeline_url"       : "https://github.com/adoptium/ci-jenkins-pipelines.git",

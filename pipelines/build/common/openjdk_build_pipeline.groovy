@@ -129,7 +129,7 @@ class Build {
 
     /*
     Calculates which test job we should execute for each requested test type.
-    The test jobs all follow the same name naming pattern that is defined in the openjdk-tests repository.
+    The test jobs all follow the same name naming pattern that is defined in the aqa-tests repository.
     E.g. Test_openjdk11_hs_sanity.system_ppc64_aix
     */
      def getSmokeTestJobParams() {
@@ -252,7 +252,7 @@ class Build {
             }
             suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
         } else if (buildConfig.VARIANT == "hotspot") {
-            suffix = "adoptopenjdk/openjdk-${buildConfig.JAVA_TO_BUILD}"
+            suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
         } else if (buildConfig.VARIANT == "dragonwell") {
             suffix = "alibaba/dragonwell${javaNumber}"
         } else if (buildConfig.VARIANT == "bisheng") {
@@ -283,7 +283,7 @@ class Build {
                 def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
                 if (!JobHelper.jobIsRunnable(jobName as String)) {
                     context.node('master') {
-                        context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
+                        context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
                         def templatePath = 'testJobTemplate'
                         context.println "Smoke test job doesn't exist, create test job: ${jobName}"
                         context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
@@ -341,7 +341,7 @@ class Build {
                         // Create test job if job doesn't exist or is not runnable
                         if (!JobHelper.jobIsRunnable(jobName as String)) {
                             context.node('master') {
-                                context.sh('curl -Os https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-tests/master/buildenv/jenkins/testJobTemplate')
+                                context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
                                 def templatePath = 'testJobTemplate'
                                 context.println "Test job doesn't exist, create test job: ${jobName}"
                                 context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
@@ -506,7 +506,7 @@ class Build {
 
     /*
     Run the Windows installer downstream jobs.
-    We run two jobs if we have a JRE (see https://github.com/AdoptOpenJDK/openjdk-build/issues/1751).
+    We run two jobs if we have a JRE (see https://github.com/adoptium/temurin-build/issues/1751).
     */
     private void buildWindowsInstaller(VersionInfo versionData) {
         def filter = "**/OpenJDK*jdk_*_windows*.zip"
@@ -845,7 +845,7 @@ class Build {
         /*
         example data:
             {
-                "vendor": "AdoptOpenJDK",
+                "vendor": "Eclipse Foundation",
                 "os": "mac",
                 "arch": "x64",
                 "variant": "openj9",
@@ -1077,7 +1077,7 @@ class Build {
                         repoHandler.checkoutUserPipelines(context)
                     }
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
-                    // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
+                    // https://github.com/adoptium/infrastucture/issues/1553
                     context.sh(script: "git clean -fdx")
                 }
             } catch (FlowInterruptedException e) {
@@ -1091,9 +1091,9 @@ class Build {
 
                 // Add in the adopt platform config path so it can be used if the user doesn't have one
                 def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']).minus(".git").split('/')
-                // e.g. https://github.com/AdoptOpenJDK/openjdk-build.git will produce AdoptOpenJDK/openjdk-build
+                // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
                 String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
-                // e.g. AdoptOpenJDK/openjdk-build/master/build-farm/platform-specific-configurations
+                // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
                 envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${ADOPT_DEFAULTS_JSON['repository']['build_branch']}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
 
                 // Execute build
@@ -1105,10 +1105,10 @@ class Build {
                                 updateGithubCommitStatus("PENDING", "Build Started")
                             }
                             if (useAdoptShellScripts) {
-                                context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build..."
+                                context.println "[CHECKOUT] Checking out to adoptium/temurin-build..."
                                 repoHandler.checkoutAdoptBuild(context)
                                 context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                context.println "[CHECKOUT] Reverting pre-build AdoptOpenJDK/openjdk-build checkout..."
+                                context.println "[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout..."
 
                                 // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
                                 if (env.JOB_NAME.contains("pr-tester")) {
@@ -1381,7 +1381,7 @@ class Build {
                                         }
 
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
-                                        // https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1553
+                                        // https://github.com/adoptium/infrastucture/issues/1553
                                         context.sh(script: "git clean -fdx")
                                     }
                                 } catch (FlowInterruptedException e) {
@@ -1422,7 +1422,7 @@ class Build {
                             // This is to avoid windows path length issues.
                             context.echo("checking ${buildConfig.TARGET_OS}")
                             if (buildConfig.TARGET_OS == "windows") {
-                                // See https://github.com/AdoptOpenJDK/openjdk-infrastructure/issues/1284#issuecomment-621909378 for justification of the below path
+                                // See https://github.com/adoptium/infrastucture/issues/1284#issuecomment-621909378 for justification of the below path
                                 def workspace = "C:/workspace/openjdk-build/"
                                 if (env.CYGWIN_WORKSPACE) {
                                     workspace = env.CYGWIN_WORKSPACE

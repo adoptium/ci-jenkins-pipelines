@@ -96,6 +96,6 @@ If you're unsure if the tests failed because of your changes or not, check our [
 ##### `add to whitelist`
 
 - **ADMIN COMMAND ONLY**
-- This command adds a new user to the whitelist but not to the admin list of the [#openjdk-build-pr-tester](#openjdk-build-pr-tester) job. As of typing this, there is [currently no way to check if you have the correct permissions](https://github.com/AdoptOpenJDK/openjdk-build/issues/2055#issuecomment-688801090).
+- This command adds a new user to the whitelist but not to the admin list of the [#openjdk-build-pr-tester](#openjdk-build-pr-tester) job. As of typing this, there is [currently no way to check if you have the correct permissions](https://github.com/adoptium/temurin-build/issues/2055#issuecomment-688801090).
 - Should you want to be promoted to the whitelist, please contact one of the admins through [#infrastructure](https://adoptopenjdk.slack.com/archives/C53GHCXL4) in Slack.
 - Should you want the up to date admin or white list, check the configuration of the [openjdk-build-pr-tester](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/) job. If you don't have the permissions to view the configuration, then try out the `add to whitelist` and `run tests` commands on a test PR to see if they work.

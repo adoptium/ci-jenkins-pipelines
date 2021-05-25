@@ -1,6 +1,6 @@
 # Jenkins pipeline files for building OpenJDK
 
-AdoptOpenJDK makes use of these scripts to build binaries on the build farm at <https://ci.adoptopenjdk.net>
+Eclipse Adoptium makes use of these scripts to build binaries on the build farm at <https://ci.adoptopenjdk.net>
 
 ## Repository contents
 
@@ -19,7 +19,7 @@ The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory con
 
 To ensure both configurations are not overridden in a race condition scenario by another job, the [job generators](pipelines/build/regeneration/README.md) ensure they remain in the sync with the repository.
 
-**Generally, any new parameters/configurations that effect the jenkins environment directly should be implemented here.** If this is not the case, it would likely be better placed in [openjdk-build/platform-specific-configurations](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/build-farm/platform-specific-configurations) (for OS or `make-adopt-build-farm.sh` specific use cases) or [openjdk-build/build.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/sbin/build.sh) (for anyone, including end users and jenkins pipelines).
+**Generally, any new parameters/configurations that effect the jenkins environment directly should be implemented here.** If this is not the case, it would likely be better placed in [openjdk-build/platform-specific-configurations](https://github.com/adoptium/temurin-build/tree/master/build-farm/platform-specific-configurations) (for OS or `make-adopt-build-farm.sh` specific use cases) or [openjdk-build/build.sh](https://github.com/adoptium/temurin-build/blob/master/sbin/build.sh) (for anyone, including end users and jenkins pipelines).
 
 ### Build
 
@@ -64,13 +64,13 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 | dockerRegistry             | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Used for Docker login when pulling dockerImage from a custom Docker registry. Used in conjunction with **dockerImage**. Default (blank) will be DockerHub. Must also use dockerCredential. |
 | dockerCredential           | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Used for Docker login when pulling a dockerImage. Value is the Jenkins credential ID for the username and password of the dockerRegistry. Used in conjunction with **dockerImage**. Can use with custom dockerRegistry or default DockerHub. Must use this if using a non-default registry. |
 | additionalNodeLabels       | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Appended to the default constructed jenkins node label (often used to lock variants or build configs to specific machines). Jenkins will additionally search for a node with this tag as well as the default node label.<br>*E.g. `build-macstadium-macos1010-1`, `macos10.14`* |
-| additionalTestLabels       | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Used by [openjdk-tests](https://github.com/AdoptOpenJDK/openjdk-tests/blob/2b6ee54f18021c38386cea65c552de4ea20a8d1c/buildenv/jenkins/testJobTemplate#L213) to lock specific tests to specific machine nodes (in the same manner as **additionalNodeLabels**)<br>*E.g. `!(centos6\|\|rhel6)`, `dragonwell`* |
+| additionalTestLabels       | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Used by [aqa-tests](https://github.com/adoptium/aqa-tests/blob/2b6ee54f18021c38386cea65c552de4ea20a8d1c/buildenv/jenkins/testJobTemplate#L213) to lock specific tests to specific machine nodes (in the same manner as **additionalNodeLabels**)<br>*E.g. `!(centos6\|\|rhel6)`, `dragonwell`* |
 | configureArgs              | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Configuration arguments that will ultimately be passed to OpenJDK's `./configure`<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
-| buildArgs                  | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Build arguments that will ultimately be passed to [openjdk-build's ./makejdk-any-platform.sh](https://github.com/AdoptOpenJDK/openjdk-build#the-makejdk-any-platformsh-script) script<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
+| buildArgs                  | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Build arguments that will ultimately be passed to [openjdk-build's ./makejdk-any-platform.sh](https://github.com/adoptium/temurin-build#the-makejdk-any-platformsh-script) script<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
 | additionalFileNameTag      | ❌    | `String`                              | Commonly used when building [large heap versions](https://adoptopenjdk.net/faq.html#:~:text=What%20are%20the%20OpenJ9%20%22Large,XL%20in%20the%20download%20filenames) of the binary, this tag will also be included in the jenkins job name and binary file name. Include this parameter if you have an "extra" variant that requires a different tagname<br>*E.g. `linuxXL`* |
 | crossCompile               | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Used when building on a cross compiled system, informing jenkins to treat it differently when retrieving the version and producing the binary. This value is also used to create the jenkins node label alongside the **arch** (similarly to **additionalNodeLabels**)<br>*E.g. `x64`* |
-| bootJDK                    | ❌    | `String`                              | JDK version number to specify to openjdk-build's `make-adopt-build-farm.sh` script, informing it to utilise a [predefined location of a boot jdk](https://github.com/AdoptOpenJDK/openjdk-build/blob/2df732492b59b1606439505316c766edbb566cc2/build-farm/make-adopt-build-farm.sh#L115-L141)<br> *E.g. `8`, `11`* |
-| platformSpecificConfigPath | ❌    | `String`                              | openjdk-build repository path to pull the operating system configurations from inside [openjdk-build's set-platform-specific-configurations.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/build-farm/set-platform-specific-configurations.sh). Do not include the repo name or branch as this is prepended automatically.<br>*E.g. `pipelines/TestLocation/platform-specific-configurations`* |
+| bootJDK                    | ❌    | `String`                              | JDK version number to specify to openjdk-build's `make-adopt-build-farm.sh` script, informing it to utilise a [predefined location of a boot jdk](https://github.com/adoptium/temurin-build/blob/2df732492b59b1606439505316c766edbb566cc2/build-farm/make-adopt-build-farm.sh#L115-L141)<br> *E.g. `8`, `11`* |
+| platformSpecificConfigPath | ❌    | `String`                              | openjdk-build repository path to pull the operating system configurations from inside [openjdk-build's set-platform-specific-configurations.sh](https://github.com/adoptium/temurin-build/blob/master/build-farm/set-platform-specific-configurations.sh). Do not include the repo name or branch as this is prepended automatically.<br>*E.g. `pipelines/TestLocation/platform-specific-configurations`* |
 | codebuild                  | ❌    | `Boolean`                             | Setting this field will tell jenkins to spin up an Azure or [AWS cloud](https://aws.amazon.com/codebuild/) machine, allowing the build to retrieve a machine not normally available on the Jenkins server. It does this by appending a `codebuild` flag to the jenkins label. |
 | cleanWorkspaceAfterBuild   | ❌    | `Boolean`                             | Setting this field will tell jenkins to clean down the workspace after the build has completed. Particularly useful for AIX where disk space can be limited. |
 
@@ -165,7 +165,7 @@ Alongside the built assets a metadata file will be created with info about the b
 
 ```json
 {
-    "vendor": "AdoptOpenJDK",
+    "vendor": "Eclipse Foundation",
     "os": "mac",
     "arch": "x64",
     "variant": "openj9",
@@ -205,9 +205,9 @@ Below are all of the keys contained in the metadata file and some example values
 ---
 
 - `vendor:`
-Example values: [`AdoptOpenJDK`, `Alibaba`]
+Example values: [`Temurin`, `Alibaba`]
 
-This tag is used to identify the vendor of the JDK being built, this value is set in the [build.sh](https://github.com/AdoptOpenJDK/openjdk-build/blob/805e76acbb8a994abc1fb4b7d582486d48117ee8/sbin/build.sh#L183) file and defaults to "AdoptOpenJDK".
+This tag is used to identify the vendor of the JDK being built, this value is set in the [build.sh](https://github.com/adoptium/temurin-build/blob/master/sbin/build.sh#L327) file and defaults to "Temurin".
 
 ---
 
@@ -291,7 +291,7 @@ Example values: [`202008210941`, `202010120348`, `202007272039`]
 - `scmRef:`
 Example values: [`dragonwell-8.4.4_jdk8u262-b10`, `jdk-16+19_adopt-61198-g59e3baa94ac`, `jdk-11.0.9+10_adopt-197-g11f44f68c5`, `23f997ca1`]
 
-A reference the the base JDK repository being build, usually including a Github commit reference, i.e. `jdk-16+19_adopt-61198-g59e3baa94ac` links to <https://github.com/AdoptOpenJDK/openjdk-jdk/commit/59e3baa94ac> via the commit SHA **59e3baa94ac**.
+A reference the the base JDK repository being build, usually including a Github commit reference, i.e. `jdk-16+19_adopt-61198-g59e3baa94ac` links to <https://github.com/adoptium/jdk/commit/59e3baa94ac> via the commit SHA **59e3baa94ac**.
 
 Values that only contain a commit reference such as `23f997ca1` are OpenJ9 commits on their respective JDK repositories, for example **23f997ca1** links to the commit <https://github.com/ibmruntimes/openj9-openjdk-jdk14/commit/23f997ca1>.
 

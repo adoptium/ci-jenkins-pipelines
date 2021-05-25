@@ -20,7 +20,7 @@ class RepoHandlerTest {
 
         // Repository
         Assertions.assertTrue(adoptJson.repository instanceof Map)
-        Assertions.assertEquals(adoptJson.repository.build_url, "https://github.com/AdoptOpenJDK/openjdk-build.git")
+        Assertions.assertEquals(adoptJson.repository.build_url, "https://github.com/adoptium/temurin-build.git")
         Assertions.assertEquals(adoptJson.repository.build_branch, "master")
         Assertions.assertEquals(adoptJson.repository.pipeline_url, "https://github.com/adoptium/ci-jenkins-pipelines.git")
         Assertions.assertEquals(adoptJson.repository.pipeline_branch, "master")

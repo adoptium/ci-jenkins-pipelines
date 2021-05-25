@@ -10,8 +10,8 @@ This file contains the default constants and paths used in the build scripts for
 {
     // Git repository details
     "repository"             : {
-        // Git Url of the openjdk-build repository.
-        "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        // Git Url of the temurin-build repository.
+        "build_url"          : "https://github.com/adoptium/temurin-build.git",
         // Git branch you wish to use when running the shell scripts inside the build_url
         "build_branch"       : "master",
         // Smoke tests directory under the build repo
@@ -125,7 +125,7 @@ It will then evaluate the existence of that directory in the user's repository a
 ```
 
 NOTE: For the defaults that are paths to directories, the scripts will search for files of the same name as Adopt's.
-Custom named files are not currently supported (so for `defaults.json['configDirectories']['platform']`, all of the filenames in the specified folder need to be the same as [Adopt's](https://github.com/AdoptOpenJDK/openjdk-build/tree/master/build-farm/platform-specific-configurations) or the script will fail to pick up the user's config's and will use Adopt's instead).
+Custom named files are not currently supported (so for `defaults.json['configDirectories']['platform']`, all of the filenames in the specified folder need to be the same as [Adopt's](https://github.com/adoptium/temurin-build/tree/master/build-farm/platform-specific-configurations) or the script will fail to pick up the user's config's and will use Adopt's instead).
 
 ### This is great, but how do I add new defaults?
 
@@ -147,7 +147,7 @@ Once it has been approved and merged, update your scripts and/or jenkins jobs to
     - [pipelines/build/common/import_lib.groovy](pipelines/build/common/import_lib.groovy) - Class library import script. This imports [Adopt's classes](pipelines/library/src) used in the groovy scripts.
     - [pipelines/build/common/build_base_file.groovy](pipelines/build/common/build_base_file.groovy) - Base upstream script file that's called from `pipelines/build/openjdkx_pipeline.groovy`, setting up the [downstream build JSON](pipelines/library/src/common/IndividualBuildConfig.groovy) for each downstream job and executing them.
     - [pipelines/jobs/configurations/jdkx(u).groovy](pipelines/jobs/configurations/jdk8u.groovy) - Upstream nightly config files. These define the job schedules, what platforms are instantiated on a nightly build and what tags are used on the weekend releases.
-    - [pipelines/jobs/configurations/jdkx(u)_pipeline_config.groovy](pipelines/jobs/configurations/jdk8u_pipeline_config.groovy) - Downstream build config files, docs for this are [in progress](https://github.com/AdoptOpenJDK/openjdk-build/issues/2129).
+    - [pipelines/jobs/configurations/jdkx(u)_pipeline_config.groovy](pipelines/jobs/configurations/jdk8u_pipeline_config.groovy) - Downstream build config files, docs for this are [in progress](https://github.com/adoptium/temurin-build/issues/2129).
     - [pipelines/build/common/kick_off_build.groovy](pipelines/build/common/kick_off_build.groovy) - Main downstream scripts file. These are what the [jdkx(u)-os-arch-variant jenkins jobs](https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/jdk8u/) execute on build.
     - [pipelines/build/common/openjdk_build_pipeline.groovy](pipelines/build/common/openjdk_build_pipeline.groovy) - Base downstream script file. This contains most of the functionality for Adopt's downstream jobs (tests, installers, bash scripts, etc).
     - [pipelines/build/regeneration/jdkx_regeneration_pipeline.groovy](pipelines/build/regeneration/jdk8_regeneration_pipeline.groovy) - Main downstream generator files.
