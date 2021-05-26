@@ -11,6 +11,10 @@ apply plugin: 'groovy'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 sourceSets {
     main {
         groovy {
