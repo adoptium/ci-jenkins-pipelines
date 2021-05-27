@@ -53,13 +53,19 @@ class Build {
     VersionInfo versionInfo = null
     String scmRef = ""
     String fullVersionOutput = ""
+    String makejdkArgs = ""
     String configureArguments = ""
+    String makeCommandArgs = ""
     String j9Major = ""
     String j9Minor = ""
     String j9Security = ""
     String j9Tags = ""
     String vendorName = ""
     String buildSource = ""
+    String openjdkSource = ""
+    String openjdk_built_config = ""
+    String dockerImageDigest = ""
+    Map<String,String> dependency_version = new HashMap<String,String>()
     String crossCompileVersionPath = ""
     Map variantVersion = [:]
 
@@ -752,6 +758,17 @@ class Build {
                 throw new Exception("ERROR: ${configurePath} was not found. Exiting...")
             }
 
+            // Get make command args
+            String makeCommandArgPath = "workspace/target/metadata/makeCommandArg.txt"
+            context.println "INFO: Attempting to read ${makeCommandArgPath}..."
+
+            try {
+                makeCommandArgs = context.readFile(makeCommandArgPath)
+                context.println "SUCCESS: makeCommandArg.txt found"
+            } catch (NoSuchFileException e) {
+                throw new Exception("ERROR: ${makeCommandArgPath} was not found. Exiting...")
+            }
+
             // Get Variant Version for OpenJ9
             if (buildConfig.VARIANT == "openj9") {
                 String j9MajorPath = "workspace/target/metadata/variant_version/major.txt"
@@ -818,6 +835,51 @@ class Build {
                 throw new Exception("ERROR: ${buildSourcePath} was not found. Exiting...")
             }
 
+            // Get OpenJDK Source
+            String openjdkSourcePath = "workspace/target/metadata/openjdkSource.txt"
+            context.println "INFO: Attempting to read ${openjdkSourcePath}..."
+
+            try {
+                openjdkSource = context.readFile(openjdkSourcePath)
+                context.println "SUCCESS: openjdkSource.txt found"
+            } catch (NoSuchFileException e) {
+                throw new Exception("ERROR: ${openjdkSourcePath} was not found. Exiting...")
+            }
+
+            // Get built OPENJDK BUILD_CONFIG
+            String openjdkBuiltConfigPath = "workspace/config/built_config.cfg"
+            context.println "INFO: Attempting to read ${openjdkBuiltConfigPath}..."
+            try {
+                openjdk_built_config = context.readFile(openjdkBuiltConfigPath)
+                context.println "SUCCESS: built_config.cfg found"
+            } catch (NoSuchFileException e) {
+                throw new Exception("ERROR: ${openjdkBuiltConfigPath} was not found. Exiting...")
+            }
+
+            // Get built makejdk-any-platforms.sh args
+            String makejdkArgsPath = "workspace/config/makejdk-any-platform.args"
+            context.println "INFO: Attempting to read ${makejdkArgsPath}..."
+            try {
+                makejdkArgs = context.readFile(makejdkArgsPath)
+                context.println "SUCCESS: makejdk-any-platform.args found"
+            } catch (NoSuchFileException e) {
+                throw new Exception("ERROR: ${makejdkArgsPath} was not found. Exiting...")
+            }
+
+            // Get dependency_versions
+            def deps = ["alsa", "freetype", "freemarker"]
+            for (dep in deps) {
+                String depVerPath = "workspace/target/metadata/dependency_version_${dep}.txt"
+                context.println "INFO: Attempting to read ${depVerPath}..."
+                if (context.fileExists(depVerPath)) {
+                    def depVer = context.readFile(depVerPath)
+                    context.println "SUCCESS: dependency_version_${dep}.txt found: ${depVer}"
+                    dependency_version["${dep}"] = depVer
+                } else {
+                    context.println "${depVerPath} was not found, no metadata set."
+                    dependency_version["${dep}"] = ""
+                }
+            }
         }
 
         return new MetaData(
@@ -831,7 +893,16 @@ class Build {
             variantVersion,
             buildConfig.ARCHITECTURE,
             fullVersionOutput,
-            configureArguments
+            makejdkArgs,
+            configureArguments,
+            makeCommandArgs,
+            buildConfig.toJson(),
+            openjdk_built_config,
+            openjdkSource,
+            dockerImageDigest,
+            dependency_version["alsa"],
+            dependency_version["freetype"],
+            dependency_version["freemarker"]
         )
 
     }
@@ -872,7 +943,10 @@ class Build {
                 "binary_type": "debugimage",
                 "sha256": "<shasum>",
                 "full_version_output": <output of java --version>,
-                "configure_arguments": <output of bash configure>
+                "configure_arguments": <output of bash configure>,
+                "make_command_args" : <make command args>,
+                "BUILD_CONFIGURATION_param": <build job BUILD_CONFIGURATION param json>,
+                "openjdk_built_config" : <built BUILD_CONFIG>
             }
         */
 
@@ -1363,6 +1437,8 @@ class Build {
                                     } else {
                                         context.docker.image(buildConfig.DOCKER_IMAGE).pull()
                                     }
+                                    // Store the pulled docker image digest as 'buildinfo'
+                                    dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
                                 }
                             } catch (FlowInterruptedException e) {
                                 throw new Exception("[ERROR] Master docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
