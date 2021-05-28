@@ -332,7 +332,15 @@ class Regeneration implements Serializable {
         testList.unique()
         return testList
     }
-
+    /*
+    * Get the list of tests to dynamically run  parallel builds from the build configurations. Used as a placeholder since the pipelines overwrite this
+    * @param configuration
+    */
+    Map<String, ?> getDynamicParams() {
+        List<String> testLists = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["testLists"]
+        String numMachines = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["numMachines"]
+        return ["testLists": testLists, "numMachines": numMachines]
+    }
     /*
     * Checks if the platform/arch/variant is in the EXCLUDES_LIST Parameter.
     * @param configuration
@@ -400,12 +408,18 @@ class Regeneration implements Serializable {
 
             def testList = getTestList(platformConfig)
 
-            return new IndividualBuildConfig( // final build config
+            def dynamicList = getDynamicParams().get("testLists")
+
+            def numMachines = getDynamicParams().get("numMachines")
+
+           return new IndividualBuildConfig( // final build config
                 JAVA_TO_BUILD: javaToBuild,
                 ARCHITECTURE: platformConfig.arch as String,
                 TARGET_OS: platformConfig.os as String,
                 VARIANT: variant,
                 TEST_LIST: testList,
+                DYNAMIC_LIST: dynamicList,
+                NUM_MACHINES: numMachines,
                 SCM_REF: "",
                 BUILD_ARGS: buildArgs,
                 NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${archLabel}",
@@ -428,6 +442,7 @@ class Regeneration implements Serializable {
                 PUBLISH_NAME: "",
                 ADOPT_BUILD_NUMBER: "",
                 ENABLE_TESTS: DEFAULTS_JSON['testDetails']['enableTests'] as Boolean,
+                ENABLE_TESTDYNAMICPARALLEL: DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean,
                 ENABLE_INSTALLERS: true,
                 ENABLE_SIGNER: true,
                 CLEAN_WORKSPACE: true,

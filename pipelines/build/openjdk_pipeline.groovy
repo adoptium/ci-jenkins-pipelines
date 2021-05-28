@@ -117,6 +117,7 @@ if (scmVars != null || configureBuild != null || buildConfigurations != null) {
         activeNodeTimeout,
         dockerExcludes,
         enableTests,
+        enableTestDynamicParallel,
         enableInstallers,
         enableSigner,
         releaseType,

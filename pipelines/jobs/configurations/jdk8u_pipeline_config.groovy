@@ -34,7 +34,6 @@ class Config8 {
                         "dragonwell"  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
                 ]
         ],
-
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
@@ -116,7 +115,8 @@ class Config8 {
                 dockerFile: [
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell_aarch64.dockerfile'
                 ],
-                test                 : 'default'
+                test                 : 'default',
+                testDynamic          : false
         ],
 
         x64LinuxXL       : [

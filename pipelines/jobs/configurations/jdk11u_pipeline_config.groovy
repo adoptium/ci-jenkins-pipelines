@@ -132,7 +132,8 @@ class Config11 {
                         "corretto" : '--enable-dtrace=auto',
                         "dragonwell" : "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
                         "bisheng" : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
-                ]
+                ],
+                testDynamic        : false
         ],
 
         x64LinuxXL    : [
@@ -167,7 +168,8 @@ class Config11 {
                 arch                 : 'aarch64',
                 test                 : 'default',
                 additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
+                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto',
+                testDynamic          : false
         ],
         riscv64Linux      :  [
                 os                   : 'linux',
