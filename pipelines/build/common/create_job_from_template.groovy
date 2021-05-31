@@ -56,7 +56,22 @@ pipelineJob("$buildFolder/$JOB_NAME") {
         }
     }
     properties {
-    disableConcurrentBuilds()
+        // Hide all non Temurin builds from public view
+        if (VARIANT != "hotspot") {
+            authorizationMatrix {
+                inheritanceStrategy {
+                    // Do not inherit permissions from global configuration
+                    nonInheriting()
+                } 
+                permissions(['hudson.model.Item.Build:AdoptOpenJDK*build', 'hudson.model.Item.Build:AdoptOpenJDK*build-triage', 
+                'hudson.model.Item.Cancel:AdoptOpenJDK*build', 'hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
+                'hudson.model.Item.Configure:AdoptOpenJDK*build', 'hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
+                'hudson.model.Item.Read:AdoptOpenJDK*build', 'hudson.model.Item.Read:AdoptOpenJDK*build-triage',
+                'hudson.model.Item.Workspace:AdoptOpenJDK*build', 'hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
+                'hudson.model.Run.Update:AdoptOpenJDK*build', 'hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
+            }
+        }
+        disableConcurrentBuilds()
         copyArtifactPermission {
             projectNames('*')
         }
