@@ -472,6 +472,7 @@ class Regeneration implements Serializable {
         Map<String, ?> params = config.toMap().clone() as Map
         params.put("JOB_NAME", jobName)
         params.put("JOB_FOLDER", jobFolder)
+        params.put("VARIANT", config.VARIANT)
         params.put("SCRIPT_PATH", scriptPath)
 
         params.put("GIT_URL", gitRemoteConfigs['url'])
