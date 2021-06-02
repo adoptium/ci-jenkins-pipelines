@@ -1118,16 +1118,47 @@ class Build {
                                         context.println "Building an exploded image for signing"
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
-                                    context.archiveArtifacts artifacts: "workspace/build/src/build/macosx-x86_64-normal-server-release"
+                                    context.stash name: 'jmods',
+                                        includes: 'workspace/build/src/build/macosx-x86_64-normal-server-release/hotspot/variant-server/**/*,' +
+                                            'workspace/build/src/build/macosx-x86_64-normal-server-release/support/modules_cmds/**/*,' +
+                                            'workspace/build/src/build/macosx-x86_64-normal-server-release/support/modules_libs/**/*'
 
                                     context.node('eclipse-codesign') {
-                                        //Copy signed artifact back and archive again
-                                        context.sh "rm workspace/build/src/build/macosx-x86_64-normal-server-release/* || true"
+                                        context.sh "rm -rf workspace/build/src/build/macosx-x86_64-normal-server-release/* || true"
 
-                                        // context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
-                                        
-                                        // context.archiveArtifacts artifacts: "workspace/target/*"
+                                        repoHandler.checkoutAdoptBuild(context)
+
+                                        // Copy pre assembled binary ready for JMODs to be codesigned
+                                        context.unstash 'jmods'
+
+                                        context.sh '''
+                                            #!/bin/bash
+                                            set -eu
+                                            echo "Signing JMOD files"
+                                            TMP_DIR=workspace/build/src/build/macosx-x86_64-normal-server-release/
+                                            ENTITLEMENTS="$WORKSPACE/entitlements.plist"
+                                            FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
+                                            for f in $FILES
+                                            do
+                                                echo "Signing $f using Eclipse Foundation codesign service"
+                                                dir=$(dirname "$f")
+                                                file=$(basename "$f")
+                                                mv "$f" "${dir}/unsigned_${file}"
+                                                curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                rm -rf "${dir}/unsigned_${file}"
+                                            done
+                                        '''
+                                        context.stash name: 'signed_jmods', includes: 'workspace/build/src/build/macosx-x86_64-normal-server-release/**/*'
                                     }
+                                    
+                                    // Remove jmod directories to be replaced with the stash saved above
+                                    context.sh "rm -rf workspace/build/src/build/macosx-x86_64-normal-server-release/hotspot/variant-server || true"
+                                    context.sh "rm -rf workspace/build/src/build/macosx-x86_64-normal-server-release/support/modules_cmds || true"
+                                    context.sh "rm -rf workspace/build/src/build/macosx-x86_64-normal-server-release/support/modules_libs || true"
+
+                                    // Restore signed JMODs
+                                    context.unstash 'signed_jmods'
 
                                     context.withEnv(["BUILD_ARGS=--assemble-exploded-image"]) {
                                         context.println "Assembling the exploded image"
