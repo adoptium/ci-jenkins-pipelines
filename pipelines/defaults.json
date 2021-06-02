@@ -1,7 +1,7 @@
 {
     "repository"             : {
-        "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
-        "build_branch"       : "master",
+        "build_url"          : "https://github.com/gdams/openjdk-build.git",
+        "build_branch"       : "jmods",
         "test_dirs"          : "/test/functional",
         "pipeline_url"       : "https://github.com/adoptium/ci-jenkins-pipelines.git",
         "pipeline_branch"    : "master"
