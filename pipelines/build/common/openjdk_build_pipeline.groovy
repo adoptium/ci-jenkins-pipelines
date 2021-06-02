@@ -1134,25 +1134,26 @@ class Build {
 
                                         // Copy pre assembled binary ready for JMODs to be codesigned
                                         context.unstash 'jmods'
-
-                                        context.sh '''
-                                            #!/bin/bash
-                                            set -eu
-                                            echo "Signing JMOD files"
-                                            TMP_DIR="${macos_base_path}/"
-                                            ENTITLEMENTS="$WORKSPACE/entitlements.plist"
-                                            FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
-                                            for f in $FILES
-                                            do
-                                                echo "Signing $f using Eclipse Foundation codesign service"
-                                                dir=$(dirname "$f")
-                                                file=$(basename "$f")
-                                                mv "$f" "${dir}/unsigned_${file}"
-                                                curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
-                                                chmod --reference="${dir}/unsigned_${file}" "$f"
-                                                rm -rf "${dir}/unsigned_${file}"
-                                            done
-                                        '''
+                                        context.withEnv(["macos_base_path=${macos_base_path}"]) {
+                                            context.sh '''
+                                                #!/bin/bash
+                                                set -eu
+                                                echo "Signing JMOD files"
+                                                TMP_DIR="${macos_base_path}/"
+                                                ENTITLEMENTS="$WORKSPACE/entitlements.plist"
+                                                FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
+                                                for f in $FILES
+                                                do
+                                                    echo "Signing $f using Eclipse Foundation codesign service"
+                                                    dir=$(dirname "$f")
+                                                    file=$(basename "$f")
+                                                    mv "$f" "${dir}/unsigned_${file}"
+                                                    curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                    chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                    rm -rf "${dir}/unsigned_${file}"
+                                                done
+                                            '''
+                                        }
                                         context.stash name: 'signed_jmods', includes: "${macos_base_path}/**/*"
                                     }
                                     
