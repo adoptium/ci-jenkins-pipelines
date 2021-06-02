@@ -1118,13 +1118,17 @@ class Build {
                                         context.println "Building an exploded image for signing"
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
+                                    def macos_base_path='workspace/build/src/build/macosx-x86_64-server-release'
+                                    if (buildConfig.JAVA_TO_BUILD == "jdk11u") {
+                                        macos_base_path='workspace/build/src/build/macosx-x86_64-normal-server-release'
+                                    }
                                     context.stash name: 'jmods',
-                                        includes: 'workspace/build/src/build/macosx-x86_64-normal-server-release/hotspot/variant-server/**/*,' +
-                                            'workspace/build/src/build/macosx-x86_64-normal-server-release/support/modules_cmds/**/*,' +
-                                            'workspace/build/src/build/macosx-x86_64-normal-server-release/support/modules_libs/**/*'
+                                        includes: "${macos_base_path}/hotspot/variant-server/**/*," +
+                                            "${macos_base_path}/support/modules_cmds/**/*," +
+                                            "${macos_base_path}/support/modules_libs/**/*"
 
                                     context.node('eclipse-codesign') {
-                                        context.sh "rm -rf workspace/build/src/build/macosx-x86_64-normal-server-release/* || true"
+                                        context.sh "rm -rf ${macos_base_path}/* || true"
 
                                         repoHandler.checkoutAdoptBuild(context)
 
@@ -1135,7 +1139,7 @@ class Build {
                                             #!/bin/bash
                                             set -eu
                                             echo "Signing JMOD files"
-                                            TMP_DIR=workspace/build/src/build/macosx-x86_64-normal-server-release/
+                                            TMP_DIR="${macos_base_path}/"
                                             ENTITLEMENTS="$WORKSPACE/entitlements.plist"
                                             FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
                                             for f in $FILES
@@ -1149,13 +1153,13 @@ class Build {
                                                 rm -rf "${dir}/unsigned_${file}"
                                             done
                                         '''
-                                        context.stash name: 'signed_jmods', includes: 'workspace/build/src/build/macosx-x86_64-normal-server-release/**/*'
+                                        context.stash name: 'signed_jmods', includes: "${macos_base_path}/**/*"
                                     }
                                     
                                     // Remove jmod directories to be replaced with the stash saved above
-                                    context.sh "rm -rf workspace/build/src/build/macosx-x86_64-normal-server-release/hotspot/variant-server || true"
-                                    context.sh "rm -rf workspace/build/src/build/macosx-x86_64-normal-server-release/support/modules_cmds || true"
-                                    context.sh "rm -rf workspace/build/src/build/macosx-x86_64-normal-server-release/support/modules_libs || true"
+                                    context.sh "rm -rf ${macos_base_path}/hotspot/variant-server || true"
+                                    context.sh "rm -rf ${macos_base_path}/support/modules_cmds || true"
+                                    context.sh "rm -rf ${macos_base_path}/support/modules_libs || true"
 
                                     // Restore signed JMODs
                                     context.unstash 'signed_jmods'
