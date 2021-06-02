@@ -402,7 +402,7 @@ class Build {
     def sign(VersionInfo versionInfo) {
         // Sign and archive jobs if needed
         if (
-            buildConfig.TARGET_OS == "windows" || (buildConfig.TARGET_OS == "mac" && versionInfo.major == 8)
+            buildConfig.TARGET_OS == "windows" || (buildConfig.TARGET_OS == "mac")
         ) {
             context.stage("sign") {
                 def filter = ""
@@ -1113,7 +1113,65 @@ class Build {
                             if (useAdoptShellScripts) {
                                 context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build..."
                                 repoHandler.checkoutAdoptBuild(context)
-                                context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                if (buildConfig.TARGET_OS == "mac" && buildConfig.JAVA_TO_BUILD != "jdk8u") {
+                                    context.withEnv(["BUILD_ARGS=--make-exploded-image"]) {
+                                        context.println "Building an exploded image for signing"
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
+                                    def macos_base_path='workspace/build/src/build/macosx-x86_64-server-release'
+                                    if (buildConfig.JAVA_TO_BUILD == "jdk11u") {
+                                        macos_base_path='workspace/build/src/build/macosx-x86_64-normal-server-release'
+                                    }
+                                    context.stash name: 'jmods',
+                                        includes: "${macos_base_path}/hotspot/variant-server/**/*," +
+                                            "${macos_base_path}/support/modules_cmds/**/*," +
+                                            "${macos_base_path}/support/modules_libs/**/*"
+
+                                    context.node('eclipse-codesign') {
+                                        context.sh "rm -rf ${macos_base_path}/* || true"
+
+                                        repoHandler.checkoutAdoptBuild(context)
+
+                                        // Copy pre assembled binary ready for JMODs to be codesigned
+                                        context.unstash 'jmods'
+                                        context.withEnv(["macos_base_path=${macos_base_path}"]) {
+                                            context.sh '''
+                                                #!/bin/bash
+                                                set -eu
+                                                echo "Signing JMOD files"
+                                                TMP_DIR="${macos_base_path}/"
+                                                ENTITLEMENTS="$WORKSPACE/entitlements.plist"
+                                                FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
+                                                for f in $FILES
+                                                do
+                                                    echo "Signing $f using Eclipse Foundation codesign service"
+                                                    dir=$(dirname "$f")
+                                                    file=$(basename "$f")
+                                                    mv "$f" "${dir}/unsigned_${file}"
+                                                    curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                    chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                    rm -rf "${dir}/unsigned_${file}"
+                                                done
+                                            '''
+                                        }
+                                        context.stash name: 'signed_jmods', includes: "${macos_base_path}/**/*"
+                                    }
+                                    
+                                    // Remove jmod directories to be replaced with the stash saved above
+                                    context.sh "rm -rf ${macos_base_path}/hotspot/variant-server || true"
+                                    context.sh "rm -rf ${macos_base_path}/support/modules_cmds || true"
+                                    context.sh "rm -rf ${macos_base_path}/support/modules_libs || true"
+
+                                    // Restore signed JMODs
+                                    context.unstash 'signed_jmods'
+
+                                    context.withEnv(["BUILD_ARGS=--assemble-exploded-image"]) {
+                                        context.println "Assembling the exploded image"
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
+                                } else {
+                                    context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                }
                                 context.println "[CHECKOUT] Reverting pre-build AdoptOpenJDK/openjdk-build checkout..."
 
                                 // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
