@@ -402,7 +402,7 @@ class Build {
     def sign(VersionInfo versionInfo) {
         // Sign and archive jobs if needed
         if (
-            buildConfig.TARGET_OS == "windows" || (buildConfig.TARGET_OS == "mac" && versionInfo.major == 8)
+            buildConfig.TARGET_OS == "windows" || (buildConfig.TARGET_OS == "mac")
         ) {
             context.stage("sign") {
                 def filter = ""
@@ -1113,7 +1113,14 @@ class Build {
                             if (useAdoptShellScripts) {
                                 context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build..."
                                 repoHandler.checkoutAdoptBuild(context)
-                                context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                if (buildConfig.TARGET_OS == "mac" && buildConfig.JAVA_TO_BUILD != "jdk8u") {
+                                    context.println "Building an exploded image for signing"
+                                    context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']} --make-exploded-image")
+                                    context.println "Assembling the exploded image"
+                                    context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']} --assemble-exploded-image")
+                                } else {
+                                    context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                }
                                 context.println "[CHECKOUT] Reverting pre-build AdoptOpenJDK/openjdk-build checkout..."
 
                                 // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
