@@ -1114,10 +1114,25 @@ class Build {
                                 context.println "[CHECKOUT] Checking out to AdoptOpenJDK/openjdk-build..."
                                 repoHandler.checkoutAdoptBuild(context)
                                 if (buildConfig.TARGET_OS == "mac" && buildConfig.JAVA_TO_BUILD != "jdk8u") {
-                                    context.println "Building an exploded image for signing"
-                                    context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']} --make-exploded-image")
-                                    context.println "Assembling the exploded image"
-                                    context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']} --assemble-exploded-image")
+                                    context.withEnv(["BUILD_ARGS=--make-exploded-image"]) {
+                                        context.println "Building an exploded image for signing"
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
+                                    context.archiveArtifacts artifacts: "workspace/build/src/build/macosx-x86_64-normal-server-release"
+
+                                    context.node('eclipse-codesign') {
+                                        //Copy signed artifact back and archive again
+                                        context.sh "rm workspace/build/src/build/macosx-x86_64-normal-server-release/* || true"
+
+                                        // context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
+                                        
+                                        // context.archiveArtifacts artifacts: "workspace/target/*"
+                                    }
+
+                                    context.withEnv(["BUILD_ARGS=--assemble-exploded-image"]) {
+                                        context.println "Assembling the exploded image"
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
                                 } else {
                                     context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                 }
