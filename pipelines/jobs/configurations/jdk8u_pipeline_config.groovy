@@ -116,7 +116,10 @@ class Config8 {
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell_aarch64.dockerfile'
                 ],
                 test                 : 'default',
-                testDynamic          : false
+                testDynamic          : false,
+                configureArgs        : [
+                        "bisheng"      : '--enable-kae=yes'
+                ]
         ],
 
         x64LinuxXL       : [
