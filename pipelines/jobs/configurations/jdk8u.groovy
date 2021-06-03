@@ -39,6 +39,9 @@ targetConfigurations = [
         ],
         "arm32Linux"  : [
                 "hotspot"
+        ],
+        "x64Solaris": [
+                "hotspot"
         ]
 ]
 
