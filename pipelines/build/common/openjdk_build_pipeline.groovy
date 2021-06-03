@@ -312,15 +312,15 @@ class Build {
     */
     def runAQATests() {
         def testStages = [:]
-        List testList = []
         def jdkBranch = getJDKBranch()
         def jdkRepo = getJDKRepo()
         def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == "openj9") ? buildConfig.SCM_REF : "master"
 
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
-        testList = buildConfig.TEST_LIST
-
+        List testList = buildConfig.TEST_LIST
+        List dynamicList = buildConfig.DYNAMIC_LIST
+        String numMachines = buildConfig.NUM_MACHINES
         testList.each { testType ->
 
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
@@ -335,6 +335,10 @@ class Build {
                         }
 
                         def jobParams = getAQATestJobParams(testType)
+                        def parallel = 'None'
+                        if (dynamicList.contains(testType)) {
+                            parallel = 'Dynamic'
+                        }
                         def jobName = jobParams.TEST_JOB_NAME
                         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
 
@@ -359,6 +363,8 @@ class Build {
                                             context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
                                             context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                             context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
+                                            context.string(name: 'PARALLEL', value: parallel),
+                                            context.string(name: 'NUM_MACHINES', value: numMachines),
                                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
                         }
                     }
@@ -396,7 +402,7 @@ class Build {
     def sign(VersionInfo versionInfo) {
         // Sign and archive jobs if needed
         if (
-            buildConfig.TARGET_OS == "windows" || (buildConfig.TARGET_OS == "mac" && versionInfo.major == 8)
+            buildConfig.TARGET_OS == "windows" || (buildConfig.TARGET_OS == "mac")
         ) {
             context.stage("sign") {
                 def filter = ""
@@ -1107,9 +1113,72 @@ class Build {
                             if (useAdoptShellScripts) {
                                 context.println "[CHECKOUT] Checking out to adoptium/temurin-build..."
                                 repoHandler.checkoutAdoptBuild(context)
-                                context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                context.println "[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout..."
+                                if (buildConfig.TARGET_OS == "mac" && buildConfig.JAVA_TO_BUILD != "jdk8u") {
+                                    context.withEnv(["BUILD_ARGS=--make-exploded-image"]) {
+                                        context.println "Building an exploded image for signing"
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
+                                    def macos_base_path='workspace/build/src/build/macosx-x86_64-server-release'
+                                    if (buildConfig.JAVA_TO_BUILD == "jdk11u") {
+                                        macos_base_path='workspace/build/src/build/macosx-x86_64-normal-server-release'
+                                    }
+                                    context.stash name: 'jmods',
+                                        includes: "${macos_base_path}/hotspot/variant-server/**/*," +
+                                            "${macos_base_path}/support/modules_cmds/**/*," +
+                                            "${macos_base_path}/support/modules_libs/**/*," +
+                                            // JDK 16 + jpackage needs to be signed as well
+                                            "${macos_base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncher" 
 
+                                    context.node('eclipse-codesign') {
+                                        context.sh "rm -rf ${macos_base_path}/* || true"
+
+                                        repoHandler.checkoutAdoptBuild(context)
+
+                                        // Copy pre assembled binary ready for JMODs to be codesigned
+                                        context.unstash 'jmods'
+                                        context.withEnv(["macos_base_path=${macos_base_path}"]) {
+                                            context.sh '''
+                                                #!/bin/bash
+                                                set -eu
+                                                echo "Signing JMOD files"
+                                                TMP_DIR="${macos_base_path}/"
+                                                ENTITLEMENTS="$WORKSPACE/entitlements.plist"
+                                                FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
+                                                for f in $FILES
+                                                do
+                                                    echo "Signing $f using Eclipse Foundation codesign service"
+                                                    dir=$(dirname "$f")
+                                                    file=$(basename "$f")
+                                                    mv "$f" "${dir}/unsigned_${file}"
+                                                    curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                    chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                    rm -rf "${dir}/unsigned_${file}"
+                                                done
+                                            '''
+                                        }
+                                        context.stash name: 'signed_jmods', includes: "${macos_base_path}/**/*"
+                                    }
+                                    
+                                    // Remove jmod directories to be replaced with the stash saved above
+                                    context.sh "rm -rf ${macos_base_path}/hotspot/variant-server || true"
+                                    context.sh "rm -rf ${macos_base_path}/support/modules_cmds || true"
+                                    context.sh "rm -rf ${macos_base_path}/support/modules_libs || true"
+                                    // JDK 16 + jpackage needs to be signed as well
+                                    if (buildConfig.JAVA_TO_BUILD != "jdk11u") {
+                                        context.sh "rm -rf ${macos_base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncher || true"
+                                    }
+
+                                    // Restore signed JMODs
+                                    context.unstash 'signed_jmods'
+
+                                    context.withEnv(["BUILD_ARGS=--assemble-exploded-image"]) {
+                                        context.println "Assembling the exploded image"
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
+                                } else {
+                                    context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                }
+                                context.println "[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout..."
                                 // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
                                 if (env.JOB_NAME.contains("pr-tester")) {
                                     context.checkout context.scm

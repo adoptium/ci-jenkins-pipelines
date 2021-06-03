@@ -39,6 +39,7 @@ class Builder implements Serializable {
     String activeNodeTimeout
     Map<String, List<String>> dockerExcludes
     boolean enableTests
+    boolean enableTestDynamicParallel
     boolean enableInstallers
     boolean enableSigner
     boolean publish
@@ -115,6 +116,8 @@ class Builder implements Serializable {
         }
 
         def testList = getTestList(platformConfig, variant)
+        def dynamicList = getDynamicParams(platformConfig, variant).get("testLists")
+        def numMachines = getDynamicParams(platformConfig, variant).get("numMachines")
 
         def platformCleanWorkspaceAfterBuild = getCleanWorkspaceAfterBuild(platformConfig)
 
@@ -136,6 +139,8 @@ class Builder implements Serializable {
             TARGET_OS: platformConfig.os as String,
             VARIANT: variant,
             TEST_LIST: testList,
+            DYNAMIC_LIST: dynamicList,
+            NUM_MACHINES: numMachines,
             SCM_REF: scmReference,
             BUILD_ARGS: buildArgs,
             NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${archLabel}",
@@ -158,6 +163,7 @@ class Builder implements Serializable {
             PUBLISH_NAME: publishName,
             ADOPT_BUILD_NUMBER: adoptBuildNumber,
             ENABLE_TESTS: enableTests,
+            ENABLE_TESTDYNAMICPARALLEL: enableTestDynamicParallel,
             ENABLE_INSTALLERS: enableInstallers,
             ENABLE_SIGNER: enableSigner,
             CLEAN_WORKSPACE: cleanWorkspace,
@@ -256,7 +262,30 @@ class Builder implements Serializable {
 
         return testList
     }
-
+    /*
+    Get the list of tests to dynamically run  parallel builds from the build configurations.
+    This function parses and applies this to the individual build config.
+    */
+    Map<String, ?> getDynamicParams(Map<String, ?> configuration, String variant) {
+        List<String> testLists = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["testLists"]
+        String numMachines = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["numMachines"]
+        if (configuration.containsKey("testDynamic")) {
+            if (configuration.get("testDynamic")) {
+                if(configuration.get("testDynamic").containsKey(variant)) {
+                    testLists = configuration.get("testDynamic").get(variant).get("testLists")
+                    numMachines = configuration.get("testDynamic").get(variant).get("numMachines")
+                } else {
+                    testLists = configuration.get("testDynamic").get("testLists")
+                    numMachines = configuration.get("testDynamic").get("numMachines")
+                }
+           } else {
+                testLists = []
+                numMachines = ""
+            }
+        }
+        
+        return ["testLists": testLists, "numMachines": numMachines]
+    }
     /*
     Get the cleanWorkspaceAfterBuild override for this platform configuration
     */
@@ -787,6 +816,7 @@ return {
     String activeNodeTimeout,
     String dockerExcludes,
     String enableTests,
+    String enableTestDynamicParallel,
     String enableInstallers,
     String enableSigner,
     String releaseType,
@@ -841,6 +871,7 @@ return {
             activeNodeTimeout: activeNodeTimeout,
             dockerExcludes: buildsExcludeDocker,
             enableTests: Boolean.parseBoolean(enableTests),
+            enableTestDynamicParallel: Boolean.parseBoolean(enableTestDynamicParallel),
             enableInstallers: Boolean.parseBoolean(enableInstallers),
             enableSigner: Boolean.parseBoolean(enableSigner),
             publish: publish,

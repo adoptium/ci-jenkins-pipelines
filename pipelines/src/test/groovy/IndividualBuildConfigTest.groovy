@@ -13,6 +13,8 @@ class IndividualBuildConfigTest {
                 VARIANT                    : "c",
                 JAVA_TO_BUILD              : "d",
                 TEST_LIST                  : "e",
+                DYNAMIC_LIST               : "e",
+                NUM_MACHINES               : "e",
                 SCM_REF                    : "f",
                 BUILD_ARGS                 : "g",
                 NODE_LABEL                 : "h",
