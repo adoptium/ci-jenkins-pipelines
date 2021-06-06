@@ -98,7 +98,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         stringParam('additionalConfigureArgs', "", "Additional arguments that will be ultimately passed to OpenJDK's <code>./configure</code>")
         stringParam('additionalBuildArgs', "", "Additional arguments to be passed to <code>makejdk-any-platform.sh</code>")
         stringParam('overrideFileNameVersion', "", "When forming the filename, ignore the part of the filename derived from the publishName or timestamp and override it.<br/>For instance if you set this to 'FOO' the final file name will be of the form: <code>OpenJDK8U-jre_ppc64le_linux_openj9_FOO.tar.gz</code>")
-        booleanParam('useAdoptBashScripts', adoptScripts, "If enabled, the downstream job will pull and execute <code>make-adopt-build-farm.sh</code> from AdoptOpenJDK/openjdk-build. If disabled, it will use whatever the job is running inside of at the time, usually it's the default repository in the configuration.")
+        booleanParam('useAdoptBashScripts', adoptScripts, "If enabled, the downstream job will pull and execute <code>make-adopt-build-farm.sh</code> from adoptium/temurin-build. If disabled, it will use whatever the job is running inside of at the time, usually it's the default repository in the configuration.")
         booleanParam('cleanWorkspaceBeforeBuild', false, "Clean out the workspace before the build")
         booleanParam('cleanWorkspaceAfterBuild', false, "Clean out the workspace after the build")
         booleanParam('cleanWorkspaceBuildOutputAfterBuild', cleanWsBuildOutput, "Clean out the workspace/build/src/build and workspace/target output only, after the build")

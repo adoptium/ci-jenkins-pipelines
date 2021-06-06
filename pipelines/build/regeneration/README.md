@@ -16,7 +16,7 @@ The pipelines can use these job dsl's to create their downstream jobs since they
 ## Where they are
 
 They are stored in the [utils](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/) folder of our jenkins server. The jobs themselves are called `pipeline_jobs_generator_jdk11u`, `pipeline_jobs_generator_jdk8u`, etc.
-NOTE: When the JDK HEAD updates, these jobs will need to be updated too (see [RELEASING.md](https://github.com/AdoptOpenJDK/openjdk-build/blob/master/RELEASING.md#steps-for-every-version)) for how to do so.
+NOTE: When the JDK HEAD updates, these jobs will need to be updated too (see [RELEASING.md](https://github.com/adoptium/temurin-build/blob/master/RELEASING.md#steps-for-every-version)) for how to do so.
 
 ## How they work
 
@@ -42,12 +42,12 @@ Resolved master as branch master at revision 3e6da943be88a2bcdff335cdb93d4baf1a7
 using credential 8dfb669c-96d7-4960-aa2d-6059651eea96
  > git rev-parse --is-inside-work-tree # timeout=10
 Fetching changes from the remote Git repository
- > git config remote.origin.url https://github.com/AdoptOpenJDK/openjdk-jenkins-helper.git # timeout=10
+ > git config remote.origin.url https://github.com/adoptium/jenkins-helper.git # timeout=10
 Fetching without tags
-Fetching upstream changes from https://github.com/AdoptOpenJDK/openjdk-jenkins-helper.git
+Fetching upstream changes from https://github.com/adoptium/jenkins-helper.git
  > git --version # timeout=10
 using GIT_ASKPASS to set credentials Github BOT PWD
- > git fetch --no-tags --force --progress -- https://github.com/AdoptOpenJDK/openjdk-jenkins-helper.git +refs/heads/master:refs/remotes/origin/master # timeout=10
+ > git fetch --no-tags --force --progress -- https://github.com/adoptium/jenkins-helper.git +refs/heads/master:refs/remotes/origin/master # timeout=10
 Checking out Revision 3e6da943be88a2bcdff335cdb93d4baf1a7555a7 (master)
  > git config core.sparsecheckout # timeout=10
  > git checkout -f 3e6da943be88a2bcdff335cdb93d4baf1a7555a7 # timeout=10
@@ -94,5 +94,5 @@ It then calls [pipeline_job_template.groovy](pipelines/jobs/pipeline_job_templat
 ## Downstream Test Jobs
 
 Existing [downstream test jobs](https://ci.adoptopenjdk.net/view/Test_openjdk/) are generated separately from the build ones, via the [Test_Job_Auto_Gen](https://ci.adoptopenjdk.net/view/Test_grinder/job/Test_Job_Auto_Gen/),
-[testJobTemplate](https://github.com/AdoptOpenJDK/openjdk-tests/blob/master/buildenv/jenkins/testJobTemplate) resources in the openjdk-tests repository.
-If a new JDK version | JVM vendor | Platform is beginning to be built | supported, a bunch of new test jobs get created on that first attempt to run testing dynamically by using same [testJobTemplate](https://github.com/AdoptOpenJDK/openjdk-tests/blob/master/buildenv/jenkins/testJobTemplate).
+[testJobTemplate](https://github.com/adoptium/aqa-tests/blob/master/buildenv/jenkins/testJobTemplate) resources in the aqa-tests repository.
+If a new JDK version | JVM vendor | Platform is beginning to be built | supported, a bunch of new test jobs get created on that first attempt to run testing dynamically by using same [testJobTemplate](https://github.com/adoptium/aqa-tests/blob/master/buildenv/jenkins/testJobTemplate).

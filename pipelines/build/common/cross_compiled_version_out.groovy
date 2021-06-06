@@ -1,7 +1,7 @@
 import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
 /**
  * This file is a jenkins job for extracting a version string from a cross-compiled binary.
- * See https://github.com/AdoptOpenJDK/openjdk-build/issues/1773 for the inspiration for this.
+ * See https://github.com/adoptium/temurin-build/issues/1773 for the inspiration for this.
  *
  * This file is referenced by the upstream job at pipelines/build/common/openjdk_build_pipeline.groovy.
  * This job is run at build-scripts/job/utils/job/cross-compiled-version-out/.
@@ -13,7 +13,7 @@ import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
  *  4. Expose to the upstream job by archiving file
  */
 
-// TODO: ADD THE ACTIVE NODE TIMEOUT LOGIC HERE OR GET IT MERGED INTO JOB HELPER (https://github.com/AdoptOpenJDK/openjdk-build/issues/2235)
+// TODO: ADD THE ACTIVE NODE TIMEOUT LOGIC HERE OR GET IT MERGED INTO JOB HELPER (https://github.com/adoptium/temurin-build/issues/2235)
 String nodeLabel = (params.NODE) ?: ""
 
 node (nodeLabel) {

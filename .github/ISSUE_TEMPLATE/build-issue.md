@@ -1,6 +1,6 @@
 ---
 name: 🐛 Bug Report
-about: For problems related to how the adoptopenjdk scripts are built in Jenkins
+about: For problems related to how the Eclipse Adoptium scripts are built in Jenkins
 
 ---
 
