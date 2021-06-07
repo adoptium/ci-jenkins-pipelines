@@ -312,10 +312,6 @@ class Builder implements Serializable {
         String stringOs = configuration.os as String
         String estimatedKey = stringArch + stringOs.capitalize()
 
-        if (configuration.containsKey("additionalFileNameTag")) {
-            estimatedKey = estimatedKey + "XL"
-        }
-
         if (dockerExcludes.containsKey(estimatedKey)) {
 
             if (dockerExcludes[estimatedKey].contains(variant)) {

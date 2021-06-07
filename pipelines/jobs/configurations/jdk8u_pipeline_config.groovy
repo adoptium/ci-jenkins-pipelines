@@ -11,15 +11,6 @@ class Config8 {
                 test                 : 'default'
         ],
 
-        x64MacXL      : [
-                os                   : 'mac',
-                arch                 : 'x64',
-                additionalNodeLabels : 'macos10.14',
-                test                 : 'default',
-                additionalFileNameTag: "macosXL",
-                configureArgs        : '--with-noncompressedrefs'
-        ],
-
         x64Linux      : [
                 os                  : 'linux',
                 arch                : 'x64',
@@ -39,15 +30,6 @@ class Config8 {
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012',
                 test                 : 'default'
-        ],
-
-        x64WindowsXL    : [
-                os                   : 'windows',
-                arch                 : 'x64',
-                additionalNodeLabels : 'win2012',
-                test                 : 'default',
-                additionalFileNameTag: "windowsXL",
-                configureArgs        : '--with-noncompressedrefs'
         ],
 
         x32Windows    : [
@@ -117,33 +99,6 @@ class Config8 {
                 ],
                 test                 : 'default',
                 testDynamic          : false
-        ],
-
-        x64LinuxXL       : [
-                os                   : 'linux',
-                dockerImage          : 'adoptopenjdk/centos6_build_image',
-                dockerFile: [
-                        openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
-                ],
-                arch                 : 'x64',
-                additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-jitserver',
-                test                 : 'default'
-        ],
-        s390xLinuxXL       : [
-                os                   : 'linux',
-                arch                 : 's390x',
-                additionalFileNameTag: "linuxXL",
-                test                 : 'default',
-                configureArgs        : '--with-noncompressedrefs'
-        ],
-        ppc64leLinuxXL       : [
-                os                   : 'linux',
-                arch                 : 'ppc64le',
-                additionalNodeLabels : 'centos7',
-                additionalFileNameTag: "linuxXL",
-                test                 : 'default',
-                configureArgs        : '--with-noncompressedrefs --enable-jitserver'
         ],
   ]
 
