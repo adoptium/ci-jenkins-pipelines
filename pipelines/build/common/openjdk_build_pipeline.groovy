@@ -1118,9 +1118,13 @@ class Build {
                                         context.println "Building an exploded image for signing"
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
-                                    def macos_base_path='workspace/build/src/build/macosx-x86_64-server-release'
+                                    def macos_base_path_arch = "x86_64"
+                                    if (buildConfig.ARCHITECTURE == "arm64") {
+                                        macos_base_path_arch = "aarch64"
+                                    }
+                                    def macos_base_path="workspace/build/src/build/macosx-${macos_base_path_arch}-server-release"
                                     if (buildConfig.JAVA_TO_BUILD == "jdk11u") {
-                                        macos_base_path='workspace/build/src/build/macosx-x86_64-normal-server-release'
+                                        macos_base_path="workspace/build/src/build/macosx-${macos_base_path_arch}-normal-server-release"
                                     }
                                     context.stash name: 'jmods',
                                         includes: "${macos_base_path}/hotspot/variant-server/**/*," +
