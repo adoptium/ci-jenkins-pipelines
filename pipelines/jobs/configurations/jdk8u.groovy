@@ -42,6 +42,9 @@ targetConfigurations = [
         ],
         "x64Solaris": [
                 "hotspot"
+        ],
+        "sparcv9Solaris": [
+                "hotspot"
         ]
 ]
 
