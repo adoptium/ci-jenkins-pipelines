@@ -11,7 +11,16 @@ class MetaData {
     final String buildRef
     final String version_data
     final String full_version_output
+    final String makejdk_any_platform_args
     final String configure_arguments
+    final String make_command_args
+    final String BUILD_CONFIGURATION_param
+    final String openjdk_built_config
+    final String openjdk_source
+    final String build_env_docker_image_digest
+    final String dependency_version_alsa
+    final String dependency_version_freetype
+    final String dependency_version_freemarker
     String binary_type
     String sha256
 
@@ -26,7 +35,16 @@ class MetaData {
         Map variant_version,
         String arch,
         String full_version_output,
-        String configure_arguments
+        String makejdk_any_platform_args,
+        String configure_arguments,
+        String make_command_args,
+        String BUILD_CONFIGURATION_param,
+        String openjdk_built_config,
+        String openjdk_source,
+        String build_env_docker_image_digest,
+        String dependency_version_alsa,
+        String dependency_version_freetype,
+        String dependency_version_freemarker
     ) {
         this.vendor = vendor
         this.os = os
@@ -38,28 +56,20 @@ class MetaData {
         this.variant_version = variant_version
         this.arch = arch
         this.full_version_output = full_version_output
+        this.makejdk_any_platform_args = makejdk_any_platform_args
         this.configure_arguments = configure_arguments
+        this.make_command_args = make_command_args
+        this.BUILD_CONFIGURATION_param = BUILD_CONFIGURATION_param
+        this.openjdk_built_config = openjdk_built_config
+        this.openjdk_source = openjdk_source
+        this.build_env_docker_image_digest = build_env_docker_image_digest
+        this.dependency_version_alsa = dependency_version_alsa
+        this.dependency_version_freetype = dependency_version_freetype
+        this.dependency_version_freemarker = dependency_version_freemarker
     }
 
     Map asMap() {
-        if (variant_version){
-            return [
-                vendor      : vendor,
-                os          : os,
-                arch        : arch,
-                variant     : variant,
-                variant_version : variant_version,
-                version     : version,
-                scmRef      : scmRef,
-                buildRef    : buildRef,
-                version_data: version_data,
-                binary_type : binary_type,
-                sha256      : sha256,
-                full_version_output : full_version_output,
-                configure_arguments : configure_arguments
-            ]
-        } else {
-            return [
+        def map = [
                 vendor      : vendor,
                 os          : os,
                 arch        : arch,
@@ -71,8 +81,22 @@ class MetaData {
                 binary_type : binary_type,
                 sha256      : sha256,
                 full_version_output : full_version_output,
-                configure_arguments : configure_arguments
+                makejdk_any_platform_args : makejdk_any_platform_args,
+                configure_arguments : configure_arguments,
+                make_command_args : make_command_args,
+                BUILD_CONFIGURATION_param : BUILD_CONFIGURATION_param,
+                openjdk_built_config : openjdk_built_config,
+                openjdk_source : openjdk_source,
+                build_env_docker_image_digest : build_env_docker_image_digest,
+                dependency_version_alsa : dependency_version_alsa,
+                dependency_version_freetype : dependency_version_freetype,
+                dependency_version_freemarker : dependency_version_freemarker
             ]
+
+        if (variant_version) {
+            map.variant_version = variant_version
         }
+
+        return map
     }
 }
