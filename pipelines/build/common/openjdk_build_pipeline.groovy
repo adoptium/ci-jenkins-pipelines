@@ -173,13 +173,6 @@ class Build {
             default: variant = "hs"
         }
         def jobName = "Test_openjdk${jobParams['JDK_VERSIONS']}_${variant}_${testType}_${jobParams['ARCH_OS_LIST']}"
-        if (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
-            switch (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
-                case ~/.*XL.*/: 
-                    jobName += "_xl";
-                    break
-            }
-        }
         jobParams.put('TEST_JOB_NAME', jobName)
         return jobParams
     }
@@ -195,13 +188,6 @@ class Build {
             arch = "x86-64"
         }
         def arch_os = "${arch}_${buildConfig.TARGET_OS}"
-        if (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
-            switch (buildConfig.ADDITIONAL_FILE_NAME_TAG) {
-                case ~/.*XL.*/: 
-                    arch_os += "_xl";
-                    break
-            }
-        }
         jobParams.put('ARCH_OS_LIST', arch_os)
         jobParams.put('LIGHT_WEIGHT_CHECKOUT', true)
         return jobParams

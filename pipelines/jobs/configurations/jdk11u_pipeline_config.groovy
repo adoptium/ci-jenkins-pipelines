@@ -11,15 +11,6 @@ class Config11 {
                 ]
         ],
 
-        x64MacXL    : [
-                os                   : 'mac',
-                arch                 : 'x64',
-                additionalNodeLabels : 'macos10.14',
-                test                 : 'default',
-                additionalFileNameTag: "macosXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto --with-cmake'
-        ],
-
         x64Linux  : [
                 os                  : 'linux',
                 arch                : 'x64',
@@ -136,41 +127,6 @@ class Config11 {
                 testDynamic        : false
         ],
 
-        x64LinuxXL    : [
-                os                   : 'linux',
-                dockerImage          : 'adoptopenjdk/centos6_build_image',
-                dockerFile: [
-                        openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
-                ],
-                arch                 : 'x64',
-                test                 : "default",
-                additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-jitserver --enable-dtrace=auto'
-        ],
-        s390xLinuxXL    : [
-                os                   : 'linux',
-                arch                 : 's390x',
-                test                 : 'default',
-                additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
-        ],
-        ppc64leLinuxXL    : [
-                os                   : 'linux',
-                arch                 : 'ppc64le',
-                additionalNodeLabels : 'centos7',
-                test                 : 'default',
-                additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto --enable-jitserver'
-        ],
-        aarch64LinuxXL    : [
-                os                   : 'linux',
-                dockerImage          : 'adoptopenjdk/centos7_build_image',
-                arch                 : 'aarch64',
-                test                 : 'default',
-                additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto',
-                testDynamic          : false
-        ],
         riscv64Linux      :  [
                 os                   : 'linux',
                 dockerImage          : [
