@@ -112,10 +112,10 @@ class Config11 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 additionalNodeLabels: [
-                        dragonwell: 'dragonwell'
+                        dragonwell: 'armv8.2'
                 ],
                 additionalTestLabels: [
-                        dragonwell: 'dragonwell'
+                        dragonwell: 'armv8.2'
                 ],
                 configureArgs       : [
                         "hotspot" : '--enable-dtrace=auto',
