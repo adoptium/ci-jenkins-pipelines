@@ -4,13 +4,11 @@ NODE_LABEL = "dockerBuild&&linux&&x64"
 
 pipeline {
     agent none
-
     triggers {
         cron(CRON_SETTINGS)
     }
-
     stages {
-        stage('Dependency Build') {
+        stage('Build') {
             parallel {
                 stage('asmtools') {
                     agent {
@@ -20,35 +18,6 @@ pipeline {
                         build('asmtools')
                     }
                 }
-                stage('jcov') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('jcov')
-                    }
-                }
-                stage('jtharness') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('jtharness')
-                    }
-                }
-                stage('sigtest') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('sigtest')
-                    }
-                }
-            }
-        }
-
-        stage('Downstream Build') {
-            parallel {
                 stage("jtreg") {
                     agent {
                         label NODE_LABEL
@@ -68,11 +37,6 @@ def build(stageName) {
         try {
             checkout scm
             checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/openjdk/${stageName}"]]])
-            if (stageName == "jtreg") {
-                step([$class: 'CopyArtifact', filter: 'jcov/jcov-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
-                step([$class: 'CopyArtifact', filter: 'asmtools/asmtools-*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
-                step([$class: 'CopyArtifact', filter: 'jtharness/jtharness*.tar.gz', fingerprintArtifacts: true, flatten: true, projectName: "${JOB_NAME}", selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"], target: 'jtreg/'])
-            }
             sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
             archiveArtifacts artifacts: "${stageName}/*.tar.gz, ${stageName}/${stageName}.jar, ${stageName}/${stageName}.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt", followSymlinks: false
         } catch (Exception e) {
