@@ -19,6 +19,7 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 node ("master") {
+  def variant = "${params.VARIANT}"
   def jenkinsUrl = "${params.JENKINS_URL}"
   def trssUrl    = "${params.TRSS_URL}"
   def slackChannel = "${params.SLACK_CHANNEL}"
@@ -27,6 +28,17 @@ node ("master") {
 
   // Get the last Nightly build and test job & case stats
   stage("getStats") {
+    // Determine build and test variant job name search strings
+    def buildVariant = variant
+    def testVariant
+    if (variant == "hotspot") {
+      testVariant = "_hs_"
+    } else if (variant == "openj9") {
+      testVariant = "_j9_"
+    } else {
+      testVariant = "_${variant}_"
+    }
+
     // Get top level builds names
     def trssBuildNames = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getTopLevelBuildNames?type=Test")
     def buildNamesJson = new JsonSlurper().parseText(trssBuildNames)
@@ -76,7 +88,7 @@ node ("master") {
               // Was job a "match"?
               if (pipeline_id != null) {
                 // Get all child Test jobs for this pipeline job
-                def pipelineTestJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*")
+                def pipelineTestJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*")
                 def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
                 if (pipelineTestJobsJson.size() > 0) {
                   testJobNumber = pipelineTestJobsJson.size()
@@ -98,13 +110,16 @@ node ("master") {
                 // Get all child Build jobs for this pipeline job
                 def pipelineBuildJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
                 def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
-                buildJobNumber = pipelineBuildJobsJson.size() 
+                buildJobNumber = 0 
                 if (pipelineBuildJobsJson.size() > 0) {
                   pipelineBuildJobsJson.each { buildJob ->
-                    if (buildJob.buildResult.equals("SUCCESS")) {
-                      buildJobSuccess += 1
-                    } else {
-                      buildJobFailure += 1
+                    if (buildJob.buildName.contains(buildVariant)) {
+                      buildJobNumber += 1
+                      if (buildJob.buildResult.equals("SUCCESS")) {
+                        buildJobSuccess += 1
+                      } else {
+                        buildJobFailure += 1
+                      }
                     }
                   }
                 }
@@ -137,17 +152,18 @@ node ("master") {
     def totalBuildJobs = 0
     def totalTestJobs = 0
     testStats.each { pipeline ->
-      echo "Pipeline : ${pipeline.name} : ${pipeline.url}"
-      echo "  => Number of Build jobs = ${pipeline.buildJobNumber}"
-      echo "  => Build job SUCCESS   = ${pipeline.buildJobSuccess}"
-      echo "  => Build job FAILURE   = ${pipeline.buildJobFailure}"
-      echo "  => Number of Test jobs = ${pipeline.testJobNumber}" 
-      echo "  => Test job SUCCESS    = ${pipeline.testJobSuccess}"
-      echo "  => Test job UNSTABLE   = ${pipeline.testJobUnstable}"
-      echo "  => Test job FAILURE    = ${pipeline.testJobFailure}"
-      echo "  => Test case Passed    = ${pipeline.testCasePassed}"
-      echo "  => Test case Failed    = ${pipeline.testCaseFailed}"
-      echo "  => Test case Disabled  = ${pipeline.testCaseDisabled}"
+      echo "For Variant: ${variant}"
+      echo "  Pipeline : ${pipeline.name} : ${pipeline.url}"
+      echo "    => Number of Build jobs = ${pipeline.buildJobNumber}"
+      echo "    => Build job SUCCESS   = ${pipeline.buildJobSuccess}"
+      echo "    => Build job FAILURE   = ${pipeline.buildJobFailure}"
+      echo "    => Number of Test jobs = ${pipeline.testJobNumber}" 
+      echo "    => Test job SUCCESS    = ${pipeline.testJobSuccess}"
+      echo "    => Test job UNSTABLE   = ${pipeline.testJobUnstable}"
+      echo "    => Test job FAILURE    = ${pipeline.testJobFailure}"
+      echo "    => Test case Passed    = ${pipeline.testCasePassed}"
+      echo "    => Test case Failed    = ${pipeline.testCaseFailed}"
+      echo "    => Test case Disabled  = ${pipeline.testCaseDisabled}"
       echo "==================================================================================="
       totalBuildJobs += pipeline.buildJobNumber
       buildFailures += pipeline.buildJobFailure
@@ -180,6 +196,7 @@ node ("master") {
     // Overall % success rating: Average build & test % success rating
     def overallNightlySuccessRating = ((nightlyBuildSuccessRating+nightlyTestSuccessRating)/2).intValue()
 
+    echo "======> Success Rating for variant: ${variant}"
     echo "======> Total number of Build jobs    = ${totalBuildJobs}"
     echo "======> Total number of Test jobs     = ${totalTestJobs}" 
     echo "======> Nightly Build Success Rating  = ${nightlyBuildSuccessRating.intValue()} %"
@@ -187,7 +204,7 @@ node ("master") {
     echo "======> Overall Nightly Build & Test Success Rating = ${overallNightlySuccessRating} %"
 
     // Slack message:
-    slackSend(channel: slackChannel, color: 'good', message: 'Adoptium Jenkins Nightly Build & Test Pipeline Success Rating: '+overallNightlySuccessRating+' %\n  - Build Jobs: '+totalBuildJobs+' at '+nightlyBuildSuccessRating.intValue()+' %\n  - Test Jobs: '+totalTestJobs+' at '+nightlyTestSuccessRating.intValue()+' %\n<'+jenkinsUrl+'/view/Tooling/job/nightlyBuildAndTestStats/'+BUILD_NUMBER+'/console|Job>')
+    slackSend(channel: slackChannel, color: 'good', message: 'Adoptium Nightly Build Success : *'+variant+'* => *'+overallNightlySuccessRating+'* %\n  Build Job Rating: '+totalBuildJobs+' jobs ('+nightlyBuildSuccessRating.intValue()+'%)  Test Job Rating: '+totalTestJobs+' jobs ('+nightlyTestSuccessRating.intValue()+'%) <'+jenkinsUrl+'/view/Tooling/job/nightlyBuildAndTestStats_'+variant+'/'+BUILD_NUMBER+'/console|Detail>')
   }
 }
 
