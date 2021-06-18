@@ -1,37 +1,30 @@
 targetConfigurations = [
         "x64Mac"      : [
-                "hotspot",
-                "openj9"
+                "hotspot"
         ],
         "x64Linux"    : [
-                "hotspot",
-                "openj9"
+                "hotspot"
         ],
         "x64AlpineLinux" : [
                 "hotspot"
         ],
         "x64Windows"  : [
-                "hotspot",
-                "openj9"
+                "hotspot"
         ],
         "x32Windows"  : [
                 "hotspot"
         ],
         "ppc64Aix"    : [
-                "hotspot",
-                "openj9"
+                "hotspot"
         ],
         "ppc64leLinux": [
-                "hotspot",
-                "openj9"
+                "hotspot"
         ],
         "s390xLinux"  : [
-                "hotspot",
-                "openj9"
+                "hotspot"
         ],
         "aarch64Linux": [
-                "hotspot",
-                "openj9"
+                "hotspot"
         ],
         "aarch64Mac": [
                 "hotspot"
