@@ -65,13 +65,13 @@ class Config8 {
         sparcv9Solaris: [
                 os  : 'solaris',
                 arch: 'sparcv9',
-                test: false
+                test: 'default'
         ],
 
         x64Solaris    : [
                 os                  : 'solaris',
                 arch                : 'x64',
-                test                : false
+                test                : 'default'
         ],
 
         ppc64leLinux  : [
