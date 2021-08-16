@@ -69,8 +69,6 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 'hudson.model.Item.Read:AdoptOpenJDK*build', 'hudson.model.Item.Read:AdoptOpenJDK*build-triage',
                  // eclipse-temurin-bot needs read access for TRSS
                 'hudson.model.Item.Read:eclipse-temurin-bot',
-                 // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance 
-                'hudson.model.Item.Read:eclipse-temurin-compliance-bot',
                 'hudson.model.Item.Workspace:AdoptOpenJDK*build', 'hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
                 'hudson.model.Run.Update:AdoptOpenJDK*build', 'hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
             }
