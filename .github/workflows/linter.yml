@@ -11,13 +11,10 @@ name: Linter
 # https://help.github.com/en/articles/workflow-syntax-for-github-actions
 #
 
-#############################
-# Start the job on all push #
-#############################
+####################################################################
+# Start the job on all pull requests that target the master branch #
+####################################################################
 on:
-  push:
-    branches-ignore: [master]
-    # Remove the line above to run when pushing to master
   pull_request:
     branches: [master]
 
