@@ -1179,7 +1179,7 @@ class Build {
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                     def macos_base_path_arch = "x86_64"
-                                    if (buildConfig.ARCHITECTURE == "arm64") {
+                                    if (buildConfig.ARCHITECTURE == "aarch64") {
                                         macos_base_path_arch = "aarch64"
                                     }
                                     def macos_base_path="workspace/build/src/build/macosx-${macos_base_path_arch}-server-release"
