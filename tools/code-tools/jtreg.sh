@@ -75,6 +75,7 @@ buildJTReg()
     gzip -9 jtreg.tar
     mv jtreg.tar.gz "$WORKSPACE/$version.tar.gz"
     createChecksum "$WORKSPACE/$version.tar.gz" "$WORKSPACE"
+    git reset --hard HEAD
   )
 }
 
