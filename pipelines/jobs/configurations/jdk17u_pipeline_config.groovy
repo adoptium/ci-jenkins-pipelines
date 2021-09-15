@@ -42,7 +42,7 @@ class Config17 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2017',
+                additionalNodeLabels: 'win2016&&vs2019',
                 test                : 'default'
         ],
 
