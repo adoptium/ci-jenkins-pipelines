@@ -206,6 +206,7 @@ node('master') {
         }
 
         config.put("enableTests", DEFAULTS_JSON['testDetails']['enableTests'] as Boolean)
+        config.put("enableTestDynamicParallel", DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean)
 
         println "[INFO] JDK${javaVersion}: nightly pipelineSchedule = ${config.pipelineSchedule}"
 
