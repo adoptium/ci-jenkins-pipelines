@@ -146,7 +146,10 @@ class Config11 {
                         "openj9"     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
                         "bisheng"    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
                 ],
-                test                 : 'default'
+                test                : [
+                        nightly: ['sanity.openjdk'],
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                ]
         ]
   ]
 
