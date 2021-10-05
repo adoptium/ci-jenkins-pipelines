@@ -126,7 +126,10 @@ class Config17 {
                 arch                 : 'riscv64',
                 configureArgs        : '--enable-dtrace --with-native-debug-symbols=none',
                 buildArgs            : '-r https://github.com/openjdk/jdk-sandbox -b riscv-port-branch --custom-cacerts false --disable-adopt-branch-safety',
-                test                 : 'default'
+                test                : [
+                        nightly: ['sanity.openjdk'],
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                ]
         ]
 
   ]
