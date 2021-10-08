@@ -29,6 +29,14 @@ class Config11 {
                 ]
         ],
 
+        x64AlpineLinux  : [
+                os                  : 'alpine-linux',
+                arch                : 'x64',
+                dockerImage         : 'adoptopenjdk/alpine3_build_image',
+                test                : 'default',
+                configureArgs       : '--enable-headless-only=yes'
+        ],
+
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
