@@ -25,6 +25,9 @@ class Config17 {
                 configureArgs       : [
                         "openj9"    : '--enable-dtrace --enable-jitserver',
                         "hotspot"   : '--enable-dtrace'
+                ],
+                buildArgs           : [
+                        "hotspot"   : '--create-source-archive'
                 ]
         ],
 

@@ -23,6 +23,9 @@ class Config8 {
                 configureArgs       : [
                         "openj9"      : '--enable-jitserver',
                         "dragonwell"  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
+                ],
+                buildArgs           : [
+                        "hotspot"   : '--create-source-archive'
                 ]
         ],
         x64Windows    : [
