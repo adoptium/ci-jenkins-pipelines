@@ -287,6 +287,7 @@ class Build {
                             parameters: [
                                     context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                                     context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                    context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
                                     context.string(name: 'RELEASE_TAG', value: "${buildConfig.SCM_REF}"),
                                     context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                     context.string(name: 'KEEP_REPORTDIR', value: "${buildConfig.KEEP_TEST_REPORTDIR}"),
