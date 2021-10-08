@@ -956,6 +956,8 @@ class Build {
                 type = "debugimage"
             } else if (file.contains("-static-libs")) {
                 type = "staticlibs"
+            } else if (file.contains("-sources")) {
+                type = "sources"
             }
 
             String hash = context.sh(script: """\
