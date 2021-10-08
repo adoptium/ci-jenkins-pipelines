@@ -1,6 +1,7 @@
 targetConfigurations = [
         "x64Mac"        : [    "hotspot",    "openj9"                    ],
         "x64Linux"      : [    "hotspot",    "openj9",    "dragonwell",    "corretto",    "bisheng"    ],
+        "x64AlpineLinux": [    "hotspot"                            ],
         "x64Windows"    : [    "hotspot",    "openj9",    "dragonwell"            ],
         "x32Windows"    : [    "hotspot"                            ],
         "ppc64Aix"      : [    "hotspot",    "openj9"                    ],
