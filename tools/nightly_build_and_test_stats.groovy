@@ -245,11 +245,11 @@ node ("master") {
             msg = "less than 24 hours ago"
         }
         def maxDays = status['maxStaleDays']
-        def fullMessage = "JDK ${featureRelease} nigthly pipeline publish status: healthy. Last published: ${msg}"
+        def fullMessage = "JDK ${featureRelease} nightly pipeline publish status: healthy. Last published: ${msg}"
         def slackColor = "good"
         if (maxDays <= days) {
             slackColor = "warning"
-            fullMessage = "JDK ${featureRelease} nigthly pipeline publish status: unhealthy. Last published: ${msg}. Stale threshold: ${maxDays} days."
+            fullMessage = "JDK ${featureRelease} nightly pipeline publish status: unhealthy. Last published: ${msg}. Stale threshold: ${maxDays} days."
         }
         echo "===> ${fullMessage}"
         // One slack message per JDK version:
