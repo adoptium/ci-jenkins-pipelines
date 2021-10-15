@@ -400,13 +400,15 @@ class Build {
             context.stage("sign") {
                 def filter = ""
 
-                def nodeFilter = "eclipse-codesign"
+                def nodeFilter = "${buildConfig.TARGET_OS}"
 
                 if (buildConfig.TARGET_OS == "windows") {
                     filter = "**/OpenJDK*_windows_*.zip"
+                    nodeFilter = "${nodeFilter}"
 
                 } else if (buildConfig.TARGET_OS == "mac") {
                     filter = "**/OpenJDK*_mac_*.tar.gz"
+                    nodeFilter = "${nodeFilter}"
                 }
 
                 def params = [
