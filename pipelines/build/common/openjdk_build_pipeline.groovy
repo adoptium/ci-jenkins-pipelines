@@ -400,13 +400,13 @@ class Build {
             context.stage("sign") {
                 def filter = ""
 
-                def nodeFilter = "${buildConfig.TARGET_OS}"
+                def nodeFilter = "${buildConfig.SIGN_NODE_LABEL}"
 
-                if (buildConfig.TARGET_OS == "windows") {
+                if (buildConfig.SIGN_NODE_LABEL == "windows") {
                     filter = "**/OpenJDK*_windows_*.zip"
                     nodeFilter = "${nodeFilter}"
 
-                } else if (buildConfig.TARGET_OS == "mac") {
+                } else if (buildConfig.SIGN_NODE_LABEL == "mac") {
                     filter = "**/OpenJDK*_mac_*.tar.gz"
                     nodeFilter = "${nodeFilter}"
                 }
