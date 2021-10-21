@@ -5,9 +5,7 @@ set -eu
 
 readonly JTREG_5='jtreg5.1-b01'
 readonly JTREG_6='jtreg-6+1'
-
-export WORKSPACE="$WORKSPACE/jtreg"
-cd "$WORKSPACE"
+readonly JTREG_6_1='jtreg-6.1+1'
 
 function checkWorkspaceVar()
 {
@@ -38,12 +36,21 @@ buildJTReg()
   version="jtregtip"
   if [ "$#" -eq 1 ]; then
     version=$1
-    if [ "$1" == "jtreg5.1-b01" ]; then
+    if [ "$1" == "$JTREG_5" ]; then
       export BUILD_NUMBER="b01"
       export BUILD_VERSION="5.1"
+    elif [ "$1" == "$JTREG_6" ]; then
+      export JTREG_BUILD_NUMBER="1"
+      export BUILD_VERSION="6"
+    elif [ "$1" == "$JTREG_6_1" ]; then
+      export JTREG_BUILD_NUMBER="1"
+      export BUILD_VERSION="6.1"
     fi
     git checkout $version
   else
+    unset BUILD_NUMBER
+    unset BUILD_VERSION
+    unset JTREG_BUILD_NUMBER
     git checkout master
   fi
 
@@ -59,7 +66,7 @@ buildJTReg()
 
     echo "Removing contents of build folder"
     rm -fr build || true
-    if [ "$version" == "jtreg5.1-b01" ]; then
+    if [ "$version" == "$JTREG_5" ]; then
       chmod +x make/build-all.sh
       make/build-all.sh "$JAVA_HOME"
     else
@@ -98,7 +105,10 @@ createChecksum() {
 checkWorkspaceVar
 clearWorkspace
 echo 'Starting build process...'
+export WORKSPACE="$WORKSPACE/jtreg"
+cd "$WORKSPACE"
 buildJTReg "$JTREG_5"
 buildJTReg "$JTREG_6"
+buildJTReg "$JTREG_6_1"
 buildJTReg
 echo '...finished with build process.'
