@@ -3,7 +3,7 @@ import groovy.json.JsonOutput
 gitRefSpec = ""
 propagateFailures = false
 runTests = enableTests
-runParallel = true
+runParallel = enableTestDynamicParallel
 runInstaller = true
 runSigner = true
 cleanWsBuildOutput = true

@@ -10,7 +10,7 @@ class IndividualBuildConfig implements Serializable {
     final String JAVA_TO_BUILD
     final List<String> TEST_LIST
     final List<String> DYNAMIC_LIST
-    final String NUM_MACHINES
+    final List<String> NUM_MACHINES
     final String SCM_REF
     final String BUILD_ARGS
     final String NODE_LABEL
@@ -33,6 +33,7 @@ class IndividualBuildConfig implements Serializable {
     final String PUBLISH_NAME
     final String ADOPT_BUILD_NUMBER
     final boolean ENABLE_TESTS
+    final boolean ENABLE_TESTDYNAMICPARALLEL
     final boolean ENABLE_INSTALLERS
     final boolean ENABLE_SIGNER
     final boolean CLEAN_WORKSPACE
@@ -63,8 +64,16 @@ class IndividualBuildConfig implements Serializable {
             DYNAMIC_LIST = map.get("DYNAMIC_LIST")
         } else {
             DYNAMIC_LIST = []
-        }        
-        NUM_MACHINES = map.get("NUM_MACHINES")
+        }
+
+        if (String.class.isInstance(map.get("NUM_MACHINES"))) {
+            NUM_MACHINES = map.get("NUM_MACHINES").split(",")
+        } else if (List.class.isInstance(map.get("NUM_MACHINES"))) {
+            NUM_MACHINES = map.get("NUM_MACHINES")
+        } else {
+            NUM_MACHINES = []
+        }
+
         SCM_REF = map.get("SCM_REF")
         BUILD_ARGS = map.get("BUILD_ARGS")
         NODE_LABEL = map.get("NODE_LABEL")
@@ -87,6 +96,7 @@ class IndividualBuildConfig implements Serializable {
         PUBLISH_NAME = map.get("PUBLISH_NAME")
         ADOPT_BUILD_NUMBER = map.get("ADOPT_BUILD_NUMBER")
         ENABLE_TESTS = map.get("ENABLE_TESTS")
+        ENABLE_TESTDYNAMICPARALLEL = map.get("ENABLE_TESTDYNAMICPARALLEL")
         ENABLE_INSTALLERS = map.get("ENABLE_INSTALLERS")
         ENABLE_SIGNER = map.get("ENABLE_SIGNER")
         CLEAN_WORKSPACE = map.get("CLEAN_WORKSPACE")
@@ -140,6 +150,7 @@ class IndividualBuildConfig implements Serializable {
                 PUBLISH_NAME              : PUBLISH_NAME,
                 ADOPT_BUILD_NUMBER        : ADOPT_BUILD_NUMBER,
                 ENABLE_TESTS              : ENABLE_TESTS,
+                ENABLE_TESTDYNAMICPARALLEL: ENABLE_TESTDYNAMICPARALLEL,
                 ENABLE_INSTALLERS         : ENABLE_INSTALLERS,
                 ENABLE_SIGNER             : ENABLE_SIGNER,
                 CLEAN_WORKSPACE           : CLEAN_WORKSPACE,

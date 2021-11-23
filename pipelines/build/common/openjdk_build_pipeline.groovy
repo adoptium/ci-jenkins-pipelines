@@ -313,7 +313,10 @@ class Build {
 
         List testList = buildConfig.TEST_LIST
         List dynamicList = buildConfig.DYNAMIC_LIST
-        String numMachines = buildConfig.NUM_MACHINES
+        List numMachines = buildConfig.NUM_MACHINES
+        def enableTestDynamicParallel = Boolean.valueOf(buildConfig.ENABLE_TESTDYNAMICPARALLEL)
+        def numMachinesPerTest = ''
+
         testList.each { testType ->
 
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
@@ -329,9 +332,19 @@ class Build {
 
                         def jobParams = getAQATestJobParams(testType)
                         def parallel = 'None'
-                        if (dynamicList.contains(testType)) {
+
+                        if (enableTestDynamicParallel && dynamicList.contains(testType)) {
+                            numMachinesPerTest = numMachines.getAt(dynamicList.indexOf(testType))
+                            if (!numMachinesPerTest) {
+                                // see build configuration in jdk*_pipeline_config.groovy
+                                // when numMachines is an array, its size should match the testLists size
+                                throw new Exception("No number of machines provided for running ${testType} tests in parallel, numMachines: ${numMachines}!")
+                            }
+                            context.println "Number of machines for running parallel tests: ${numMachinesPerTest}"
+
                             parallel = 'Dynamic'
                         }
+
                         def jobName = jobParams.TEST_JOB_NAME
                         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
 
@@ -357,7 +370,7 @@ class Build {
                                             context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                             context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
                                             context.string(name: 'PARALLEL', value: parallel),
-                                            context.string(name: 'NUM_MACHINES', value: numMachines),
+                                            context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
                                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
                         }
                     }

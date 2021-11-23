@@ -338,7 +338,7 @@ class Regeneration implements Serializable {
     */
     Map<String, ?> getDynamicParams() {
         List<String> testLists = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["testLists"]
-        String numMachines = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["numMachines"]
+        List<String> numMachines = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["numMachines"]
         return ["testLists": testLists, "numMachines": numMachines]
     }
     /*

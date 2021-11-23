@@ -116,8 +116,10 @@ class Builder implements Serializable {
         }
 
         def testList = getTestList(platformConfig, variant)
-        def dynamicList = getDynamicParams(platformConfig, variant).get("testLists")
-        def numMachines = getDynamicParams(platformConfig, variant).get("numMachines")
+
+        def dynamicTestsParameters = getDynamicParams(platformConfig, variant)
+        def dynamicList = dynamicTestsParameters.get("testLists")
+        def numMachines = dynamicTestsParameters.get("numMachines")
 
         def platformCleanWorkspaceAfterBuild = getCleanWorkspaceAfterBuild(platformConfig)
 
@@ -263,27 +265,60 @@ class Builder implements Serializable {
         return testList
     }
     /*
-    Get the list of tests to dynamically run  parallel builds from the build configurations.
+    Get the list of tests to dynamically run parallel builds from the build configurations.
     This function parses and applies this to the individual build config.
     */
     Map<String, ?> getDynamicParams(Map<String, ?> configuration, String variant) {
-        List<String> testLists = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["testLists"]
-        String numMachines = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["numMachines"]
+        List<String> testLists = []
+        List<String> numMachines = []
+
+        def testDynamicMap
+
         if (configuration.containsKey("testDynamic")) {
-            if (configuration.get("testDynamic")) {
-                if(configuration.get("testDynamic").containsKey(variant)) {
-                    testLists = configuration.get("testDynamic").get(variant).get("testLists")
-                    numMachines = configuration.get("testDynamic").get(variant).get("numMachines")
+            // fetch from buildConfigurations for target
+
+            // testDynamic could be map, list or boolean
+            if (configuration.containsKey("testDynamic") && configuration.get("testDynamic")) {
+                // fetch variant options
+                testDynamicMap = configuration.get("testDynamic").get(variant)
+            } else {
+                // fetch generic options
+                testDynamicMap = configuration.get("testDynamic")
+            }
+        } else if (DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]) {
+            // fetch default options
+            testDynamicMap = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]
+        }
+
+        if (testDynamicMap) {
+            if (testDynamicMap.containsKey("testLists")) {
+                testLists.addAll(testDynamicMap.get("testLists"))
+            }
+
+            if (testDynamicMap.containsKey("numMachines")) {
+                // populate the list of number of machines per tests
+                if (List.class.isInstance(testDynamicMap.get("numMachines"))) {
+                    // the size of the numMachines List should match the testLists size
+                    // otherwize throw an error
+                    // e.g. 
+                    // testLists    = ['extended.openjdk', 'extended.jck', 'special.jck']
+                    // numMachines  = ['3',                '2',            '5']
+
+                    numMachines.addAll(testDynamicMap.get("numMachines"))
+
+                    if (numMachines.size() < testLists.size()) {
+                        throw new Exception("Configuration error for dynamic testing: missmatch between dymanic parallel test targets testListing: ${testListing} and numMachines: ${numMachines}")
+                    }
                 } else {
-                    testLists = configuration.get("testDynamic").get("testLists")
-                    numMachines = configuration.get("testDynamic").get("numMachines")
+                    if (!testLists.isEmpty()) {
+                        // work-around for numMachines as a String
+                        // populate the List<String> number of machines with duplicates
+                        numMachines.addAll(Collections.nCopies(testLists.size(), "${testDynamicMap.get('numMachines')}"))
+                    }
                 }
-           } else {
-                testLists = []
-                numMachines = ""
             }
         }
-        
+
         return ["testLists": testLists, "numMachines": numMachines]
     }
     /*
