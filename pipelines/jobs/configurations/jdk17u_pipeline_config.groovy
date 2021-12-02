@@ -5,7 +5,10 @@ class Config17 {
                 arch                : 'x64',
                 additionalNodeLabels: 'macos10.14',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace'
+                configureArgs       : '--enable-dtrace',
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
+                ]
         ],
 
         x64Linux  : [
@@ -27,7 +30,7 @@ class Config17 {
                         "hotspot"   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        "hotspot"   : '--create-source-archive'
+                        "hotspot"   : '--create-source-archive --create-jre-image'
                 ]
         ],
 
@@ -36,14 +39,21 @@ class Config17 {
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-headless-only=yes'
+                configureArgs       : '--enable-headless-only=yes',
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
+                ]
+
         ],
 
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012&&vs2017',
-                test                : 'default'
+                test                : 'default',
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
+                ]
         ],
 
         // TODO: Enable testing (https://github.com/adoptium/ci-jenkins-pipelines/issues/77)
@@ -56,6 +66,9 @@ class Config17 {
                 test                : [
                         nightly: [],
                         weekly : []
+                ],
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
                 ]
         ],
 
@@ -67,7 +80,10 @@ class Config17 {
                 buildArgs           : [
                         hotspot : '--jvm-variant client,server'
                 ],
-                test                : 'default'
+                test                : 'default',
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
+                ]
         ],
 
         ppc64Aix    : [
@@ -78,7 +94,10 @@ class Config17 {
                         openj9:  'xlc16&&aix715'
                 ],
                 test                : 'default',
-                cleanWorkspaceAfterBuild: true
+                cleanWorkspaceAfterBuild: true,
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
+                ]
         ],
 
 
@@ -86,7 +105,10 @@ class Config17 {
                 os                  : 'linux',
                 arch                : 's390x',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace'
+                configureArgs       : '--enable-dtrace',
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
+                ]
         ],
 
         ppc64leLinux    : [
@@ -97,8 +119,10 @@ class Config17 {
                 configureArgs       : [
                         "hotspot"     : '--enable-dtrace',
                         "openj9"      : '--enable-dtrace --enable-jitserver'
+                ],
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
                 ]
-
         ],
 
         aarch64Linux    : [
@@ -107,21 +131,33 @@ class Config17 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs : '--enable-dtrace',
-                testDynamic          : false
+                testDynamic          : false,
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
+                ]
+
         ],
         
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
                 additionalNodeLabels: 'macos11',
-                test                : 'default'
+                test                : 'default',
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
+                ]
+
         ],
 
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace'
+                configureArgs       : '--enable-dtrace',
+                buildArgs           : [
+                        "hotspot"   : '--create-jre-image'
+                ]
+
         ],
 
         riscv64Linux      :  [
