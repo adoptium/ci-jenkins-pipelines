@@ -43,7 +43,6 @@ class Config17 {
                 buildArgs           : [
                         "hotspot"   : '--create-jre-image'
                 ]
-
         ],
 
         x64Windows: [
