@@ -1192,7 +1192,13 @@ class Build {
                                 context.println "[CHECKOUT] Checking out to adoptium/temurin-build..."
                                 repoHandler.checkoutAdoptBuild(context)
                                 if (buildConfig.TARGET_OS == "mac" && buildConfig.JAVA_TO_BUILD != "jdk8u") {
-                                    context.withEnv(["BUILD_ARGS=--make-exploded-image"]) {
+                                    def macSignBuildArgs
+                                    if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+                                        macSignBuildArgs = env.BUILD_ARGS+" --make-exploded-image"
+                                    } else {
+                                        macSignBuildArgs = "--make-exploded-image"
+                                    }
+                                    context.withEnv(["BUILD_ARGS="+macSignBuildArgs]) {
                                         context.println "Building an exploded image for signing"
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
@@ -1253,7 +1259,13 @@ class Build {
                                     // Restore signed JMODs
                                     context.unstash 'signed_jmods'
 
-                                    context.withEnv(["BUILD_ARGS=--assemble-exploded-image"]) {
+                                    def macAssembleBuildArgs
+                                    if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+                                        macAssembleBuildArgs = env.BUILD_ARGS+" --assemble-exploded-image"
+                                    } else {
+                                        macAssembleBuildArgs = "--assemble-exploded-image"
+                                    }
+                                    context.withEnv(["BUILD_ARGS="+macAssembleBuildArgs]) {
                                         context.println "Assembling the exploded image"
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }

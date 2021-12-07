@@ -53,7 +53,8 @@ class PullRequestTestPipeline implements Serializable {
                 adoptDefaultsJson   : ADOPT_DEFAULTS_JSON,
                 CHECKOUT_CREDENTIALS: "",
                 adoptScripts        : true,
-                enableTests         : false
+                enableTests         : false,
+                enableTestDynamicParallel : false
         ]
     }
 
