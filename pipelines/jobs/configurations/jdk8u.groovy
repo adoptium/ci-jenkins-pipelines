@@ -10,6 +10,9 @@ targetConfigurations = [
                 "dragonwell",
                 "bisheng"
         ],
+        "x64AlpineLinux" : [
+                "hotspot"
+        ],
         "x32Windows"    : [
                 "temurin",
                 "openj9"

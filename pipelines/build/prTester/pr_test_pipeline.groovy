@@ -161,6 +161,9 @@ Map<String, ?> defaultTestConfigurations = [
     "x64Linux": [
         "hotspot"
     ],
+    "x64AlpineLinux" : [
+        "hotspot"
+    ],
     "aarch64Linux": [
         "hotspot"
     ],

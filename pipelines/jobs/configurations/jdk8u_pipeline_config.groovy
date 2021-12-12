@@ -28,6 +28,15 @@ class Config8 {
                         "temurin"   : '--create-source-archive'
                 ]
         ],
+
+        x64AlpineLinux  : [
+                os                  : 'alpine-linux',
+                arch                : 'x64',
+                dockerImage         : 'adoptopenjdk/alpine3_build_image',
+                test                : 'default',
+                configureArgs       : '--disable-headful'
+        ],
+
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
