@@ -31,7 +31,11 @@ targetConfigurations = [
         ],
         "arm32Linux"  : [
                 "hotspot"
+        ],
+        "riscv64Linux"  : [
+                "hotspot"
         ]
+
 ]
 
 // 23:30 Tue, Thur

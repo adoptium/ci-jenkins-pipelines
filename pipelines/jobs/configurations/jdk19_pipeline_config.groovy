@@ -119,7 +119,18 @@ class Config19 {
                 arch                : 'arm',
                 test                : 'default',
                 configureArgs       : '--enable-dtrace'
+        ],
+        riscv64Linux      :  [
+                os                   : 'linux',
+                arch                 : 'riscv64',
+                configureArgs        : '--enable-dtrace --with-native-debug-symbols=none',
+                buildArgs            : '-r https://github.com/openjdk/riscv-port -b riscv-port --custom-cacerts false --disable-adopt-branch-safety',
+                test                : [
+                        nightly: ['sanity.openjdk'],
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                ]
         ]
+
   ]
 
 }

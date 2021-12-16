@@ -38,9 +38,6 @@ targetConfigurations = [
         ],
         "arm32Linux"  : [
                 "hotspot"
-        ],
-        "riscv64Linux"  : [
-                "hotspot"
         ]
 ]
 
