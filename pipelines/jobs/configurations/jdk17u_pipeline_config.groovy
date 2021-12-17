@@ -156,18 +156,6 @@ class Config17 {
                 buildArgs           : [
                         "hotspot"   : '--create-jre-image'
                 ]
-
-        ],
-
-        riscv64Linux      :  [
-                os                   : 'linux',
-                arch                 : 'riscv64',
-                configureArgs        : '--enable-dtrace --with-native-debug-symbols=none',
-                buildArgs            : '-r https://github.com/openjdk/jdk-sandbox -b riscv-port-branch --custom-cacerts false --disable-adopt-branch-safety',
-                test                : [
-                        nightly: ['sanity.openjdk'],
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
-                ]
         ]
 
   ]
