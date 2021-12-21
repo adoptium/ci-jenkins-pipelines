@@ -315,7 +315,6 @@ class Build {
         List dynamicList = buildConfig.DYNAMIC_LIST
         List numMachines = buildConfig.NUM_MACHINES
         def enableTestDynamicParallel = Boolean.valueOf(buildConfig.ENABLE_TESTDYNAMICPARALLEL)
-        def numMachinesPerTest = ''
 
         testList.each { testType ->
 
@@ -332,6 +331,7 @@ class Build {
 
                         def jobParams = getAQATestJobParams(testType)
                         def parallel = 'None'
+                        def numMachinesPerTest = ''
 
                         if (enableTestDynamicParallel && dynamicList.contains(testType)) {
                             numMachinesPerTest = numMachines.getAt(dynamicList.indexOf(testType))
