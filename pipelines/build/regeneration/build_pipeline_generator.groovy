@@ -44,7 +44,7 @@ node('master') {
     }
 
     timestamps {
-      def retiredVersions = [9, 10, 12, 13, 14, 15]
+      def retiredVersions = [9, 10, 12, 13, 14, 15, 16]
       def generatedPipelines = []
 
       // Load git url and branch and gitBranch. These determine where we will be pulling user configs from.
