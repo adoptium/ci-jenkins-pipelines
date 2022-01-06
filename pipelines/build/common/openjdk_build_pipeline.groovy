@@ -23,7 +23,7 @@ limitations under the License.
 */
 /**
  * This file is a template for running a build for a given configuration
- * A configuration is for example jdk10u-mac-x64-hotspot.
+ * A configuration is for example jdk10u-mac-x64-temurin.
  *
  * This file is referenced by the pipeline template create_job_from_template.groovy
  *
@@ -201,7 +201,7 @@ class Build {
 
         if (buildConfig.SCM_REF) {
             // We need to override the SCM ref on jdk8 arm builds change aarch64-shenandoah-jdk8u282-b08 to jdk8u282-b08
-            if (buildConfig.JAVA_TO_BUILD == "jdk8u" &&  buildConfig.VARIANT == "hotspot" && (buildConfig.ARCHITECTURE == "aarch64" || buildConfig.ARCHITECTURE == "arm")) {
+            if (buildConfig.JAVA_TO_BUILD == "jdk8u" &&  buildConfig.VARIANT == "temurin" && (buildConfig.ARCHITECTURE == "aarch64" || buildConfig.ARCHITECTURE == "arm")) {
                 jdkBranch = buildConfig.OVERRIDE_FILE_NAME_VERSION
             } else {
                 jdkBranch = buildConfig.SCM_REF
@@ -212,6 +212,8 @@ class Build {
             } else if (buildConfig.VARIANT == "openj9") {
                 jdkBranch = 'openj9'
             } else if (buildConfig.VARIANT == "hotspot"){
+                jdkBranch = 'master'
+            } else if (buildConfig.VARIANT == "temurin"){
                 jdkBranch = 'dev'
             } else if (buildConfig.VARIANT == "dragonwell") {
                 jdkBranch = 'master'
@@ -243,7 +245,7 @@ class Build {
                 openj9JavaToBuild = openj9JavaToBuild.substring(0, openj9JavaToBuild.length() - 1)
             }
             suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
-        } else if (buildConfig.VARIANT == "hotspot") {
+        } else if (buildConfig.VARIANT == "temurin") {
             suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
         } else if (buildConfig.VARIANT == "dragonwell") {
             suffix = "alibaba/dragonwell${javaNumber}"
@@ -1000,7 +1002,7 @@ class Build {
 
     /*
     Calculates what the binary filename will be based off of the version, arch, os, variant, timestamp and extension.
-    It will usually be something like OpenJDK8U-jdk_x64_linux_hotspot_2020-10-19-17-06.tar.gz
+    It will usually be something like OpenJDK8U-jdk_x64_linux_temurin_2020-10-19-17-06.tar.gz
     */
     def determineFileName() {
         String javaToBuild = buildConfig.JAVA_TO_BUILD

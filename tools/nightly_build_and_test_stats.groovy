@@ -32,7 +32,7 @@ node ("master") {
   def testStats = []
 
   stage("getPipelineStatus") {
-    if (variant == "hotspot") { // hotspot only for now
+    if (variant == "temurin") { // temurin only for now
       // Determine nightly pipeline health by looking at published assets.
       // In particular, look at one data set for published binaries (Linux x64).
       // If no published assets happened the last 4 days, the nightly pipeline
@@ -57,7 +57,7 @@ node ("master") {
     // Determine build and test variant job name search strings
     def buildVariant = variant
     def testVariant
-    if (variant == "hotspot") {
+    if (variant == "temurin") {
       testVariant = "_hs_"
     } else if (variant == "openj9") {
       testVariant = "_j9_"
@@ -234,7 +234,7 @@ node ("master") {
   }
 
   stage("printPublishStats") {
-    if (variant == "hotspot") { // hotspot only for now
+    if (variant == "temurin") { // temurin only for now
       echo "-------------- Nightly pipeline health report ------------------"
       featureReleases.each { featureRelease ->
         def key = "jdk${featureRelease}"

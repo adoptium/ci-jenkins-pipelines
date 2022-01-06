@@ -4,7 +4,7 @@ class Config8 {
                 os                  : 'mac',
                 arch                : 'x64',
                 additionalNodeLabels: [
-                        hotspot : 'macos10.14',
+                        temurin : 'macos10.14',
                         corretto: 'build-macstadium-macos1010-1',
                         openj9  : 'macos10.14'
                 ],
@@ -25,7 +25,7 @@ class Config8 {
                         "dragonwell"  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
                 ],
                 buildArgs           : [
-                        "hotspot"   : '--create-source-archive'
+                        "temurin"   : '--create-source-archive'
                 ]
         ],
         x64Windows    : [
@@ -40,7 +40,7 @@ class Config8 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012',
                 buildArgs : [
-                        hotspot : '--jvm-variant client,server'
+                        temurin : '--jvm-variant client,server'
                 ],
                 test                 : 'default'
         ],
@@ -49,7 +49,7 @@ class Config8 {
                 os  : 'aix',
                 arch: 'ppc64',
                 additionalNodeLabels: [
-                        hotspot: 'xlc13&&aix710',
+                        temurin: 'xlc13&&aix710',
                         openj9:  'xlc13&&aix715'
                 ],
                 test                 : 'default',
@@ -60,7 +60,7 @@ class Config8 {
                 os  : 'linux',
                 arch: 's390x',
                 test: [
-                        hotspot: ['sanity.openjdk'],
+                        temurin: ['sanity.openjdk'],
                         openj9: 'default'
                 ]
         ],

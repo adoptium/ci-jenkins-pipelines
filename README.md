@@ -32,7 +32,7 @@ x64Mac        : [
     os                   : 'mac',
     arch                 : 'x64',
     additionalNodeLabels : [
-            hotspot  : 'macos10.14',
+            temurin  : 'macos10.14',
             corretto : 'build-macstadium-macos1010-1',
             openj9   : 'macos10.14'
     ],
@@ -46,7 +46,7 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 
 ```groovy
                 additionalNodeLabels : [
-                        hotspot : 'xlc13&&aix710',
+                        temurin : 'xlc13&&aix710',
                         openj9 :  'xlc13&&aix715'
                 ],
 ```
@@ -86,46 +86,46 @@ A single `Map<String, Map<String, String>>` variable containing what platforms a
 ```groovy
 targetConfigurations = [
         "x64Mac"        : [
-                "hotspot",
+                "temurin",
                 "openj9"
         ],
         "x64Linux"      : [
-                "hotspot",
+                "temurin",
                 "openj9",
                 "corretto",
                 "dragonwell"
         ],
         "x32Windows"    : [
-                "hotspot",
+                "temurin",
                 "openj9"
         ],
         "x64Windows"    : [
-                "hotspot",
+                "temurin",
                 "openj9",
                 "dragonwell"
         ],
         "ppc64Aix"      : [
-                "hotspot",
+                "temurin",
                 "openj9"
         ],
         "ppc64leLinux"  : [
-                "hotspot",
+                "temurin",
                 "openj9"
         ],
         "s390xLinux"    : [
-                "hotspot",
+                "temurin",
                 "openj9"
         ],
         "aarch64Linux"  : [
-                "hotspot",
+                "temurin",
                 "openj9",
                 "dragonwell"
         ],
         "arm32Linux"  : [
-                "hotspot"
+                "temurin"
         ],
         "sparcv9Solaris": [
-                "hotspot"
+                "temurin"
         ]
 ]
 ```
@@ -153,7 +153,7 @@ Source control references (e.g. tags) to use in the weekly release builds
 
 ```groovy
 weekly_release_scmReferences = [
-        "hotspot"        : "jdk8u282-b07",
+        "temurin"        : "jdk8u282-b07",
         "openj9"         : "v0.24.0-release",
         "corretto"       : "",
         "dragonwell"     : ""
@@ -227,7 +227,7 @@ This tag identifies the architecture the JDK has been built on and it intended t
 ---
 
 - `variant:`
-Example values: [`hotspot`, `openj9`, `corretto`, `dragonwell`]
+Example values: ['hotpost, `temurin`, `openj9`, `corretto`, `dragonwell`]
 
 This tag identifies the JVM being used by the JDK, "dragonwell" itself is not a JVM but is currently considered a variant in its own right.
 

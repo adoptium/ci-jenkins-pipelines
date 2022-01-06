@@ -1,14 +1,14 @@
 targetConfigurations = [
-        "x64Mac"        : [    "hotspot",    "openj9"                    ],
-        "x64Linux"      : [    "hotspot",    "openj9",    "dragonwell",    "corretto",    "bisheng"    ],
-        "x64AlpineLinux": [    "hotspot"                            ],
-        "x64Windows"    : [    "hotspot",    "openj9",    "dragonwell"            ],
-        "x32Windows"    : [    "hotspot"                            ],
-        "ppc64Aix"      : [    "hotspot",    "openj9"                    ],
-        "ppc64leLinux"  : [    "hotspot",    "openj9"                    ],
-        "s390xLinux"    : [    "hotspot",    "openj9"                    ],
-        "aarch64Linux"  : [    "hotspot",    "openj9",    "dragonwell",                   "bisheng"    ],
-        "arm32Linux"    : [    "hotspot"                            ],
+        "x64Mac"        : [    "temurin",    "openj9"                    ],
+        "x64Linux"      : [    "temurin",    "openj9",    "dragonwell",    "corretto",    "bisheng"    ],
+        "x64AlpineLinux": [    "temurin"                            ],
+        "x64Windows"    : [    "temurin",    "openj9",    "dragonwell"            ],
+        "x32Windows"    : [    "temurin"                            ],
+        "ppc64Aix"      : [    "temurin",    "openj9"                    ],
+        "ppc64leLinux"  : [    "temurin",    "openj9"                    ],
+        "s390xLinux"    : [    "temurin",    "openj9"                    ],
+        "aarch64Linux"  : [    "temurin",    "openj9",    "dragonwell",                   "bisheng"    ],
+        "arm32Linux"    : [    "temurin"                            ],
         "riscv64Linux"  : [                  "openj9",                                    "bisheng"    ]
 ]
 
@@ -20,6 +20,7 @@ triggerSchedule_weekly="TZ=UTC\n05 17 * * 6"
 // scmReferences to use for weekly release build
 weekly_release_scmReferences=[
         "hotspot"        : "",
+        "temurin"        : "",
         "openj9"         : "",
         "corretto"       : "",
         "dragonwell"     : "",
