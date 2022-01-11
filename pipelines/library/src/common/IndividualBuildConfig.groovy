@@ -12,6 +12,7 @@ class IndividualBuildConfig implements Serializable {
     final List<String> DYNAMIC_LIST
     final List<String> NUM_MACHINES
     final String SCM_REF
+    final String AQA_REF
     final String BUILD_ARGS
     final String NODE_LABEL
     final String ADDITIONAL_TEST_LABEL
@@ -75,6 +76,7 @@ class IndividualBuildConfig implements Serializable {
         }
 
         SCM_REF = map.get("SCM_REF")
+        AQA_REF = map.get("AQA_REF")
         BUILD_ARGS = map.get("BUILD_ARGS")
         NODE_LABEL = map.get("NODE_LABEL")
         ADDITIONAL_TEST_LABEL = map.get("ADDITIONAL_TEST_LABEL")
@@ -129,6 +131,7 @@ class IndividualBuildConfig implements Serializable {
                 DYNAMIC_LIST              : DYNAMIC_LIST,
                 NUM_MACHINES              : NUM_MACHINES,
                 SCM_REF                   : SCM_REF,
+                AQA_REF                   : AQA_REF,
                 BUILD_ARGS                : BUILD_ARGS,
                 NODE_LABEL                : NODE_LABEL,
                 ADDITIONAL_TEST_LABEL     : ADDITIONAL_TEST_LABEL,
