@@ -317,7 +317,6 @@ class Build {
         def aqaBranch = "master"
         def useTestEnvProperties = false
         if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
-            // We keep the ADOPTOPENJDK label for historical compatibility.
             aqaBranch = buildConfig.AQA_REF
             useTestEnvProperties = true
         }
@@ -375,6 +374,7 @@ class Build {
                                             context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                             context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
                                             context.string(name: 'PARALLEL', value: parallel),
+                                            context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
                                             context.string(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
                                             context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
                                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
