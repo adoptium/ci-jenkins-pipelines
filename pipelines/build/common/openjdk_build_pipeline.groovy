@@ -375,7 +375,7 @@ class Build {
                                             context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
                                             context.string(name: 'PARALLEL', value: parallel),
                                             context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
-                                            context.string(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
+                                            context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
                                             context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
                                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
                         }
