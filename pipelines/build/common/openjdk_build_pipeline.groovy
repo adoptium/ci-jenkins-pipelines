@@ -314,6 +314,12 @@ class Build {
         List dynamicList = buildConfig.DYNAMIC_LIST
         List numMachines = buildConfig.NUM_MACHINES
         def enableTestDynamicParallel = Boolean.valueOf(buildConfig.ENABLE_TESTDYNAMICPARALLEL)
+        def aqaBranch = "master"
+        def useTestEnvProperties = false
+        if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
+            aqaBranch = buildConfig.AQA_REF
+            useTestEnvProperties = true
+        }
 
         testList.each { testType ->
 
@@ -369,6 +375,8 @@ class Build {
                                             context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
                                             context.string(name: 'PARALLEL', value: parallel),
                                             context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
+                                            context.string(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
+                                            context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
                                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
                         }
                     }

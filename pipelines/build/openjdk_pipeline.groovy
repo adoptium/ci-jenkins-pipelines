@@ -122,6 +122,7 @@ if (scmVars != null || configureBuild != null || buildConfigurations != null) {
         enableSigner,
         releaseType,
         scmReference,
+        aqaReference,
         overridePublishName,
         useAdoptBashScripts,
         additionalConfigureArgs,

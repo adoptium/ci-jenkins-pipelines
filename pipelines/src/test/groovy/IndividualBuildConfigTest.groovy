@@ -16,6 +16,7 @@ class IndividualBuildConfigTest {
                 DYNAMIC_LIST               : "e",
                 NUM_MACHINES               : "e",
                 SCM_REF                    : "f",
+                AQA_REF                    : "s",
                 BUILD_ARGS                 : "g",
                 NODE_LABEL                 : "h",
                 ADDITIONAL_TEST_LABEL      : "t",
