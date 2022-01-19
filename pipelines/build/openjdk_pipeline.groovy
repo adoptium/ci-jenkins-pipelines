@@ -123,6 +123,7 @@ if (scmVars != null || configureBuild != null || buildConfigurations != null) {
         releaseType,
         scmReference,
         aqaReference,
+        aqaAutoGen,
         overridePublishName,
         useAdoptBashScripts,
         additionalConfigureArgs,
