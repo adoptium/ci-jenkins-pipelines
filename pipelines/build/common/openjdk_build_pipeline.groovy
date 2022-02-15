@@ -1024,7 +1024,12 @@ class Build {
 
         javaToBuild = javaToBuild.toUpperCase()
 
-        def fileName = "Open${javaToBuild}-jdk_${architecture}_${os}_${variant}"
+        if (variant == "temurin") {
+          // For compatibility with existing releases
+          def fileName = "Open${javaToBuild}-jdk_${architecture}_${os}_hotspot"
+        } else {
+          def fileName = "Open${javaToBuild}-jdk_${architecture}_${os}_${variant}"
+        }
 
         if (additionalFileNameTag) {
             fileName = "${fileName}_${additionalFileNameTag}"
