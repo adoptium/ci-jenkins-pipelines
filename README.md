@@ -227,7 +227,7 @@ This tag identifies the architecture the JDK has been built on and it intended t
 ---
 
 - `variant:`
-Example values: ['hotpost, `temurin`, `openj9`, `corretto`, `dragonwell`]
+Example values: ['hotspot, `temurin`, `openj9`, `corretto`, `dragonwell`]
 
 This tag identifies the JVM being used by the JDK, "dragonwell" itself is not a JVM but is currently considered a variant in its own right.
 

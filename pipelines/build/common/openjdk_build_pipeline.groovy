@@ -182,7 +182,7 @@ class Build {
         String jdk_Version = getJavaVersionNumber() as String
         jobParams.put('JDK_VERSIONS', jdk_Version)
         if (jdk_Version == "temurin") {
-            jobParams.pu('JDK_IMPL', 'hotspot'
+            jobParams.put('JDK_IMPL', 'hotspot')
         } else { 
             jobParams.put('JDK_IMPL', buildConfig.VARIANT)
         }
