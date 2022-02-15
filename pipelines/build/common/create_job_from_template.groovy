@@ -57,7 +57,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
     }
     properties {
         // Hide all non Temurin builds from public view
-        if (VARIANT != "hotspot") {
+        if (VARIANT != "temurin") {
             authorizationMatrix {
                 inheritanceStrategy {
                     // Do not inherit permissions from global configuration
