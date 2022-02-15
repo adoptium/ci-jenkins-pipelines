@@ -1,36 +1,36 @@
 targetConfigurations = [
         "x64Mac"      : [
-                "hotspot"
+                "temurin"
         ],
         "x64Linux"    : [
-                "hotspot"
+                "temurin"
         ],
         "x64AlpineLinux" : [
-                "hotspot"
+                "temurin"
         ],
         "x64Windows"  : [
-                "hotspot"
+                "temurin"
         ],
         "x32Windows"  : [
-                "hotspot"
+                "temurin"
         ],
         "ppc64Aix"    : [
-                "hotspot"
+                "temurin"
         ],
         "ppc64leLinux": [
-                "hotspot"
+                "temurin"
         ],
         "s390xLinux"  : [
-                "hotspot"
+                "temurin"
         ],
         "aarch64Linux": [
-                "hotspot"
+                "temurin"
         ],
         "aarch64Mac": [
-                "hotspot"
+                "temurin"
         ],
         "arm32Linux"  : [
-                "hotspot"
+                "temurin"
         ]
 ]
 
@@ -42,6 +42,7 @@ triggerSchedule_weekly="TZ=UTC\n30 23 * * 6"
 // scmReferences to use for weekly release build
 weekly_release_scmReferences=[
         "hotspot"        : "",
+        "temurin"        : "",
         "openj9"         : "",
         "corretto"       : "",
         "dragonwell"     : ""

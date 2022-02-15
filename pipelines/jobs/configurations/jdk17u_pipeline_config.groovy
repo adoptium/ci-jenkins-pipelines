@@ -7,7 +7,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -15,7 +15,7 @@ class Config17 {
                 os                  : 'linux',
                 arch                : 'x64',
                 dockerImage: [
-                        hotspot     : 'adoptopenjdk/centos6_build_image',
+                        temurin     : 'adoptopenjdk/centos6_build_image',
                         openj9      : 'adoptopenjdk/centos7_build_image'
                 ],
                 dockerFile: [
@@ -27,10 +27,10 @@ class Config17 {
                 ],
                 configureArgs       : [
                         "openj9"    : '--enable-dtrace --enable-jitserver',
-                        "hotspot"   : '--enable-dtrace'
+                        "temurin"   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        "hotspot"   : '--create-source-archive --create-jre-image'
+                        "temurin"   : '--create-source-archive --create-jre-image'
                 ]
         ],
 
@@ -41,7 +41,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -51,7 +51,7 @@ class Config17 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default',
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -67,7 +67,7 @@ class Config17 {
                         weekly : []
                 ],
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -77,11 +77,11 @@ class Config17 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012&&vs2017',
                 buildArgs           : [
-                        hotspot : '--jvm-variant client,server'
+                        temurin : '--jvm-variant client,server'
                 ],
                 test                : 'default',
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -89,13 +89,13 @@ class Config17 {
                 os                  : 'aix',
                 arch                : 'ppc64',
                 additionalNodeLabels: [
-                        hotspot: 'xlc16&&aix710',
+                        temurin: 'xlc16&&aix710',
                         openj9:  'xlc16&&aix715'
                 ],
                 test                : 'default',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -106,7 +106,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -116,11 +116,11 @@ class Config17 {
                 additionalNodeLabels: 'centos7',
                 test                : 'default',
                 configureArgs       : [
-                        "hotspot"     : '--enable-dtrace',
+                        "temurin"     : '--enable-dtrace',
                         "openj9"      : '--enable-dtrace --enable-jitserver'
                 ],
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -132,7 +132,7 @@ class Config17 {
                 configureArgs : '--enable-dtrace',
                 testDynamic          : false,
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
 
         ],
@@ -143,7 +143,7 @@ class Config17 {
                 additionalNodeLabels: 'macos11',
                 test                : 'default',
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
 
         ],
@@ -154,7 +154,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "hotspot"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image'
                 ]
         ]
 

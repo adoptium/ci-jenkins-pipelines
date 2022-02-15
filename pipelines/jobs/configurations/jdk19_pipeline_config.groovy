@@ -12,7 +12,7 @@ class Config19 {
                 os                  : 'linux',
                 arch                : 'x64',
                 dockerImage: [
-                        hotspot     : 'adoptopenjdk/centos6_build_image',
+                        temurin     : 'adoptopenjdk/centos6_build_image',
                         openj9      : 'adoptopenjdk/centos7_build_image'
                 ],
                 dockerFile: [
@@ -24,7 +24,7 @@ class Config19 {
                 ],
                 configureArgs       : [
                         "openj9"    : '--enable-dtrace --enable-jitserver',
-                        "hotspot"   : '--enable-dtrace'
+                        "temurin"   : '--enable-dtrace'
                 ]
         ],
 
@@ -62,7 +62,7 @@ class Config19 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012&&vs2017',
                 buildArgs           : [
-                        hotspot : '--jvm-variant client,server'
+                        temurin : '--jvm-variant client,server'
                 ],
                 test                : 'default'
         ],
@@ -71,7 +71,7 @@ class Config19 {
                 os                  : 'aix',
                 arch                : 'ppc64',
                 additionalNodeLabels: [
-                        hotspot: 'xlc16&&aix710',
+                        temurin: 'xlc16&&aix710',
                         openj9:  'xlc16&&aix715'
                 ],
                 test                : 'default',
@@ -92,7 +92,7 @@ class Config19 {
                 additionalNodeLabels: 'centos7',
                 test                : 'default',
                 configureArgs       : [
-                        "hotspot"     : '--enable-dtrace',
+                        "temurin"     : '--enable-dtrace',
                         "openj9"      : '--enable-dtrace --enable-jitserver'
                 ]
 

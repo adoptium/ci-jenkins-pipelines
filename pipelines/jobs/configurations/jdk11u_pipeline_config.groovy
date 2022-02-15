@@ -7,7 +7,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : [
                         "openj9"      : '--enable-dtrace=auto --with-cmake',
-                        "hotspot"     : '--enable-dtrace=auto'
+                        "temurin"     : '--enable-dtrace=auto'
                 ]
         ],
 
@@ -21,14 +21,14 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : [
                         "openj9"      : '--enable-jitserver --enable-dtrace=auto',
-                        "hotspot"     : '--enable-dtrace=auto',
+                        "temurin"     : '--enable-dtrace=auto',
                         "corretto"    : '--enable-dtrace=auto',
                         "SapMachine"  : '--enable-dtrace=auto',
                         "dragonwell"  : '--enable-dtrace=auto --enable-unlimited-crypto --with-jvm-variants=server --with-zlib=system --with-jvm-features=zgc',
                         "bisheng"     : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server --disable-warnings-as-errors'
                 ],
                 buildArgs            : [
-                        "hotspot"     : '--create-source-archive'
+                        "temurin"     : '--create-source-archive'
                 ]
         ],
 
@@ -44,12 +44,12 @@ class Config11 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: [
-                        hotspot:    'win2012',
+                        temurin:    'win2012',
                         openj9:     'win2012&&vs2017',
                         dragonwell: 'win2012'
                 ],
                 buildArgs : [
-                        hotspot : '--jvm-variant client,server'
+                        temurin : '--jvm-variant client,server'
                 ],
                 test                : 'default'
         ],
@@ -68,7 +68,7 @@ class Config11 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012',
                 buildArgs : [
-                        hotspot : '--jvm-variant client,server'
+                        temurin : '--jvm-variant client,server'
                 ],
                 test                : 'default'
         ],
@@ -77,7 +77,7 @@ class Config11 {
                 os                  : 'aix',
                 arch                : 'ppc64',
                 additionalNodeLabels: [
-                        hotspot: 'xlc13&&aix710',
+                        temurin: 'xlc13&&aix710',
                         openj9:  'xlc13&&aix715'
                 ],
                 test                : 'default',
@@ -104,7 +104,7 @@ class Config11 {
                 additionalNodeLabels : 'centos7',
                 test                : 'default',
                 configureArgs       : [
-                        "hotspot"     : '--enable-dtrace=auto',
+                        "temurin"     : '--enable-dtrace=auto',
                         "openj9"      : '--enable-dtrace=auto --enable-jitserver'
                 ]
 
@@ -129,11 +129,11 @@ class Config11 {
                         dragonwell: 'armv8.2'
                 ],
                 configureArgs       : [
-                        "hotspot" : '--enable-dtrace=auto',
-                        "openj9" : '--enable-dtrace=auto',
-                        "corretto" : '--enable-dtrace=auto',
-                        "dragonwell" : "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
-                        "bisheng" : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
+                        "temurin"   : '--enable-dtrace=auto',
+                        "openj9"    : '--enable-dtrace=auto',
+                        "corretto"  : '--enable-dtrace=auto',
+                        "dragonwell": "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
+                        "bisheng"   : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
                 ],
                 testDynamic        : false
         ],
