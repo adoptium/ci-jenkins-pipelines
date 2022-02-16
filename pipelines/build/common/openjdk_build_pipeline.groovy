@@ -327,6 +327,8 @@ class Build {
             useTestEnvProperties = true
         }
 
+        def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
+
         testList.each { testType ->
 
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
@@ -359,8 +361,8 @@ class Build {
                         def jobName = jobParams.TEST_JOB_NAME
                         def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
 
-                        // Create test job if job doesn't exist or is not runnable
-                        if (!JobHelper.jobIsRunnable(jobName as String)) {
+                        // Create test job if AQA_AUTO_GEN is set to true, the job doesn't exist or is not runnable
+                        if (aqaAutoGen || !JobHelper.jobIsRunnable(jobName as String)) {
                             context.node('master') {
                                 context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
                                 def templatePath = 'testJobTemplate'
@@ -382,6 +384,7 @@ class Build {
                                             context.string(name: 'PARALLEL', value: parallel),
                                             context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
                                             context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
+                                            context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
                                             context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
                                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
                         }
