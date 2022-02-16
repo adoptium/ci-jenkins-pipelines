@@ -366,7 +366,11 @@ class Build {
                             context.node('master') {
                                 context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
                                 def templatePath = 'testJobTemplate'
-                                context.println "Test job doesn't exist, create test job: ${jobName}"
+                                if (!JobHelper.jobIsRunnable(jobName as String)) {
+                                    context.println "AQA test job: ${jobName} doesn't exist, generate job : ${jobName}"
+                                } else {
+                                    context.println "Regenerate job: ${jobName}, note: default job parameters may change."
+                                }
                                 context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                             }
                         }
