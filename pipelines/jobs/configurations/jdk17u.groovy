@@ -5,7 +5,8 @@ targetConfigurations = [
         ],
         "x64Linux"    : [
                 "temurin",
-                "openj9"
+                "openj9",
+                "bisheng"
         ],
         "x64AlpineLinux" : [
                 "temurin"
@@ -31,7 +32,8 @@ targetConfigurations = [
         ],
         "aarch64Linux": [
                 "temurin",
-                "openj9"
+                "openj9",
+                "bisheng"
         ],
         "aarch64Mac": [
                 "temurin"
@@ -52,7 +54,8 @@ weekly_release_scmReferences=[
         "temurin"        : "",
         "openj9"         : "",
         "corretto"       : "",
-        "dragonwell"     : ""
+        "dragonwell"     : "",
+        "bisheng"        : ""
 ]
 
 return this
