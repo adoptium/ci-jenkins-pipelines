@@ -36,10 +36,11 @@ class Config19 {
                 configureArgs       : '--enable-headless-only=yes'
         ],
 
+        // Bumped to win2019 and vs2019 to support ZGC
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2017',
+                additionalNodeLabels: 'win2019&&vs2019',
                 test                : 'default'
         ],
 
@@ -55,7 +56,6 @@ class Config19 {
                         weekly : []
                 ]
         ],
-
 
         x32Windows: [
                 os                  : 'windows',
@@ -77,7 +77,6 @@ class Config19 {
                 test                : 'default',
                 cleanWorkspaceAfterBuild: true
         ],
-
 
         s390xLinux    : [
                 os                  : 'linux',
@@ -120,6 +119,7 @@ class Config19 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
+
         riscv64Linux      :  [
                 os                   : 'linux',
                 arch                 : 'riscv64',
