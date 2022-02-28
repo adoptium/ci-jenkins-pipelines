@@ -347,6 +347,11 @@ class Build {
                             keep_test_reportdir = "true"
                         }
 
+                        def DYNAMIC_COMPILE = false
+                        if (("${testType}".contains("functional")) || ("${testType}".contains("external"))) {
+                            DYNAMIC_COMPILE = true
+                        }
+
                         def jobParams = getAQATestJobParams(testType)
                         def parallel = 'None'
                         def numMachinesPerTest = ''
@@ -413,7 +418,8 @@ class Build {
                                             context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
                                             context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
                                             context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
-                                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+                                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)]
                         }
                     }
                 }
