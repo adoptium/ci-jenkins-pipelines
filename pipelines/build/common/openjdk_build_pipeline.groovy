@@ -169,6 +169,7 @@ class Build {
             case "openj9": variant = "j9"; break
             case "corretto": variant = "corretto"; break
             case "dragonwell": variant = "dragonwell"; break;
+            case "fast_startup": variant = "fast_startup"; break;
             case "bisheng": variant = "bisheng"; break;
             default: variant = "hs"
         }
@@ -221,6 +222,8 @@ class Build {
                 jdkBranch = 'dev'
             } else if (buildConfig.VARIANT == "dragonwell") {
                 jdkBranch = 'master'
+            } else if (buildConfig.VARIANT == "fast_startup") {
+                jdkBranch = 'master'
             } else if (buildConfig.VARIANT == "bisheng") {
                 jdkBranch = 'master'
             } else {
@@ -253,6 +256,8 @@ class Build {
             suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
         } else if (buildConfig.VARIANT == "dragonwell") {
             suffix = "alibaba/dragonwell${javaNumber}"
+        } else if (buildConfig.VARIANT == "fast_startup") {
+            suffix = "adoptium/jdk11u-fast-startup-incubator"
         } else if (buildConfig.VARIANT == "bisheng") {
             suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
         } else {
