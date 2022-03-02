@@ -245,12 +245,12 @@ node ("master") {
       featureReleases.each { featureRelease ->
         def key = "jdk${featureRelease}"
         def status = healthStatus[key]
-        def days = status['actualDays']
+        def days = status['actualDays'] as int
         def msg = "${days} day(s) ago" // might actually be days + N hours, where N < 24
         if (status['actualDays'] == 0) {
             msg = "less than 24 hours ago"
         }
-        def maxDays = status['maxStaleDays']
+        def maxDays = status['maxStaleDays'] as int
         def fullMessage = "JDK ${featureRelease} nightly pipeline publish status: healthy. Last published: ${msg}"
         def slackColor = "good"
         if (maxDays <= days) {
