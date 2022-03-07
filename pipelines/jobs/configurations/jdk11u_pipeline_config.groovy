@@ -25,6 +25,7 @@ class Config11 {
                         "corretto"    : '--enable-dtrace=auto',
                         "SapMachine"  : '--enable-dtrace=auto',
                         "dragonwell"  : '--enable-dtrace=auto --enable-unlimited-crypto --with-jvm-variants=server --with-zlib=system --with-jvm-features=zgc',
+                        "fast_startup": '--enable-dtrace=auto',
                         "bisheng"     : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server --disable-warnings-as-errors'
                 ],
                 buildArgs            : [

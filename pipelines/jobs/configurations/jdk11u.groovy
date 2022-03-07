@@ -1,6 +1,6 @@
 targetConfigurations = [
         "x64Mac"        : [    "temurin",    "openj9"                    ],
-        "x64Linux"      : [    "temurin",    "openj9",    "dragonwell",    "corretto",    "bisheng"    ],
+        "x64Linux"      : [    "temurin",    "openj9",    "dragonwell",    "corretto",    "bisheng",    "fast_startup"],
         "x64AlpineLinux": [    "temurin"                            ],
         "x64Windows"    : [    "temurin",    "openj9",    "dragonwell"            ],
         "x32Windows"    : [    "temurin"                            ],
@@ -23,6 +23,7 @@ weekly_release_scmReferences=[
         "openj9"         : "",
         "corretto"       : "",
         "dragonwell"     : "",
+        "fast_startup"   : "",
         "bisheng"        : ""
 ]
 
