@@ -296,6 +296,7 @@ class Build {
                     context.build job: jobName,
                             propagate: false,
                             parameters: [
+                                    context.string(name: 'SDK_RESOURCE', value: "upstream"),
                                     context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                                     context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
                                     context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
