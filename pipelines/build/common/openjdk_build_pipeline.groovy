@@ -292,7 +292,7 @@ class Build {
                         context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                     }
                 }
-               context.catchError {
+                context.catchError {
                     context.build job: jobName,
                             propagate: false,
                             parameters: [
@@ -302,7 +302,8 @@ class Build {
                                     context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
                                     context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                     context.string(name: 'KEEP_REPORTDIR', value: "${buildConfig.KEEP_TEST_REPORTDIR}"),
-                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}")]
+                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: true)]
                 }
             }
         } catch (Exception e) {
