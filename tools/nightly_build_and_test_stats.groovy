@@ -32,17 +32,18 @@ node ("master") {
   def testStats = []
 
   stage("getPipelineStatus") {
-    if (variant == "temurin") {
-        variant = "hotspot"
+    def apiVariant = variant
+    if (apiVariant == "temurin") {
+        apiVariant = "hotspot"
     }
-    if (variant == "hotspot") { // hotspot only for now
+    if (apiVariant == "hotspot") { // hotspot only for now
       // Determine nightly pipeline health by looking at published assets.
       // In particular, look at one data set for published binaries (Linux x64).
       // If no published assets happened the last 4 days, the nightly pipeline
       // is considered unhealthy.
       // TODO: account for disabled nightly pipelines
       featureReleases.each { featureRelease ->
-        def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureRelease}/ea?image_type=jdk&os=linux&architecture=x64&jvm_impl=${variant}'")
+        def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureRelease}/ea?image_type=jdk&os=linux&architecture=x64&jvm_impl=${apiVariant}'")
         def assetsJson = new JsonSlurper().parseText(assets)
         def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
         def assetTs = Instant.parse(ts).atZone(ZoneId.of("UTC"))
