@@ -10,6 +10,9 @@ targetConfigurations = [
                 "dragonwell",
                 "bisheng"
         ],
+        "x64AlpineLinux" : [
+                "temurin"
+        ],
         "x32Windows"    : [
                 "temurin",
                 "openj9"
