@@ -159,19 +159,19 @@ class PullRequestTestPipeline implements Serializable {
 
 Map<String, ?> defaultTestConfigurations = [
     "x64Linux": [
-        "hotspot"
+        "temurin"
     ],
     "x64AlpineLinux" : [
-        "hotspot"
+        "temurin"
     ],
     "aarch64Linux": [
-        "hotspot"
+        "temurin"
     ],
     "x64Windows": [
-        "hotspot"
+        "temurin"
     ],
     "x64Mac": [
-        "hotspot"
+        "temurin"
     ]
 ]
 

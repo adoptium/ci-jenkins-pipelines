@@ -11,7 +11,7 @@ targetConfigurations = [
                 "bisheng"
         ],
         "x64AlpineLinux" : [
-                "hotspot"
+                "temurin"
         ],
         "x32Windows"    : [
                 "temurin",
