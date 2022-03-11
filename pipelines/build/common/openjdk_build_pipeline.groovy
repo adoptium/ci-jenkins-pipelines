@@ -539,34 +539,6 @@ class Build {
     }
 
     /*
-    Run the Linux installer downstream job.
-    */
-    private void buildLinuxInstaller(VersionInfo versionData) {
-        def filter = "**/OpenJDK*_linux_*.tar.gz"
-        def nodeFilter = "${buildConfig.TARGET_OS}&&fpm"
-
-        String releaseType = "Nightly"
-        if (buildConfig.RELEASE) {
-            releaseType = "Release"
-        }
-
-        // Execute installer job
-        context.build job: "build-scripts/release/create_installer_linux",
-            propagate: true,
-            parameters: [
-                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                    context.string(name: 'FILTER', value: "${filter}"),
-                    context.string(name: 'RELEASE_TYPE', value: "${releaseType}"),
-                    context.string(name: 'VERSION', value: "${versionData.version}"),
-                    context.string(name: 'MAJOR_VERSION', value: "${versionData.major}"),
-                    context.string(name: 'ARCHITECTURE', value: "${buildConfig.ARCHITECTURE}"),
-                    ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
-            ]
-
-    }
-
-    /*
     Run the Windows installer downstream jobs.
     We run two jobs if we have a JRE (see https://github.com/adoptium/temurin-build/issues/1751).
     */
@@ -666,13 +638,11 @@ class Build {
             context.stage("installer") {
                 switch (buildConfig.TARGET_OS) {
                     case "mac": context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt'; buildMacInstaller(versionData); break
-                    case "linux": buildLinuxInstaller(versionData); break
                     case "windows": buildWindowsInstaller(versionData); break
                     default: break
                 }
 
                 // Archive the Mac and Windows pkg/msi
-                // (Linux installer job produces no artifacts, it just uploads rpm/deb to the repositories)
                 if (buildConfig.TARGET_OS == "mac" || buildConfig.TARGET_OS == "windows") {
                     try {
                         context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.pkg workspace/target/*.msi); do sha256sum "$file" > $file.sha256.txt ; done'
