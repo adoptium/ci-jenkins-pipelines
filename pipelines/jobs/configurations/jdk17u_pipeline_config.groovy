@@ -45,10 +45,11 @@ class Config17 {
                 ]
         ],
 
+        // Bumped to win2019 and vs2019 to support ZGC
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2017',
+                additionalNodeLabels: 'win2019&&vs2019',
                 test                : 'default',
                 buildArgs           : [
                         "temurin"   : '--create-jre-image'
