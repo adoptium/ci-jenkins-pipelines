@@ -5,7 +5,10 @@ class Config18 {
                 arch                : 'x64',
                 additionalNodeLabels: 'macos10.14',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace'
+                configureArgs       : '--enable-dtrace',
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
+                ]
         ],
 
         x64Linux  : [
@@ -25,6 +28,9 @@ class Config18 {
                 configureArgs       : [
                         "openj9"    : '--enable-dtrace --enable-jitserver',
                         "temurin"   : '--enable-dtrace'
+                ],
+                buildArgs           : [
+                        "temurin"   : '--create-source-archive --create-jre-image'
                 ]
         ],
 
@@ -33,14 +39,20 @@ class Config18 {
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-headless-only=yes'
+                configureArgs       : '--enable-headless-only=yes',
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
+                ]
         ],
 
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012&&vs2017',
-                test                : 'default'
+                test                : 'default',
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
+                ]
         ],
 
         // TODO: Enable testing (https://github.com/adoptium/ci-jenkins-pipelines/issues/77)
@@ -53,6 +65,9 @@ class Config18 {
                 test                : [
                         nightly: [],
                         weekly : []
+                ],
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -64,7 +79,10 @@ class Config18 {
                 buildArgs           : [
                         temurin : '--jvm-variant client,server'
                 ],
-                test                : 'default'
+                test                : 'default',
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
+                ]
         ],
 
         ppc64Aix    : [
@@ -75,7 +93,10 @@ class Config18 {
                         openj9:  'xlc16&&aix715'
                 ],
                 test                : 'default',
-                cleanWorkspaceAfterBuild: true
+                cleanWorkspaceAfterBuild: true,
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
+                ]
         ],
 
 
@@ -83,7 +104,10 @@ class Config18 {
                 os                  : 'linux',
                 arch                : 's390x',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace'
+                configureArgs       : '--enable-dtrace',
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
+                ]
         ],
 
         ppc64leLinux    : [
@@ -94,8 +118,10 @@ class Config18 {
                 configureArgs       : [
                         "temurin"     : '--enable-dtrace',
                         "openj9"      : '--enable-dtrace --enable-jitserver'
+                ],
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
                 ]
-
         ],
 
         aarch64Linux    : [
@@ -104,21 +130,30 @@ class Config18 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs : '--enable-dtrace',
-                testDynamic          : false
+                testDynamic          : false,
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
+                ]
         ],
         
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
                 additionalNodeLabels: 'macos11',
-                test                : 'default'
+                test                : 'default',
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
+                ]
         ],
 
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace'
+                configureArgs       : '--enable-dtrace',
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image'
+                ]
         ]
   ]
 
