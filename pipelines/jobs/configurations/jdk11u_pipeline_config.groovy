@@ -41,7 +41,6 @@ class Config11 {
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-headless-only=yes'
         ],
 
         x64Windows: [
@@ -112,6 +111,14 @@ class Config11 {
                         "openj9"      : '--enable-dtrace=auto --enable-jitserver'
                 ]
 
+        ],
+
+        aarch64Mac: [
+                os                  : 'mac',
+                arch                : 'aarch64',
+                additionalNodeLabels: 'macos11',
+                test                : 'default',
+                configureArgs       : '--disable-ccache"
         ],
 
         arm32Linux    : [
