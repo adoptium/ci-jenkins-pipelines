@@ -40,7 +40,7 @@ class Config11 {
                 os                  : 'alpine-linux',
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
+                test                : 'default'
         ],
 
         x64Windows: [
