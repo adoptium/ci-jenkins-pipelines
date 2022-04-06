@@ -118,7 +118,7 @@ class Config11 {
                 arch                : 'aarch64',
                 additionalNodeLabels: 'macos11',
                 test                : 'default',
-                configureArgs       : '--disable-ccache"
+                configureArgs       : '--disable-ccache'
         ],
 
         arm32Linux    : [
