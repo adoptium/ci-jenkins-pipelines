@@ -77,13 +77,15 @@ class Config8 {
         sparcv9Solaris: [
                 os  : 'solaris',
                 arch: 'sparcv9',
-                test: 'default'
+                test: 'default',
+                buildArgs: '--make-args SHELL=/bin/bash'
         ],
 
         x64Solaris    : [
                 os                  : 'solaris',
                 arch                : 'x64',
-                test                : 'default'
+                test                : 'default',
+                buildArgs           : '--make-args SHELL=/bin/bash'
         ],
 
         ppc64leLinux  : [
