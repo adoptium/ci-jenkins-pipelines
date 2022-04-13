@@ -19,7 +19,7 @@ The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory con
 
 To ensure both configurations are not overridden in a race condition scenario by another job, the [job generators](pipelines/build/regeneration/README.md) ensure they remain in the sync with the repository.
 
-**Generally, any new parameters/configurations that effect the jenkins environment directly should be implemented here.** If this is not the case, it would likely be better placed in [openjdk-build/platform-specific-configurations](https://github.com/adoptium/temurin-build/tree/master/build-farm/platform-specific-configurations) (for OS or `make-adopt-build-farm.sh` specific use cases) or [openjdk-build/build.sh](https://github.com/adoptium/temurin-build/blob/master/sbin/build.sh) (for anyone, including end users and jenkins pipelines).
+**Generally, any new parameters/configurations that effect the jenkins environment directly should be implemented here.** If this is not the case, it would likely be better placed in [temurin-build/platform-specific-configurations](https://github.com/adoptium/temurin-build/tree/master/build-farm/platform-specific-configurations) (for OS or `make-adopt-build-farm.sh` specific use cases) or [temurin-build/build.sh](https://github.com/adoptium/temurin-build/blob/master/sbin/build.sh) (for anyone, including end users and jenkins pipelines).
 
 ### Build
 
@@ -55,7 +55,7 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 
 | Name                       | Required? | Type                              | <div style="width:500px">Description</div> |
 | :------------------------- | :---: | :------------------------------------ | :----------------------------------------- |
-| os                         | ✅    | `String`                              | Operating system tag that will identify the job on jenkins and determine which platforms configs to pull from openjdk-build.<br>*E.g. `windows`, `solaris`* |
+| os                         | ✅    | `String`                              | Operating system tag that will identify the job on jenkins and determine which platforms configs to pull from temurin-build.<br>*E.g. `windows`, `solaris`* |
 | arch                       | ✅    | `String`                              | Architecture tag that will identify the job on jenkins and determine which build params to use.<br>*E.g. `x64`, `sparcv9`, `x86-32`* |
 | test                       | ❌    | `String`<br>**OR**<br>`Map<String, List>`<br>**OR**<br>`Map<String, List or Map<String, List>>`   | Case one: Tests to run against the binary after the build has completed. A `default` tag indicates that you want to run [whatever the default test nightly/release list is](https://github.com/adoptium/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/build/common/build_base_file.groovy#L66-L88).<br><br>Case two: You can also [specify your own list for that particular platform (not variant)](https://github.com/adoptium/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/jobs/configurations/jdk16_pipeline_config.groovy#L59-L64). <br><br>Case three: Or you can even [specify the list for that particular platform per variant](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk8u_pipeline_config.groovy#L78-L81). The list could be specific one `sanity.openjdk` or `default` (similar to the first case) or a map per nightly or release (similar to case two).
 | testDynamic                 | ❌    | `Boolean`<br>**OR**<br>`Map<String, ?>` | PARALLEL=Dynamic parameter setting. False : no Parallel. Or you can set the parameters with or without variant.
@@ -67,11 +67,11 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 | additionalNodeLabels       | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Appended to the default constructed jenkins node label (often used to lock variants or build configs to specific machines). Jenkins will additionally search for a node with this tag as well as the default node label.<br>*E.g. `build-macstadium-macos1010-1`, `macos10.14`* |
 | additionalTestLabels       | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Used by [aqa-tests](https://github.com/adoptium/aqa-tests/blob/2b6ee54f18021c38386cea65c552de4ea20a8d1c/buildenv/jenkins/testJobTemplate#L213) to lock specific tests to specific machine nodes (in the same manner as **additionalNodeLabels**)<br>*E.g. `!(centos6\|\|rhel6)`, `dragonwell`* |
 | configureArgs              | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Configuration arguments that will ultimately be passed to OpenJDK's `./configure`<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
-| buildArgs                  | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Build arguments that will ultimately be passed to [openjdk-build's ./makejdk-any-platform.sh](https://github.com/adoptium/temurin-build#the-makejdk-any-platformsh-script) script<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
+| buildArgs                  | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Build arguments that will ultimately be passed to [temurin-build's ./makejdk-any-platform.sh](https://github.com/adoptium/temurin-build#the-makejdk-any-platformsh-script) script<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
 | additionalFileNameTag      | ❌    | `String`                              | Commonly used when building [large heap versions](https://adoptopenjdk.net/faq.html#:~:text=What%20are%20the%20OpenJ9%20%22Large,XL%20in%20the%20download%20filenames) of the binary, this tag will also be included in the jenkins job name and binary file name. Include this parameter if you have an "extra" variant that requires a different tagname<br>*E.g. `linuxXL`* |
 | crossCompile               | ❌    | `String`<br>**OR**<br>`Map<String, String>` | Used when building on a cross compiled system, informing jenkins to treat it differently when retrieving the version and producing the binary. This value is also used to create the jenkins node label alongside the **arch** (similarly to **additionalNodeLabels**)<br>*E.g. `x64`* |
-| bootJDK                    | ❌    | `String`                              | JDK version number to specify to openjdk-build's `make-adopt-build-farm.sh` script, informing it to utilise a [predefined location of a boot jdk](https://github.com/adoptium/temurin-build/blob/2df732492b59b1606439505316c766edbb566cc2/build-farm/make-adopt-build-farm.sh#L115-L141)<br> *E.g. `8`, `11`* |
-| platformSpecificConfigPath | ❌    | `String`                              | openjdk-build repository path to pull the operating system configurations from inside [openjdk-build's set-platform-specific-configurations.sh](https://github.com/adoptium/temurin-build/blob/master/build-farm/set-platform-specific-configurations.sh). Do not include the repo name or branch as this is prepended automatically.<br>*E.g. `pipelines/TestLocation/platform-specific-configurations`* |
+| bootJDK                    | ❌    | `String`                              | JDK version number to specify to temurin-build's `make-adopt-build-farm.sh` script, informing it to utilise a [predefined location of a boot jdk](https://github.com/adoptium/temurin-build/blob/2df732492b59b1606439505316c766edbb566cc2/build-farm/make-adopt-build-farm.sh#L115-L141)<br> *E.g. `8`, `11`* |
+| platformSpecificConfigPath | ❌    | `String`                              | temurin-build repository path to pull the operating system configurations from inside [temurin-build's set-platform-specific-configurations.sh](https://github.com/adoptium/temurin-build/blob/master/build-farm/set-platform-specific-configurations.sh). Do not include the repo name or branch as this is prepended automatically.<br>*E.g. `pipelines/TestLocation/platform-specific-configurations`* |
 | codebuild                  | ❌    | `Boolean`                             | Setting this field will tell jenkins to spin up an Azure or [AWS cloud](https://aws.amazon.com/codebuild/) machine, allowing the build to retrieve a machine not normally available on the Jenkins server. It does this by appending a `codebuild` flag to the jenkins label. |
 | cleanWorkspaceAfterBuild   | ❌    | `Boolean`                             | Setting this field will tell jenkins to clean down the workspace after the build has completed. Particularly useful for AIX where disk space can be limited. |
 
@@ -206,14 +206,14 @@ Below are all of the keys contained in the metadata file and some example values
 ---
 
 - `vendor:`
-Example values: [`Temurin`, `Alibaba`]
+Example values: [`Temurin`, `Alibaba`, `Adoptium`, `Huawei`]
 
-This tag is used to identify the vendor of the JDK being built, this value is set in the [build.sh](https://github.com/adoptium/temurin-build/blob/master/sbin/build.sh#L327) file and defaults to "Temurin".
+This tag is used to identify the vendor of the JDK being built, this value is set in the [build.sh](https://github.com/adoptium/temurin-build/blob/9fa328f89f7381ceda5549fe0834ce36c14cbf56/sbin/build.sh#L222) file and defaults to "Temurin".
 
 ---
 
 - `os:`
-Example values: [`windows`, `mac`, `linux`, `aix`, `solaris`]
+Example values: [`windows`, `mac`, `linux`, `aix`, `solaris`, `alpine-linux`]
 
 This tag identifies the operating system the JDK has been built on (and should be used on).
 
@@ -227,7 +227,7 @@ This tag identifies the architecture the JDK has been built on and it intended t
 ---
 
 - `variant:`
-Example values: ['hotspot, `temurin`, `openj9`, `corretto`, `dragonwell`]
+Example values: [`hotspot`, `temurin`, `openj9`, `corretto`, `dragonwell`, `bisheng`, `fast_startup`]
 
 This tag identifies the JVM being used by the JDK, "dragonwell" itself is not a JVM but is currently considered a variant in its own right.
 
@@ -299,7 +299,7 @@ Values that only contain a commit reference such as `23f997ca1` are OpenJ9 commi
 ---
 
 - `buildRef:`
-Example values: [`openjdk-build/fe0f2dba`, `openjdk-build/f412a523`]
+Example values: [`temurin-build/fe0f2dba`, `temurin-build/f412a523`]
 A reference to the build tools repository used to create the JDK, uses the format **repository-name**/**commit-SHA**.
 
 ---
@@ -332,7 +332,7 @@ The full output of the command `java -version` for the JDK.
 ---
 
 - `configure_arguments:`
-The full output generated by `configure.sh` for the JDK built.
+The full output generated by `configure-and-build.sh` for the JDK built.
 
 ## Build status
 

@@ -1305,7 +1305,7 @@ class Build {
                                     repoHandler.checkoutUserPipelines(context)
                                 }
                             } else {
-                                context.println "[CHECKOUT] Checking out to the user's openjdk-build..."
+                                context.println "[CHECKOUT] Checking out to the user's temurin-build..."
                                 repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                 repoHandler.checkoutUserBuild(context)
                                 context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")

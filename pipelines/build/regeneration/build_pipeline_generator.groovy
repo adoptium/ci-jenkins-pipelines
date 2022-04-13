@@ -79,7 +79,10 @@ node('master') {
       // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
       def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["rootDirectory"]
 
-      // Load scriptFolderPath. This is the folder where the openjdkxx-pipeline.groovy code is located compared to the repository root. These are the top level pipeline jobs.
+      /*
+      Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root.
+      These are the top level pipeline jobs.
+      */
       def scriptFolderPath = (params.SCRIPT_FOLDER_PATH) ?: DEFAULTS_JSON["scriptDirectories"]["upstream"]
 
       if (!fileExists(scriptFolderPath)) {
@@ -90,7 +93,10 @@ node('master') {
         checkoutUserPipelines()
       }
 
-      // Load nightlyFolderPath. This is the folder where the jdkxx.groovy code is located compared to the repository root. These define what the default set of nightlies will be.
+      /*
+      Load nightlyFolderPath. This is the folder where the configurations/jdkxx_pipeline_config.groovy code is located compared to the repository root.
+      These define what the default set of nightlies will be.
+      */
       def nightlyFolderPath = (params.NIGHTLY_FOLDER_PATH) ?: DEFAULTS_JSON["configDirectories"]["nightly"]
 
       if (!fileExists(nightlyFolderPath)) {
@@ -101,7 +107,10 @@ node('master') {
         checkoutUserPipelines()
       }
 
-      // Load jobTemplatePath. This is where the pipeline_job_template.groovy code is located compared to the repository root. This actually sets up the pipeline job using the parameters above.
+      /*
+      Load jobTemplatePath. This is where the pipeline_job_template.groovy code is located compared to the repository root. 
+      This actually sets up the pipeline job using the parameters above.
+      */
       def jobTemplatePath = (params.JOB_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['upstream']
 
       if (!fileExists(jobTemplatePath)) {
@@ -213,7 +222,7 @@ node('master') {
         config.put("defaultsJson", DEFAULTS_JSON)
         config.put("adoptDefaultsJson", ADOPT_DEFAULTS_JSON)
 
-        println "[INFO] FINAL CONFIG FOR NIGHTLY $javaVersion"
+        println "[INFO] FINAL CONFIG FOR NIGHTLY JDK${javaVersion}"
         println JsonOutput.prettyPrint(JsonOutput.toJson(config))
 
         // Create the nightly job, using adopt's template if the user's one fails
@@ -274,7 +283,7 @@ node('master') {
       if (generatedPipelines == []) {
         throw new Exception("[ERROR] NO PIPELINES WERE GENERATED!")
       } else {
-        println "[SUCCESS] THE FOLLOWING PIPELINES WERE GENERATED IN THE $JOB_ROOT FOLDER"
+        println "[SUCCESS] THE FOLLOWING PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER"
         println generatedPipelines
       }
 

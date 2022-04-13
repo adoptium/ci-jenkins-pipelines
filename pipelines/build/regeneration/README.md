@@ -23,7 +23,7 @@ NOTE: When the JDK HEAD updates, these jobs will need to be updated too (see [RE
 There are three stages for each job regenerator.
 
 - Execute the top level job:
-  - The jobs themselves are executed by Github Push on this repository. Each time there is a commit, all the pipeline regenerators are kicked off. This is so any potential changes to the [buildConfigurations](pipelines/jobs/configurations) and [targetConfigurations](pipelines/jobs/configurations) are taken into account when creating a job dsl for each downstream job.
+  - The jobs themselves are executed by Github Push on this repository. Each time there is a commit, all the pipeline regenerators are kicked off. This is so any potential changes to the [buildConfigurations](pipelines/jobs/configurations/jdk*_pipeline_config.groovy) and [targetConfigurations](pipelines/jobs/configurations/jdk*.groovy) are taken into account when creating a job dsl for each downstream job.
   - Each of the jobs executes it's corresponding [regeneration](pipelines/build/regeneration) file, passing down it's version, targeted OS/ARCH/VARIANT and specific build configurations to the main [config_regeneration](pipelines/build/common/config_regeneration.groovy) file.
 - Check if the corresponding pipeline is in progress:
   - Since we want to potentially avoid overwriting the job dsl's of any pipelines in progress, we use the [jenkins api](https://ci.adoptopenjdk.net/api/) to verify that there are no pipelines of that version queued or running. If there are, the job regenerator sleeps for 15mins and checks again afterwards. If not, it moves onto the next step.
