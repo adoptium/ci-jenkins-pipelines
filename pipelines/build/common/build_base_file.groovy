@@ -766,9 +766,7 @@ class Builder implements Serializable {
                     context.catchError {
                         // Execute build job for configuration i.e jdk11u/job/jdk11u-linux-x64-hotspot
                         context.stage(configuration.key) {
-                            context.echo "Created job " + downstreamJobName
-
-                            // execute build
+                            // Triggering downstream job ${downstreamJobName}
                             def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: config.toBuildParams()
 
                             if (downstreamJob.getResult() == 'SUCCESS') {
