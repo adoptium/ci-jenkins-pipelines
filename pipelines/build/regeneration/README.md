@@ -1,3 +1,4 @@
+<!-- textlint-disable terminology -->
 # Job Regenerator
 
 To enable concurrent pipeline builds (i.e. submitting two pipelines in parallel), we have implemented a "job regeneration" system for each JDK version.
