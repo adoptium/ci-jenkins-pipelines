@@ -36,7 +36,7 @@ G             - openjdk_build_pipeline.groovy
 G               - context.sh make-adopt-build-farm.sh
 ```
 
-*See the [openjdk-build FAQ.md](https://github.com/adoptium/temurin-build/blob/master/FAQ.md#how-do-i-find-my-way-around-adoptopenjdks-build-automation-scripts) for the shell script side of the pipeline*
+*See the [temurin-build FAQ.md](https://github.com/adoptium/temurin-build/blob/master/FAQ.md#how-do-i-find-my-way-around-adoptopenjdks-build-automation-scripts) for the shell script side of the pipeline*
 
 High level diagram on Jenkins Job Creation
 ```mermaid
