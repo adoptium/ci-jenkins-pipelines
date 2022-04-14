@@ -116,7 +116,7 @@ shouldInstaller --> install{enableInstaller} --yes:call_function--> bI[buildInst
 
  ```mermaid
 flowchart TD 
-CallbuildScript[function: buildScripts] --git_clone--> checkout[termurin-build] --call_script -->
+CallbuildScript[function: buildScripts] --git_clone--> checkout[temurin-build] --call_script -->
 script[sh:script build-farm/make-adopt-build-farm.sh] --call_function--> meta[writeMetadata] --call_function -->
 arch[archiveArtifacts] --load --> Load2[pipelines/build/common/import_lib.groovy]
 ```
