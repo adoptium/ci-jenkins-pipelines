@@ -102,8 +102,8 @@ Stage2 --run_job--> sanity1[sanity.openjdk]
 Stage2 --run_job--> sanity2[sanity.system]
 Stage2 --run_job--> sanity3[sanity.perf]
 Stage2 --run_job--> sanity4[sanity.functional]
-Stage2 --run_job--> extended1[extneded.system]
-Stage2 --run_job--> extended2[extneded.functional]
+Stage2 --run_job--> extended1[extended.system]
+Stage2 --run_job--> extended2[extended.functional]
 
 sanity1 --if:pass--> shouldInstaller
 sanity2 --if:pass--> shouldInstaller
