@@ -207,7 +207,7 @@ Below are all of the keys contained in the metadata file and some example values
 ---
 
 - `vendor:`
-Example values: [`Temurin`, `Alibaba`, `Adoptium`, `Huawei`]
+Example values: [`Eclipse Adoptium`, `Alibaba`, `Huawei`]
 
 This tag is used to identify the vendor of the JDK being built, this value is set in the [build.sh](https://github.com/adoptium/temurin-build/blob/9fa328f89f7381ceda5549fe0834ce36c14cbf56/sbin/build.sh#L222) file and defaults to "Temurin".
 

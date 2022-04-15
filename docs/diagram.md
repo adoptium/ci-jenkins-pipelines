@@ -5,8 +5,8 @@
 ```mermaid
 flowchart  LR  
 Trigger[SCM change] --> Seed[build-scripts/utils/build-pipeline-generator]
-Seed --create jobs--> Pipelinen[build-scripts/openjdk<ver>-pipeline]
-Seed --create jobs--> Pipelinew[build-scripts/weekly-openjdk<ver>-pipeline]
+Seed --create jobs--> Pipelinen[build-scripts/openjdk*ver-pipeline]
+Seed --create jobs--> Pipelinew[build-scripts/weekly-openjdk*ver-pipeline]
 ```
 
 ```mermaid
@@ -14,59 +14,59 @@ flowchart  LR
 Seed[Seed Job: build-pipeline-generator] --call--> Call1[Script: build/regeneration/build_pipeline_generator.groovy]
 Seed[Seed Job: build-pipeline-generator] --load--> Load1[Load Config: jobs/configurations/*.groovy]
 
-Call1 --create--> Pipelinen[Nightly Job: build-scripts/openjdk<version>-pipeline]
+Call1 --create--> Pipelinen[Nightly Job: build-scripts/openjdk*ver-pipeline]
 Load1 --input--> Pipelinen
 
-Call1 --create--> Pipelinew[Weekly Job: build-scripts/weekly-openjdk<version>-pipeline]
+Call1 --create--> Pipelinew[Weekly Job: build-scripts/weekly-openjdk*ver-pipeline]
 Load1 --input--> Pipelinew
 ```
 
 ```mermaid
 flowchart  LR  
-Trigger2[manual trigger] --> Seed2[build-scripts/utils/pipeline_jobs_generator_jdk<ver>]
-Seed2 --create--> Downstream1[Job: build-scripts/jobs/jdk<ver>/jdk<ver>-<os>-<arch>-<var>]
-Seed2 --create--> Downstream2[Job: build-scripts/jobs/jdk<ver>/jdk<ver>-<os>-<arch>-<var>]
-Seed2 --create--> Downstream3[Job: build-scripts/jobs/jdk<ver>/jdk<ver>-<os>-<arch>-<var>]
-Seed2 --create--> Downstream4[Job: build-scripts/jobs/jdk<ver>/jdk<ver>-<os>-<arch>-<var>]
+Trigger2[manual trigger] --> Seed2[build-scripts/utils/pipeline_jobs_generator_jdk*ver]
+Seed2 --create--> Downstream1[Job: build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var]
+Seed2 --create--> Downstream2[Job: build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var]
+Seed2 --create--> Downstream3[Job: build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var]
+Seed2 --create--> Downstream4[Job: build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var]
  ```
 
 ```mermaid
 flowchart  LR
-Seed2[Seed Job: pipeline_jobs_generator_jdk<ver>] --call-->  
+Seed2[Seed Job: pipeline_jobs_generator_jdk*ver] --call-->
 Call2[Script: build/regeneration/build_job_generator.groovy]
 
-Call2 --load--> Load1[Build Config: jobs/configurations/jdk<ver>_pipeline_config.groovy] --loop--> DSL[jobDsl: common/create_job_from_template.groovy]
-Call2 --load--> Load2[Target Config: jobs/configurations/jdk<ver>.groovy] --> DSL
+Call2 --load--> Load1[Build Config: jobs/configurations/jdk*ver_pipeline_config.groovy] --loop--> DSL[jobDsl: common/create_job_from_template.groovy]
+Call2 --load--> Load2[Target Config: jobs/configurations/jdk*ver.groovy] --> DSL
 Call2 --call--> Load3[Script: common/config_regeneration.groovy] --creatJob--> DSL
 
-DSL --create--> DS1[build-scripts/jobs/jdk<ver>/jdk<version>-<os>-<arch>-<variant>]
-DSL --create--> DS2[build-scripts/jobs/jdk<ver>/jdk<version>-<os>-<arch>-<variant>]
-DSL --create--> DS3[build-scripts/jobs/jdk<ver>/jdk<version>-<os>-<arch>-<variant>]
-DSL --create--> DS4[build-scripts/jobs/jdk<ver>/jdk<version>-<os>-<arch>-<variant>]
+DSL --create--> DS1[build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant]
+DSL --create--> DS2[build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant]
+DSL --create--> DS3[build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant]
+DSL --create--> DS4[build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant]
 ```
 
 ## High level diagram on Jenkins build/test jobs interaction
 
 ```mermaid
 flowchart  LR  
-WeeklyTimer --run job--> PipelineW[build-scripts/weekly-openjdk<ver>-pipeline]
-PipelineW --multiple trigger by variatns--> PipelineN[build-scripts/openjdk<ver>-pipeline]
-NightlyTimer --run job--> PipelineN
+WeeklyTimer --run job--> PipelineW[build-scripts/weekly-openjdk*ver-pipeline]
+PipelineW --multiple trigger by variants as Release releaseType--> PipelineN[build-scripts/openjdk*ver-pipeline]
+NightlyTimer --rrun job with Nightly releaseType--> PipelineN
 
-PipelineN --run downstream--> DS1[build-scripts/jobs/jdk<ver>/jdk<ver>-<os>-<arch>-<variant>]
-PipelineN --run downstream--> DS2[build-scripts/jobs/jdk<ver>/jdk<ver>-<os>-<arch>-<variant>]
-PipelineN --run downstream --> DS3[build-scripts/jobs/jdk<ver>/jdk<ver>-<os>-<arch>-<variant>]
-PipelineN --run downstream --> DS12[build-scripts/jobs/jdk<ver>/jdk<ver>-<os>-<arch>-<variant>]
+PipelineN --run downstream--> DS1[build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant>]
+PipelineN --run downstream--> DS2[build-scripts/jobs/jdk*ver/jdk*ver-*os-*rch-*variant>]
+PipelineN --run downstream --> DS3[build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant>]
+PipelineN --run downstream --> DS12[build-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant>]
 ```
 
-## Mainflow logic of creation pipeline: openjdk*ver-pipeline
+## Mainflow logic of creation pipeline: openjdk\*ver-pipeline
 
 ```mermaid
 flowchart TD 
 Call[build/openjdk_pipeline.groovy] --load script--> 
 Load1[build/common/build_base_file.groovy]
  
-Call --load config--> Load2[build/jobs/configurations/jdk<ver>_pipeline_config.groovy]
+Call --load config--> Load2[build/jobs/configurations/jdk*ver_pipeline_config.groovy]
 
 Call --sharedlib --> 
 Load3[Git repo: openjdk-jenkins-helper]
@@ -76,7 +76,7 @@ Load2 --input--> Build
 Load3 --input--> Build
 
 Build --create_downstream_jobs --> 
-Done[Job: jdk<ver>/job/jdk<ver>-<os>-<arch>-<variant>]
+Done[Job: jdk*ver/job/jdk*ver-<os>-<arch>-<variant>]
 ```
 
 ## Mainflow logic of creation job: "build-scripts/job/utils/job/pipeline_jobs_generator_jdk*ver"
@@ -86,7 +86,7 @@ flowchart TD
 build/regeneration/build_job_generator.groovy --load--> build/common/import_lib.groovy --load--> jobs/configurations/jdk*_pipeline_config.groovy --load--> jobs/configurations/jdk*.groovy --load--> common/config_regeneration.groovy --call_function--> regenerate --call_function--> makeJob --call--> createJob --> DSL[jobDSL: common/create_job_from_template.groovy] --set--> scm[Git clone: ci-jenkins-pipelines] --set--> properties[Permission/logRotator/...]--> parameters
 ```
 
-## Mainflow logic of build job: jobs/jdk*ver/jdk*ver-*os-*arch-*variant
+## Mainflow logic of build job: jobs/jdk\*ver/jdk\*ver-\*os-\*arch-\*variant
 
 ```mermaid
 flowchart TD
@@ -96,7 +96,7 @@ Load3[Git repo: openjdk-jenkins-helper] --> docker{build in docker}
 docker --yes: run--> dockerbuild[docker.build] --> sign
 docker --no: call_function--> CallbuildScript[buildScripts] --> sign{enableSigner} --yes:call--> sing[sign] --> testStage{enableTests}
 sign{enableSigner} --no:skip --> testStage --yes:call_function--> smoketest[runSmokeTests] --pass:run--> 
-smoke[Job: jobs/jdk<ver>/jdk<ver>-<os>-<arch>-<variant>_SmokeTests] --call_function--> Stage2[runAQATests]
+smoke[Job: jobs/jdk*ver/jdk*ver-<os>-<arch>-<variant>_SmokeTests] --call_function--> Stage2[runAQATests]
 
 Stage2 --run_job--> sanity1[sanity.openjdk]
 Stage2 --run_job--> sanity2[sanity.system]
@@ -104,6 +104,9 @@ Stage2 --run_job--> sanity3[sanity.perf]
 Stage2 --run_job--> sanity4[sanity.functional]
 Stage2 --run_job--> extended1[extended.system]
 Stage2 --run_job--> extended2[extended.functional]
+Stage2 -.->|run weekly extra test job| weekly1[extended.openjdk]
+Stage2 -.->|run weekly extra test job| weekly2[extended.perf]
+Stage2 -.->|run weekly extra test job| weekly3[special.functional]
 
 sanity1 --if:pass--> shouldInstaller
 sanity2 --if:pass--> shouldInstaller
@@ -111,7 +114,11 @@ sanity3 --if:pass--> shouldInstaller
 sanity4 --if:pass--> shouldInstaller
 extended1 --if:pass--> shouldInstaller
 extended2 --if:pass--> shouldInstaller
-shouldInstaller --> install{enableInstaller} --yes:call_function--> bI[buildInstaller] --> sI[signInstaller]
+weekly1 -->|if:pass| shouldInstaller
+weekly2  -->|if:pass| shouldInstaller
+weekly3  -->|if:pass| shouldInstaller
+
+shouldInstaller --> install{enableInstaller} --yes:call_function--> bI[buildInstaller] --call_function--> sI[signInstaller]
  ```
 
  ```mermaid
