@@ -936,7 +936,7 @@ class Build {
     /*
     Calculates and writes out the metadata to a file.
     The metadata defines and summarises a build and the jdk it creates.
-    The adopt v3 api makes use of it in its endpoints to quickly display information about the jdk binaries that are stored on github.
+    https://api.adoptium.net/ v3 api makes use of it in its endpoints to quickly display information about the jdk binaries that are stored on github.
     */
     def writeMetadata(VersionInfo version, Boolean initialWrite) {
         /*

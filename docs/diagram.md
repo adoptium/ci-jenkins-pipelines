@@ -76,7 +76,7 @@ Load2 --input--> Build
 Load3 --input--> Build
 
 Build --create_downstream_jobs --> 
-Done[Job: jdk*ver/job/jdk*ver-<os>-<arch>-<variant>]
+Done[Job: jdk*ver/job/jdk*ver-*os-*arch-*variant]
 ```
 
 ## Mainflow logic of creation job: "build-scripts/job/utils/job/pipeline_jobs_generator_jdk*ver"
@@ -119,11 +119,27 @@ weekly2  -->|if:pass| shouldInstaller
 weekly3  -->|if:pass| shouldInstaller
 
 shouldInstaller --> install{enableInstaller} --yes:call_function--> bI[buildInstaller] --call_function--> sI[signInstaller]
- ```
+```
 
- ```mermaid
-flowchart TD 
+## Breakdown logic of build script: openjdk_build_pipeline.groovy
+
+```mermaid
+flowchart TD
 CallbuildScript[function: buildScripts] --git_clone--> checkout[temurin-build] --call_script -->
 script[sh:script build-farm/make-adopt-build-farm.sh] --call_function--> meta[writeMetadata] --call_function -->
 arch[archiveArtifacts] --load --> Load2[pipelines/build/common/import_lib.groovy]
+
+bk1[Script: build-farm/make-adopt-build-farm.sh] --source--> step1[sbin/common/constants.sh] --source -->step2[build-farm/set-platform-specific-configurations.sh] --call_script--> step3[makejdk-any-platform.sh]
+
+bk1.2[makejdk-any-platform.sh] --> source[various shell scripts] --call_function--> f1[configure_build] --call_function--> f2[writeConfigToFile] -->isD{USE_DOCKER} --yes:run_function from docker-build.sh--> f3[buildOpenJDKViaDocker] -->dockerarg[set entrypoint to /openjdk/sbin/build.sh] --run--> cmd[docker build]
+isD --no:run_function from native-build.sh--> f4[buildOpenJDKInNativeEnvironment] --run:script--> sbin/build.sh
+
+bk1.3[sbin/build.sh] --call_function from config_init.sh--> do1[loadConfigFromFile] --> is1{ASSEMBLE_EXPLODED_IMAGE} --yes--> is2{CREATE_SBOM} --yes:call_function-->
+do2[buildCyclonedxLib: ant build] --call_function--> do3[generateSBoM]
+--> BUILD --post build-->
+is3{MAKE_EXPLODED} --no--> is4{CREATE_SBOM} --yes:call_function--> do4[buildCyclonedxLib: ant build] --call_function--> do5[generateSBoM]
+
+bk2[function: writeMetadat] -->f{initialWrite} --no--> listArchives[Loop: installer files under target/*]
+f --yes: check various files--> check1[target/metadata/*] --check file--> check2[config/makejdk-any-platform.args] --> listArchives
+listArchives --run--> run[command: shasum on *file] --> write[output: *file.json]
 ```
