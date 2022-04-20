@@ -93,9 +93,9 @@ flowchart TD
 starter[kick_off_build.groovy] --load--> import[build/common/import_lib.groovy] --load--> Load1[build/common/openjdk_build_pipeline.groovy] --call_function--> Builder[build] 
 Builder --sharedlib --> 
 Load3[Git repo: openjdk-jenkins-helper] --> docker{build in docker}
-docker --yes: run--> dockerbuild[docker.build] --> sign
-docker --no: call_function--> CallbuildScript[buildScripts] --> sign{enableSigner} --yes:call--> sing[sign] --> testStage{enableTests}
-sign{enableSigner} --no:skip --> testStage --yes:call_function--> smoketest[runSmokeTests] --pass:run--> 
+docker --true: run--> dockerbuild[docker.build] --> sign
+docker --false:call_function--> CallbuildScript[buildScripts] --> sign{enableSigner} --true:call--> sing[sign] --> testStage{enableTests}
+sign{enableSigner} --false:skip --> testStage --true:call_function--> smoketest[runSmokeTests] --pass:run-->
 smoke[Job: jobs/jdk*ver/jdk*ver-<os>-<arch>-<variant>_SmokeTests] --call_function--> Stage2[runAQATests]
 
 Stage2 --run_job--> sanity1[sanity.openjdk]
@@ -118,28 +118,79 @@ weekly1 -->|if:pass| shouldInstaller
 weekly2  -->|if:pass| shouldInstaller
 weekly3  -->|if:pass| shouldInstaller
 
-shouldInstaller --> install{enableInstaller} --yes:call_function--> bI[buildInstaller] --call_function--> sI[signInstaller]
+shouldInstaller --> install{enableInstaller} --true:call_function--> bI[buildInstaller] --call_function--> sI[signInstaller]
 ```
 
 ## Breakdown logic of build script: openjdk_build_pipeline.groovy
 
 ```mermaid
+
 flowchart TD
-CallbuildScript[function: buildScripts] --git_clone--> checkout[temurin-build] --call_script -->
-script[sh:script build-farm/make-adopt-build-farm.sh] --call_function--> meta[writeMetadata] --call_function -->
-arch[archiveArtifacts] --load --> Load2[pipelines/build/common/import_lib.groovy]
+CallbuildScript[function: buildScripts] --git_clone--> checkout["Repo: temurin-build"] -->
 
-bk1[Script: build-farm/make-adopt-build-farm.sh] --source--> step1[sbin/common/constants.sh] --source -->step2[build-farm/set-platform-specific-configurations.sh] --call_script--> step3[makejdk-any-platform.sh]
+checkmac{check: Mac && !jdk8u} --true--> flagmac["Call:jmods\nSet flag: --make-exploded-image\n"] --call_script -->
+scriptmake[sh:script build-farm/make-adopt-build-farm.sh] --> meta["Call function:\nwriteMetadata"] --> arch["Jenkins step:\narchiveArtifacts"] --> clean2["Cleanup workspace"]
+checkmac --false:call_script--> scriptmake
 
-bk1.2[makejdk-any-platform.sh] --> source[various shell scripts] --call_function--> f1[configure_build] --call_function--> f2[writeConfigToFile] -->isD{USE_DOCKER} --yes:run_function from docker-build.sh--> f3[buildOpenJDKViaDocker] -->dockerarg[set entrypoint to /openjdk/sbin/build.sh] --run--> cmd[docker build]
-isD --no:run_function from native-build.sh--> f4[buildOpenJDKInNativeEnvironment] --run:script--> sbin/build.sh
+bk1[Script: build-farm/make-adopt-build-farm.sh] --source--> step1[sbin/common/constants.sh] --source -->step[build-farm/set-platform-specific-configurations.sh] --call_script--> step3[makejdk-any-platform.sh]
 
-bk1.3[sbin/build.sh] --call_function from config_init.sh--> do1[loadConfigFromFile] --> is1{ASSEMBLE_EXPLODED_IMAGE} --yes--> is2{CREATE_SBOM} --yes:call_function-->
-do2[buildCyclonedxLib: ant build] --call_function--> do3[generateSBoM]
---> BUILD --post build-->
-is3{MAKE_EXPLODED} --no--> is4{CREATE_SBOM} --yes:call_function--> do4[buildCyclonedxLib: ant build] --call_function--> do5[generateSBoM]
+bk1.2[makejdk-any-platform.sh] --> source[various shell scripts] --> f1["Call functions:\nconfigure_build\nwriteConfigToFile"] -->
+isD{USE_DOCKER} --true:run_function from docker-build.sh--> f3[buildOpenJDKViaDocker] -->dockerarg[set entrypoint to /openjdk/sbin/build.sh] --> cmd["Run: docker build"]
+isD --false:run_function from native-build.sh--> f4[buildOpenJDKInNativeEnvironment] --call_script--> sbin/build.sh
 
-bk2[function: writeMetadat] -->f{initialWrite} --no--> listArchives[Loop: installer files under target/*]
-f --yes: check various files--> check1[target/metadata/*] --check file--> check2[config/makejdk-any-platform.args] --> listArchives
+bk1.3[sbin/build.sh] --call_function from config_init.sh--> do1.3.1["Call function:\nloadConfigFromFile\nfixJavaHomeUnderDocker\nparseArguments"] -->
+
+is1{"MacOS Logic\nCheck flag: --assemble-exploded-image\n(ASSEMBLE_EXPLODED_IMAGE)"} --true-->
+do2.1["Build:\nbuildTemplatedFile\nexecuteTemplatedFile\naddInfoToReleaseFile\naddInfoToJson"] -->
+is2{"Check flag: --create-sbom\n(CREATE_SBOM)"} --true--> do3.1["Call functions:\nbuildCyclonedxLib: ant build\ngenerateSBoM"] --post_build-->
+post["Call functions:\nremovingUnnecessaryFiles\ncopyFreeFontForMacOS\nsetPlistForMacOS\naddNoticeFile\ncreateOpenJDKTarArchive"] --> finish[Done]
+
+is1 --false--> step1.1.1["pre-build:\nwipeOutOldTargetDir\ncreateTargetDir\nconfigureWorkspace"] -->
+BUILD["Build:\ngetOpenJDKUpdateAndBuildVersion\nconfigureCommandParameters\nbuildTemplatedFile\nexecuteTemplatedFile"] --post build-->
+
+is3{"check flag: --make-exploded-image\n(MAKE_EXPLODED)"} --flase-->
+step2.1.1["Call functions:\nprintJavaVersionString\naddInfoToReleaseFile\naddInfoToJson"] --> is2 
+
+is2 --false--> post
+is3 --true--> post
+
+bk2[function: writeMetadata] --> finit{initialWrite} --false--> listArchives[Loop: installer files under target/*]
+
+finit --true:check various files--> check1[target/metadata/*] --load--> check2["file: config/makejdk-any-platform.args"] --> listArchives
+
 listArchives --run--> run[command: shasum on *file] --> write[output: *file.json]
+```
+
+## High level docker image build (adopt image)
+
+```mermaid
+flowchart TD
+job[openjdk_build_docker_multiarch] --load--> load[Jenkinsfile] --stage1-->
+stage1[Docker build stage]
+stage1 --> 11[linux x64] --> stagecheck{ build all pass}
+stage1 --> 12[linux aarch64]--> stagecheck
+stage1 --> 13[linux armv7l]--> stagecheck
+stage1 --> 14[linux ppc64le]--> stagecheck
+stage1 --> 15[linux s390x]--> stagecheck
+stagecheck --true--> stage2[Docker Manifest]
+stagecheck --false--> abort[Abort job]
+stage2 --> 21[manifest 8] --> finalcheck{ update manifest done}
+stage2 --> 22[manifest 11] --> finalcheck
+stage2 --> 23[manifest 15] --> finalcheck
+stage2 --> 24[manifest 16] --> finalcheck
+finalcheck --true--> done[Job finish]
+
+Stage1[Docker build stage] --call_function --> build[dockerBuild]
+Stage2[Docker Manifest] --call_function --> mani[dockerManifest]
+
+build[dockerBuild] --> login1[login dockerhub] --git pull--> git1[openjdk-docker.git] --call--> ba[Script: build_all.sh]
+
+mani[dockerManifest] --> login2[login dockerhub] --git pull--> git2[openjdk-docker.git] --call--> ua[Script: update_manifest_all.sh]
+
+buildall[Script: build_all.sh] -->s1[handle .summary_table file] --> s2[load common_functions.sh] --> s3[clenaup .summary_table file] --> s4[cleanup env: container, image, menifests , temp scripts] --call_script--> s5[Script: build_latest] -->result{build failed or push_commands.sh non-exist} --false-->s6[Run: push_commands.sh] --test image-->s7[Run: test_multiarch.sh]
+
+common[common_functions.sh] --> c1[supported_version:8,11,15,16]
+
+updateall[Script: update_manifest_all.sh]
+
 ```
