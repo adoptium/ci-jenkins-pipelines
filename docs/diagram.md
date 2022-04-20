@@ -189,8 +189,9 @@ mani[dockerManifest] --> login2[login dockerhub] --git pull--> git2[openjdk-dock
 
 buildall[Script: build_all.sh] -->s1[handle .summary_table file] --> s2[load common_functions.sh] --> s3[clenaup .summary_table file] --> s4[cleanup env: container, image, menifests , temp scripts] --call_script--> s5[Script: build_latest] -->result{build failed or push_commands.sh non-exist} --false-->s6[Run: push_commands.sh] --test image-->s7[Run: test_multiarch.sh]
 
-common[common_functions.sh] --> c1[supported_version:8,11,15,16]
-
-updateall[Script: update_manifest_all.sh]
+updateall["Script: update_manifest_all.sh"] --source--> c1[common_functions.sh] --"loop:supported_versions"-->
+c2["Call functions:\ncleanup_images\ncleanup_manifest"] -->
+c3["Call scripts:\n generate_manifest_script.sh\nmanifest_commands.sh"] -->
+c4["Test image: test_multiarch.sh"]
 
 ```
