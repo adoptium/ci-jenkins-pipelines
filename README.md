@@ -1,3 +1,4 @@
+<!-- textlint-disable terminology -->
 # Jenkins pipeline files for building OpenJDK
 
 Eclipse Adoptium makes use of these scripts to build binaries on the build farm at <https://ci.adoptopenjdk.net>
