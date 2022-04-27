@@ -560,9 +560,11 @@ class Builder implements Serializable {
                 configureArgs += configConfigureArgs
             }
         }
-
         if (additionalConfigureArgs) {
-            configureArgs += " " + additionalConfigureArgs
+            if (configureArgs) {
+                configureArgs += " "
+            }
+            configureArgs += additionalConfigureArgs
         }
 
         return configureArgs
