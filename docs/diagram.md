@@ -94,7 +94,7 @@ starter[kick_off_build.groovy] --load--> import[build/common/import_lib.groovy] 
 Builder --sharedlib --> 
 Load3[Git repo: openjdk-jenkins-helper] --> docker{build in docker}
 docker --true: run--> dockerbuild[docker.build] --> sign
-docker --false:call_function--> CallbuildScript[buildScripts] --> sign{enableSigner} --true:call--> sing[sign] --> testStage{enableTests}
+docker --false:call_function--> CallbuildScript[buildScripts] --> sign{enableSigner} --true:call--> sign[sign] --> testStage{enableTests}
 sign{enableSigner} --false:skip --> testStage --true:call_function--> smoketest[runSmokeTests] --pass:run-->
 smoke[Job: jobs/jdk*ver/jdk*ver-<os>-<arch>-<variant>_SmokeTests] --call_function--> Stage2[runAQATests]
 
