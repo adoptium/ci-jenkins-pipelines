@@ -89,24 +89,41 @@ build/regeneration/build_job_generator.groovy --load--> build/common/import_lib.
 ## Mainflow logic of build job: jobs/jdk\*ver/jdk\*ver-\*os-\*arch-\*variant
 
 ```mermaid
-flowchart TD
-starter[kick_off_build.groovy] --load--> import[build/common/import_lib.groovy] --load--> Load1[build/common/openjdk_build_pipeline.groovy] --call_function--> Builder[build] 
-Builder --sharedlib --> 
-Load3[Git repo: openjdk-jenkins-helper] --> docker{build in docker}
-docker --true: run--> dockerbuild[docker.build] --> sign
-docker --false:call_function--> CallbuildScript[buildScripts] --> sign{enableSigner} --true:call--> sign[sign] --> testStage{enableTests}
-sign{enableSigner} --false:skip --> testStage --true:call_function--> smoketest[runSmokeTests] --pass:run-->
-smoke[Job: jobs/jdk*ver/jdk*ver-<os>-<arch>-<variant>_SmokeTests] --call_function--> Stage2[runAQATests]
 
-Stage2 --run_job--> sanity1[sanity.openjdk]
-Stage2 --run_job--> sanity2[sanity.system]
-Stage2 --run_job--> sanity3[sanity.perf]
-Stage2 --run_job--> sanity4[sanity.functional]
-Stage2 --run_job--> extended1[extended.system]
-Stage2 --run_job--> extended2[extended.functional]
-Stage2 -.->|run weekly extra test job| weekly1[extended.openjdk]
-Stage2 -.->|run weekly extra test job| weekly2[extended.perf]
-Stage2 -.->|run weekly extra test job| weekly3[special.functional]
+flowchart TD
+
+starter[kick_off_build.groovy] --load--> import[build/common/import_lib.groovy] --load--> Load1[build/common/openjdk_build_pipeline.groovy] --call_function--> Builder["openjdk_build_pipeline.build()"]
+Builder --sharedlib --> Load3[Git repo: openjdk-jenkins-helper]
+
+subgraph internal
+
+Load3 --> docker{"DOCKER_IMAGE"}
+
+docker --true: run--> dockerbuild["Jenkins'call: docker.build(build-image)"] --> sign
+
+docker --false:call_function--> CallbuildScript["buildScripts()"] --> sign{enableSigner} --true:call_function--> sign2[sign] --> testStage{enableTests}
+
+sign{enableSigner} --"false" --> testStage
+
+testStage --"true:call_function"--> smoketest["runSmokeTests()"] --> parallel{"TEST_LIST.size() > 0"}
+testStage --"false"--> shouldInstaller
+parallel --"false"--> shouldInstaller
+
+subgraph invoking parallel tests
+
+parallel --"true: run as stages in pipeline"-->
+Stage2["runAQATests() as parallel stages"] --"invoke"-->
+smokes[Job: jobs/jdk*ver/jdk*ver-<os>-<arch>-<variant>_SmokeTests]
+
+smokes --run_job--> sanity1[sanity.openjdk]
+smokes --run_job--> sanity2[sanity.system]
+smokes --run_job--> sanity3[sanity.perf]
+smokes --run_job--> sanity4[sanity.functional]
+smokes --run_job--> extended1[extended.system]
+smokes --run_job--> extended2[extended.functional]
+smokes -.->|run weekly extra test job| weekly1[extended.openjdk]
+smokes -.->|run weekly extra test job| weekly2[extended.perf]
+smokes -.->|run weekly extra test job| weekly3[special.functional]
 
 sanity1 --if:pass--> shouldInstaller
 sanity2 --if:pass--> shouldInstaller
@@ -115,10 +132,19 @@ sanity4 --if:pass--> shouldInstaller
 extended1 --if:pass--> shouldInstaller
 extended2 --if:pass--> shouldInstaller
 weekly1 -->|if:pass| shouldInstaller
-weekly2  -->|if:pass| shouldInstaller
-weekly3  -->|if:pass| shouldInstaller
+weekly2 -->|if:pass| shouldInstaller
+weekly3 -->|if:pass| shouldInstaller
 
-shouldInstaller --> install{enableInstaller} --true:call_function--> bI[buildInstaller] --call_function--> sI[signInstaller]
+end
+
+shouldInstaller{"enableInstallers"} --true:call_function--> bI["buildInstaller()"] --call_function--> sI["signInstaller()"] --> done
+
+shouldInstaller --"false"--> done
+
+end
+
+done["return(..)"]
+
 ```
 
 ## Breakdown logic of build script: openjdk_build_pipeline.groovy
