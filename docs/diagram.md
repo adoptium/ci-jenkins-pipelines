@@ -126,17 +126,31 @@ shouldInstaller --> install{enableInstaller} --true:call_function--> bI[buildIns
 ```mermaid
 
 flowchart TD
-CallbuildScript[function: buildScripts] --git_clone--> checkout["Repo: temurin-build"] -->
 
+subgraph build scripts
+
+CallbuildScript[function: buildScripts] --git_clone--> checkout["Repo: temurin-build"] -->
 checkmac{check: Mac && !jdk8u} --true--> flagmac["Call:jmods\nSet flag: --make-exploded-image\n"] --call_script -->
 scriptmake[sh:script build-farm/make-adopt-build-farm.sh] --> meta["Call function:\nwriteMetadata"] --> arch["Jenkins step:\narchiveArtifacts"] --> clean2["Cleanup workspace"]
 checkmac --false:call_script--> scriptmake
 
+end
+
+subgraph make-adopt-build-farm
+
 bk1[Script: build-farm/make-adopt-build-farm.sh] --source--> step1[sbin/common/constants.sh] --source -->step[build-farm/set-platform-specific-configurations.sh] --call_script--> step3[makejdk-any-platform.sh]
+
+end
+
+subgraph makejdk-any-platform
 
 bk1.2[makejdk-any-platform.sh] --> source[various shell scripts] --> f1["Call functions:\nconfigure_build\nwriteConfigToFile"] -->
 isD{USE_DOCKER} --true:run_function from docker-build.sh--> f3[buildOpenJDKViaDocker] -->dockerarg[set entrypoint to /openjdk/sbin/build.sh] --> cmd["Run: docker build"]
-isD --false:run_function from native-build.sh--> f4[buildOpenJDKInNativeEnvironment] --call_script--> sbin/build.sh
+isD --false:run_function from native-build.sh--> f4[buildOpenJDKInNativeEnvironment] --call_script--> sbin["sbin/build.sh"]
+
+end
+
+subgraph build
 
 bk1.3[sbin/build.sh] --call_function from config_init.sh--> do1.3.1["Call function:\nloadConfigFromFile\nfixJavaHomeUnderDocker\nparseArguments"] -->
 
@@ -144,54 +158,159 @@ is1{"MacOS Logic\nCheck flag: --assemble-exploded-image\n(ASSEMBLE_EXPLODED_IMAG
 do2.1["Build:\nbuildTemplatedFile\nexecuteTemplatedFile\naddInfoToReleaseFile\naddInfoToJson"] -->
 is2{"Check flag: --create-sbom\n(CREATE_SBOM)"} --true--> do3.1["Call functions:\nbuildCyclonedxLib: ant build\ngenerateSBoM"] --post_build-->
 post["Call functions:\nremovingUnnecessaryFiles\ncopyFreeFontForMacOS\nsetPlistForMacOS\naddNoticeFile\ncreateOpenJDKTarArchive"] --> finish[Done]
-
 is1 --false--> step1.1.1["pre-build:\nwipeOutOldTargetDir\ncreateTargetDir\nconfigureWorkspace"] -->
-BUILD["Build:\ngetOpenJDKUpdateAndBuildVersion\nconfigureCommandParameters\nbuildTemplatedFile\nexecuteTemplatedFile"] --post build-->
-
+BUILD["Build:\ngetOpenJDKUpdateAndBuildVersion\nconfigureCommandParameters\nbuildTemplatedFile\nexecuteTemplatedFile"] --post build--> 
 is3{"check flag: --make-exploded-image\n(MAKE_EXPLODED)"} --flase-->
 step2.1.1["Call functions:\nprintJavaVersionString\naddInfoToReleaseFile\naddInfoToJson"] --> is2 
-
 is2 --false--> post
 is3 --true--> post
 
+end
+
+subgraph writeMetadata
+
 bk2[function: writeMetadata] --> finit{initialWrite} --false--> listArchives[Loop: installer files under target/*]
-
 finit --true:check various files--> check1[target/metadata/*] --load--> check2["file: config/makejdk-any-platform.args"] --> listArchives
-
 listArchives --run--> run[command: shasum on *file] --> write[output: *file.json]
+
+end
+
+classDef green fill:#66cc00,stroke:#333,stroke-width:2px
+classDef blue fill:#99ccff,stroke:#333,stroke-width:2px
+classDef yellow fill:#ffffcc,stroke:#333,stroke-width:2px
+classDef red fill:#ff6666,stroke:#333,stroke-width:2px
+class bk1,scriptmake yellow
+class bk1.2,step3 blue
+class bk1.3,sbin red
+class bk2,meta green
+
 ```
 
-## High level docker image build (adopt image)
+## High level docker image build
+
+### Adoptium OpenJDK docker image(https://hub.docker.com/_/eclipse-temurin)
+```mermaid
+
+flowchart TD
+subgraph Adoptium OpenJDK docker image main flow
+
+buildNew["To create docker image"] --"auto"--> use["Nightly GitHub Action"] -->auto1["Run ./update_all.sh"] --"either auto\nor manual"--> doneNew["Generate PR"]
+buildNew --"manual"--> manual2["Start GH Action"] --> auto1
+end
+
+subgraph internal function calls
+detailNew1["./update_all.sh"]
+--> stepN1.1["source ./common_functions.sh"]
+--> stepN1.2["loop $supported_versions"]
+--"each"--> stepN1.3["Run ./update_multiarch.sh"]
+
+detailNew2["./update_multiarch.sh"]
+--> stepN2.1["source ./common_functions.sh"]
+--> stepN2.2["source ./dockerfile_functions.sh"]
+--> stepN2.3["loop\n$all_jvms\n$all_packages\n$oses\n$builds"]
+--"each"--> check2.1{"file ${vm}_shasums_latest.sh exist"}
+--"true"--> stepN2.4["source ./${vm}_shasums_latest.sh"]
+-->stepN2.5["loop ${btypes}"] --"call_function"--> stepN2.6["function: generate_dockerfile"]
+check2.1 --"false"--> stepN2.5
+stepN2.6 --> check2.2{"if slim btype"} --"true"--> stenpN2.7["copy OS specified files"]
+end
+
+classDef color fill:#99ccff,stroke:#333,stroke-width:2px
+class detailNew2,auto1 color
+```
+
+### AdoptOpenJDK docker image(https://hub.docker.com/u/adoptopenjdk)
+
+```mermaid
+
+flowchart TD
+
+subgraph AdoptOpenJDK docker image main flow
+
+job[openjdk_build_docker_multiarch] --load--> load[Jenkinsfile] --stage1-->
+
+stage1[Docker build stage]
+
+stage1 --> 11[linux x64] --> stagecheck{ build all pass}
+
+stage1 --> 12[linux aarch64]--> stagecheck
+
+stage1 --> 13[linux armv7l]--> stagecheck
+
+stage1 --> 14[linux ppc64le]--> stagecheck
+
+stage1 --> 15[linux s390x]--> stagecheck
+
+stagecheck --true--> stage2[Docker Manifest]
+
+stagecheck --false--> abort[Abort job]
+
+stage2 --> 21[manifest 8] --> finalcheck{ update manifest done}
+
+stage2 --> 22[manifest 11] --> finalcheck
+
+stage2 --> 23[manifest 15] --> finalcheck
+
+stage2 --> 24[manifest 16] --> finalcheck
+
+finalcheck --true--> done[Job finish]
+
+end
+
+classDef green fill:#66cc00,stroke:#333,stroke-width:2px
+classDef blue fill:#99ccff,stroke:#333,stroke-width:2px
+class stage1 green
+class stage2 blue
+```
 
 ```mermaid
 flowchart TD
-job[openjdk_build_docker_multiarch] --load--> load[Jenkinsfile] --stage1-->
-stage1[Docker build stage]
-stage1 --> 11[linux x64] --> stagecheck{ build all pass}
-stage1 --> 12[linux aarch64]--> stagecheck
-stage1 --> 13[linux armv7l]--> stagecheck
-stage1 --> 14[linux ppc64le]--> stagecheck
-stage1 --> 15[linux s390x]--> stagecheck
-stagecheck --true--> stage2[Docker Manifest]
-stagecheck --false--> abort[Abort job]
-stage2 --> 21[manifest 8] --> finalcheck{ update manifest done}
-stage2 --> 22[manifest 11] --> finalcheck
-stage2 --> 23[manifest 15] --> finalcheck
-stage2 --> 24[manifest 16] --> finalcheck
-finalcheck --true--> done[Job finish]
+
+subgraph detail internal function call1
 
 Stage1[Docker build stage] --call_function --> build[dockerBuild]
+--> login1[login dockerhub] --git pull--> git1[openjdk-docker.git] --call--> ba[Script: build_all.sh]
+
+end
+
+subgraph detail internal function call2
+
 Stage2[Docker Manifest] --call_function --> mani[dockerManifest]
+--> login2[login dockerhub] --git pull--> git2[openjdk-docker.git] --call--> ua[Script: update_manifest_all.sh]
 
-build[dockerBuild] --> login1[login dockerhub] --git pull--> git1[openjdk-docker.git] --call--> ba[Script: build_all.sh]
+end
 
-mani[dockerManifest] --> login2[login dockerhub] --git pull--> git2[openjdk-docker.git] --call--> ua[Script: update_manifest_all.sh]
+subgraph internal function calls
 
-buildall[Script: build_all.sh] -->s1[handle .summary_table file] --> s2[load common_functions.sh] --> s3[clenaup .summary_table file] --> s4[cleanup env: container, image, menifests , temp scripts] --call_script--> s5[Script: build_latest] -->result{build failed or push_commands.sh non-exist} --false-->s6[Run: push_commands.sh] --test image-->s7[Run: test_multiarch.sh]
+subgraph build1
+
+buildall[Script: build_all.sh] -->s1[handle .summary_table file] --> s2[load common_functions.sh] --> s3[clenaup .summary_table file] --> s4[cleanup env: container, image, menifests , temp scripts] --call_script--> s5[Script: build_latest] -->result{build failed or push_commands.sh non-exist} --false-->s6[Run: push_commands.sh]
+
+end
+
+s6--test image-->s7[Run: test_multiarch.sh]
+
+subgraph build2
 
 updateall["Script: update_manifest_all.sh"] --source--> c1[common_functions.sh] --"loop:supported_versions"-->
+
 c2["Call functions:\ncleanup_images\ncleanup_manifest"] -->
-c3["Call scripts:\n generate_manifest_script.sh\nmanifest_commands.sh"] -->
-c4["Test image: test_multiarch.sh"]
+
+c3["Call scripts:\n generate_manifest_script.sh\nmanifest_commands.sh"]
+
+end
+
+end
+
+c3--"test image"-->s7
+
+classDef green fill:#66cc00,stroke:#333,stroke-width:2px
+classDef blue fill:#99ccff,stroke:#333,stroke-width:2px
+classDef yellow fill:#ffffcc,stroke:#333,stroke-width:2px
+classDef red fill:#ff6666,stroke:#333,stroke-width:2px
+class Stage1 green
+class Stage2 blue
+class buildall,ba yellow
+class updateall,ua red
 
 ```
