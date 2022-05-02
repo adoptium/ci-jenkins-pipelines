@@ -214,7 +214,8 @@ class bk2,meta green
 
 ## High level docker image build
 
-### Adoptium OpenJDK docker image(https://hub.docker.com/_/eclipse-temurin)
+### Adoptium OpenJDK docker image(<https://hub.docker.com/_/eclipse-temurin>)
+
 ```mermaid
 
 flowchart TD
@@ -245,7 +246,7 @@ classDef color fill:#99ccff,stroke:#333,stroke-width:2px
 class detailNew2,auto1 color
 ```
 
-### AdoptOpenJDK docker image(https://hub.docker.com/u/adoptopenjdk)
+### AdoptOpenJDK docker image(<https://hub.docker.com/u/adoptopenjdk>)
 
 ```mermaid
 
