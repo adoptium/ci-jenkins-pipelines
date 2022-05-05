@@ -7,6 +7,7 @@
 flowchart TD
 
 WeeklyTimer --run job--> PipelineW["Weekly Job:\nbuild-scripts/weekly-openjdk*ver-pipeline"]
+
 PipelineW --multiple trigger by variants as Release releaseType--> PipelineN["Nightly Job:\nbuild-scripts/openjdk*ver-pipeline"]
 
 NightlyTimer --run job with Nightly as releaseType--> PipelineN
@@ -17,28 +18,32 @@ PipelineN --run downstream --> DS3["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os
 PipelineN --run downstream --> DS12["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
 
 classDef yellow fill:#ffff99,stroke:#333,stroke-width:2px
-classDef green fill:#66ff66,stroke:#333,stroke-width:2px
+classDef grey fill:#999999,stroke:#333,stroke-width:2px
 classDef c1 fill:#ccffff,stroke:#333,stroke-width:2px
 classDef c2 fill:#99ffff,stroke:#333,stroke-width:2px
 classDef c3 fill:#66ffff,stroke:#333,stroke-width:2px
 classDef c12 fill:#33ffff,stroke:#333,stroke-width:2px
-class PipelineW green
+class PipelineW grey
 class PipelineN yellow
 class DS1 c1
 class DS2 c2
 class DS3 c3
 class DS12 c12
+
 ```
 
 ## High level diagram on Jenkins Job Creation
 
 ```mermaid
-flowchart  LR
+
+flowchart LR
 
 subgraph 1
 
 Trigger[SCM change] --trigger--> Seed1["Seed Job:\nbuild-scripts/utils/build-pipeline-generator"]
+
 Seed1 --create jobs--> Pipelinen1["Nightly Job:\nbuild-scripts/openjdk*ver-pipeline"]
+
 Seed1 --create jobs--> Pipelinew1["Weekly Job:\nbuild-scripts/weekly-openjdk*ver-pipeline"]
 
 end
@@ -46,17 +51,19 @@ end
 subgraph 2
 
 Seed["Seed Job:\nbuild-scripts/utils/build-pipeline-generator"] --call--> Call1["Script: build/regeneration/build_pipeline_generator.groovy"]
+
 Seed--load--> Load1["Load Config: jobs/configurations/*.groovy"]
+
 Call1 & Load1--> Pipelinew["Weekly Job: build-scripts/weekly-openjdk*ver-pipeline"] & Pipelinen["Nightly Job: build-scripts/openjdk*ver-pipeline"]
 
 end
 
-classDef red fill:#ff6666,stroke:#333,stroke-width:2px
+classDef red fill:#ffcce5,stroke:#333,stroke-width:2px
 classDef yellow fill:#ffff99,stroke:#333,stroke-width:2px
-classDef green fill:#66ff66,stroke:#333,stroke-width:2px
+classDef grey fill:#999999,stroke:#333,stroke-width:2px
 class Seed1,Seed red
 class Pipelinen1,Pipelinen yellow
-class Pipelinew1,Pipelinew green
+class Pipelinew1,Pipelinew grey
 
 ```
 
@@ -78,8 +85,8 @@ end
 subgraph 2
 
 Seed2["Seed Job:\nbuild-scripts/utils/pipeline_jobs_generator_jdk*ver"] --"interal call"-->
-
 Call2[Script: build/regeneration/build_job_generator.groovy]
+
 Call2 --load--> Load1["Build Config:\njobs/configurations/jdk*ver_pipeline_config.groovy"] --loop--> DSL["jobDsl: common/create_job_from_template.groovy"]
 Call2 --load--> Load2["Target Config:\njobs/configurations/jdk*ver.groovy"] --> DSL
 Call2 --call--> Load3["Script: common/config_regeneration.groovy"] --"create job"--> DSL
@@ -118,24 +125,24 @@ flowchart TD
 
 subgraph nightly_pipeline_job
 
-Call[build/openjdk_pipeline.groovy] --load script--> 
+Call[build/openjdk_pipeline.groovy] --load script-->
 Load1[build/common/build_base_file.groovy]
- 
-Call --load config--> Load2[build/jobs/configurations/jdk*ver_pipeline_config.groovy]
 
-Call --sharedlib --> 
+Call --load config--> Load2[build/jobs/configurations/jdk*ver_pipeline_config.groovy]
+Call --sharedlib -->
 Load3["git clone: openjdk-jenkins-helper"]
 
 Load1 --call_function--> Build["function: doBuild()"]
 Load2 --input--> Build
 Load3 --input--> Build
+
 end
 
 Build --"run downstream job" -->
 Done["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
 
 classDef yellow fill:#ffff99
-classDef c12 fill:#33ffff,stroke:#333,stroke-width:2px
+classDef c12 fill:#ccffff,stroke:#333,stroke-width:2px
 class nightly_pipeline_job yellow
 class Done c12
 
@@ -150,18 +157,15 @@ flowchart TD
 subgraph job
 
 starter[kick_off_build.groovy] --load--> import[build/common/import_lib.groovy] --load--> Load1["build/common/openjdk_build_pipeline.groovy"] --call_function--> Builder["openjdk_build_pipeline.build()"]
+
 Builder --sharedlib --> Load3[Git repo: openjdk-jenkins-helper]
 
 subgraph internal_build
 
 Load3 --> docker{"DOCKER_IMAGE"}
-
 docker --true: run--> dockerbuild["Jenkins'call: docker.build(build-image)"] --> sign
-
 docker --false:call_function--> CallbuildScript["buildScripts()"] --> sign{enableSigner} --true:call_function--> sign2["sign()"] --> testStage{enableTests}
-
 sign{enableSigner} --"false" --> testStage
-
 testStage --"true:call_function"--> smoketest["runSmokeTests()"] --> parallel{"TEST_LIST.size() > 0"}
 testStage --"false"--> shouldInstaller
 parallel --"false"--> shouldInstaller
@@ -195,15 +199,15 @@ weekly3 -->|if:pass| shouldInstaller
 end
 
 shouldInstaller{"enableInstallers"} --true:call_function--> bI["buildInstaller()"] --call_function--> sI["signInstaller()"] --> done
-
 shouldInstaller --"false"--> done
 
 end
 
 done["return(..)"]
+
 end
 
-classDef thisjob fill:#33ffff,stroke:#333,stroke-width:2px
+classDef thisjob fill:#ccffff,stroke:#333,stroke-width:2px
 classDef inner fill:#ffffff,stroke:#333,stroke-width:2px
 classDef external fill:#ffe5cc,stroke:#333,stroke-width:2px
 class job thisjob
@@ -223,6 +227,7 @@ subgraph build_scripts
 CallbuildScript["function: buildScripts()"] --git_clone--> checkout["git clone: temurin-build"] -->
 checkmac{check: Mac && !jdk8u} --true--> flagmac["Call: jmods\nSet flag: --make-exploded-image\n"] --call_script -->
 scriptmake["Jenkins sh:script build-farm/make-adopt-build-farm.sh"] --> meta["Call function:\nwriteMetadata()"] --> arch["Jenkins step:\narchiveArtifacts"] --> clean2["Cleanup workspace"]
+
 checkmac --false:call_script--> scriptmake
 
 end
@@ -244,15 +249,16 @@ end
 subgraph build
 
 bk1.3["Script: sbin/build.sh"] --call_function from config_init.sh--> do1.3.1["Call function:\nloadConfigFromFile\nfixJavaHomeUnderDocker\nparseArguments"] -->
-
 is1{"MacOS Logic\nCheck flag: --assemble-exploded-image\n(ASSEMBLE_EXPLODED_IMAGE)"} --true-->
 do2.1["Build:\nbuildTemplatedFile\nexecuteTemplatedFile\naddInfoToReleaseFile\naddInfoToJson"] -->
 is2{"Check flag: --create-sbom\n(CREATE_SBOM)"} --true--> do3.1["Call functions:\nbuildCyclonedxLib: ant build\ngenerateSBoM"] --post_build-->
 post["Call functions:\nremovingUnnecessaryFiles\ncopyFreeFontForMacOS\nsetPlistForMacOS\naddNoticeFile\ncreateOpenJDKTarArchive"] --> finish[Done]
+
 is1 --false--> step1.1.1["pre-build:\nwipeOutOldTargetDir\ncreateTargetDir\nconfigureWorkspace"] -->
-BUILD["Build:\ngetOpenJDKUpdateAndBuildVersion\nconfigureCommandParameters\nbuildTemplatedFile\nexecuteTemplatedFile"] --post build--> 
+BUILD["Build:\ngetOpenJDKUpdateAndBuildVersion\nconfigureCommandParameters\nbuildTemplatedFile\nexecuteTemplatedFile"] --post build-->
 is3{"check flag: --make-exploded-image\n(MAKE_EXPLODED)"} --flase-->
-step2.1.1["Call functions:\nprintJavaVersionString\naddInfoToReleaseFile\naddInfoToJson"] --> is2 
+step2.1.1["Call functions:\nprintJavaVersionString\naddInfoToReleaseFile\naddInfoToJson"] --> is2
+
 is2 --false--> post
 is3 --true--> post
 
@@ -261,21 +267,26 @@ end
 subgraph writeMetadata
 
 bk2[function: writeMetadata] --> finit{initialWrite} --false--> listArchives[Loop: installer files under target/*]
+
 finit --true:check various files--> check1[target/metadata/*] --load--> check2["file: config/makejdk-any-platform.args"] --> listArchives
+
 listArchives --run--> run[command: shasum on *file] --> write[output: *file.json]
 
 end
 
 build_scripts --> make-adopt-build-farm
+
 build_scripts --> writeMetadata
+
 make-adopt-build-farm --> makejdk-any-platform
+
 makejdk-any-platform --> build
 
 classDef color fill:#ffe5cc,stroke:#333,stroke-width:2px
-classDef green fill:#66cc00,stroke:#333,stroke-width:2px
+classDef green fill:#89d498,stroke:#333,stroke-width:2px
 classDef blue fill:#99ccff,stroke:#333,stroke-width:2px
 classDef yellow fill:#ffffcc,stroke:#333,stroke-width:2px
-classDef red fill:#ff6666,stroke:#333,stroke-width:2px
+classDef red fill:#ccccff,stroke:#333,stroke-width:2px
 class bk1,scriptmake,make-adopt-build-farm yellow
 class bk1.2,step3,makejdk-any-platform blue
 class bk1.3,sbin,build red
@@ -291,10 +302,13 @@ class build_scripts color
 ```mermaid
 
 flowchart TD
+
 subgraph Adoptium_OpenJDK_docker_image_main_flow
 
 buildNew["To create docker image"] --"auto"--> use["Nightly GitHub Action"] -->auto1["Run ./update_all.sh"] --"either auto\nor manual"--> doneNew["Generate PR"]
+
 buildNew --"manual"--> manual2["Run GitHub Action"] --> auto1
+
 end
 
 subgraph internal_function_call1
@@ -321,12 +335,14 @@ stepN2.6 --> check2.2{"if slim btype"} --"true"--> stenpN2.7["copy OS specified 
 end
 
 Adoptium_OpenJDK_docker_image_main_flow --> internal_function_call1
+
 internal_function_call1 --> internal_function_call2
 
 classDef color1 fill:#ffeeff,stroke:#333,stroke-width:2px
 classDef color2 fill:#009999,stroke:#333,stroke-width:2px
 class detailNew1,auto1 color1
 class detailNew2,stepN1.3 color2
+
 ```
 
 ### AdoptOpenJDK docker image(<https://hub.docker.com/u/adoptopenjdk>)
@@ -367,13 +383,15 @@ finalcheck --true--> done[Job finish]
 
 end
 
-classDef green fill:#00ff80,stroke:#333,stroke-width:2px
+classDef green fill:#08e980,stroke:#333,stroke-width:2px
 classDef blue fill:#0080ff,stroke:#333,stroke-width:2px
 class stage1 green
 class stage2 blue
+
 ```
 
 ```mermaid
+
 flowchart TD
 
 subgraph detail_internal_function_call1
@@ -405,7 +423,6 @@ subgraph build2
 updateall["Script: update_manifest_all.sh"] --source--> c1[common_functions.sh] --"loop:supported_versions"-->
 
 c2["Call functions:\ncleanup_images\ncleanup_manifest"] -->
-
 c3["Call scripts:\n generate_manifest_script.sh\nmanifest_commands.sh"]
 
 end
@@ -413,12 +430,10 @@ end
 end
 
 c3--"test image"-->s7
-
 detail_internal_function_call1 --> internal_function_calls
 detail_internal_function_call2 --> internal_function_calls
 
-
-classDef green fill:#00ff80,stroke:#333,stroke-width:2px
+classDef green fill:#08e980,stroke:#333,stroke-width:2px
 classDef blue fill:#0080ff,stroke:#333,stroke-width:2px
 classDef yellow fill:#cccc00,stroke:#333,stroke-width:2px
 classDef red fill:#ff99ff,stroke:#333,stroke-width:2px
