@@ -936,7 +936,7 @@ class Build {
     /*
     Calculates and writes out the metadata to a file.
     The metadata defines and summarises a build and the jdk it creates.
-    The adopt v3 api makes use of it in its endpoints to quickly display information about the jdk binaries that are stored on github.
+    https://api.adoptium.net/ v3 api makes use of it in its endpoints to quickly display information about the jdk binaries that are stored on github.
     */
     def writeMetadata(VersionInfo version, Boolean initialWrite) {
         /*
@@ -1141,7 +1141,7 @@ class Build {
         useAdoptShellScripts
     ) {
         return context.stage("build") {
-            // Create the repo handler with the user's defaults to ensure a openjdk-build checkout is not null
+            // Create the repo handler with the user's defaults to ensure a temurin-build checkout is not null
             def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS)
             repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
             if (cleanWorkspace) {
@@ -1305,11 +1305,11 @@ class Build {
                                     repoHandler.checkoutUserPipelines(context)
                                 }
                             } else {
-                                context.println "[CHECKOUT] Checking out to the user's openjdk-build..."
+                                context.println "[CHECKOUT] Checking out to the user's temurin-build..."
                                 repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                 repoHandler.checkoutUserBuild(context)
                                 context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                context.println "[CHECKOUT] Reverting pre-build user openjdk-build checkout..."
+                                context.println "[CHECKOUT] Reverting pre-build user temurin-build checkout..."
                                 repoHandler.checkoutUserPipelines(context)
                             }
                         }

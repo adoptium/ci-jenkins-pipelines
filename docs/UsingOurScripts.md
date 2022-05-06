@@ -129,7 +129,7 @@ Custom named files are not currently supported (so for `defaults.json['configDir
 
 ### This is great, but how do I add new defaults?
 
-Create a openjdk-build PR that adds the new defaults in for what they would be for Adopt. Don't forget to update Adopt's [RepoHandlerTest.groovy](pipelines/src/test/groovy/RepoHandlerTest.groovy) and [fakeDefaults.json](pipelines/src/test/groovy/fakeDefaults.json), as well as any jenkins jobs if needs be (if you don't have configuration access, ask in Slack#build for assistance).
+Create a temurin-build PR that adds the new defaults in for what they would be for Adopt. Don't forget to update Adopt's [RepoHandlerTest.groovy](pipelines/src/test/groovy/RepoHandlerTest.groovy) and [fakeDefaults.json](pipelines/src/test/groovy/fakeDefaults.json), as well as any jenkins jobs if needs be (if you don't have configuration access, ask in Slack#build for assistance).
 
 You may find that the `RepoHandlerTest.groovy:adoptDefaultsGetterReturns()` will fail when you add new values. This is expected as the test is pulling in Adopt's master branch `defaults.json` which does not yet contain the new values. Please inform any reviewers of this in the pull request.
 

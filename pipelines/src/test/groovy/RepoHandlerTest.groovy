@@ -8,7 +8,7 @@ class RepoHandlerTest {
     private Map testRemote = [
         "branch"  : "foo",
         "remotes" : [
-            "url"         : "https://github.com/bar/openjdk-build.git",
+            "url"         : "https://github.com/bar/temurin-build.git",
             "credentials" : "1234567890"
         ]
     ]
@@ -133,7 +133,7 @@ class RepoHandlerTest {
 
         Assertions.assertEquals(userConfigsMap.branch, "foo")
         Assertions.assertTrue(userConfigsMap.remotes instanceof Map)
-        Assertions.assertEquals(userConfigsMap.remotes.url, "https://github.com/bar/openjdk-build.git")
+        Assertions.assertEquals(userConfigsMap.remotes.url, "https://github.com/bar/temurin-build.git")
         Assertions.assertEquals(handler.configs.remotes.credentials, "1234567890")
     }
 }

@@ -81,7 +81,7 @@ class RepoHandler {
     }
 
     /*
-    Changes dir to adopt's openjdk-build repo
+    Changes dir to adopt's temurin-build repo
     */
     public void checkoutAdoptBuild (def context) {
         context.println "[CHECKOUT] Checking out Adopt Build ${ADOPT_DEFAULTS_JSON['repository']['build_url']} : ${ADOPT_DEFAULTS_JSON['repository']['build_branch']}"
@@ -92,7 +92,7 @@ class RepoHandler {
     }
 
     /*
-    Changes dir to user's openjdk-build repo
+    Changes dir to user's temurin-build repo
     */
     public void checkoutUserBuild (def context) {
         context.println "[CHECKOUT] Checking out User Build ${USER_DEFAULTS_JSON['repository']['build_url']} : ${USER_DEFAULTS_JSON['repository']['build_branch']}"

@@ -571,7 +571,7 @@ class Regeneration implements Serializable {
     }
 
     /**
-    * Main function. Ran from jdkxx_regeneration_pipeline.groovy, this will be what jenkins will run first.
+    * Main function. Ran from build_job_generator.groovy, this will be what jenkins will run first.
     */
     @SuppressWarnings("unused")
     def regenerate() {
