@@ -47,10 +47,10 @@ class IndividualBuildConfig implements Serializable {
     }
 
     IndividualBuildConfig(Map<String, ?> map) {
-        ARCHITECTURE = trimString(map, "ARCHITECTURE")
-        TARGET_OS = trimString(map, "TARGET_OS")
-        VARIANT = trimString(map, "VARIANT")
-        JAVA_TO_BUILD = trimString(map, "JAVA_TO_BUILD")
+        ARCHITECTURE = map.get("ARCHITECTURE")
+        TARGET_OS = map.get("TARGET_OS")
+        VARIANT = map.get("VARIANT")
+        JAVA_TO_BUILD = map.get("JAVA_TO_BUILD")
 
         if (String.class.isInstance(map.get("TEST_LIST"))) {
             TEST_LIST = map.get("TEST_LIST").split(",")
@@ -76,29 +76,29 @@ class IndividualBuildConfig implements Serializable {
             NUM_MACHINES = []
         }
 
-        SCM_REF = trimString(map, "SCM_REF")
-        AQA_REF = trimString(map, "AQA_REF")
+        SCM_REF = map.get("SCM_REF")
+        AQA_REF = map.get("AQA_REF")
         AQA_AUTO_GEN = map.get("AQA_AUTO_GEN")
-        BUILD_ARGS = trimString(map, "BUILD_ARGS")
-        NODE_LABEL = trimString(map, "NODE_LABEL")
-        ADDITIONAL_TEST_LABEL = trimString(map, "ADDITIONAL_TEST_LABEL")
-        KEEP_TEST_REPORTDIR = trimString(map, "KEEP_TEST_REPORTDIR")
-        ACTIVE_NODE_TIMEOUT = trimString(map, "ACTIVE_NODE_TIMEOUT")
+        BUILD_ARGS = map.get("BUILD_ARGS")
+        NODE_LABEL = map.get("NODE_LABEL")
+        ADDITIONAL_TEST_LABEL = map.get("ADDITIONAL_TEST_LABEL")
+        KEEP_TEST_REPORTDIR = map.get("KEEP_TEST_REPORTDIR")
+        ACTIVE_NODE_TIMEOUT = map.get("ACTIVE_NODE_TIMEOUT")
         CODEBUILD = map.get("CODEBUILD")
-        DOCKER_IMAGE = trimString(map, "DOCKER_IMAGE")
-        DOCKER_FILE = trimString(map, "DOCKER_FILE")
-        DOCKER_NODE = trimString(map, "DOCKER_NODE")
-        DOCKER_REGISTRY = trimString(map, "DOCKER_REGISTRY")
-        DOCKER_CREDENTIAL = trimString(map, "DOCKER_CREDENTIAL")
-        PLATFORM_CONFIG_LOCATION = trimString(map, "PLATFORM_CONFIG_LOCATION")
-        CONFIGURE_ARGS = trimString(map, "CONFIGURE_ARGS")
-        OVERRIDE_FILE_NAME_VERSION = trimString(map, "OVERRIDE_FILE_NAME_VERSION")
+        DOCKER_IMAGE = map.get("DOCKER_IMAGE")
+        DOCKER_FILE = map.get("DOCKER_FILE")
+        DOCKER_NODE = map.get("DOCKER_NODE")
+        DOCKER_REGISTRY = map.get("DOCKER_REGISTRY")
+        DOCKER_CREDENTIAL = map.get("DOCKER_CREDENTIAL")
+        PLATFORM_CONFIG_LOCATION = map.get("PLATFORM_CONFIG_LOCATION")
+        CONFIGURE_ARGS = map.get("CONFIGURE_ARGS")
+        OVERRIDE_FILE_NAME_VERSION = map.get("OVERRIDE_FILE_NAME_VERSION")
         USE_ADOPT_SHELL_SCRIPTS = map.get("USE_ADOPT_SHELL_SCRIPTS")
-        ADDITIONAL_FILE_NAME_TAG = trimString(map, "ADDITIONAL_FILE_NAME_TAG")
-        JDK_BOOT_VERSION = trimString(map, "JDK_BOOT_VERSION")
+        ADDITIONAL_FILE_NAME_TAG = map.get("ADDITIONAL_FILE_NAME_TAG")
+        JDK_BOOT_VERSION = map.get("JDK_BOOT_VERSION")
         RELEASE = map.get("RELEASE")
-        PUBLISH_NAME = trimString(map, "PUBLISH_NAME")
-        ADOPT_BUILD_NUMBER = trimString(map, "ADOPT_BUILD_NUMBER")
+        PUBLISH_NAME = map.get("PUBLISH_NAME")
+        ADOPT_BUILD_NUMBER = map.get("ADOPT_BUILD_NUMBER")
         ENABLE_TESTS = map.get("ENABLE_TESTS")
         ENABLE_TESTDYNAMICPARALLEL = map.get("ENABLE_TESTDYNAMICPARALLEL")
         ENABLE_INSTALLERS = map.get("ENABLE_INSTALLERS")
@@ -163,16 +163,6 @@ class IndividualBuildConfig implements Serializable {
                 CLEAN_WORKSPACE_AFTER     : CLEAN_WORKSPACE_AFTER,
                 CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER : CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER
         ]
-    }
-
-    /**
-      * trim whitespace for String input parameter if it is set
-      * @param map  build_config map
-      * @param key  key of build_config map
-      * @return     trimmed value or null if not set
-    */
-    String trimString(Map map, String key){
-        return map.get(key) ? map.get(key).trim() : null
     }
 
     String toJson() {

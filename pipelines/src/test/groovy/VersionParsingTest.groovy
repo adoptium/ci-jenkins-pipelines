@@ -25,7 +25,7 @@ OpenJDK 64-Bit Server VM AdoptOpenJDK (build 11.0.3+9-201903122221, mixed mode)"
   Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map
 
     def parse(String version) {
-        IndividualBuildConfig config = new IndividualBuildConfig(["ADOPT_BUILD_NUMBER": "23"]);
+        IndividualBuildConfig config = new IndividualBuildConfig([ADOPT_BUILD_NUMBER: 23]);
 
         // Use a dead map for DEFAULTS_JSON as it's not being tested here
         def build = new Build(
