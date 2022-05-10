@@ -59,14 +59,14 @@ class IndividualBuildConfigTest {
 
     @Test
     void serializationTransfersTrimmedDataCorrectly() {
-        def parsed = new IndividualBuildConfig([
+        Map config = [
                 ARCHITECTURE               : "   a",
                 TARGET_OS                  : "b     ",
                 BUILD_ARGS                 : " g "
-        ])
+        ]
         def trimmedConfig = new IndividualBuildConfig().trimValue(config)
-        Assertions.assertEquals("a", parsed.ARCHITECTURE)
-        Assertions.assertEquals("b", parsed.TARGET_OS)
-        Assertions.assertEquals("g", parsed.semver)
+        Assertions.assertEquals("a", trimmedConfig.ARCHITECTURE)
+        Assertions.assertEquals("b", trimmedConfig.TARGET_OS)
+        Assertions.assertEquals("g", trimmedConfig.BUILD_ARGS)
     }
 }
