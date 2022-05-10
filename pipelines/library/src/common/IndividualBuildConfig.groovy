@@ -42,6 +42,8 @@ class IndividualBuildConfig implements Serializable {
     final boolean CLEAN_WORKSPACE_AFTER
     final boolean CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER
 
+    IndividualBuildConfig() { }
+
     IndividualBuildConfig(String json) {
         this(new JsonSlurper().parseText(json) as Map)
     }
@@ -163,6 +165,18 @@ class IndividualBuildConfig implements Serializable {
                 CLEAN_WORKSPACE_AFTER     : CLEAN_WORKSPACE_AFTER,
                 CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER : CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER
         ]
+    }
+
+    /**
+      * trim whitespace for String input parameter if it is set
+      * @param map  build_config map
+      * @return     IndividualBuildConfig instance
+    */
+    IndividualBuildConfig trimValue(Map map) {
+        map.each{ entry ->
+                entry.value = entry.value instanceof String ? entry.value.trim() : entry.value
+        }
+        return new IndividualBuildConfig(map)
     }
 
     String toJson() {

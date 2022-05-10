@@ -137,7 +137,7 @@ class Builder implements Serializable {
             cleanWsAfter = platformCleanWorkspaceAfterBuild
         }
 
-        return new IndividualBuildConfig(
+        return new IndividualBuildConfig().trimValue(
             JAVA_TO_BUILD: javaToBuild,
             ARCHITECTURE: platformConfig.arch as String,
             TARGET_OS: platformConfig.os as String,

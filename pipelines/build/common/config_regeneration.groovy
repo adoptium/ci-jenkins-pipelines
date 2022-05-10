@@ -408,7 +408,7 @@ class Regeneration implements Serializable {
 
             def numMachines = getDynamicParams().get("numMachines")
 
-           return new IndividualBuildConfig( // final build config
+           return new IndividualBuildConfig().trimValue( // final build config
                 JAVA_TO_BUILD: javaToBuild,
                 ARCHITECTURE: platformConfig.arch as String,
                 TARGET_OS: platformConfig.os as String,
