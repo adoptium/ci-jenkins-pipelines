@@ -57,4 +57,22 @@ class IndividualBuildConfigTest {
         Assertions.assertEquals(JsonOutput.toJson(config), JsonOutput.toJson(parsedConfig))
     }
 
+    @Test
+    void serializationTransfersTrimmedDataCorrectly() {
+        Map config = [
+                ARCHITECTURE               : "   a",
+                TARGET_OS                  : "b     ",
+                BUILD_ARGS                 : " g ",
+                PUBLISH_NAME               : "",
+                CONFIGURE_ARGS             : null
+
+        ]
+        def trimmedConfig = new IndividualBuildConfig(config)
+        Assertions.assertEquals("a", trimmedConfig.ARCHITECTURE)
+        Assertions.assertEquals("b", trimmedConfig.TARGET_OS)
+        Assertions.assertEquals("g", trimmedConfig.BUILD_ARGS)
+        Assertions.assertEquals("", trimmedConfig.PUBLISH_NAME)
+        Assertions.assertNull(trimmedConfig.CONFIGURE_ARGS)
+    }
+
 }
