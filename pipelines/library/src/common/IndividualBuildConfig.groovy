@@ -47,10 +47,10 @@ class IndividualBuildConfig implements Serializable {
     }
 
     IndividualBuildConfig(Map<String, ?> map) {
-        ARCHITECTURE = map.get("ARCHITECTURE")
-        TARGET_OS = map.get("TARGET_OS")
-        VARIANT = map.get("VARIANT")
-        JAVA_TO_BUILD = map.get("JAVA_TO_BUILD")
+        ARCHITECTURE = map.get("ARCHITECTURE") != null ? map.get("ARCHITECTURE").trim() : null
+        TARGET_OS = map.get("TARGET_OS") != null ? map.get("TARGET_OS").trim() : null
+        VARIANT = map.get("VARIANT") != null ? map.get("VARIANT").trim() : null
+        JAVA_TO_BUILD = map.get("JAVA_TO_BUILD")!= null ? map.get("JAVA_TO_BUILD").trim() : null
 
         if (String.class.isInstance(map.get("TEST_LIST"))) {
             TEST_LIST = map.get("TEST_LIST").split(",")
