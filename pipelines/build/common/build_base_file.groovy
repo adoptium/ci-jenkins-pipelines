@@ -172,6 +172,7 @@ class Builder implements Serializable {
             ENABLE_TESTDYNAMICPARALLEL: enableTestDynamicParallel,
             ENABLE_INSTALLERS: enableInstallers,
             ENABLE_SIGNER: enableSigner,
+            ENABLE_SBOM: enableSBOM,
             CLEAN_WORKSPACE: cleanWorkspace,
             CLEAN_WORKSPACE_AFTER: cleanWsAfter,
             CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER: cleanWorkspaceBuildOutputAfterBuild
