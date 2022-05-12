@@ -41,7 +41,6 @@ class IndividualBuildConfigTest {
                 ENABLE_TESTS               : true,
                 ENABLE_INSTALLERS          : true,
                 ENABLE_SIGNER              : true,
-                ENABLE_SBOM                : true,
                 CLEAN_WORKSPACE            : false,
                 CLEAN_WORKSPACE_AFTER      : false,
                 CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER : false
