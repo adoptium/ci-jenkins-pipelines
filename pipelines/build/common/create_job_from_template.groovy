@@ -116,7 +116,6 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>ENABLE_TESTS</strong></dt><dd>Run tests</dd>
                 <dt><strong>ENABLE_TESTDYNAMICPARALLEL</strong></dt><dd>Run parallel</dd>
                 <dt><strong>ENABLE_INSTALLERS</strong></dt><dd>Run installers</dd>
-                <dt><strong>ENABLE_SBOM</strong></dt><dd>Run create cyclonedxlib and generate SBOM</dd>
                 <dt><strong>ENABLE_SIGNER</strong></dt><dd>Run signer</dd>
                 <dt><strong>CLEAN_WORKSPACE</strong></dt><dd>Wipe out workspace before build</dd>
                 <dt><strong>CLEAN_WORKSPACE_AFTER</strong></dt><dd>Wipe out workspace after build</dd>
