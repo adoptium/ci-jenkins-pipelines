@@ -42,7 +42,6 @@ class Builder implements Serializable {
     boolean enableTestDynamicParallel
     boolean enableInstallers
     boolean enableSigner
-    boolean enableSBOM
     boolean publish
     boolean release
     String releaseType
@@ -744,7 +743,6 @@ class Builder implements Serializable {
             context.echo "Enable tests: ${enableTests}"
             context.echo "Enable Installers: ${enableInstallers}"
             context.echo "Enable Signer: ${enableSigner}"
-            context.echo "Enable SBOM: ${enableSBOM}"
             context.echo "Use Adopt's Scripts: ${useAdoptShellScripts}"
             context.echo "Publish: ${publish}"
             context.echo "Release: ${release}"
@@ -857,7 +855,6 @@ return {
     String enableTestDynamicParallel,
     String enableInstallers,
     String enableSigner,
-    String enableSBOM,
     String releaseType,
     String scmReference,
     String aqaReference,
@@ -915,7 +912,6 @@ return {
             enableTestDynamicParallel: Boolean.parseBoolean(enableTestDynamicParallel),
             enableInstallers: Boolean.parseBoolean(enableInstallers),
             enableSigner: Boolean.parseBoolean(enableSigner),
-            enableSBOM: Boolean.parseBoolean(enableSBOM),
             publish: publish,
             release: release,
             releaseType: releaseType,
