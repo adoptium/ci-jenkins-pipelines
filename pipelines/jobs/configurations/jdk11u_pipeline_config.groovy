@@ -32,7 +32,7 @@ class Config11 {
                         "bisheng"     : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server --disable-warnings-as-errors'
                 ],
                 buildArgs            : [
-                        "temurin"     : '--create-source-archive --create-sbom'
+                        "temurin"     : '--create-source-archive'
                 ]
         ],
 
@@ -52,7 +52,7 @@ class Config11 {
                         dragonwell: 'win2012'
                 ],
                 buildArgs : [
-                        temurin : '--jvm-variant client,server --create-sbom'
+                        temurin : '--jvm-variant client,server'
                 ],
                 test                : 'default'
         ],
@@ -71,7 +71,7 @@ class Config11 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012',
                 buildArgs : [
-                        temurin : '--jvm-variant client,server --create-sbom'
+                        temurin : '--jvm-variant client,server'
                 ],
                 test                : 'default'
         ],
