@@ -54,7 +54,7 @@ class Config19 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -70,7 +70,7 @@ class Config19 {
                         weekly : []
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -80,7 +80,7 @@ class Config19 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012&&vs2017',
                 buildArgs           : [
-                        temurin : '--jvm-variant client,server -create-jre-image --create-sbom'
+                        temurin : '--jvm-variant client,server -create-jre-image'
                 ],
                 test                : 'default',
         ],
@@ -95,7 +95,7 @@ class Config19 {
                 test                : 'default',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -159,7 +159,7 @@ class Config19 {
                 os                   : 'linux',
                 arch                 : 'riscv64',
                 configureArgs        : '--enable-dtrace --with-native-debug-symbols=none',
-                buildArgs            : '-r https://github.com/openjdk/riscv-port -b riscv-port --custom-cacerts false --disable-adopt-branch-safety',
+                buildArgs            : '-r https://github.com/openjdk/riscv-port -b riscv-port --custom-cacerts false --disable-adopt-branch-safety --create-sbom',
                 test                : [
                         nightly: ['sanity.openjdk'],
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']

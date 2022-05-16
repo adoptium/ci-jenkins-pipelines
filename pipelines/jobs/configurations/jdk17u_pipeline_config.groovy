@@ -54,7 +54,7 @@ class Config17 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -70,7 +70,7 @@ class Config17 {
                         weekly : []
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -84,7 +84,7 @@ class Config17 {
                 ],
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -98,7 +98,7 @@ class Config17 {
                 test                : 'default',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
