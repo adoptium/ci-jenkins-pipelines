@@ -10,7 +10,7 @@ class Config18 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -33,7 +33,7 @@ class Config18 {
                         "temurin"   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-source-archive --create-jre-image'
+                        "temurin"   : '--create-source-archive --create-jre-image --create-sbom'
                 ]
         ],
 
@@ -44,7 +44,7 @@ class Config18 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -54,7 +54,7 @@ class Config18 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -70,7 +70,7 @@ class Config18 {
                         weekly : []
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -84,7 +84,7 @@ class Config18 {
                 ],
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -98,7 +98,7 @@ class Config18 {
                 test                : 'default',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -109,7 +109,7 @@ class Config18 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -123,7 +123,7 @@ class Config18 {
                         "openj9"      : '--enable-dtrace --enable-jitserver'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -135,7 +135,7 @@ class Config18 {
                 configureArgs : '--enable-dtrace',
                 testDynamic          : false,
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
         
@@ -145,7 +145,7 @@ class Config18 {
                 additionalNodeLabels: 'macos11',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -155,7 +155,7 @@ class Config18 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image'
+                        "temurin"   : '--create-jre-image --create-sbom'
                 ]
         ]
   ]

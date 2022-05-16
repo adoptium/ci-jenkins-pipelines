@@ -25,7 +25,7 @@ class Config8 {
                         "dragonwell"  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-source-archive'
+                        "temurin"   : '--create-source-archive --create-sbom'
                 ]
         ],
 
@@ -49,7 +49,7 @@ class Config8 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012',
                 buildArgs : [
-                        temurin : '--jvm-variant client,server'
+                        temurin : '--jvm-variant client,server --create-sbom'
                 ],
                 test                 : 'default'
         ],
