@@ -37,14 +37,6 @@ class Config8 {
                 configureArgs       : '--disable-headful'
         ],
 
-        aarch64AlpineLinux  : [
-                os                  : 'alpine-linux',
-                arch                : 'aarch64',
-                dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
-                configureArgs       : '--disable-headful'
-        ],
-
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
