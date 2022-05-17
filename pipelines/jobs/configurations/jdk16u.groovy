@@ -33,6 +33,9 @@ targetConfigurations = [
                 "hotspot",
                 "openj9"
         ],
+        "aarch64AlpineLinux" : [
+                "temurin"
+        ],
         "arm32Linux"  : [
                 "hotspot"
         ]

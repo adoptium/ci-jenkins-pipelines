@@ -27,6 +27,9 @@ targetConfigurations = [
                 "hotspot",
                 "temurin"
         ],
+        "aarch64AlpineLinux" : [
+                "temurin"
+        ],
         "aarch64Mac": [
                 "temurin"
         ],
