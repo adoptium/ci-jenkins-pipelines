@@ -41,7 +41,7 @@ class Config16 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--disable-headful'
+                configureArgs       : '--enable-headless-only=yes'
         ],
 
         x64Windows: [

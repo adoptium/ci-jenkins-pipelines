@@ -44,6 +44,7 @@ class Config11 {
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
+                configureArgs       : '--enable-headless-only=yes'
                 buildArgs           : [
                         "temurin"   : '--create-sbom'
                 ]
@@ -54,7 +55,10 @@ class Config11 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--disable-headful'
+                configureArgs       : '--enable-headless-only=yes'
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
 
         x64Windows: [

@@ -49,6 +49,9 @@ class Config8 {
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
                 configureArgs       : '--disable-headful'
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
 
         x64Windows    : [

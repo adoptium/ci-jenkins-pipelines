@@ -40,6 +40,9 @@ targetConfigurations = [
                 "dragonwell",
                 "bisheng"
         ],
+        "aarch64AlpineLinux" : [
+                "temurin"
+        ],
         "arm32Linux"  : [
                 "temurin"
         ],

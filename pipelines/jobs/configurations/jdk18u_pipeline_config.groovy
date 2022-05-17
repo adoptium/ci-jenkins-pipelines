@@ -53,7 +53,10 @@ class Config18 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--disable-headful'
+                configureArgs       : '--enable-headless-only=yes'
+                buildArgs           : [
+                        "temurin"   : '--create-jre-image --create-sbom'
+                ]
         ],
         
         x64Windows: [
