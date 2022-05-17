@@ -27,6 +27,8 @@ node ("master") {
   def slackChannel = "${params.SLACK_CHANNEL}"
   def featureReleases = [ 8, 11, 17 ] // Consider making those parameters
   def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
+  def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
+  def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
 
   def healthStatus = [ "jdk8": null, "jdk11": null, "jdk17": null]
   def testStats = []
@@ -236,8 +238,13 @@ node ("master") {
     echo "======> Nightly Test Success Rating   = ${nightlyTestSuccessRating.intValue()} %"
     echo "======> Overall Nightly Build & Test Success Rating = ${overallNightlySuccessRating} %"
 
+    def statusColor = 'good'
+    if (nightlyBuildSuccessRating.intValue() < amberBuildAlertLevel || nightlyTestSuccessRating.intValue() < amberTestAlertLevel) {
+      statusColor = 'warning'
+    }
+
     // Slack message:
-    slackSend(channel: slackChannel, color: 'good', message: 'Adoptium Nightly Build Success : *'+variant+'* => *'+overallNightlySuccessRating+'* %\n  Build Job Rating: '+totalBuildJobs+' jobs ('+nightlyBuildSuccessRating.intValue()+'%)  Test Job Rating: '+totalTestJobs+' jobs ('+nightlyTestSuccessRating.intValue()+'%) <'+jenkinsUrl+'/view/Tooling/job/nightlyBuildAndTestStats_'+variant+'/'+BUILD_NUMBER+'/console|Detail>')
+    slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Nightly Build Success : *'+variant+'* => *'+overallNightlySuccessRating+'* %\n  Build Job Rating: '+totalBuildJobs+' jobs ('+nightlyBuildSuccessRating.intValue()+'%)  Test Job Rating: '+totalTestJobs+' jobs ('+nightlyTestSuccessRating.intValue()+'%) <'+jenkinsUrl+'/view/Tooling/job/nightlyBuildAndTestStats_'+variant+'/'+BUILD_NUMBER+'/console|Detail>')
   }
 
   stage("printPublishStats") {
