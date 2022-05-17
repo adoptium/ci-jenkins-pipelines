@@ -53,7 +53,7 @@ class Config19 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-headless-only=yes'
+                configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
                         "temurin"   : '--create-jre-image --create-sbom'
                 ]
