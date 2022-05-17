@@ -31,6 +31,9 @@ targetConfigurations = [
         ],
         "arm32Linux"  : [
                 "temurin"
+        ],
+        "aarch64AlpineLinux": [
+                "temurin"
         ]
 ]
 

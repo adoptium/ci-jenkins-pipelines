@@ -35,6 +35,9 @@ targetConfigurations = [
         ],
         "riscv64Linux"  : [
                 "temurin"
+        ],
+        "aarch64AlpineLinux": [
+                "temurin"
         ]
 
 ]

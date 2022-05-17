@@ -10,7 +10,8 @@ targetConfigurations = [
         "aarch64Linux"  : [    "temurin",    "openj9",    "dragonwell",                   "bisheng"    ],
         "aarch64Mac"    : [    "temurin",                           ],
         "arm32Linux"    : [    "temurin"                            ],
-        "riscv64Linux"  : [                  "openj9",                                    "bisheng"    ]
+        "riscv64Linux"  : [                  "openj9",                                    "bisheng"    ],
+        "aarch64AlpineLinux": ["temurin"]
 ]
 
 // 18:05 Tue, Thur

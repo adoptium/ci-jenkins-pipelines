@@ -48,6 +48,9 @@ targetConfigurations = [
         ],
         "sparcv9Solaris": [
                 "temurin"
+        ],
+        "aarch64AlpineLinux": [
+                "temurin"
         ]
 ]
 
