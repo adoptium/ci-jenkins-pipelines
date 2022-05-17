@@ -90,7 +90,10 @@ class Config11 {
                         openj9:  'xlc13&&aix715'
                 ],
                 test                : 'default',
-                cleanWorkspaceAfterBuild: true
+                cleanWorkspaceAfterBuild: true,
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
 
         s390xLinux    : [
