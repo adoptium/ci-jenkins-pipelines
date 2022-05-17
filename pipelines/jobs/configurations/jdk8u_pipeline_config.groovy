@@ -8,7 +8,10 @@ class Config8 {
                         corretto: 'build-macstadium-macos1010-1',
                         openj9  : 'macos10.14'
                 ],
-                test                 : 'default'
+                test                 : 'default',
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
 
         x64Linux      : [
@@ -25,7 +28,7 @@ class Config8 {
                         "dragonwell"  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-source-archive'
+                        "temurin"   : '--create-source-archive --create-sbom'
                 ]
         ],
 
@@ -34,7 +37,10 @@ class Config8 {
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--disable-headful'
+                configureArgs       : '--disable-headful',
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
 
         x64Windows    : [
@@ -49,7 +55,7 @@ class Config8 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012',
                 buildArgs : [
-                        temurin : '--jvm-variant client,server'
+                        temurin : '--jvm-variant client,server --create-sbom'
                 ],
                 test                 : 'default'
         ],
@@ -62,7 +68,10 @@ class Config8 {
                         openj9:  'xlc13&&aix715'
                 ],
                 test                 : 'default',
-                cleanWorkspaceAfterBuild: true
+                cleanWorkspaceAfterBuild: true,
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
 
         s390xLinux    : [
@@ -71,19 +80,28 @@ class Config8 {
                 test: [
                         temurin: ['sanity.openjdk'],
                         openj9: 'default'
+                ],
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
                 ]
         ],
 
         sparcv9Solaris: [
                 os  : 'solaris',
                 arch: 'sparcv9',
-                test: 'default'
+                test: 'default',
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
 
         x64Solaris    : [
                 os                  : 'solaris',
                 arch                : 'x64',
-                test                : 'default'
+                test                : 'default',
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
 
         ppc64leLinux  : [
@@ -93,13 +111,19 @@ class Config8 {
                 test                 : 'default',
                 configureArgs       : [
                         "openj9"      : '--enable-jitserver'
+                ],
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
                 ]
         ],
 
         arm32Linux    : [
                 os  : 'linux',
                 arch: 'arm',
-                test: 'default'
+                test: 'default',
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
 
         aarch64Linux  : [
@@ -110,7 +134,10 @@ class Config8 {
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell_aarch64.dockerfile'
                 ],
                 test                 : 'default',
-                testDynamic          : false
+                testDynamic          : false,
+                buildArgs           : [
+                        "temurin"   : '--create-sbom'
+                ]
         ],
   ]
 
