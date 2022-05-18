@@ -301,7 +301,7 @@ class Build {
                                     context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
                                     context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
                                     context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                    context.string(name: 'KEEP_REPORTDIR', value: "${buildConfig.KEEP_TEST_REPORTDIR}"),
+                                    context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
                                     context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
                                     context.booleanParam(name: 'DYNAMIC_COMPILE', value: true)]
                 }
@@ -346,7 +346,7 @@ class Build {
                         def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
                         if (("${testType}".contains("openjdk")) || ("${testType}".contains("jck"))) {
                             // Keep test reportdir always for JUnit targets
-                            keep_test_reportdir = "true"
+                            keep_test_reportdir = true
                         }
 
                         def DYNAMIC_COMPILE = false
@@ -414,7 +414,7 @@ class Build {
                                             context.string(name: 'JDK_BRANCH', value: jdkBranch),
                                             context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
                                             context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                            context.string(name: 'KEEP_REPORTDIR', value: "${keep_test_reportdir}"),
+                                            context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
                                             context.string(name: 'PARALLEL', value: parallel),
                                             context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
                                             context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
