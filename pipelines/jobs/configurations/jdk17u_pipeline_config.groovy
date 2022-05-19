@@ -90,12 +90,9 @@ class Config17 {
                 os                  : 'windows',
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012&&vs2017',
-                buildArgs           : [
-                        temurin : '--jvm-variant client,server'
-                ],
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--jvm-variant client,server --create-jre-image --create-sbom'
                 ]
         ],
 
