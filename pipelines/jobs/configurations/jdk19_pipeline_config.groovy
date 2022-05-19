@@ -91,7 +91,7 @@ class Config19 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012&&vs2017',
                 buildArgs           : [
-                        temurin : '--create-jre-image'
+                        temurin : '--jvm-variant client,server --create-jre-image'
                 ],
                 test                : 'default',
         ],
