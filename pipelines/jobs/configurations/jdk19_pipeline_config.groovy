@@ -65,7 +65,7 @@ class Config19 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -81,7 +81,7 @@ class Config19 {
                         weekly : []
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
