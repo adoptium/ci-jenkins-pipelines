@@ -8,9 +8,6 @@ class Config11 {
                 configureArgs       : [
                         "openj9"      : '--enable-dtrace=auto --with-cmake',
                         "temurin"     : '--enable-dtrace=auto'
-                ],
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
                 ]
         ],
 
@@ -35,7 +32,7 @@ class Config11 {
                         "bisheng"     : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server --disable-warnings-as-errors'
                 ],
                 buildArgs            : [
-                        "temurin"     : '--create-source-archive --create-sbom'
+                        "temurin"     : '--create-source-archive'
                 ]
         ],
 
@@ -44,10 +41,7 @@ class Config11 {
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-headless-only=yes',
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
-                ]
+                configureArgs       : '--enable-headless-only=yes'
         ],
 
         aarch64AlpineLinux  : [
@@ -55,10 +49,7 @@ class Config11 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-headless-only=yes',
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
-                ]
+                configureArgs       : '--enable-headless-only=yes'
         ],
 
         x64Windows: [
@@ -70,7 +61,7 @@ class Config11 {
                         dragonwell: 'win2012'
                 ],
                 buildArgs : [
-                        temurin : '--jvm-variant client,server --create-sbom'
+                        temurin : '--jvm-variant client,server'
                 ],
                 test                : 'default'
         ],
@@ -89,7 +80,7 @@ class Config11 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012',
                 buildArgs : [
-                        temurin : '--jvm-variant client,server --create-sbom'
+                        temurin : '--jvm-variant client,server'
                 ],
                 test                : 'default'
         ],
@@ -102,30 +93,21 @@ class Config11 {
                         openj9:  'xlc13&&aix715'
                 ],
                 test                : 'default',
-                cleanWorkspaceAfterBuild: true,
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
-                ]
+                cleanWorkspaceAfterBuild: true
         ],
 
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace=auto',
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
-                ]
+                configureArgs       : '--enable-dtrace=auto'
         ],
 
         sparcv9Solaris    : [
                 os                  : 'solaris',
                 arch                : 'sparcv9',
                 test                : false,
-                configureArgs       : '--enable-dtrace=auto',
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
-                ]
+                configureArgs       : '--enable-dtrace=auto'
         ],
 
         ppc64leLinux    : [
@@ -136,10 +118,8 @@ class Config11 {
                 configureArgs       : [
                         "temurin"     : '--enable-dtrace=auto',
                         "openj9"      : '--enable-dtrace=auto --enable-jitserver'
-                ],
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
                 ]
+
         ],
 
         aarch64Mac: [
@@ -147,20 +127,14 @@ class Config11 {
                 arch                : 'aarch64',
                 additionalNodeLabels: 'macos11',
                 test                : 'default',
-                configureArgs       : '--disable-ccache',
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
-                ]
+                configureArgs       : '--disable-ccache'
         ],
 
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace=auto',
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
-                ]
+                configureArgs       : '--enable-dtrace=auto'
         ],
 
         aarch64Linux    : [
@@ -181,10 +155,7 @@ class Config11 {
                         "dragonwell": "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
                         "bisheng"   : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
                 ],
-                testDynamic        : false,
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
-                ]
+                testDynamic        : false
         ],
 
         riscv64Linux      :  [
@@ -200,8 +171,7 @@ class Config11 {
                 ],
                 buildArgs            : [
                         "openj9"     : '--cross-compile',
-                        "bisheng"    : '--cross-compile --branch risc-v',
-                        "temurin"   : '--create-sbom'
+                        "bisheng"    : '--cross-compile --branch risc-v'
                 ],
                 configureArgs        : [
                         "openj9"     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
