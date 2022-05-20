@@ -643,7 +643,7 @@ class Regeneration implements Serializable {
             context.stage("Regenerate $javaVersion pipeline jobs") {
 
                 // If we're building jdk head, update the javaToBuild
-                context.println "[INFO] Querying adopt api to get the JDK-Head number"
+                context.println "[INFO] Querying Adoptium api to get the JDK-Head number"
 
                 def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
                 Integer jdkHeadNum = Integer.valueOf(JobHelper.getAvailableReleases(context).tip_version)

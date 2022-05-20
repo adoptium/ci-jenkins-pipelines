@@ -58,7 +58,7 @@ This file contains the default constants and paths used in the build scripts for
         "regeneration"       : "pipelines/build/common/config_regeneration.groovy",
         // Base PR tester file script file containing the 2nd script that is executed by the pipeline_jobs_generator_jdkxx jobs
         "tester"             : "pipelines/build/prTester/pr_test_pipeline.groovy",
-        // Shell script that builds the adopt machine farm, pulling in platform configs and setting Boot JDK roots. Executed by the openjdk_build_pipeline.groovy
+        // Shell script that builds machine farm, pulling in platform configs and setting Boot JDK roots. Executed by the openjdk_build_pipeline.groovy
         "buildfarm"          : "build-farm/make-adopt-build-farm.sh"
     },
     // Job base file (the main file which is called after the 1st setup script file) paths (relative to this repository root)
@@ -94,7 +94,7 @@ This file contains the default constants and paths used in the build scripts for
             "special.functional"
         ]
     },
-    // Script to import the adopt groovy class library (relative to this repository root)
+    // Script to import the groovy class library (relative to this repository root)
     "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
     // Raw content URL of this (defaults.json) file. This is so the openjdk_build_pipeline.groovy script can set user default configs when checking out to the shell script repo
     "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"

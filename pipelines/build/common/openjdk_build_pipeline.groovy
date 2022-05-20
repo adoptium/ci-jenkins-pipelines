@@ -1197,7 +1197,7 @@ class Build {
                 List<String> envVars = buildConfig.toEnvVars()
                 envVars.add("FILENAME=${filename}" as String)
 
-                // Add in the adopt platform config path so it can be used if the user doesn't have one
+                // Add platform config path so it can be used if the user doesn't have one
                 def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']).minus(".git").split('/')
                 // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
                 String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
