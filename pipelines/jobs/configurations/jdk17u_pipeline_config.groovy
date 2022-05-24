@@ -10,7 +10,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -33,7 +33,7 @@ class Config17 {
                         "temurin"   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-source-archive --create-jre-image --create-sbom'
+                        "temurin"   : '--create-source-archive --create-jre-image'
                 ]
         ],
 
@@ -44,7 +44,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -55,7 +55,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -65,7 +65,7 @@ class Config17 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -81,7 +81,7 @@ class Config17 {
                         weekly : []
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -92,7 +92,7 @@ class Config17 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--jvm-variant client,server --create-jre-image --create-sbom'
+                        "temurin"   : '--jvm-variant client,server --create-jre-image'
                 ]
         ],
 
@@ -106,7 +106,7 @@ class Config17 {
                 test                : 'default',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -117,7 +117,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -131,7 +131,7 @@ class Config17 {
                         "openj9"      : '--enable-dtrace --enable-jitserver'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ],
 
@@ -143,7 +143,7 @@ class Config17 {
                 configureArgs : '--enable-dtrace',
                 testDynamic          : false,
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
 
         ],
@@ -154,7 +154,7 @@ class Config17 {
                 additionalNodeLabels: 'macos11',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
 
         ],
@@ -165,7 +165,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        "temurin"   : '--create-jre-image'
                 ]
         ]
 
