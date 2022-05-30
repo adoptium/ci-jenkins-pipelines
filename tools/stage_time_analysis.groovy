@@ -60,7 +60,7 @@ limitations under the License.
     }
   }
 
-node ("master") {
+node ("built-in || master") {
   def jenkinsUrl = "${params.JENKINS_URL}"
   def findStage = "${params.STAGE}"
   def periodDays = params.PERIOD_DAYS as Long

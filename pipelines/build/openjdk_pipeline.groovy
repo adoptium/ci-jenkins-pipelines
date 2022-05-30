@@ -21,7 +21,7 @@ Closure configureBuild = null
 def buildConfigurations = null
 Map<String, ?> DEFAULTS_JSON = null
 
-node ("master") {
+node ("built-in || master") {
     // Load defaultsJson. These are passed down from the build_pipeline_generator and is a JSON object containing user's default constants.
     if (!params.defaultsJson || defaultsJson == "") {
         throw new Exception("[ERROR] No User Defaults JSON found! Please ensure the defaultsJson parameter is populated and not altered during parameter declaration.")

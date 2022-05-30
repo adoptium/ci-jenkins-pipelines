@@ -36,7 +36,7 @@ def baseFilePath = (params.CUSTOM_BASEFILE_LOCATION) ?: LOCAL_DEFAULTS_JSON["bas
 
 def userRemoteConfigs = [:]
 def downstreamBuilder = null
-node("master") {
+node("built-in || master") {
     /*
     Changes dir to Adopt's pipeline repo. Use closures as functions aren't accepted inside node blocks
     */

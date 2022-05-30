@@ -21,7 +21,7 @@ String javaVersion = params.JAVA_VERSION
 String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
 String DEFAULTS_FILE_URL = (params.DEFAULTS_URL) ?: ADOPT_DEFAULTS_FILE_URL
 
-node ("master") {
+node ("built-in || master") {
   // Retrieve Adopt Defaults
   def getAdopt = new URL(ADOPT_DEFAULTS_FILE_URL).openConnection()
   Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map

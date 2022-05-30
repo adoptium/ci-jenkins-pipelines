@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-node("master") {
+node("built-in || master") {
     // Don't parameterise url as we currently have no need and the job generates its own params anyway
     String branch = "${ghprbActualCommit}"
     String DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/${branch}/pipelines/defaults.json"
