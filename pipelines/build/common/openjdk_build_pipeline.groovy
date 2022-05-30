@@ -991,6 +991,8 @@ class Build {
                 type = "staticlibs"
             } else if (file.contains("-sources")) {
                 type = "sources"
+            } else if (file.contains("-sbom")) {
+                type = "sbom"
             }
 
             String hash = context.sh(script: """\
