@@ -139,12 +139,14 @@ Load3 --input--> Build
 end
 
 Build --"run downstream job" -->
-Done["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+variantJob["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"] -->
+checkpublish{publish && !release} --true: run-->
+Publish["Job:\nbuild-scripts/release/refactor_openjdk_release_tool"]
 
 classDef yellow fill:#ffff99
 classDef c12 fill:#ccffff,stroke:#333,stroke-width:2px
 class nightly_pipeline_job yellow
-class Done c12
+class variantJob c12
 
 ```
 
