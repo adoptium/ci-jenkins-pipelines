@@ -636,8 +636,11 @@ class Build {
 
         context.node('built-in || master') {
             context.stage("installer") {
+                // Ensure master context workspace is clean
+                context.sh "rm workspace/target/* || true"
+
                 switch (buildConfig.TARGET_OS) {
-                    case "mac": context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt'; buildMacInstaller(versionData); break
+                    case "mac":     buildMacInstaller(versionData); break
                     case "windows": buildWindowsInstaller(versionData); break
                     default: break
                 }
@@ -665,6 +668,9 @@ class Build {
 
         context.node('built-in || master') {
             context.stage("sign installer") {
+                // Ensure master context workspace is clean
+                context.sh "rm workspace/target/* || true"
+
                 if (buildConfig.TARGET_OS == "mac" || buildConfig.TARGET_OS == "windows") {
                     try {
                         signInstallerJob(versionData);
