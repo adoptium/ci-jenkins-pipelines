@@ -34,7 +34,7 @@ There are three stages for each job regenerator.
   - The job dsl for that downstream job is constructed and that job is then, successfully regenerated. The result is somewhat similar to this:
 
 ```bash
-[INFO] Querying adopt API to get the JDK-Head number
+[INFO] Querying Adoptium API to get the JDK-Head number
 [Pipeline] library
 Loading library openjdk-jenkins-helper@master
 Examining AdoptOpenJDK/openjdk-jenkins-helper

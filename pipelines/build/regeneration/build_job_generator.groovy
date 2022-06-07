@@ -75,7 +75,7 @@ node ("built-in || master") {
 
     checkoutUserPipelines()
 
-    // Import adopt class library. This contains groovy classes, used for carrying across metadata between jobs.
+    // Import class library. This contains groovy classes, used for carrying across metadata between jobs.
     def libraryPath = (params.LIBRARY_PATH) ?: DEFAULTS_JSON['importLibraryScript']
     try {
       load "${WORKSPACE}/${libraryPath}"

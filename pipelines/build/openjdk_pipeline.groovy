@@ -48,7 +48,7 @@ node ("built-in || master") {
 
     scmVars = checkout scm
 
-    // Load the adopt class library so we can use their classes here. If we don't find an import library script in the user's repo, we checkout to temurin-build and use the one that's present there. Finally, we check back out to the user repo.
+    // Load the class library so we can use their classes here. If we don't find an import library script in the user's repo, we checkout to temurin-build and use the one that's present there. Finally, we check back out to the user repo.
     def libraryPath = (params.baseFilePath) ?: DEFAULTS_JSON['importLibraryScript']
     try {
         load "${WORKSPACE}/${libraryPath}"
