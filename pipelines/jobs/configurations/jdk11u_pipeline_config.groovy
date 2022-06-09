@@ -89,8 +89,8 @@ class Config11 {
                 os                  : 'aix',
                 arch                : 'ppc64',
                 additionalNodeLabels: [
-                        temurin: 'xlc13&&aix710',
-                        openj9:  'xlc13&&aix715'
+                        temurin: 'xlc16&&aix710',
+                        openj9:  'xlc16&&aix715'
                 ],
                 test                : 'default',
                 cleanWorkspaceAfterBuild: true
