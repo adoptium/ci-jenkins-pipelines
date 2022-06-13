@@ -496,7 +496,7 @@ class Build {
                             selector: context.specific("${signJob.getNumber()}"),
                             filter: 'workspace/target/*',
                             fingerprintArtifacts: true,
-                            target: "workspace/target/",
+                            target: 'workspace/target/',
                             flatten: true)
 
 
@@ -505,6 +505,34 @@ class Build {
                     writeMetadata(versionInfo, false)
                     context.archiveArtifacts artifacts: "workspace/target/*"
                 }
+            }
+        }
+        context.stage("GPG sign") {
+
+            context.println "RUNNING sign_temurin_gpg for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
+           
+            def params = [
+                context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                context.string(name: 'UPSTREAM_DIR', value: "workspace/target"),
+                ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "built-in"]
+            ]
+
+            def signSHAsJob = context.build job: "build-scripts/release/sign_temurin_gpg",
+                propagate: true,
+                parameters: params
+
+            context.node('built-in || master') {
+                context.sh "rm -f workspace/target/*.sig"
+                context.copyArtifacts(
+                    projectName: "build-scripts/release/sign_temurin_gpg",
+                    selector: context.specific("${signSHAsJob.getNumber()}"),
+                    filter: '**/*.sig',
+                    fingerprintArtifacts: true, 
+                    target: 'workspace/target/',
+                    flatten: true)
+                // Archive GPG signatures in Jenkins
+                context.archiveArtifacts artifacts: "workspace/target/*.sig"
             }
         }
     }
