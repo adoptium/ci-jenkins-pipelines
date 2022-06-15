@@ -405,23 +405,50 @@ class Build {
                             }
                         }
                         context.catchError {
-                            context.build job: jobName,
-                                    propagate: false,
-                                    parameters: [
-                                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                            context.string(name: 'JDK_REPO', value: jdkRepo),
-                                            context.string(name: 'JDK_BRANCH', value: jdkBranch),
-                                            context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-                                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                            context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
-                                            context.string(name: 'PARALLEL', value: parallel),
-                                            context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
-                                            context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
-                                            context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
-                                            context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
-                                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)]
+                            def testJob = context.build job: jobName,
+                                            propagate: false,
+                                            parameters: [
+                                                context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                                context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                                context.string(name: 'JDK_REPO', value: jdkRepo),
+                                                context.string(name: 'JDK_BRANCH', value: jdkBranch),
+                                                context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                                                context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
+                                                context.string(name: 'PARALLEL', value: parallel),
+                                                context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
+                                                context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
+                                                context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
+                                                context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
+                                                context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                                                context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)],
+                                            wait: true
+                            if (buildConfig.RELEASE) {
+                                context.node('built-in || master') {
+                                    def result = testJob.getResult()
+                                    context.echo " ${jobName} result is ${result}"
+                                    if (testJob.getResult() == 'SUCCESS' || testJob.getResult() == 'UNSTABLE') {
+                                        context.sh "rm -f workspace/target/AQATestTaps/*.tap"
+                                        try {
+                                            context.timeout(time: 2, unit: 'HOURS') {
+                                                context.copyArtifacts(
+                                                    projectName:jobName,
+                                                    selector:context.specific("${testJob.getNumber()}"),
+                                                    filter: "**/${jobName}*.tap",
+                                                    target: "workspace/target/AQATestTaps/",
+                                                    fingerprintArtifacts: true,
+                                                    flatten: true
+                                                )
+                                            }
+                                        } catch (Exception e) {
+                                           context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
+                                        }
+                                        context.archiveArtifacts artifacts: "workspace/target/AQATestTaps/*.tap", fingerprint: true
+                                    } else {
+                                        context.echo "Warning: ${jobName} result is ${result}, no tap file is archived"
+                                    }
+                                }
+                            }
                         }
                     }
                 }
