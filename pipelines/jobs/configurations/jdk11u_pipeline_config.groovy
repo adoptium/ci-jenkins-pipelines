@@ -56,7 +56,7 @@ class Config11 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: [
-                        temurin:    'win2012',
+                        temurin:    'win2012&&vs2017',
                         openj9:     'win2012&&vs2017',
                         dragonwell: 'win2012'
                 ],
@@ -64,15 +64,6 @@ class Config11 {
                         temurin : '--jvm-variant client,server'
                 ],
                 test                : 'default'
-        ],
-
-        x64WindowsXL    : [
-                os                   : 'windows',
-                arch                 : 'x64',
-                additionalNodeLabels : 'win2012&&vs2017',
-                test                 : 'default',
-                additionalFileNameTag: "windowsXL",
-                configureArgs        : '--with-noncompressedrefs'
         ],
 
         x32Windows: [
