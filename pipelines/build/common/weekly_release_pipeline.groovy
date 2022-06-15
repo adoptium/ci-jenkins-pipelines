@@ -21,7 +21,7 @@ stage("Submit Release Pipelines") {
     // Map of <platform> : [<variant>,<variant>,..]
     def Map<String, List<String>> targetConfigurations = new JsonSlurper().parseText("${params.targetConfigurations}") as Map
 
-    def jobs = [:]
+    def Map<String, String> jobs = [:]
 
     // For each variant create a release pipeline job
     scmRefs.each{ variant ->
@@ -49,9 +49,23 @@ stage("Submit Release Pipelines") {
                 }
             }
         }
+    
     }
+    // Run downstream jobs in parallel
+    def childJobs = parallel jobs
 
-    // Submit jobs
-    parallel jobs
+    //if releaseType=Release: Copy artifacts from downstream and archive again
+    jobs.each { downstreamRun ->
+        if ( downstreamRun.value.getCurrentResult() == "SUCCESS" ) {
+            context.copyArtifacts(
+                projectName: "${params.buildPipeline}",
+                selector: context.specific("${downstreamRun.value.getRawBuild().getNumber()}"),
+                filter: 'workspace/target/*',
+                fingerprintArtifacts: true,
+                target: "workspace/target/",
+                flatten: true
+            )
+        }
+    }
+    archiveArtifacts artifacts: "workspace/target/"
 }
-
