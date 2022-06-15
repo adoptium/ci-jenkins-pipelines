@@ -1,0 +1,32 @@
+/*
+Jenkins job does comparision for two different build artifacts
+If they are identical, build pass; or fail
+*/
+pipeline {
+    agent {
+        label linux
+    }
+    parameters {
+        string(name: 'URL1', defaultValue: '', description: 'URL to one versoin of the build artifacts\ne.g: https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk18-pipeline/lastSuccessfulBuild/artifact/target/linux/x64/temurin/OpenJDK18U-jdk_x64_linux_hotspot_2022-06-11-23-30.tar.gz')
+        string(name: 'URL2', defaultValue: '', description: 'URL to the other versoin of the build artifacts\ne.g: https://github.com/adoptium/temurin19-binaries/releases/download/jdk-2022-06-09-19-11-beta/OpenJDK-jdk_x64_linux_hotspot_2022-06-09-03-31.tar.gz')
+    }
+
+    stages {
+        stage('Lets Compare') {
+            steps {
+                script {
+                    cleanWs()
+                    echo "Fetching artifact1 from ${params.URL1}"
+                    sh "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
+                    echo "Fetching artifact2 from ${params.URL2}"
+                    sh "mkdir url1Dir2 && wget -q ${params.URL2} -O - | tar -xz -C url1Dir2"
+                    retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2"
+                    if (retVal != 0 ){
+                        echo "Panic: two builds are not the same!"
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
+        }
+    }
+}
