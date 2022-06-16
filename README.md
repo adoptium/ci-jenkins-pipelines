@@ -167,7 +167,7 @@ Alongside the built assets a metadata file will be created with info about the b
 
 ```json
 {
-    "vendor": "Eclipse Foundation",
+    "vendor": "Eclipse Adoptium",
     "os": "mac",
     "arch": "x64",
     "variant": "openj9",
