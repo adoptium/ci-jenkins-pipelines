@@ -1051,10 +1051,12 @@ class Build {
             }
 
             // Special handling for sbom metadat file (to be backwards compatible for api service)
+            // from "*sbom<XXX>.json" to "*sbom<XXX>-metadata.json"
             if (file.contains("sbom")) {
-                file.replace(".json", "-metadata") // from "*sbom<XXX>.json" to "*sbom<XXX>-metadata"
+                context.writeFile file: file.replace(".json", "-metadata.json"), text: JsonOutput.prettyPrint(JsonOutput.toJson(data.asMap()))
+            } else {
+                context.writeFile file: "${file}.json", text: JsonOutput.prettyPrint(JsonOutput.toJson(data.asMap()))
             }
-            context.writeFile file: "${file}.json", text: JsonOutput.prettyPrint(JsonOutput.toJson(data.asMap()))
         })
     }
 
