@@ -1074,7 +1074,7 @@ class Build {
 
         javaToBuild = javaToBuild.trim().toUpperCase()
  
-        # Add "U" to javaToBuild filename prefix for non-head versions
+        // Add "U" to javaToBuild filename prefix for non-head versions
         if (!javaToBuild.endsWith("U") && !javaToBuild.equals("JDK")) {
           javaToBuild += "U"
         }
