@@ -749,11 +749,11 @@ class Build {
 
 
     /*
-    Lists and returns any compressed archived contents of the top directory of the build node
+    Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
     List<String> listArchives() {
         return context.sh(
-                script: '''find workspace/target/ | egrep '(.tar.gz|.zip|.msi|.pkg|.deb|.rpm)$' ''',
+                script: '''find workspace/target/ | egrep -e '(.tar.gz|.zip|.msi|.pkg|.deb|.rpm)$' -e '-sbom_' ''',
                 returnStdout: true,
                 returnStatus: false
         )
@@ -976,7 +976,7 @@ class Build {
         /*
         example data:
             {
-                "vendor": "Eclipse Foundation",
+                "vendor": "Eclipse Adoptium",
                 "os": "mac",
                 "arch": "x64",
                 "variant": "openj9",
@@ -1050,7 +1050,13 @@ class Build {
                 metaWrittenOut = true
             }
 
-            context.writeFile file: "${file}.json", text: JsonOutput.prettyPrint(JsonOutput.toJson(data.asMap()))
+            // Special handling for sbom metadata file (to be backwards compatible for api service)
+            // from "*sbom<XXX>.json" to "*sbom<XXX>-metadata.json"
+            if (file.contains("sbom")) {
+                context.writeFile file: file.replace(".json", "-metadata.json"), text: JsonOutput.prettyPrint(JsonOutput.toJson(data.asMap()))
+            } else {
+                context.writeFile file: "${file}.json", text: JsonOutput.prettyPrint(JsonOutput.toJson(data.asMap()))
+            }
         })
     }
 
