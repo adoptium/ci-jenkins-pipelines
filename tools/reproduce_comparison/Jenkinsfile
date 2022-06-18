@@ -8,7 +8,7 @@ pipeline {
     }
     parameters {
         string(name: 'URL1', defaultValue: '', description: 'URL to one version of the build artifacts\ne.g.: https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk18-pipeline/lastSuccessfulBuild/artifact/target/linux/x64/temurin/OpenJDK18U-jdk_x64_linux_hotspot_2022-06-11-23-30.tar.gz')
-        string(name: 'URL2', defaultValue: '', description: 'URL to the other versoin of the build artifacts\ne.g: https://github.com/adoptium/temurin19-binaries/releases/download/jdk-2022-06-09-19-11-beta/OpenJDK-jdk_x64_linux_hotspot_2022-06-09-03-31.tar.gz')
+        string(name: 'URL2', defaultValue: '', description: 'URL to the other version of the build artifacts\ne.g.: https://github.com/adoptium/temurin19-binaries/releases/download/jdk-2022-06-09-19-11-beta/OpenJDK-jdk_x64_linux_hotspot_2022-06-09-03-31.tar.gz')
     }
 
     stages {
