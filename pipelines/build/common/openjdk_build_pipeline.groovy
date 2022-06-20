@@ -1078,7 +1078,12 @@ class Build {
             extension = "zip"
         }
 
-        javaToBuild = javaToBuild.toUpperCase()
+        javaToBuild = javaToBuild.trim().toUpperCase()
+ 
+        // Add "U" to javaToBuild filename prefix for non-head versions
+        if (!javaToBuild.endsWith("U") && !javaToBuild.equals("JDK")) {
+          javaToBuild += "U"
+        }
 
         def fileName = "Open${javaToBuild}-jdk_${architecture}_${os}_${variant}"
         if (variant == "temurin") {
