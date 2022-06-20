@@ -406,7 +406,7 @@ class Build {
                         }
                         context.catchError {
                             context.build job: jobName,
-                                    propagate: false,
+                                    propagate: true,
                                     parameters: [
                                             context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                                             context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
