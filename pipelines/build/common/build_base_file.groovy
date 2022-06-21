@@ -891,10 +891,9 @@ return {
         if (overridePublishName) {
             publishName = overridePublishName
         } else if (release) {
-            // Default to scmReference, remove any trailing "_adopt" or "_adoptium" from the source code tag if present
+            // Default to scmReference, remove any trailing "_adopt" from the tag if present
             if (scmReference) {
-                tagSuffix = ~/_adopt$|_adoptium$/
-                publishName = scmReference - tagSuffix
+                publishName = scmReference.minus("_adopt")
             }
         }
 
