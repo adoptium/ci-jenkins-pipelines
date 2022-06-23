@@ -16,14 +16,20 @@ pipeline {
             steps {
                 script {
                     cleanWs()
-                    echo "Fetching artifact1 from ${params.URL1}"
-                    sh "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
-                    echo "Fetching artifact2 from ${params.URL2}"
-                    sh "mkdir url1Dir2 && wget -q ${params.URL2} -O - | tar -xz -C url1Dir2"
-                    retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2"
-                    if (retVal != 0 ){
-                        echo "Panic: two builds are not the same!"
-                        currentBuild.result = 'FAILURE'
+                    try {
+                        echo "Fetching artifact1 from ${params.URL1}"
+                        sh "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
+                        echo "Fetching artifact2 from ${params.URL2}"
+                        sh "mkdir url1Dir2 && wget -q ${params.URL2} -O - | tar -xz -C url1Dir2"
+                        retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2"
+                        if (retVal != 0 ){
+                            echo "Panic: two builds are not the same!"
+                            currentBuild.result = 'FAILURE'
+                        }
+                    } catch (Exception err) {
+                        echo err.getMessage()
+                    } finally {
+                        cleanWs()
                     }
                 }
             }
