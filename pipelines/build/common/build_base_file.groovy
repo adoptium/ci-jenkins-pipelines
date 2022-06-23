@@ -802,7 +802,8 @@ class Builder implements Serializable {
                                                         filter: 'workspace/target/AQATestTaps/*.tap',
                                                         fingerprintArtifacts: true,
                                                         target: "target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/AQATestTaps/",
-                                                        flatten: true
+                                                        flatten: true,
+                                                        optional: true
                                                 )
                                             }
                                         } catch (FlowInterruptedException e) {
