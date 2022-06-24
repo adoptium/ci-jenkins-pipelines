@@ -427,14 +427,14 @@ class Build {
                                 def result = testJob.getResult()
                                 context.echo " ${jobName} result is ${result}"
                                 if (testJob.getResult() == 'SUCCESS' || testJob.getResult() == 'UNSTABLE') {
-                                    context.sh "rm -f workspace/target/AQATestTaps/*.tap"
+                                    context.sh "rm -f workspace/target/AQAvitTaps/*.tap"
                                     try {
                                         context.timeout(time: 2, unit: 'HOURS') {
                                             context.copyArtifacts(
                                                 projectName:jobName,
                                                 selector:context.specific("${testJob.getNumber()}"),
                                                 filter: "**/${jobName}*.tap",
-                                                target: "workspace/target/AQATestTaps/",
+                                                target: "workspace/target/AQAvitTaps/",
                                                 fingerprintArtifacts: true,
                                                 flatten: true
                                             )
@@ -442,7 +442,7 @@ class Build {
                                     } catch (Exception e) {
                                        context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
                                     }
-                                    context.archiveArtifacts artifacts: "workspace/target/AQATestTaps/*.tap", fingerprint: true
+                                    context.archiveArtifacts artifacts: "workspace/target/AQAvitTaps/*.tap", fingerprint: true
                                 } else {
                                     context.echo "Warning: ${jobName} result is ${result}, no tap file is archived"
                                 }
