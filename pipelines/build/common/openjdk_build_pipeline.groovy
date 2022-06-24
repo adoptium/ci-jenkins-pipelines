@@ -807,7 +807,7 @@ class Build {
                 flatten: true)
     }
 
-    private void gpgSign()
+    private void gpgSign() {
         context.stage("GPG sign") {
 
            context.println "RUNNING sign_temurin_gpg for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
@@ -1816,7 +1816,6 @@ class Build {
                 }
                 try {
                     gpgSign()
-                    }
                 } catch (Exception e) {
                     context.println(e.message)
                 }
