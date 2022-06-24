@@ -423,30 +423,28 @@ class Build {
                                                 context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
                                                 context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)],
                                             wait: true
-                            if (buildConfig.RELEASE) {
-                                context.node('built-in || master') {
-                                    def result = testJob.getResult()
-                                    context.echo " ${jobName} result is ${result}"
-                                    if (testJob.getResult() == 'SUCCESS' || testJob.getResult() == 'UNSTABLE') {
-                                        context.sh "rm -f workspace/target/AQATestTaps/*.tap"
-                                        try {
-                                            context.timeout(time: 2, unit: 'HOURS') {
-                                                context.copyArtifacts(
-                                                    projectName:jobName,
-                                                    selector:context.specific("${testJob.getNumber()}"),
-                                                    filter: "**/${jobName}*.tap",
-                                                    target: "workspace/target/AQATestTaps/",
-                                                    fingerprintArtifacts: true,
-                                                    flatten: true
-                                                )
-                                            }
-                                        } catch (Exception e) {
-                                           context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
+                            context.node('built-in || master') {
+                                def result = testJob.getResult()
+                                context.echo " ${jobName} result is ${result}"
+                                if (testJob.getResult() == 'SUCCESS' || testJob.getResult() == 'UNSTABLE') {
+                                    context.sh "rm -f workspace/target/AQAvitTaps/*.tap"
+                                    try {
+                                        context.timeout(time: 2, unit: 'HOURS') {
+                                            context.copyArtifacts(
+                                                projectName:jobName,
+                                                selector:context.specific("${testJob.getNumber()}"),
+                                                filter: "**/${jobName}*.tap",
+                                                target: "workspace/target/AQAvitTaps/",
+                                                fingerprintArtifacts: true,
+                                                flatten: true
+                                            )
                                         }
-                                        context.archiveArtifacts artifacts: "workspace/target/AQATestTaps/*.tap", fingerprint: true
-                                    } else {
-                                        context.echo "Warning: ${jobName} result is ${result}, no tap file is archived"
+                                    } catch (Exception e) {
+                                       context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
                                     }
+                                    context.archiveArtifacts artifacts: "workspace/target/AQAvitTaps/*.tap", fingerprint: true
+                                } else {
+                                    context.echo "Warning: ${jobName} result is ${result}, no tap file is archived"
                                 }
                             }
                         }
