@@ -78,7 +78,8 @@ class Build {
         BUILD_ARCHIVE_TIMEOUT : 3,
         CONTROLLER_CLEAN_TIMEOUT : 1,
         DOCKER_CHECKOUT_TIMEOUT : 1,
-        DOCKER_PULL_TIMEOUT : 2
+        DOCKER_PULL_TIMEOUT : 2,
+        ARCHIVE_ARTIFACTS_TIMEOUT : 6
     ]
 
     /*
@@ -737,39 +738,6 @@ class Build {
                 }
             }
         }
-        context.stage("GPG sign") {
-
-           context.println "RUNNING sign_temurin_gpg for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
-           
-           def params = [
-                  context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                  context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                  context.string(name: 'UPSTREAM_DIR', value: "workspace/target"),
-                  ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "built-in"]
-           ]
-
-           def signSHAsJob = context.build job: "build-scripts/release/sign_temurin_gpg",
-               propagate: true,
-               parameters: params
-
-           context.node('built-in || master') {
-               context.copyArtifacts(
-                    projectName: "build-scripts/release/sign_temurin_gpg",
-                    selector: context.specific("${signSHAsJob.getNumber()}"),
-                    filter: '**/*.sig',
-                    fingerprintArtifacts: true, 
-                    target: 'workspace/target/',
-                    flatten: true)
-           }
-           // Archive GPG signatures in Jenkins
-           try {
-               context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
-                   context.archiveArtifacts artifacts: "target/${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE}/${buildConfig.VARIANT}/*.sha256.txt.sig"
-               }
-           } catch (FlowInterruptedException e) {
-               throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
-           }
-        }
     }
 
     private void signInstallerJob(VersionInfo versionData) {
@@ -832,11 +800,11 @@ class Build {
            }
            // Archive GPG signatures in Jenkins
            try {
-               context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
-                   context.archiveArtifacts artifacts: "target/${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE}/${buildConfig.VARIANT}/*.sha256.txt.sig"
+               context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
+                   context.archiveArtifacts artifacts: "workspace/target/*.sig"
                }
            } catch (FlowInterruptedException e) {
-               throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
+               throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
            }
         }
     }
