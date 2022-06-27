@@ -690,7 +690,7 @@ class Build {
         context.node('built-in || master') {
             context.stage("installer") {
                 // Ensure master context workspace is clean of any previous archives
-                context.sh "rm -f workspace/target/* || true"
+                context.sh "rm -rf workspace/target/* || true"
 
                 switch (buildConfig.TARGET_OS) {
                     case "mac":     buildMacInstaller(versionData); break
@@ -722,7 +722,7 @@ class Build {
         context.node('built-in || master') {
             context.stage("sign installer") {
                 // Ensure master context workspace is clean of any previous archives
-                context.sh "rm -f workspace/target/* || true"
+                context.sh "rm -rf workspace/target/* || true"
 
                 if (buildConfig.TARGET_OS == "mac" || buildConfig.TARGET_OS == "windows") {
                     try {
