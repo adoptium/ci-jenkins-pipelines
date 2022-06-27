@@ -104,6 +104,9 @@ class Config20 {
                         openj9:  'xlc16&&aix715'
                 ],
                 test                : 'default',
+                additionalTestLabels: [
+                        temurin      : 'aix720'
+                ],
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         "temurin"   : '--create-jre-image'
