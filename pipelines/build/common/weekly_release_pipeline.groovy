@@ -54,7 +54,7 @@ stage("Submit Release Pipelines") {
     // Run downstream jobs in parallel
     def childJobs = parallel jobs
 
-    // For reproduciable builds (releaseType==Release) to have comparision on multiple builds' artifacts
+    // For reproducible builds (releaseType==Release) to have comparison on multiple builds' artifacts.
     // Copy artifacts from downstream and archive again on weekly-pipeline. Detail see issue: https://github.com/adoptium/ci-jenkins-pipelines/issues/301
     jobs.each { downstreamRun ->
         if ( downstreamRun.value.getCurrentResult() == "SUCCESS" ) {
