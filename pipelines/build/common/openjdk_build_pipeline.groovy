@@ -78,7 +78,8 @@ class Build {
         BUILD_ARCHIVE_TIMEOUT : 3,
         CONTROLLER_CLEAN_TIMEOUT : 1,
         DOCKER_CHECKOUT_TIMEOUT : 1,
-        DOCKER_PULL_TIMEOUT : 2
+        DOCKER_PULL_TIMEOUT : 2,
+        ARCHIVE_ARTIFACTS_TIMEOUT : 6
     ]
 
     /*
@@ -763,11 +764,11 @@ class Build {
            }
            // Archive GPG signatures in Jenkins
            try {
-               context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
+               context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
                    context.archiveArtifacts artifacts: "target/${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE}/${buildConfig.VARIANT}/*.sha256.txt.sig"
                }
            } catch (FlowInterruptedException e) {
-               throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
+               throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
            }
         }
     }
@@ -832,11 +833,11 @@ class Build {
            }
            // Archive GPG signatures in Jenkins
            try {
-               context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
+               context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
                    context.archiveArtifacts artifacts: "target/${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE}/${buildConfig.VARIANT}/*.sha256.txt.sig"
                }
            } catch (FlowInterruptedException e) {
-               throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
+               throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
            }
         }
     }
