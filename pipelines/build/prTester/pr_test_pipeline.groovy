@@ -144,8 +144,8 @@ class PullRequestTestPipeline implements Serializable {
                         }
                     }
                 }
-            } // End: node("built-in || master")
-        })
+            })
+        } // End: node("built-in || master")
 
         context.parallel jobs
 
