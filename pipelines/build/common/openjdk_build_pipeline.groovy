@@ -33,6 +33,7 @@ limitations under the License.
  *  3. Run all tests defined in the configuration
  *  4. Sign artifacts if needed and re-archive
  *
+test
  */
 
 
