@@ -26,6 +26,7 @@ if (!DEFAULTS_JSON) {
 }
 
 String url = DEFAULTS_JSON['repository']['pipeline_url']
+Closure prTest
 
 // Switch to controller node to load library groovy definitions
 node("built-in || master") {
@@ -39,7 +40,7 @@ node("built-in || master") {
     ])
 
     load DEFAULTS_JSON['importLibraryScript']
-    Closure prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
+    prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
 }
 
 // Run tests outside node context
