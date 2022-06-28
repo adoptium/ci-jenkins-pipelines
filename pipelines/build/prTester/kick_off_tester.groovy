@@ -38,12 +38,14 @@ node("built-in || master") {
 
     load DEFAULTS_JSON['importLibraryScript']
     Closure prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
+}
 
-    prTest(
+// Run tests outside node context
+prTest(
         branch,
         currentBuild,
         this,
         url,
         DEFAULTS_JSON
-    ).runTests()
-}
+).runTests()
+
