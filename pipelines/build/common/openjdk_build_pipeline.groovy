@@ -1032,6 +1032,10 @@ class Build {
                     dependency_version["${dep}"] = ""
                 }
             }
+
+            // Dump docker image SHA1 to workspace, consumed by build.sh sbom stage
+            context.writeFile file: "workspace/target/metadata/docker.txt", text: dockerImageDigest
+
         }
 
         return new MetaData(
