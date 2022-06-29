@@ -12,11 +12,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import common.IndividualBuildConfig
+import common.RepoHandler
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import java.util.Base64
-
-@Library('openjdk-jenkins-helper')
 
 /**
 This file is a job that regenerates all of the build configurations in pipelines/build/jobs/configurations/jdk*_pipeline_config.groovy. This ensures that race conditions are not encountered when running concurrent pipeline builds.
@@ -423,7 +423,7 @@ class Regeneration implements Serializable {
 
             def numMachines = getDynamicParams().get("numMachines")
 
-           return new IndividualBuildConfig( // final build config
+            return new IndividualBuildConfig( // final build config
                 JAVA_TO_BUILD: javaToBuild,
                 ARCHITECTURE: platformConfig.arch as String,
                 TARGET_OS: platformConfig.os as String,

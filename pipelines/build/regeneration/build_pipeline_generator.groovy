@@ -64,6 +64,8 @@ node('built-in || master') {
       // Checkout into user repository
       checkoutUserPipelines()
 
+      library(identifier: 'openjdk-jenkins-helper@master')
+
       // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
       def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["rootDirectory"]
 

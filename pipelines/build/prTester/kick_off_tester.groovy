@@ -34,6 +34,7 @@ node("built-in || master") {
         ]]
     ])
 
+    library(identifier: 'openjdk-jenkins-helper@master')
     Closure prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
 
 // Run tests outside node context

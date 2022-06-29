@@ -75,6 +75,8 @@ node ("built-in || master") {
 
     checkoutUserPipelines()
 
+    library(identifier: 'openjdk-jenkins-helper@master')
+
     // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
     def buildConfigurations = null
     def buildConfigPath = (params.BUILD_CONFIG_PATH) ? "${WORKSPACE}/${BUILD_CONFIG_PATH}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}"

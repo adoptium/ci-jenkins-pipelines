@@ -1,8 +1,3 @@
-import groovy.json.*
-
-import java.util.regex.Matcher
-import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
-
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,6 +11,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+import common.IndividualBuildConfig
+import groovy.json.*
+
+import java.util.regex.Matcher
+import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
 
 /**
  * Represents parameters that get past to each individual build

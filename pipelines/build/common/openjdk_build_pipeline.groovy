@@ -1,9 +1,3 @@
-import groovy.json.*
-import java.nio.file.NoSuchFileException
-import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
-
-import java.util.regex.Matcher
-
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +11,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+import common.IndividualBuildConfig
+import common.MetaData
+import common.VersionInfo
+import common.RepoHandler
+import groovy.json.*
+import java.nio.file.NoSuchFileException
+import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
+
+import java.util.regex.Matcher
+
 /**
  * This file is a template for running a build for a given configuration
  * A configuration is for example jdk10u-mac-x64-temurin.

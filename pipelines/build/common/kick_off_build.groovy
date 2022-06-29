@@ -52,6 +52,8 @@ node("built-in || master") {
         userRemoteConfigs = new JsonSlurper().parseText(USER_REMOTE_CONFIGS) as Map
     }
 
+    library(identifier: 'openjdk-jenkins-helper@master')
+
     try {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
     } catch (NoSuchFileException e) {
