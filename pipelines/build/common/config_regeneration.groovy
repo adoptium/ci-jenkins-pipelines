@@ -383,6 +383,8 @@ class Regeneration implements Serializable {
     * @param variant
     * @param javaToBuild
     */
+    def IndividualBuildConfig = context.library(identifier: 'openjdk-jenkins-helper@master').common.IndividualBuildConfig
+    def repoHandler = context.library(identifier: 'openjdk-jenkins-helper@master').common.repoHandler
     IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant, String javaToBuild) {
         try {
 
