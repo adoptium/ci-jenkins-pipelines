@@ -1,4 +1,3 @@
-import common.IndividualBuildConfig
 import groovy.json.*
 
 import java.util.regex.Matcher

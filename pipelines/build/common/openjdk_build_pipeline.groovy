@@ -1,7 +1,3 @@
-import common.IndividualBuildConfig
-import common.MetaData
-import common.VersionInfo
-import common.RepoHandler
 import groovy.json.*
 import java.nio.file.NoSuchFileException
 import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException

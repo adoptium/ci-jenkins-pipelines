@@ -1,5 +1,3 @@
-import common.IndividualBuildConfig
-import common.RepoHandler
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import java.util.Base64
@@ -38,7 +36,7 @@ class Regeneration implements Serializable {
     private final def gitBranch
 
     private final def jobTemplatePath
-    private final def libraryPath
+
     private final def baseFilePath
     private final def scriptPath
     private final def jenkinsBuildRoot
@@ -67,7 +65,6 @@ class Regeneration implements Serializable {
         Map gitRemoteConfigs,
         String gitBranch,
         String jobTemplatePath,
-        String libraryPath,
         String baseFilePath,
         String scriptPath,
         String jenkinsBuildRoot,
@@ -87,7 +84,6 @@ class Regeneration implements Serializable {
         this.gitRemoteConfigs = gitRemoteConfigs
         this.gitBranch = gitBranch
         this.jobTemplatePath = jobTemplatePath
-        this.libraryPath = libraryPath
         this.baseFilePath = baseFilePath
         this.scriptPath = scriptPath
         this.jenkinsBuildRoot = jenkinsBuildRoot
@@ -745,7 +741,6 @@ return {
     Map gitRemoteConfigs,
     String gitBranch,
     String jobTemplatePath,
-    String libraryPath,
     String baseFilePath,
     String scriptPath,
     String jenkinsBuildRoot,
@@ -772,7 +767,6 @@ return {
             gitRemoteConfigs,
             gitBranch,
             jobTemplatePath,
-            libraryPath,
             baseFilePath,
             scriptPath,
             jenkinsBuildRoot,

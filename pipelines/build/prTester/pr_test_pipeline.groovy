@@ -276,7 +276,6 @@ return {
             testConfigurations: testConfig,
             DEFAULTS_JSON: defaultsJson,
             javaVersions: javaVersions,
-
             context: context,
             currentBuild: currentBuild
         )
