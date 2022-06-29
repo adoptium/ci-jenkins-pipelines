@@ -1,6 +1,3 @@
-import groovy.json.JsonSlurper
-import groovy.json.JsonOutput
-import java.util.Base64
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,6 +11,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+import java.util.Base64
+
+@Library('openjdk-jenkins-helper')
 
 /**
 This file is a job that regenerates all of the build configurations in pipelines/build/jobs/configurations/jdk*_pipeline_config.groovy. This ensures that race conditions are not encountered when running concurrent pipeline builds.
@@ -383,8 +386,6 @@ class Regeneration implements Serializable {
     * @param variant
     * @param javaToBuild
     */
-    def IndividualBuildConfig = context.library(identifier: 'openjdk-jenkins-helper@master').common.IndividualBuildConfig
-    def repoHandler = context.library(identifier: 'openjdk-jenkins-helper@master').common.repoHandler
     IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant, String javaToBuild) {
         try {
 
