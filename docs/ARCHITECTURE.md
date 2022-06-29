@@ -30,8 +30,3 @@ defines this stage is contained within [build_base_file.groovy](https://github.c
 
 This are invoked by the parent pipeline job and each build creates the archives/installers for a given platform. The majority
 of this code is defined in [openjdk_build_pipeline.groovy](https://github.com/adoptium/temurin-build/blob/master/pipelines/build/common/openjdk_build_pipeline.groovy)
-
-#### adopt-shared-lib
-
-The [adopt-shared-lib](https://github.com/adoptium/temurin-build/tree/master/pipelines/library/src) is a Groovy library that provides a number of helper classes to the other parts of the build process such
-as a version parser, metadata file and build configuration definitions.
