@@ -23,7 +23,7 @@ and release builds.
 #### Pipeline Jobs
 
 These are the initial scripts that are the top level jobs that are invoked, this in turn invokes the downstream build
-jobs for each configuration/platform then coordinates deploying the results to Github. The majority of the code that
+jobs for each configuration/platform then coordinates deploying the results to GitHub. The majority of the code that
 defines this stage is contained within [build_base_file.groovy](https://github.com/adoptium/temurin-build/blob/master/pipelines/build/common/build_base_file.groovy).
 
 #### Indiviual Build Jobs
