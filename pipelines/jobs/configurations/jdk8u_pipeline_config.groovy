@@ -109,6 +109,7 @@ class Config8 {
                 arch: 'arm',
                 crossCompile: 'aarch64',
                 dockerImage: 'adoptopenjdk/ubuntu1604_build_image',
+                dockerArgs: '--platform linux/arm/v7',
                 test: 'default'
         ],
 
