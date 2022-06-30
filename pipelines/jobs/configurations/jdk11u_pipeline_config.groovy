@@ -124,6 +124,8 @@ class Config11 {
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
+                crossCompile        : 'aarch64',
+                dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
                 test                : 'default',
                 configureArgs       : '--enable-dtrace=auto'
         ],
