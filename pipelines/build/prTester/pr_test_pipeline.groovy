@@ -170,6 +170,9 @@ Map<String, ?> defaultTestConfigurations = [
     "aarch64Linux": [
         "temurin"
     ],
+    "arm32Linux": [
+        "temurin"
+    ],
     "x64Windows": [
         "temurin"
     ],
