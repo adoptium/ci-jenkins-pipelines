@@ -1656,10 +1656,10 @@ class Build {
                                 context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: "HOURS") {
                                     if (buildConfig.DOCKER_CREDENTIAL) {
                                         context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
-                                            context.docker.image(buildConfig.DOCKER_IMAGE).run(buildConfig.DOCKER_ARGS).pull()
+                                            context.docker.image(buildConfig.DOCKER_IMAGE).run(buildConfig.DOCKER_ARGS)
                                         }
                                     } else {
-                                        context.docker.image(buildConfig.DOCKER_IMAGE).run(buildConfig.DOCKER_ARGS).pull()
+                                        context.docker.image(buildConfig.DOCKER_IMAGE).run(buildConfig.DOCKER_ARGS)
                                     }
                                     // Store the pulled docker image digest as 'buildinfo'
                                     dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
