@@ -103,6 +103,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>ACTIVE_NODE_TIMEOUT</strong></dt><dd>Number of minutes we will wait for a label-matching node to become active.</dd>
                 <dt><strong>CODEBUILD</strong></dt><dd>Use a dynamic codebuild machine if no other machine is available</dd>
                 <dt><strong>DOCKER_IMAGE</strong></dt><dd>Use a docker build environment</dd>
+                <dt><strong>DOCKER_ARGS</strong></dt><dd>Additional args to be used in conjuction with DOCKER_IMAGE</dd>
                 <dt><strong>DOCKER_FILE</strong></dt><dd>Relative path to a dockerfile to be built and used on top of the DOCKER_IMAGE</dd>
                 <dt><strong>DOCKER_REGISTRY</strong></dt><dd>Custom Docker registry to pull DOCKER_IMAGE from</dd>
                 <dt><strong>DOCKER_CREDENTIAL</strong></dt><dd>Username & Password Jenkins credential ID for Docker registry login</dd>

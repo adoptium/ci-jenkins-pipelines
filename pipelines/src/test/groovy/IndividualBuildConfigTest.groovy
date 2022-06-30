@@ -25,6 +25,7 @@ class IndividualBuildConfigTest {
                 ACTIVE_NODE_TIMEOUT        : "r",
                 CODEBUILD                  : false,
                 DOCKER_IMAGE               : "o",
+                DOCKER_ARGS                : "z",
                 DOCKER_FILE                : "p",
                 DOCKER_NODE                : "q",
                 DOCKER_REGISTRY            : "u",

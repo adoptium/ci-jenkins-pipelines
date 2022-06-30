@@ -163,12 +163,16 @@ class Config20 {
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
+                crossCompile        : 'aarch64',
+                dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
+                dockerArgs          : '--platform linux/arm/v7',
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         "temurin"   : '--create-jre-image'
                 ]
         ],
+
         riscv64Linux      :  [
                 os                   : 'linux',
                 arch                 : 'riscv64',

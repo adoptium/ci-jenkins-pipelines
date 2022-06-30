@@ -1656,10 +1656,18 @@ class Build {
                                 context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: "HOURS") {
                                     if (buildConfig.DOCKER_CREDENTIAL) {
                                         context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
-                                            context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                            if (buildConfig.DOCKER_ARGS) {
+                                                context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
+                                            } else {
+                                                 context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                            }
                                         }
                                     } else {
-                                        context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                        if (buildConfig.DOCKER_ARGS) {
+                                            context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
+                                        } else {
+                                            context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                        }
                                     }
                                     // Store the pulled docker image digest as 'buildinfo'
                                     dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
@@ -1688,7 +1696,7 @@ class Build {
                                     throw new Exception("[ERROR] Controller docker file scm checkout timeout (${buildTimeouts.DOCKER_CHECKOUT_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
 
-                                context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside {
+                                context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
                                     buildScripts(
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
@@ -1700,7 +1708,7 @@ class Build {
 
                             } else {
 
-                                context.docker.image(buildConfig.DOCKER_IMAGE).inside {
+                                context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS) {
                                     buildScripts(
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,

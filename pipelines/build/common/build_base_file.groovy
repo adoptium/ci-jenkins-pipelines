@@ -101,6 +101,8 @@ class Builder implements Serializable {
 
         def dockerImage = getDockerImage(platformConfig, variant)
 
+        def dockerArgs = getDockerArgs(platformConfig, variant)
+
         def dockerFile = getDockerFile(platformConfig, variant)
 
         def dockerNode = getDockerNode(platformConfig, variant)
@@ -155,6 +157,7 @@ class Builder implements Serializable {
             ACTIVE_NODE_TIMEOUT: activeNodeTimeout,
             CODEBUILD: platformConfig.codebuild as Boolean,
             DOCKER_IMAGE: dockerImage,
+            DOCKER_ARGS: dockerArgs,
             DOCKER_FILE: dockerFile,
             DOCKER_NODE: dockerNode,
             DOCKER_REGISTRY: dockerRegistry,
@@ -401,6 +404,20 @@ class Builder implements Serializable {
         }
 
         return dockerImageValue
+    }
+
+    def getDockerArgs(Map<String, ?> configuration, String variant) {
+        def dockerArgsValue = ""
+
+        if (configuration.containsKey("dockerArgs") && !dockerOverride(configuration, variant)) {
+            if (isMap(configuration.dockerArgs)) {
+                dockerArgsValue = (configuration.dockerArgs as Map<String, ?>).get(variant)
+            } else {
+                dockerArgsValue = configuration.dockerArgs
+            }
+        }
+
+        return dockerArgsValue
     }
 
     /*
