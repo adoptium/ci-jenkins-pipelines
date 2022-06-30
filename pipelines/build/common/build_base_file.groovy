@@ -101,7 +101,7 @@ class Builder implements Serializable {
 
         def dockerImage = getDockerImage(platformConfig, variant)
 
-        def dockerArgs = getDocker(platformConfig, variant)
+        def dockerArgs = getDockerArgs(platformConfig, variant)
 
         def dockerFile = getDockerFile(platformConfig, variant)
 

@@ -161,7 +161,7 @@ class Regeneration implements Serializable {
     def getDockerArgs(Map<String, ?> configuration, String variant) {
         def dockerArgsValue = ""
 
-        if (configuration.containsKey("dockerArgs") && !dockerOverride(configuration, variant)) {
+        if (configuration.containsKey("dockerArgs")) {
             if (isMap(configuration.dockerArgs)) {
                 dockerArgsValue = (configuration.dockerArgs as Map<String, ?>).get(variant)
             } else {
