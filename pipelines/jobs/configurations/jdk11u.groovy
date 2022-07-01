@@ -8,7 +8,6 @@ targetConfigurations = [
         "ppc64leLinux"  : [    "temurin",    "openj9"                    ],
         "s390xLinux"    : [    "temurin",    "openj9"                    ],
         "aarch64Linux"  : [    "temurin",    "openj9",    "dragonwell",                   "bisheng"    ],
-        "aarch64AlpineLinux": [    "temurin"                            ],
         "aarch64Mac"    : [    "temurin",                           ],
         "arm32Linux"    : [    "temurin"                            ]
 ]
