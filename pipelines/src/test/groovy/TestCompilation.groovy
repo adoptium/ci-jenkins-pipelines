@@ -1,3 +1,4 @@
+import common.IndividualBuildConfig
 import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
