@@ -63,6 +63,8 @@ node("built-in || master") {
     }
 
     try {
+println "DEBUG: loading ${WORKSPACE}/${baseFilePath}"
+println "DEBUG: BUILD_CONFIGURATION = ${BUILD_CONFIGURATION}"
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
     } catch (NoSuchFileException e) {
         println "[WARNING] Using Adopt's base file script as none was found at ${baseFilePath}"
