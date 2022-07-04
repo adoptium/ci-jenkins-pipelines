@@ -42,14 +42,15 @@ dependencies {
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.1')
 }
 
-test {
-    checkoutJenkinsHelper()
+test(dependsOn: ['checkoutJenkinsHelper']) {
     useJUnitPlatform()
 }
 
 // Checkout Jenkins Helper so that it can be added to the classpath
-task checkoutJenkinsHelper(
-    exec {
-        commandLine 'git clone https://github.com/adoptium/jenkins-helper.git jenkins-helper'
+task checkoutJenkinsHelper {
+    doFirst {
+        exec {
+            commandLine 'git clone https://github.com/adoptium/jenkins-helper.git jenkins-helper'
+        }
     }
-)
+}
