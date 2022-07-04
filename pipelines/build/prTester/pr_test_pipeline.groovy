@@ -78,7 +78,7 @@ class PullRequestTestPipeline implements Serializable {
         Boolean pipelineFailed = false
 
         // Load generation scripts
-        context.node("built-in || master") {
+        context.node("worker") {
             context.println "loading ${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
             Closure regenerationScript = context.load "${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
 
@@ -145,7 +145,7 @@ class PullRequestTestPipeline implements Serializable {
                     }
                 }
             })
-        } // End: node("built-in || master")
+        } // End: node("worker")
 
         context.parallel jobs
 

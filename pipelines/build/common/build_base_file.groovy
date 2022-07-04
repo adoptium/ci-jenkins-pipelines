@@ -791,7 +791,7 @@ class Builder implements Serializable {
                             if (downstreamJob.getResult() == 'SUCCESS') {
                                 // copy artifacts from build
                                 context.println "[NODE SHIFT] MOVING INTO CONTROLLER NODE..."
-                                context.node("built-in || master") {
+                                context.node("worker") {
                                     context.catchError {
 
                                         //Remove the previous artifacts

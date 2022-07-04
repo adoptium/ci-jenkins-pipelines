@@ -286,7 +286,7 @@ class Build {
                 def jobName = jobParams.TEST_JOB_NAME
                 def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
                 if (!JobHelper.jobIsRunnable(jobName as String)) {
-                    context.node('built-in || master') {
+                    context.node('worker') {
                         context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
                         def templatePath = 'testJobTemplate'
                         context.println "Smoke test job doesn't exist, create test job: ${jobName}"
@@ -393,7 +393,7 @@ class Build {
                                     context.build job: "Test_Job_Auto_Gen", propagate: false, parameters: updatedParams
                                 }
                             } else {
-                                context.node('built-in || master') {
+                                context.node('worker') {
                                     context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
                                     def templatePath = 'testJobTemplate'
                                     if (!JobHelper.jobIsRunnable(jobName as String)) {
@@ -424,7 +424,7 @@ class Build {
                                                 context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
                                                 context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)],
                                             wait: true
-                            context.node('built-in || master') {
+                            context.node('worker') {
                                 def result = testJob.getResult()
                                 context.echo " ${jobName} result is ${result}"
                                 if (testJob.getResult() == 'SUCCESS' || testJob.getResult() == 'UNSTABLE') {
@@ -513,7 +513,7 @@ class Build {
                     propagate: true,
                     parameters: params
 
-                context.node('built-in || master') {
+                context.node('worker') {
                     //Copy signed artifact back and archive again
                     context.sh "rm workspace/target/* || true"
 
@@ -548,7 +548,7 @@ class Build {
                 propagate: true,
                 parameters: params
 
-            context.node('built-in || master') {
+            context.node('worker') {
                 context.sh "rm -f workspace/target/*.sig"
                 context.copyArtifacts(
                     projectName: "build-scripts/release/sign_temurin_gpg",
@@ -688,7 +688,7 @@ class Build {
             return
         }
 
-        context.node('built-in || master') {
+        context.node('worker') {
             context.stage("installer") {
                 // Ensure master context workspace is clean of any previous archives
                 context.sh "rm -rf workspace/target/* || true"
@@ -720,7 +720,7 @@ class Build {
             return
         }
 
-        context.node('built-in || master') {
+        context.node('worker') {
             context.stage("sign installer") {
                 // Ensure master context workspace is clean of any previous archives
                 context.sh "rm -rf workspace/target/* || true"
@@ -1611,7 +1611,7 @@ class Build {
 
                     // Set Github Commit Status
                     if (env.JOB_NAME.contains("pr-tester")) {
-                        context.node('built-in || master') {
+                        context.node('worker') {
                             updateGithubCommitStatus("PENDING", "Pending")
                         }
                     }
