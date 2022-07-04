@@ -94,6 +94,7 @@ class Build {
         def env,
         def currentBuild
     ) {
+context.println "DEBUG: buildConfig = ${buildConfig}"
         this.buildConfig = buildConfig
         this.USER_REMOTE_CONFIGS = USER_REMOTE_CONFIGS
         this.DEFAULTS_JSON = DEFAULTS_JSON
@@ -1820,6 +1821,7 @@ return {
     env,
     currentBuild ->
         def buildConfig
+context.println "DEBUG2: ${buildConfigArg}"
         if (String.class.isInstance(buildConfigArg)) {
             buildConfig = new IndividualBuildConfig(buildConfigArg as String)
         } else {
