@@ -14,7 +14,7 @@ targetCompatibility = 1.8
 sourceSets {
     main {
         groovy {
-            srcDirs = ['build', 'src/main/groovy', 'jenkins-helper/src']
+            srcDirs = ['build', 'src/main/groovy', 'jenkins-helper/src/common']
             buildDir = 'target'
         }
     }
@@ -42,15 +42,17 @@ dependencies {
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.1')
 }
 
-test(dependsOn: ['checkoutJenkinsHelper']) {
-    useJUnitPlatform()
-}
-
 // Checkout Jenkins Helper so that it can be added to the classpath
 task checkoutJenkinsHelper {
     doFirst {
+        delete 'jenkins-helper'
         exec {
-            commandLine 'git clone https://github.com/adoptium/jenkins-helper.git jenkins-helper'
+            commandLine 'git', 'clone', 'https://github.com/adoptium/jenkins-helper.git', 'jenkins-helper'
         }
     }
+}
+
+test {
+    dependsOn checkoutJenkinsHelper
+    useJUnitPlatform()
 }

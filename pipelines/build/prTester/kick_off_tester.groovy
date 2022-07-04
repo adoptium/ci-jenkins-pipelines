@@ -18,8 +18,6 @@ limitations under the License.
 String branch = "${ghprbActualCommit}"
 String DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/${branch}/pipelines/defaults.json"
 
-@Library('openjdk-jenkins-helper')
-
 String url = DEFAULTS_JSON['repository']['pipeline_url']
 Closure prTest
 
@@ -35,7 +33,8 @@ node("built-in || master") {
     ])
 
     library(identifier: 'openjdk-jenkins-helper@master')
-    Closure prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
+    prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
+}
 
 // Run tests outside node context
 prTest(
