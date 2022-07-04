@@ -39,9 +39,13 @@ node("built-in || master") {
         ]]
     ])
 
+<<<<<<< HEAD
     load DEFAULTS_JSON['importLibraryScript']
     prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
 }
+=======
+    Closure prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
+>>>>>>> 53b4e26 (rip out duplicate jenkins helper library)
 
 // Run tests outside node context
 prTest(

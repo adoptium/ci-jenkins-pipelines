@@ -14,7 +14,7 @@ targetCompatibility = 1.8
 sourceSets {
     main {
         groovy {
-            srcDirs = ['build', 'src/main/groovy', 'library/src']
+            srcDirs = ['build', 'src/main/groovy', 'jenkins-helper/src']
             buildDir = 'target'
         }
     }
@@ -43,5 +43,13 @@ dependencies {
 }
 
 test {
+    checkoutJenkinsHelper()
     useJUnitPlatform()
 }
+
+// Checkout Jenkins Helper so that it can be added to the classpath
+task checkoutJenkinsHelper(
+    exec {
+        commandLine 'git clone https://github.com/adoptium/jenkins-helper.git jenkins-helper'
+    }
+)

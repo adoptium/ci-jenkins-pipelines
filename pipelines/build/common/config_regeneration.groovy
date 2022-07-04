@@ -508,10 +508,6 @@ class Regeneration implements Serializable {
 
         params.put("BUILD_CONFIG", config.toJson())
 
-        // If we are not using default lib or script param values, be sure to update the initial downstream job script file
-        if (libraryPath != DEFAULTS_JSON['importLibraryScript']) {
-            params.put("CUSTOM_LIBRARY_LOCATION", libraryPath)
-        }
         if (baseFilePath != DEFAULTS_JSON["baseFileDirectories"]["downstream"]) {
             params.put("CUSTOM_BASEFILE_LOCATION", baseFilePath)
         }

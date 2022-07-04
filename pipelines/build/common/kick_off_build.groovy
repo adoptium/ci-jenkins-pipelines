@@ -31,7 +31,6 @@ if (!ADOPT_DEFAULTS_JSON) {
     throw new Exception("[ERROR] No Adopt Defaults JSON found! Please ensure the ADOPT_DEFAULTS_JSON parameter is populated and not altered during parameter declaration.")
 }
 
-def libraryPath = (params.CUSTOM_LIBRARY_LOCATION) ?: LOCAL_DEFAULTS_JSON["importLibraryScript"]
 def baseFilePath = (params.CUSTOM_BASEFILE_LOCATION) ?: LOCAL_DEFAULTS_JSON["baseFileDirectories"]["downstream"]
 
 def userRemoteConfigs = [:]
@@ -51,15 +50,6 @@ node("built-in || master") {
 
     if (params.USER_REMOTE_CONFIGS) {
         userRemoteConfigs = new JsonSlurper().parseText(USER_REMOTE_CONFIGS) as Map
-    }
-
-    try {
-        load "${WORKSPACE}/${libraryPath}"
-    } catch (NoSuchFileException e) {
-        println "[WARNING] Using Adopt's import library script as none was found at ${WORKSPACE}/${libraryPath}"
-        checkoutAdoptPipelines()
-        load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['importLibraryScript']}"
-        checkout scm
     }
 
     try {

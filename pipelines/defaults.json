@@ -53,6 +53,5 @@
             "numMachines"    : ["3"]
         }
     },
-    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
     "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }

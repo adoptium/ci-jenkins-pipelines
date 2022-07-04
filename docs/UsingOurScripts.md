@@ -94,8 +94,6 @@ This file contains the default constants and paths used in the build scripts for
             "special.functional"
         ]
     },
-    // Script to import the groovy class library (relative to this repository root)
-    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
     // Raw content URL of this (defaults.json) file. This is so the openjdk_build_pipeline.groovy script can set user default configs when checking out to the shell script repo
     "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }
@@ -144,7 +142,6 @@ Once it has been approved and merged, update your scripts and/or jenkins jobs to
     - [pipelines/jobs/pipeline_job_template.groovy](pipelines/jobs/pipeline_job_template.groovy) - Upstream jobs dsl. This is the dsl job framework of the [openjdkxx-pipeline downstream jobs](https://ci.adoptopenjdk.net/job/build-scripts).
     - [pipelines/jobs/weekly_release_pipeline_job_template.groovy](pipelines/jobs/weekly_release_pipeline_job_template.groovy) - Upstream jobs dsl. This is the dsl job framework of the [weekly-openjdkxx-pipeline downstream jobs](https://ci.adoptopenjdk.net/job/build-scripts).
     - [pipelines/build/openjdkx_pipeline.groovy](pipelines/build/openjdk8_pipeline.groovy) - Main upstream script files. These are what the [openjdkx-pipeline jenkins jobs](https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk8-pipeline/) execute on build.
-    - [pipelines/build/common/import_lib.groovy](pipelines/build/common/import_lib.groovy) - Class library import script. This imports [Adopt's classes](pipelines/library/src) used in the groovy scripts.
     - [pipelines/build/common/build_base_file.groovy](pipelines/build/common/build_base_file.groovy) - Base upstream script file that's called from `pipelines/build/openjdkx_pipeline.groovy`, setting up the [downstream build JSON](pipelines/library/src/common/IndividualBuildConfig.groovy) for each downstream job and executing them.
     - [pipelines/jobs/configurations/jdkx(u).groovy](pipelines/jobs/configurations/jdk8u.groovy) - Upstream nightly config files. These define the job schedules, what platforms are instantiated on a nightly build and what tags are used on the weekend releases.
     - [pipelines/jobs/configurations/jdkx(u)_pipeline_config.groovy](pipelines/jobs/configurations/jdk8u_pipeline_config.groovy) - Downstream build config files, docs for this are [in progress](https://github.com/adoptium/temurin-build/issues/2129).
