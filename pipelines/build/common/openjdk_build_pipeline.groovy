@@ -534,34 +534,6 @@ class Build {
                 }
             }
         }
-        context.stage("GPG sign") {
-
-            context.println "RUNNING sign_temurin_gpg for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
-           
-            def params = [
-                context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                context.string(name: 'UPSTREAM_DIR', value: "workspace/target"),
-                ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "built-in"]
-            ]
-
-            def signSHAsJob = context.build job: "build-scripts/release/sign_temurin_gpg",
-                propagate: true,
-                parameters: params
-
-            context.node('worker') {
-                context.sh "rm -f workspace/target/*.sig"
-                context.copyArtifacts(
-                    projectName: "build-scripts/release/sign_temurin_gpg",
-                    selector: context.specific("${signSHAsJob.getNumber()}"),
-                    filter: '**/*.sig',
-                    fingerprintArtifacts: true, 
-                    target: 'workspace/target/',
-                    flatten: true)
-                // Archive GPG signatures in Jenkins
-                context.archiveArtifacts artifacts: "workspace/target/*.sig"
-            }
-        }
     }
 
     /*
@@ -798,7 +770,7 @@ class Build {
                     fingerprintArtifacts: true, 
                     target: 'workspace/target/',
                     flatten: true)
-           }
+           
            // Archive GPG signatures in Jenkins
            try {
                context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
@@ -807,6 +779,7 @@ class Build {
            } catch (FlowInterruptedException e) {
                throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
            }
+          }
         }
     }
     /*
