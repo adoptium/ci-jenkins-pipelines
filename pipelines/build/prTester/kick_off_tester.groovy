@@ -18,6 +18,13 @@ limitations under the License.
 String branch = "${ghprbActualCommit}"
 String DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/${branch}/pipelines/defaults.json"
 
+// Retrieve User defaults
+def getUser = new URL(DEFAULTS_FILE_URL).openConnection()
+Map<String, ?> DEFAULTS_JSON = new JsonSlurper().parseText(getUser.getInputStream().getText()) as Map
+if (!DEFAULTS_JSON) {
+    throw new Exception("[ERROR] No DEFAULTS_JSON found at ${DEFAULTS_FILE_URL}. Please ensure this path is correct and it leads to a JSON or Map object file.")
+}
+
 String url = DEFAULTS_JSON['repository']['pipeline_url']
 Closure prTest
 
