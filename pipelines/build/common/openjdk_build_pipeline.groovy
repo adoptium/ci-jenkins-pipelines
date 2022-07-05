@@ -770,7 +770,7 @@ class Build {
                     fingerprintArtifacts: true, 
                     target: 'workspace/target/',
                     flatten: true)
-           }
+           
            // Archive GPG signatures in Jenkins
            try {
                context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
@@ -779,6 +779,7 @@ class Build {
            } catch (FlowInterruptedException e) {
                throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
            }
+          }
         }
     }
     /*
