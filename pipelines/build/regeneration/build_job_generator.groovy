@@ -75,17 +75,7 @@ node ("worker") {
 
     checkoutUserPipelines()
 
-    // Import class library. This contains groovy classes, used for carrying across metadata between jobs.
-    def libraryPath = (params.LIBRARY_PATH) ?: DEFAULTS_JSON['importLibraryScript']
-    try {
-      load "${WORKSPACE}/${libraryPath}"
-    } catch (NoSuchFileException e) {
-      println "[WARNING] ${libraryPath} does not exist in your repository. Attempting to pull Adopt's library script instead."
-      checkoutAdoptPipelines()
-      libraryPath = ADOPT_DEFAULTS_JSON['importLibraryScript']
-      load "${WORKSPACE}/${libraryPath}"
-      checkoutUserPipelines()
-    }
+    library(identifier: 'openjdk-jenkins-helper@master')
 
     // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
     def buildConfigurations = null
@@ -182,7 +172,6 @@ node ("worker") {
     println "JOB TEMPLATE PATH: $jobTemplatePath"
     println "SCRIPT PATH: $scriptPath"
     println "BASE FILE PATH: $baseFilePath"
-    println "LIBRARY PATH: $libraryPath"
     println "EXCLUDES LIST: $excludes"
     println "SLEEP_TIME: $sleepTime"
     if (jenkinsCreds == "") { println "[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error codes." }
@@ -219,7 +208,6 @@ node ("worker") {
           remoteConfigs,
           repoBranch,
           jobTemplatePath,
-          libraryPath,
           baseFilePath,
           scriptPath,
           jenkinsBuildRoot,
@@ -242,7 +230,6 @@ node ("worker") {
         remoteConfigs,
         repoBranch,
         jobTemplatePath,
-        libraryPath,
         baseFilePath,
         scriptPath,
         jenkinsBuildRoot,

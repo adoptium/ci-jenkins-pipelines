@@ -48,17 +48,7 @@ node ("worker") {
 
     scmVars = checkout scm
 
-    // Load the class library so we can use their classes here. If we don't find an import library script in the user's repo, we checkout to temurin-build and use the one that's present there. Finally, we check back out to the user repo.
-    def libraryPath = (params.baseFilePath) ?: DEFAULTS_JSON['importLibraryScript']
-    try {
-        load "${WORKSPACE}/${libraryPath}"
-    } catch (Exception e) {
-        println "[WARNING] ${libraryPath} could not be loaded, likely because it does not exist in your repository. Error:\n${e}\nAttempting to pull Adopt's library script instead..."
-
-        checkoutAdoptPipelines()
-        load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['importLibraryScript']}"
-        checkout scm
-    }
+    library(identifier: 'openjdk-jenkins-helper@master')
 
     // Load baseFilePath. This is where build_base_file.groovy is located. It runs the downstream job setup and configuration retrieval services.
     def baseFilePath = (params.baseFilePath) ?: DEFAULTS_JSON['baseFileDirectories']['upstream']

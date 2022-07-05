@@ -132,9 +132,6 @@ pipelineJob("$buildFolder/$JOB_NAME") {
         textParam('ADOPT_DEFAULTS_JSON', "$ADOPT_DEFAULTS_JSON", """
         <strong>DO NOT ALTER THIS PARAM UNDER ANY CIRCUMSTANCES!</strong> This passes down adopt's default constants to the downstream job. NOTE: <code>DEFAULTS_JSON</code> has priority, the constants contained within this param will only be used as a failsafe.
         """)
-        if (binding.hasVariable('CUSTOM_LIBRARY_LOCATION')) {
-            stringParam('CUSTOM_LIBRARY_LOCATION', "$CUSTOM_LIBRARY_LOCATION")
-        }
         if (binding.hasVariable('CUSTOM_BASEFILE_LOCATION')) {
             stringParam('CUSTOM_BASEFILE_LOCATION', "$CUSTOM_BASEFILE_LOCATION")
         }

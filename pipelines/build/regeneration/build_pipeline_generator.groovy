@@ -64,17 +64,7 @@ node('worker') {
       // Checkout into user repository
       checkoutUserPipelines()
 
-      // Load the class library so we can use their classes here. If we don't find an import library script in the user's repo, we checkout to temurin-build and use the one that's present there. Finally, we check back out to the user repo.
-      def libraryPath = (params.LIBRARY_PATH) ?: DEFAULTS_JSON['importLibraryScript']
-      try {
-        load "${WORKSPACE}/${libraryPath}"
-      } catch (NoSuchFileException e) {
-        println "[WARNING] ${libraryPath} does not exist in your repository. Attempting to pull Adopt's library script instead."
-
-        checkoutAdoptPipelines()
-        load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['importLibraryScript']}"
-        checkoutUserPipelines()
-      }
+      library(identifier: 'openjdk-jenkins-helper@master')
 
       // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
       def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["rootDirectory"]

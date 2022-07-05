@@ -1,6 +1,3 @@
-import groovy.json.JsonSlurper
-import java.nio.file.NoSuchFileException
-
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,6 +12,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import groovy.json.JsonSlurper
+import java.nio.file.NoSuchFileException
 
 class PullRequestTestPipeline implements Serializable {
 
@@ -117,7 +116,6 @@ class PullRequestTestPipeline implements Serializable {
                     [ url: gitRepo ],
                     branch,
                     DEFAULTS_JSON["templateDirectories"]["downstream"],
-                    DEFAULTS_JSON["importLibraryScript"],
                     DEFAULTS_JSON["baseFileDirectories"]["downstream"],
                     DEFAULTS_JSON["scriptDirectories"]["downstream"],
                     "https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test",
@@ -212,7 +210,6 @@ return {
             testConfigurations: testConfig,
             DEFAULTS_JSON: defaultsJson,
             javaVersions: javaVersions,
-
             context: context,
             currentBuild: currentBuild
         )

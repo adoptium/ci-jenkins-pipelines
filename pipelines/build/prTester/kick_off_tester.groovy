@@ -39,7 +39,7 @@ node("worker") {
         ]]
     ])
 
-    load DEFAULTS_JSON['importLibraryScript']
+    library(identifier: 'openjdk-jenkins-helper@master')
     prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
 }
 

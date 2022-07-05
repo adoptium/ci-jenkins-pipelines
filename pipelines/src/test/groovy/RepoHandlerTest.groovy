@@ -113,9 +113,6 @@ class RepoHandlerTest {
         Assertions.assertEquals(userJson.baseFileDirectories.upstream, "16")
         Assertions.assertEquals(userJson.baseFileDirectories.downstream, "17")
 
-        // Import library
-        Assertions.assertEquals(userJson.importLibraryScript, "18")
-
         // Defaults URL
         Assertions.assertEquals(userJson.defaultsUrl, "23")
 
