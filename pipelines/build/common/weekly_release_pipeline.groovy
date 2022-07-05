@@ -39,34 +39,31 @@ stage("Submit Release Pipelines") {
             echo("Creating ${params.buildPipeline} - ${variantName}")
             jobs[variantName] = {
                 stage("Build - ${params.buildPipeline} - ${variantName}") {
-                  build job: "${params.buildPipeline}",
-                      parameters: [
-                          string(name: 'releaseType',        value: 'Release'),
-                          string(name: 'scmReference',       value: scmRef),
-                          text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
-                          ['$class': 'BooleanParameterValue', name: 'keepReleaseLogs', value: false]
-                      ]
+                    result = build job: "${params.buildPipeline}",
+                            parameters: [
+                                string(name: 'releaseType',        value: 'Release'),
+                                string(name: 'scmReference',       value: scmRef),
+                                text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
+                                ['$class': 'BooleanParameterValue', name: 'keepReleaseLogs', value: false]
+                            ]
+                    // For reproducible builds (releaseType==Release) to have comparison on multiple builds' artifacts.
+                    // Copy artifacts from downstream and archive again on weekly-pipeline. For details, see issue: https://github.com/adoptium/ci-jenkins-pipelines/issues/301
+                    if ( result.getCurrentResult() == "SUCCESS" ) {
+                        context.copyArtifacts(
+                            projectName: result.getProjectName(), // copy-up
+                            selector: context.specific(result.getNumber()),
+                            filter: 'workspace/target/*',
+                            fingerprintArtifacts: true,
+                            target: "workspace/target/",
+                            flatten: true
+                        )
+                    }
                 }
             }
         }
-    
     }
     // Run downstream jobs in parallel
-    def childJobs = parallel jobs
+    parallel jobs
 
-    // For reproducible builds (releaseType==Release) to have comparison on multiple builds' artifacts.
-    // Copy artifacts from downstream and archive again on weekly-pipeline. For details, see issue: https://github.com/adoptium/ci-jenkins-pipelines/issues/301
-    jobs.each { downstreamRun ->
-        if ( downstreamRun.value.getCurrentResult() == "SUCCESS" ) {
-            context.copyArtifacts(
-                projectName: "${params.buildPipeline}",
-                selector: context.specific("${downstreamRun.value.getRawBuild().getNumber()}"),
-                filter: 'workspace/target/*',
-                fingerprintArtifacts: true,
-                target: "workspace/target/",
-                flatten: true
-            )
-        }
-    }
     archiveArtifacts artifacts: "workspace/target/"
 }
