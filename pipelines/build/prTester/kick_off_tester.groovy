@@ -29,7 +29,7 @@ String url = DEFAULTS_JSON['repository']['pipeline_url']
 Closure prTest
 
 // Switch to controller node to load library groovy definitions
-node("built-in || master") {
+node("worker") {
     checkout([
         $class: 'GitSCM',
         branches: [[name: branch]],

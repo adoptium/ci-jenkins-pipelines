@@ -19,7 +19,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
-node ("built-in || master") {
+node ("worker") {
   def variant = "${params.VARIANT}"
   def jenkinsUrl = "${params.JENKINS_URL}"
   def trssUrl    = "${params.TRSS_URL}"
