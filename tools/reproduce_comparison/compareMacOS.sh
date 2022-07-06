@@ -91,7 +91,7 @@ do
 
     echo "Done Removing Signature!"
 done
-echo "All preparion done!"
+echo "All preparation done!"
 
 if [ "$4" == "skip" ]; then
     echo "Skip final comparision"
