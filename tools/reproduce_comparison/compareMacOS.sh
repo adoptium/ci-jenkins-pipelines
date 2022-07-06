@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 help()
 {
@@ -100,5 +100,10 @@ if [ "$4" == "skip" ]; then
 fi
 
 echo "Start Comparing JDKs $1 and $2"
-diff -q -r "$1" "$2"
-echo "Done Comparing: JDKs are identical!"
+ret=$(diff -q -r "$1" "$2")
+if [ $? == 0 ]; then
+    echo "Done Comparing: JDKs are identical!"
+else
+    echo "Done Comparing: $ret"
+    exit 1
+if
