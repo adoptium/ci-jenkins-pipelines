@@ -80,7 +80,7 @@ do
     FILES=$(find "${JDK_DIR}" \( -type f -and -path '*.dylib' -or -path '*/bin/*' -or -path '*/lib/*' -not -path '*/modules_expanded/*' -or -path '*/jpackageapplauncher*' \))
     for f in $FILES
     do
-        echo "# Removing any signature from $f"
+        echo "# Removing any signatures from $f so we can compare the JDKs"
         codesign --remove-signature $f
         echo "# Signing $f with local certificate"
         # Sign both with same local Certificate, this adjusts __LINKEDIT vmsize identically
