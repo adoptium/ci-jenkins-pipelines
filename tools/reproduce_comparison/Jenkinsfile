@@ -2,20 +2,20 @@
 Jenkins job does comparision for two different build artifacts
 If they are identical, build pass; or fail
 */
-@Library('openjdk-jenkins-helper@master')
 
 pipeline {
-    agent {
-        label linux
-    }
+    agent any
     parameters {
-        choice(choices: ['Linux', 'macOS'], name: 'platform', description:'select release on different platform'),
+        choice(choices: ['linux', 'mac', 'windows'], name: 'platform', description:'select release on different platform')
         string(name: 'URL1', defaultValue: '', description: 'URL to one version of the build artifacts\ne.g.: https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk18-pipeline/lastSuccessfulBuild/artifact/target/linux/x64/temurin/OpenJDK18U-jdk_x64_linux_hotspot_2022-06-11-23-30.tar.gz')
         string(name: 'URL2', defaultValue: '', description: 'URL to the other version of the build artifacts\ne.g.: https://github.com/adoptium/temurin19-binaries/releases/download/jdk-2022-06-09-19-11-beta/OpenJDK-jdk_x64_linux_hotspot_2022-06-09-03-31.tar.gz')
     }
 
     stages {
         stage('Lets Compare') {
+            agent {
+                label "${params.platform}"
+            }
             steps {
                 script {
                     cleanWs()
@@ -24,7 +24,10 @@ pipeline {
                         sh "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
                         echo "Fetching artifact2 from ${params.URL2}"
                         sh "mkdir url1Dir2 && wget -q ${params.URL2} -O - | tar -xz -C url1Dir2"
-                        if ( params.platform == 'Linux' ) { prepMacOS(url1Dir1, url1Dir2, localCert) }
+                        // call extra platform specific function
+                        if ( params.platform != 'linux' ) { 
+                            "prep${platform}" ("url1Dir1", "url1Dir2") 
+                        }
                         retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2"
                         if (retVal != 0 ){
                             echo "Panic: two builds are not the same!"
@@ -41,6 +44,16 @@ pipeline {
     }
 }
 
-def prepMacOS(String jdk1, String jdk2, String localCert) {
-   sh "${WORKSPACE}/reproducible/compareMacOS.sh"
+/* TODO:
+set correct defaultpath for localCert
+*/
+def prepmac(String jdk1, String jdk2, String localCert="defaultpath") {
+   sh "${WORKSPACE}/reproducible/compareMacOS.sh $jdk1 $jdk2 $localCert"
 }
+
+/*
+TODO:
+def prepwindows(String jdk1, String jdk2, ...) {
+   sh "${WORKSPACE}/reproducible/compareWindows.sh"
+}
+*/
