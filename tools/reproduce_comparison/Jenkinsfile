@@ -48,7 +48,7 @@ pipeline {
 set correct defaultpath for localCert
 */
 def prepmac(String jdk1, String jdk2, String localCert="defaultpath") {
-   sh "${WORKSPACE}/reproducible/compareMacOS.sh $jdk1 $jdk2 $localCert"
+   sh "${WORKSPACE}/reproducible/compareMacOS.sh $jdk1 $jdk2 $localCert skip"
 }
 
 /*
