@@ -82,7 +82,7 @@ do
     do
         echo "# Removing any signatures from $f so we can compare the JDKs"
         codesign --remove-signature $f
-        echo "# Signing $f with local certificate"
+        echo "# Signing $f with a local certificate so we can compare the JDKs"
         # Sign both with same local Certificate, this adjusts __LINKEDIT vmsize identically
         codesign -s "$CERT" --options runtime -f --timestamp "$f"
         echo " # Remove local Certificate from $f"
