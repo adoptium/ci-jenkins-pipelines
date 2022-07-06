@@ -6,21 +6,22 @@ help()
 {
    echo "Run comparision for JDK MacOS release."
    echo
-   echo "Syntax: compareMacOS.sh"
+   echo "Syntax: $0"
+   echo "Usage: $0 <jdk_folder1> <jdk_folder2> <certificate> [skip]"
    echo "arguments:"
-   echo "$1     Directory to one JDK"
-   echo "$2     Directory to another JDK"
-   echo "$3     Path to local certificate file"
-   echo "$4     Skip final compare step, used for debug or from Jenkins. default to run comparision"
+   echo "jdk_folder1     Directory to one JDK"
+   echo "jdk_folder2     Directory to another JDK"
+   echo "certificate     Path to local certificate file"
+   echo "skip            Skip final compare step, used for debug or from Jenkins. default to run comparision"
 }
 
 if [ ! -f "$3" ]; then
-    echo "Panic: Require valid local Certificate specified"
+    echo "Error: Require valid local Certificate specified"
     help
     exit 1
 fi
 if [ ! -d "$1" ] || [ ! -d "$2" ]; then
-    echo "Panic: Require two valid JDK folders to compare"
+    echo "Error: Require two valid JDK folders to compare"
     help
     exit 1
 fi
@@ -33,7 +34,7 @@ do
     echo "Start Expanding: $JDK_DIR"
 
     if [ ! -d "${JDK_DIR}/Contents" ]; then
-        echo "Panic: $JDK_DIR does not contain the MacOS JDK Contents directory"
+        echo "Error: $JDK_DIR does not contain the MacOS JDK Contents directory"
         help
         exit 1
     fi
@@ -73,7 +74,7 @@ do
     echo "Start Removing non-deterministic signatures from $JDK_DIR"
 
     if [ ! -d "${JDK_DIR}/Contents" ]; then
-        echo "Panic: $JDK_DIR does not contain the MacOS JDK Contents directory"
+        echo "Error: $JDK_DIR does not contain the MacOS JDK Contents directory"
         exit 1
     fi
 

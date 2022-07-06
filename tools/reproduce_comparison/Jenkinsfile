@@ -30,7 +30,7 @@ pipeline {
                         }
                         retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2"
                         if (retVal != 0 ){
-                            echo "Panic: two builds are not the same!"
+                            echo "Error: two builds are not the same!"
                             currentBuild.result = 'FAILURE'
                         }
                     } catch (Exception err) {
