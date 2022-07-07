@@ -2,17 +2,20 @@
 Jenkins job does comparision for two different build artifacts
 If they are identical, build pass; or fail
 */
+
 pipeline {
-    agent {
-        label linux
-    }
+    agent any
     parameters {
+        choice(choices: ['linux', 'mac', 'windows'], name: 'platform', description:'select release on different platform')
         string(name: 'URL1', defaultValue: '', description: 'URL to one version of the build artifacts\ne.g.: https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk18-pipeline/lastSuccessfulBuild/artifact/target/linux/x64/temurin/OpenJDK18U-jdk_x64_linux_hotspot_2022-06-11-23-30.tar.gz')
         string(name: 'URL2', defaultValue: '', description: 'URL to the other version of the build artifacts\ne.g.: https://github.com/adoptium/temurin19-binaries/releases/download/jdk-2022-06-09-19-11-beta/OpenJDK-jdk_x64_linux_hotspot_2022-06-09-03-31.tar.gz')
     }
 
     stages {
         stage('Lets Compare') {
+            agent {
+                label "${params.platform}"
+            }
             steps {
                 script {
                     cleanWs()
@@ -21,9 +24,13 @@ pipeline {
                         sh "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
                         echo "Fetching artifact2 from ${params.URL2}"
                         sh "mkdir url1Dir2 && wget -q ${params.URL2} -O - | tar -xz -C url1Dir2"
+                        // call extra platform specific function
+                        if ( params.platform != 'linux' ) { 
+                            "prep${platform}" ("url1Dir1", "url1Dir2") 
+                        }
                         retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2"
                         if (retVal != 0 ){
-                            echo "Panic: two builds are not the same!"
+                            echo "Error: two builds are not the same!"
                             currentBuild.result = 'FAILURE'
                         }
                     } catch (Exception err) {
@@ -36,3 +43,18 @@ pipeline {
         }
     }
 }
+
+/* TODO:
+set correct defaultpath for localCert
+see: https://github.com/adoptium/temurin-build/issues/3015#issuecomment-1175322612
+*/
+def prepmac(String jdk1, String jdk2, String localCert="defaultpath") {
+   sh "./tools/reproduce_comparison/compareMacOS.sh $jdk1 $jdk2 $localCert skip"
+}
+
+/*
+TODO: placeholder for windows comparision
+def prepwindows(String jdk1, String jdk2, ...) {
+   sh "./tools/reproduce_comparison/compareWindows.sh ..."
+}
+*/
