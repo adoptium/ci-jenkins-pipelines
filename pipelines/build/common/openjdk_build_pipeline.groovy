@@ -762,7 +762,9 @@ class Build {
                propagate: true,
                parameters: params
 
-           context.node('gpgsign') {
+           context.node('worker') {
+               // Remove any previous workspace artifacts
+               context.sh "rm -rf workspace/target/* || true"
                context.copyArtifacts(
                     projectName: "build-scripts/release/sign_temurin_gpg",
                     selector: context.specific("${signSHAsJob.getNumber()}"),
@@ -771,15 +773,15 @@ class Build {
                     target: 'workspace/target/',
                     flatten: true)
            
-           // Archive GPG signatures in Jenkins
-           try {
-               context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
-                   context.archiveArtifacts artifacts: "workspace/target/*.sig"
+               // Archive GPG signatures in Jenkins
+               try {
+                   context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: "HOURS") {
+                       context.archiveArtifacts artifacts: "workspace/target/*.sig"
+                   }
+               } catch (FlowInterruptedException e) {
+                   throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
                }
-           } catch (FlowInterruptedException e) {
-               throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
            }
-          }
         }
     }
     /*
