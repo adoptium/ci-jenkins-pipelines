@@ -17,6 +17,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/* pipeline script for job pipeline_jobs_generator_jdkX */
+
 String javaVersion = params.JAVA_VERSION
 String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
 String DEFAULTS_FILE_URL = (params.DEFAULTS_URL) ?: ADOPT_DEFAULTS_FILE_URL
