@@ -147,13 +147,16 @@ class PullRequestTestPipeline implements Serializable {
 
         context.parallel jobs
 
-        // Only clean up the space if the tester passed
-        if (!pipelineFailed) {
-            context.println "[INFO] Cleaning up..."
-            context.cleanWs notFailBuild: true
-        } else {
-            context.println "[ERROR] Pipelines failed. Setting build result to FAILURE..."
-            currentBuild.result = 'FAILURE'
+        // Move to "worker" workspace context to perform clean up...
+        context.node("worker") {
+            // Only clean up the space if the tester passed
+            if (!pipelineFailed) {
+                context.println "[INFO] Cleaning up..."
+                context.cleanWs notFailBuild: true
+            } else {
+                context.println "[ERROR] Pipelines failed. Setting build result to FAILURE..."
+                currentBuild.result = 'FAILURE'
+            }
         }
     }
 }
