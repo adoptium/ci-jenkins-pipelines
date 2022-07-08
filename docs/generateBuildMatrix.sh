@@ -17,7 +17,7 @@ for i in ${allPlatforms[@]}; do
     curl -s "https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/${i}/" | egrep -o "job/${i}-[^\/]+" >> ${buildJobFile}
 done
 
-# Filter out jobs matching excludKeyword
+# Filter out jobs matching excludedKeywords
 for key in ${excludeKeyword[@]}; do
   sed -i "/${key}/d" ${buildJobFile}
 done
