@@ -32,7 +32,7 @@ class DS12 c12
 
 ```
 
-## High level diagram on Jenkins Job Creation
+## High level diagram on Jenkins Pipeline Creation
 
 ```mermaid
 
@@ -67,6 +67,8 @@ class Pipelinew1,Pipelinew grey
 
 ```
 
+## High level diagram on Jenkins Job Creation
+
 ```mermaid
 
 flowchart LR
@@ -87,33 +89,57 @@ subgraph 2
 Seed2["Seed Job:\nbuild-scripts/utils/pipeline_jobs_generator_jdk*ver"] --"interal call"-->
 Call2[Script: build/regeneration/build_job_generator.groovy]
 
-Call2 --load--> Load1["Build Config:\njobs/configurations/jdk*ver_pipeline_config.groovy"] --loop--> DSL["jobDsl: common/create_job_from_template.groovy"]
-Call2 --load--> Load2["Target Config:\njobs/configurations/jdk*ver.groovy"] --> DSL
-Call2 --call--> Load3["Script: common/config_regeneration.groovy"] --"create job"--> DSL
-DSL --create--> DS1["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
-DSL --create--> DS2["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
-DSL --create--> DS3["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
-DSL --create--> DS12["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+Call2 --create job--> DS1["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+Call2 --create job--> DS2["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+Call2 --create job--> DS3["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+Call2 --create job--> DS12["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
 
 end
 
 subgraph 3
 
-build/regeneration/build_job_generator.groovy --load-->
-files["build/common/import_lib.groovy\njobs/configurations/jdk*_pipeline_config.groovy\njobs/configurations/jdk*.groovy\ncommon/config_regeneration.groovy"] --call_function--> f1["regenerate()"] --call_function--> f2["makeJob()"] --call_function--> f3["createJob()"] --> DSL2[jobDSL: common/create_job_from_template.groovy] --clone--> scm["git clone: ci-jenkins-pipelines"] --set--> properties["parameters:\nPermission\nlogRotator\n..."]
+s3["build/regeneration/build_job_generator.groovy"] --read and parse-->
+confile["defaults.json"] --checkout--> gitrepo["repository.pipeline_url@pipeline_branch"] --library--> library["openjdk-jenkins-helper@master"] 
+
+library --load config--> Load1["Build Config:\npipelines/jobs/configurations/jdk*ver(u)_pipeline_config.groovy"]  --initial--> const
+library --load config --> Load2["Target Config:\npipelines/jobs/configurations/jdk*ver.groovy"]  --initial--> const
+library --load class--> const["pipelines/build/common/config_regeneration.groovy"] --call_function--> f0["regenerate()"] -.-> cleanWS
+
+end
+
+subgraph 4
+
+s4["regenerate()"] --internal_call--> f1["loop:\nsleep if downstream jobs busy"] -->
+match["loop:\n jdk*(u)_pipeline_config.groovy\njdk*.groovy\nmatching: os"] --call_function--> f2["makeJob()"] --internal_call-->
+f3["createJob()"] --> DSL2[jobDsL: common/create_job_from_template.groovy]
+
+end
+
+subgraph 5
+
+s5["jobDsl:create_job_from_template.groovy"] -.clone.->
+scm["scm: ci-jenkins-pipelines"] --set-->
+properties["parameters:\nPermission\nlogRotator\nparameters\n..."]
 
 end
 
 classDef green fill:#CCFFCC,stroke:#333,stroke-width:2px
+classDef c0 fill:#eeffff,stroke:#333,stroke-width:2px
 classDef c1 fill:#ccffff,stroke:#333,stroke-width:2px
 classDef c2 fill:#99ffff,stroke:#333,stroke-width:2px
 classDef c3 fill:#66ffff,stroke:#333,stroke-width:2px
-classDef c12 fill:#33ffff,stroke:#333,stroke-width:2px
-class Seed2,Seed,3 green
+classDef c4 fill:#009900,stroke:#333,stroke-width:2px
+classDef c5 fill:#00ff00,stroke:#333,stroke-width:2px
+classDef c6 fill:#33ffff,stroke:#333,stroke-width:2px
+
+class Seed2,Seed green
+class f0,s4 c0
 class DS1,Downstream1 c1
 class DS2,Downstream2 c2
 class DS3,Downstream3 c3
-class DS12,Downstream4 c12
+class s3,Call2 c4
+class DSL2,s5,DSL c5
+class DS12,Downstream4 c6
 
 ```
 
@@ -129,7 +155,7 @@ Call[build/openjdk_pipeline.groovy] --load script-->
 Load1[build/common/build_base_file.groovy]
 
 Call --load config--> Load2[build/jobs/configurations/jdk*ver_pipeline_config.groovy]
-Call --sharedlib -->
+Call --library -->
 Load3["git clone: openjdk-jenkins-helper"]
 
 Load1 --call_function--> Build["function: doBuild()"]
@@ -158,13 +184,15 @@ flowchart TD
 
 subgraph job
 
-starter[kick_off_build.groovy] --load--> import[build/common/import_lib.groovy] --load--> Load1["build/common/openjdk_build_pipeline.groovy"] --call_function--> Builder["openjdk_build_pipeline.build()"]
+starter["pipeline script: pipeline/build/common/kick_off_build.groovy"] --library--> library["openjdk-jenkins-helper@master"]  --load class--> Load1["pipelines/build/common/openjdk_build_pipeline.groovy"] --internal_call--> Builder["build()"]
 
-Builder --sharedlib --> Load3[Git repo: openjdk-jenkins-helper]
+starter --parameter--> p1["LOCAL_DEFAULTS_JSON"] --pass--> Load1
+starter --parameter--> p2["ADOPT_DEFAULTS_JSON"] --pass--> Load1
 
 subgraph internal_build
 
-Load3 --> docker{"DOCKER_IMAGE"}
+Builder --library--> library2["openjdk-jenkins-helper@master"] --> docker{"DOCKER_IMAGE"}
+
 docker --true: run--> dockerbuild["Jenkins'call: docker.build(build-image)"] --> sign
 docker --false:call_function--> CallbuildScript["buildScripts()"] --> sign{enableSigner} --true:call_function--> sign2["sign()"] --> testStage{enableTests}
 sign{enableSigner} --"false" --> testStage

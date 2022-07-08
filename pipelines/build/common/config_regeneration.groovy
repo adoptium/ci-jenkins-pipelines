@@ -565,6 +565,7 @@ class Regeneration implements Serializable {
     * @param query
     */
     def queryAPI(String query) {
+        // TODO: use sharedlib JobHelper.groovy queryJsonApi() instead
         try {
             def getJenkins = new URL(query).openConnection()
 
