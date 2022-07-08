@@ -5,7 +5,7 @@
 allPlatforms=("jdk8u" "jdk11u" "jdk17u" "jdk18u" "jdk19" "jdk")
 buildFile="/tmp/build.txt"
 buildJobFile="/tmp/build_jobs.txt"
-excludeKeyword=("SmokeTests" "hotspot" "corretto")
+excludedKeywords=("SmokeTests" "hotspot" "corretto")
 
 if [[ -f ${buildFile} ]]; then
   echo "Removing previous ${buildFile} ${buildJobFile} files"
