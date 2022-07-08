@@ -18,7 +18,7 @@ for i in ${allPlatforms[@]}; do
 done
 
 # Filter out jobs matching excludedKeywords
-for key in ${excludeKeyword[@]}; do
+for key in ${excludedKeywords[@]}; do
   sed -i "/${key}/d" ${buildJobFile}
 done
 
