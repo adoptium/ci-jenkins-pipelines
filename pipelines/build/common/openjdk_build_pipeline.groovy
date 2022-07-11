@@ -1040,9 +1040,6 @@ class Build {
                     dependency_version["${dep}"] = ''
                 }
             }
-
-            // Dump docker image SHA1 to workspace, consumed by build.sh sbom stage
-            context.writeFile file: 'workspace/target/metadata/docker.txt', text: dockerImageDigest
         }
 
         return new MetaData(
@@ -1112,8 +1109,7 @@ class Build {
             }
         */
 
-        MetaData data = initialWrite ? formMetadata(version, true) : formMetadata(version, false)
-
+        MetaData data = formMetadata(version, initialWrite)
         Boolean metaWrittenOut = false
         listArchives().each({ file ->
             def type = 'jdk'
@@ -1754,7 +1750,7 @@ class Build {
                                     throw new Exception("[ERROR] Controller docker file scm checkout timeout (${buildTimeouts.DOCKER_CHECKOUT_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
 
-                                context.docker.build('build-image', "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
+                                context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
                                     buildScripts(
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
@@ -1764,7 +1760,9 @@ class Build {
                                     )
                                 }
                             } else {
-                                context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS) {
+                                dockerImageDigest = dockerImageDigest.replaceAll("\\[", "").replaceAll("\\]", "")
+                                String dockerRunArg="-e \"BUILDIMAGESHA=$dockerImageDigest\""
+                                context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+dockerRunArg) {
                                     buildScripts(
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
