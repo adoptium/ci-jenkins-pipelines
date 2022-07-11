@@ -49,9 +49,9 @@ stage("Submit Release Pipelines") {
                     // For reproducible builds (releaseType==Release) to have comparison on multiple builds' artifacts.
                     // Copy artifacts from downstream and archive again on weekly-pipeline. For details, see issue: https://github.com/adoptium/ci-jenkins-pipelines/issues/301
                     if ( result.getCurrentResult() == "SUCCESS" ) {
-                        context.copyArtifacts(
+                        copyArtifacts(
                             projectName: result.getProjectName(), // copy-up
-                            selector: context.specific(result.getNumber()),
+                            selector: specific(result.getNumber()),
                             filter: 'workspace/target/*',
                             fingerprintArtifacts: true,
                             target: "workspace/target/",
