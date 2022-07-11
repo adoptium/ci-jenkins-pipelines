@@ -208,6 +208,8 @@ node ("worker") {
         numTestPipelines += 1
         // Pipeline Test % success rating: Failure twice as signficant as a Success, Unstable counts as -1/4
         nightlyTestSuccessRating += (((pipeline.testJobSuccess)-(pipeline.testJobUnstable*0.25)-(pipeline.testJobFailure*2))*100)/(pipeline.testJobNumber)
+        // Pipeline Test % success rating: %(SucceededOrUnstable) - %(FailedTestCases)
+        nightlyTestSuccessRating += ( ((pipeline.testJobNumber-pipeline.testJobFailure)*100/pipeline.testJobNumber) - (pipeline.testCaseFailed*100/(pipeline.testCasePassed+pipeline.testCaseFailed)) )
       }
     }
     // Average test success rating across all pipelines
