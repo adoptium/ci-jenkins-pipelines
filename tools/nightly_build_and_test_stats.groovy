@@ -203,11 +203,15 @@ node ("worker") {
       totalBuildJobs += pipeline.buildJobNumber
       buildFailures += pipeline.buildJobFailure
       totalTestJobs += pipeline.testJobNumber
-      // Did tests run? (build may have failed)
+      // Did test jobs run? (build may have failed)
       if (pipeline.testJobNumber > 0) {
         numTestPipelines += 1
         // Pipeline Test % success rating: %(SucceededOrUnstable) - %(FailedTestCases)
-        nightlyTestSuccessRating += ( ((pipeline.testJobNumber-pipeline.testJobFailure)*100/pipeline.testJobNumber) - (pipeline.testCaseFailed*100/(pipeline.testCasePassed+pipeline.testCaseFailed)) )
+        nightlyTestSuccessRating += ( ((pipeline.testJobNumber-pipeline.testJobFailure)*100/pipeline.testJobNumber) )
+        // Did test cases run?
+        if ((pipeline.testCasePassed + pipeline.testCaseFailed) > 0) {
+            nightlyTestSuccessRating -= (pipeline.testCaseFailed*100/(pipeline.testCasePassed+pipeline.testCaseFailed))
+        }
       }
     }
     // Average test success rating across all pipelines
