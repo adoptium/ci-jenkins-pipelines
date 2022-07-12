@@ -209,7 +209,7 @@ node ("worker") {
         // Pipeline Test % success rating: %(SucceededOrUnstable) - %(FailedTestCases)
         nightlyTestSuccessRating += ( ((pipeline.testJobNumber-pipeline.testJobFailure)*100/pipeline.testJobNumber) )
         // Did test cases run?
-        if ((pipeline.testCasePassed+pipeline.testCaseFailed) > 0) {
+        if ((pipeline.testCasePassed + pipeline.testCaseFailed) > 0) {
             nightlyTestSuccessRating -= (pipeline.testCaseFailed*100/(pipeline.testCasePassed+pipeline.testCaseFailed))
         }
       }
