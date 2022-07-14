@@ -72,6 +72,13 @@ If you're unsure if the tests failed because of your changes or not, check our [
 - 🟠**FAILURE** 🟠 Some of the downstream jobs failed OR the job was aborted. Check the link in the field at the bottom of the PR for the job link to see exactly where it went wrong.
 - 🔴**ERROR** 🔴 Something more serious went wrong with the tester itself. Please raise an issue with a link to the job, the error encountered and your PR that caused it (again, you can use the link at the bottom to see exactly what happened).
 
+##### `run tests quick`
+
+Simiar to `run tests` but runs a subset of jdk test jobs. Without specific jdk version, it uses 19, otherwise loops over given versions
+Example:
+`run tests quick` is the same as `run tests quick 19`
+`run tests quick 11, 19, 8` generates all jobs then runs openjdk pipeline on 8, 11 and 19
+
 ##### `add to whitelist`
 
 - **ADMIN COMMAND ONLY**
