@@ -81,6 +81,8 @@ class PullRequestTestPipeline implements Serializable {
             context.println "loading ${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
             Closure regenerationScript = context.load "${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
 
+            // run quick test only on jdk19 if PR comments is "run tests quick"
+            context.params.ghprbCommentBody =~ /(\w+) quick$/ ? javaVersions = [19] : javaVersions
             javaVersions.each({ javaVersion ->
                 // generate top level job
                 generatePipelineJob(javaVersion)
