@@ -129,14 +129,14 @@ class PullRequestTestPipeline implements Serializable {
             /*
                 Handling PR comments:
                 run tests                   run all version from  $javaVersions
-                run tests quick             run jdk19
+                run tests quick             run jdk17
                 run tests quick 8           run jdk8
                 run tests quick 11,17,19    run jdk11, 17 and 19
             */
             String[] commentsList=context.params.ghprbCommentBody.trim().split('run tests quick')
             switch (commentsList.size()) {
                 case 0:
-                    javaVersions = [19]
+                    javaVersions = [17]
                     break
                 case 1:
                     javaVersions= javaVersions

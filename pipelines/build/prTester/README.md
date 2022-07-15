@@ -74,7 +74,7 @@ If you're unsure if the tests failed because of your changes or not, check our [
 
 ##### `run tests quick`
 
-Simiar to `run tests` but runs a subset of jdk test jobs. Without specific jdk version, it uses 19, otherwise loops over given versions
+Simiar to `run tests` but runs a subset of jdk test jobs. Without specific jdk version, it uses 17, otherwise loops over given versions
 Example:
 `run tests quick` is the same as `run tests quick 19`
 `run tests quick 11, 19, 8` generates all jobs then runs openjdk pipeline on 8, 11 and 19
