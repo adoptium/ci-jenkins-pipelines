@@ -569,8 +569,8 @@ class Build {
     Run the Windows installer downstream jobs.
     We run two jobs if we have a JRE (see https://github.com/adoptium/temurin-build/issues/1751).
     */
-    private void buildWindowsInstaller(VersionInfo versionData) {
-        def filter = "**/OpenJDK*jdk_*_windows*.zip"
+    private void buildWindowsInstaller(VersionInfo versionData, String filter, String category) {
+        def nodeFilter = "${buildConfig.TARGET_OS}&&wix"
 
         def buildNumber = versionData.build
 
@@ -600,10 +600,10 @@ class Build {
                         context.string(name: 'PRODUCT_PATCH_VERSION', value: "${patch_version}"),
                         context.string(name: 'PRODUCT_BUILD_NUMBER', value: "${buildNumber}"),
                         context.string(name: 'MSI_PRODUCT_VERSION', value: "${versionData.msi_product_version}"),
-                        context.string(name: 'PRODUCT_CATEGORY', value: "jdk"),
+                        context.string(name: 'PRODUCT_CATEGORY', value: "${category}"),
                         context.string(name: 'JVM', value: "${buildConfig.VARIANT}"),
                         context.string(name: 'ARCH', value: "${INSTALLER_ARCH}"),
-                        ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${buildConfig.TARGET_OS}&&wix"]
+                        ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
                 ]
         context.copyArtifacts(
                 projectName: "build-scripts/release/create_installer_windows",
@@ -612,42 +612,6 @@ class Build {
                 fingerprintArtifacts: true,
                 target: "workspace/target/",
                 flatten: true)
-
-        // Check if JRE exists, if so, build another installer for it
-        listArchives().each({ file ->
-
-            if (file.contains("-jre")) {
-
-                context.println("We have a JRE. Running another installer for it...")
-                def jreinstallerJob = context.build job: "build-scripts/release/create_installer_windows",
-                        propagate: true,
-                        parameters: [
-                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                            context.string(name: 'FILTER', value: "**/OpenJDK*jre_*_windows*.zip"),
-                            context.string(name: 'PRODUCT_MAJOR_VERSION', value: "${versionData.major}"),
-                            context.string(name: 'PRODUCT_MINOR_VERSION', value: "${versionData.minor}"),
-                            context.string(name: 'PRODUCT_MAINTENANCE_VERSION', value: "${versionData.security}"),
-                            context.string(name: 'PRODUCT_PATCH_VERSION', value: "${patch_version}"),
-                            context.string(name: 'PRODUCT_BUILD_NUMBER', value: "${buildNumber}"),
-                            context.string(name: 'MSI_PRODUCT_VERSION', value: "${versionData.msi_product_version}"),
-                            context.string(name: 'PRODUCT_CATEGORY', value: "jre"),
-                            context.string(name: 'JVM', value: "${buildConfig.VARIANT}"),
-                            context.string(name: 'ARCH', value: "${INSTALLER_ARCH}"),
-                            ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${buildConfig.TARGET_OS}&&wix"]
-                        ]
-
-                context.copyArtifacts(
-                    projectName: "build-scripts/release/create_installer_windows",
-                    selector: context.specific("${jreinstallerJob.getNumber()}"),
-                    filter: 'wix/ReleaseDir/*',
-                    fingerprintArtifacts: true,
-                    target: "workspace/target/",
-                    flatten: true
-                )
-            }
-
-        })
     }
 
     /*
@@ -665,9 +629,17 @@ class Build {
             context.stage("installer") {
 
                 switch (buildConfig.TARGET_OS) {
-                    case "mac": context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt'; buildMacInstaller(versionData); break
-                    case "windows": buildWindowsInstaller(versionData); break
-                    default: break
+                    case "mac":
+                        context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt';
+                        buildMacInstaller(versionData);
+                        break
+                    case "windows":
+                        buildWindowsInstaller(versionData,"**/OpenJDK*jdk_*_windows*.zip", "jdk");
+                        // Check if JRE exists, if so, build another installer for it
+                         if (listArchives().any { it =~ /-jre/} ) {buildWindowsInstaller(versionData,"**/OpenJDK*jre_*_windows*.zip", "jre");} 
+                        break
+                    default:
+                        break
                 }
 
                 // Archive the Mac and Windows pkg/msi
