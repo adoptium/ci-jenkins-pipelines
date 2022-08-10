@@ -788,14 +788,18 @@ class Build {
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
     List<String> listArchives() {
-        return context.sh(
-                script: '''find workspace/target/ | egrep -e '(.tar.gz|.zip|.msi|.pkg|.deb|.rpm)$' -e '-sbom_' ''',
+        def files = context.sh(
+                script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
                 returnStdout: true,
                 returnStatus: false
         )
                 .trim()
                 .split('\n')
                 .toList()
+
+        context.println "listArchives: ${files}"
+
+        return files
     }
 
     /*
