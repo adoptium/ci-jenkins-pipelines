@@ -66,8 +66,8 @@ node ("worker") {
     def buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
 
     // Check if pipeline is jdk11 or jdk11u
-    def configPath =  new File("${WORKSPACE}/${buildConfigFilePath}")
-    if (configPath.exists()) {
+    def configPath =  "${WORKSPACE}/${buildConfigFilePath}"
+    if (fileExists(configPath)) {
         println "Found ${buildConfigFilePath}"
     } else {
         javaToBuild = "${javaToBuild}u"
@@ -85,8 +85,8 @@ node ("worker") {
         javaToBuild = javaToBuild.replaceAll("u", "")
 
         // Check if pipeline is jdk11 or jdk11u
-        configPath =  new File("${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy")
-        if (configPath.exists()) {
+        configPath =  "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
+        if (fileExists(configPath)) {
             buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
         } else {
             javaToBuild = "${javaToBuild}u"
