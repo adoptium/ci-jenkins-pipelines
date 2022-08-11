@@ -195,7 +195,8 @@ class Config11 {
                 ],
                 buildArgs            : [
                         "openj9"     : '--cross-compile',
-                        "bisheng"    : '--cross-compile --branch risc-v'
+                        "bisheng"    : '--cross-compile --branch risc-v',
+                        "temurin"    : '--create-sbom'
                 ],
                 configureArgs        : [
                         "openj9"     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
@@ -205,9 +206,6 @@ class Config11 {
                         nightly: ['sanity.openjdk'],
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
                 ],
-                buildArgs           : [
-                        "temurin"   : '--create-sbom'
-                ]
         ]
   ]
 

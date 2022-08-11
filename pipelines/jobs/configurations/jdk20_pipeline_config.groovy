@@ -74,15 +74,16 @@ class Config20 {
                 os                  : 'windows',
                 arch                : 'aarch64',
                 crossCompile        : 'x64',
-                buildArgs           : '--cross-compile',
                 additionalNodeLabels: 'win2016&&vs2019',
                 test                : [
                         nightly: [],
                         weekly : []
                 ],
-                buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                buildArgs       : [
+                        "openj9"    : '--cross-compile',
+                        "temurin"   : '--create-jre-image --create-sbom --cross-compile'
                 ]
+
         ],
 
 
