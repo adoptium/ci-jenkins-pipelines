@@ -630,13 +630,21 @@ class Build {
 
                 switch (buildConfig.TARGET_OS) {
                     case "mac":
-                        context.sh 'rm -f workspace/target/*.pkg workspace/target/*.pkg.json workspace/target/*.pkg.sha256.txt';
+                        context.sh "rm -rf workspace/target/* || true"
                         buildMacInstaller(versionData);
                         break
                     case "windows":
+                        context.sh "rm -rf workspace/target/* || true"
                         buildWindowsInstaller(versionData,"**/OpenJDK*jdk_*_windows*.zip", "jdk");
                         // Check if JRE exists, if so, build another installer for it
-                         if (listArchives().any { it =~ /-jre/} ) {buildWindowsInstaller(versionData,"**/OpenJDK*jre_*_windows*.zip", "jre");} 
+                        context.copyArtifacts(
+                            projectName: context.specific(${env.JOB_NAME}),
+                            selector: context.specific("${env.BUILD_NUMBER}"),      
+                            filter: '**/OpenJDK*jre_*_windows*.zip',
+                            fingerprintArtifacts: true,
+                            target: "workspace/target/",
+                            flatten: true)
+                        if (listArchives().any { it =~ /-jre/} ) {buildWindowsInstaller(versionData,"**/OpenJDK*jre_*_windows*.zip", "jre");} 
                         break
                     default:
                         break
