@@ -80,7 +80,6 @@ class Config18 {
                         weekly : []
                 ],
                 buildArgs       : [
-                        "openj9"    : '--cross-compile',
                         "temurin"   : '--create-jre-image --create-sbom --cross-compile'
                 ]
         ],
