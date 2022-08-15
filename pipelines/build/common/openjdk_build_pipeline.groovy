@@ -673,7 +673,9 @@ class Build {
 
         context.node('worker') {
             context.stage("sign installer") {
-
+                // Ensure master context workspace is clean of any previous archives
+                context.sh "rm -rf workspace/target/* || true"
+                
                 if (buildConfig.TARGET_OS == "mac" || buildConfig.TARGET_OS == "windows") {
                     try {
                         signInstallerJob(versionData);
