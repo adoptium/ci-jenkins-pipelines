@@ -255,7 +255,11 @@ class Build {
             }
             suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
         } else if (buildConfig.VARIANT == "temurin") {
-            suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
+            if (buildConfig.ARCHITECTURE == "arm" && buildConfig.JAVA_TO_BUILD == "jdk8u") {
+                suffix = "adoptium/aarch32-jdk8u";
+            } else {
+                suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
+            }
         } else if (buildConfig.VARIANT == "dragonwell") {
             suffix = "alibaba/dragonwell${javaNumber}"
         } else if (buildConfig.VARIANT == "fast_startup") {
