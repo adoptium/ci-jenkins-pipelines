@@ -638,7 +638,7 @@ class Build {
                         buildWindowsInstaller(versionData,"**/OpenJDK*jdk_*_windows*.zip", "jdk");
                         // Check if JRE exists, if so, build another installer for it
                         context.copyArtifacts(
-                            projectName: context.specific("${env.JOB_NAME}"),
+                            projectName: "${env.JOB_NAME}",
                             selector: context.specific("${env.BUILD_NUMBER}"),      
                             filter: '**/OpenJDK*jre_*_windows*.zip',
                             fingerprintArtifacts: true,
