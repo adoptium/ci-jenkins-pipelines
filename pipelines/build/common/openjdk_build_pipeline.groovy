@@ -636,7 +636,7 @@ class Build {
                     case "windows":
                         context.sh "rm -rf workspace/target/* || true"
                         buildWindowsInstaller(versionData,"**/OpenJDK*jdk_*_windows*.zip", "jdk");
-                        // Check if JRE exists, if so, build another installer for it
+                        // Copy jre artifact from current pipeline job 
                         context.copyArtifacts(
                             projectName: "${env.JOB_NAME}",
                             selector: context.specific("${env.BUILD_NUMBER}"),      
@@ -644,6 +644,7 @@ class Build {
                             fingerprintArtifacts: true,
                             target: "workspace/target/",
                             flatten: true)
+                        // Check if JRE exists, if so, build another installer for it
                         if (listArchives().any { it =~ /-jre/} ) {buildWindowsInstaller(versionData,"**/OpenJDK*jre_*_windows*.zip", "jre");} 
                         break
                     default:
