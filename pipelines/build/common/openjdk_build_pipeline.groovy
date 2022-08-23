@@ -80,7 +80,8 @@ class Build {
         CONTROLLER_CLEAN_TIMEOUT : 1,
         DOCKER_CHECKOUT_TIMEOUT : 1,
         DOCKER_PULL_TIMEOUT : 2,
-        ARCHIVE_ARTIFACTS_TIMEOUT : 6
+        ARCHIVE_ARTIFACTS_TIMEOUT : 6,
+        SMOKETEST_TIMEOUT : 1
     ]
 
     /*
@@ -283,45 +284,45 @@ class Build {
     */
     def runSmokeTests() {
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-
-        try {
-            context.println "Running smoke test"
-            context.stage("smoke test") {
-                def jobParams = getSmokeTestJobParams()
-                def jobName = jobParams.TEST_JOB_NAME
-                def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-                if (!JobHelper.jobIsRunnable(jobName as String)) {
-                    context.node('worker') {
-                        context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
-                        def templatePath = 'testJobTemplate'
-                        context.println "Smoke test job doesn't exist, create test job: ${jobName}"
-                        context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
+        context.timeout(time: buildTimeouts.SMOKETEST_TIMEOUT, unit: "HOURS") {
+            try {
+                context.println "Running smoke test"
+                context.stage("smoke test") {
+                    def jobParams = getSmokeTestJobParams()
+                    def jobName = jobParams.TEST_JOB_NAME
+                    def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                    if (!JobHelper.jobIsRunnable(jobName as String)) {
+                        context.node('worker') {
+                            context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
+                            def templatePath = 'testJobTemplate'
+                            context.println "Smoke test job doesn't exist, create test job: ${jobName}"
+                            context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
+                        }
+                    }
+                    context.catchError {
+                        def smoketestJob = context.build job: jobName,
+                                propagate: false,
+                                parameters: [
+                                        context.string(name: 'SDK_RESOURCE', value: "upstream"),
+                                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                        context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
+                                        context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                        context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
+                                        context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                                        context.booleanParam(name: 'DYNAMIC_COMPILE', value: true)]
+                        def smokeResult = smoketestJob.getResult()
+                        if (smokeResult != 'SUCCESS') { // failed or unstable or aborted
+                            context.error("${jobName} result is ${smokeResult}")
+                            currentBuild.result = "${smokeResult}"
+                        }
                     }
                 }
-                context.catchError {
-                    def smoketestJob = context.build job: jobName,
-                            propagate: false,
-                            parameters: [
-                                    context.string(name: 'SDK_RESOURCE', value: "upstream"),
-                                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                    context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
-                                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                    context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
-                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: true)]
-                    def smokeResult = smoketestJob.getResult()
-                    if (smokeResult != 'SUCCESS') { // failed or unstable or aborted
-                        context.error("${jobName} result is ${smokeResult}")
-                        currentBuild.result = "${smokeResult}"
-                    }
-                }
+            } catch (Exception e) {
+                context.println "Failed to execute test: ${e.message}"
+                throw new Exception("[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed. ")
             }
-        } catch (Exception e) {
-            context.println "Failed to execute test: ${e.message}"
-            throw new Exception("[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed. ")
         }
-        
     }
     /*
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
