@@ -299,7 +299,7 @@ class Build {
                     }
                 }
                 context.catchError {
-                    context.build job: jobName,
+                    def smoketestJob = context.build job: jobName,
                             propagate: false,
                             parameters: [
                                     context.string(name: 'SDK_RESOURCE', value: "upstream"),
@@ -310,12 +310,18 @@ class Build {
                                     context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
                                     context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
                                     context.booleanParam(name: 'DYNAMIC_COMPILE', value: true)]
+                    def smokeResult = smoketestJob.getResult()
+                    if (smokeResult != 'SUCCESS') { // failed or unstable or aborted
+                        context.error("${jobName} result is ${smokeResult}")
+                        currentBuild.result = "${smokeResult}"
+                    }
                 }
             }
         } catch (Exception e) {
             context.println "Failed to execute test: ${e.message}"
             throw new Exception("[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed. ")
         }
+        
     }
     /*
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
