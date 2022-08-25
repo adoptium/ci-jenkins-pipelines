@@ -15,9 +15,6 @@ targetConfigurations = [
                 "temurin",
                 "openj9"
         ],
-        "aarch64Windows" : [
-                "temurin"
-        ],
         "x32Windows"  : [
                 "temurin"
         ],

@@ -11,9 +11,6 @@ targetConfigurations = [
         "x64Windows"  : [
                 "temurin"
         ],
-        "aarch64Windows" : [
-                "temurin"
-        ],
         "x32Windows"  : [
                 "temurin"
         ],
