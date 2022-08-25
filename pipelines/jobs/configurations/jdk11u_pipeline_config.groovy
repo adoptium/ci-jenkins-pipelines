@@ -80,7 +80,7 @@ class Config11 {
                 arch                : 'aarch64',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2016&&vs2019',
-                test                : 'default',
+                test                : false,
                 buildArgs       : [
                         "temurin"   : '--jvm-variant client,server --create-sbom --cross-compile'
                 ]
