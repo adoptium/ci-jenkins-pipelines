@@ -74,7 +74,7 @@ class Config18 {
                 arch                : 'aarch64',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2016&&vs2019',
-                test                : 'default',
+                test                : false,
                 buildArgs       : [
                         "temurin"   : '--create-jre-image --create-sbom --cross-compile'
                 ]
