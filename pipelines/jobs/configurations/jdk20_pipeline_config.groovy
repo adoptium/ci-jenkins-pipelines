@@ -69,22 +69,17 @@ class Config20 {
                 ]
         ],
 
-        // TODO: Enable testing (https://github.com/adoptium/ci-jenkins-pipelines/issues/77)
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2016&&vs2019',
-                test                : [
-                        nightly: [],
-                        weekly : []
-                ],
+                test                : 'default',
                 buildArgs       : [
                         "temurin"   : '--create-jre-image --create-sbom --cross-compile'
                 ]
 
         ],
-
 
         x32Windows: [
                 os                  : 'windows',
