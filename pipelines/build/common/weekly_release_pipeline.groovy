@@ -13,57 +13,58 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+node{
+    stage("Submit Release Pipelines") {
+        // Map of <variant> : <scmRef>
+        def Map<String, String> scmRefs = new JsonSlurper().parseText("${params.scmReferences}") as Map
 
-stage("Submit Release Pipelines") {
-    // Map of <variant> : <scmRef>
-    def Map<String, String> scmRefs = new JsonSlurper().parseText("${params.scmReferences}") as Map
+        // Map of <platform> : [<variant>,<variant>,..]
+        def Map<String, List<String>> targetConfigurations = new JsonSlurper().parseText("${params.targetConfigurations}") as Map
 
-    // Map of <platform> : [<variant>,<variant>,..]
-    def Map<String, List<String>> targetConfigurations = new JsonSlurper().parseText("${params.targetConfigurations}") as Map
+        def Map<String, String> jobs = [:]
 
-    def Map<String, String> jobs = [:]
+        // For each variant create a release pipeline job
+        scmRefs.each{ variant ->
+            def variantName = variant.key
+            def scmRef = variant.value
+            def Map<String, List<String>> targetConfig = [:]
 
-    // For each variant create a release pipeline job
-    scmRefs.each{ variant ->
-        def variantName = variant.key
-        def scmRef = variant.value
-        def Map<String, List<String>> targetConfig = [:]
-
-        targetConfigurations.each{ target ->
-            if (target.value.contains(variantName)) {
-                targetConfig.put(target.key,[variantName])
+            targetConfigurations.each{ target ->
+                if (target.value.contains(variantName)) {
+                    targetConfig.put(target.key,[variantName])
+                }
             }
-        }
 
-        if (!targetConfig.isEmpty()) {
-            echo("Creating ${params.buildPipeline} - ${variantName}")
-            jobs[variantName] = {
-                stage("Build - ${params.buildPipeline} - ${variantName}") {
-                    result = build job: "${params.buildPipeline}",
-                            parameters: [
-                                string(name: 'releaseType',        value: 'Release'),
-                                string(name: 'scmReference',       value: scmRef),
-                                text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
-                                ['$class': 'BooleanParameterValue', name: 'keepReleaseLogs', value: false]
-                            ]
-                    // For reproducible builds (releaseType==Release) to have comparison on multiple builds' artifacts.
-                    // Copy artifacts from downstream and archive again on weekly-pipeline. For details, see issue: https://github.com/adoptium/ci-jenkins-pipelines/issues/301
-                    if ( result.getCurrentResult() == "SUCCESS" ) {
-                        copyArtifacts(
-                            projectName: result.getProjectName(), // copy-up
-                            selector: specific(result.getNumber().toString()), // buildNumber need to be string not int
-                            filter: 'workspace/target/*',
-                            fingerprintArtifacts: true,
-                            target: "workspace/target/",
-                            flatten: true
-                        )
+            if (!targetConfig.isEmpty()) {
+                echo("Creating ${params.buildPipeline} - ${variantName}")
+                jobs[variantName] = {
+                    stage("Build - ${params.buildPipeline} - ${variantName}") {
+                        result = build job: "${params.buildPipeline}",
+                                parameters: [
+                                    string(name: 'releaseType',        value: 'Release'),
+                                    string(name: 'scmReference',       value: scmRef),
+                                    text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
+                                    ['$class': 'BooleanParameterValue', name: 'keepReleaseLogs', value: false]
+                                ]
+                        // For reproducible builds (releaseType==Release) to have comparison on multiple builds' artifacts.
+                        // Copy artifacts from downstream and archive again on weekly-pipeline. For details, see issue: https://github.com/adoptium/ci-jenkins-pipelines/issues/301
+                        if ( result.getCurrentResult() == "SUCCESS" ) {
+                            copyArtifacts(
+                                projectName: result.getProjectName(), // copy-up
+                                selector: specific(result.getNumber().toString()), // buildNumber need to be string not int
+                                filter: 'workspace/target/*',
+                                fingerprintArtifacts: true,
+                                target: "workspace/target/",
+                                flatten: true
+                            )
+                        }
                     }
                 }
             }
         }
-    }
-    // Run downstream jobs in parallel
-    parallel jobs
+        // Run downstream jobs in parallel
+        parallel jobs
 
-    archiveArtifacts artifacts: "workspace/target/"
+        archiveArtifacts artifacts: "workspace/target/"
+    }
 }
