@@ -1743,6 +1743,10 @@ class Build {
                     } catch (Exception e) {
                         context.println(e.message)
                     }
+                    //If we'd like to remote trigger per build job the change should be here
+                    //(if it's release and variant is temurin) {
+                    //    remoteTriggerTCK()
+                    //}
                 }
 
                 //buildInstaller if needed
