@@ -299,24 +299,19 @@ class Build {
                             context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                         }
                     }
-                    context.catchError {
-                        def smoketestJob = context.build job: jobName,
-                                propagate: false,
-                                parameters: [
-                                        context.string(name: 'SDK_RESOURCE', value: "upstream"),
-                                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                        context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
-                                        context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                        context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
-                                        context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                        context.booleanParam(name: 'DYNAMIC_COMPILE', value: true)]
-                        def smokeResult = smoketestJob.getResult()
-                        if (smokeResult != 'SUCCESS') { // failed or unstable or aborted
-                            context.error("${jobName} result is ${smokeResult}")
-                            currentBuild.result = "${smokeResult}"
-                        }
-                    }
+                }
+                context.catchError {
+                    context.build job: jobName,
+                            propagate: false,
+                            parameters: [
+                                    context.string(name: 'SDK_RESOURCE', value: "upstream"),
+                                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                    context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
+                                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                    context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
+                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: true)]
                 }
             } catch (Exception e) {
                 context.println "Failed to execute test: ${e.message}"
