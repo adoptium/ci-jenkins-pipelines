@@ -158,6 +158,7 @@ class Build {
         jobParams.put("VENDOR_TEST_REPOS", vendorTestRepos)
         jobParams.put("VENDOR_TEST_BRANCHES", vendorTestBranches)
         jobParams.put("VENDOR_TEST_DIRS", vendorTestDirs)
+        jobParams.put("TIME_LIMIT", 1) // default smoketest to timeout after 1hr
         return jobParams
     }
 
