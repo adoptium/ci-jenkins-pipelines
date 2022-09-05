@@ -14,7 +14,7 @@ pipeline {
     stages {
         stage('Lets Compare') {
             agent {
-                label "${params.platform}"
+                label "${params.platform}&&build"
             }
             steps {
                 script {
