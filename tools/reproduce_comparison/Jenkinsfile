@@ -18,7 +18,6 @@ pipeline {
             } 
             steps {
                 script {
-                    cleanWs()
                     try {
                         echo "Fetching artifact1 from ${params.URL1}"
                         sh "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
