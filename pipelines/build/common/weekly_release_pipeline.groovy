@@ -52,7 +52,7 @@ stage("Submit Release Pipelines") {
                             copyArtifacts(
                                 projectName: result.getProjectName(), // copy-up
                                 selector: specific(result.getNumber().toString()), // buildNumber need to be string not int
-                                filter: 'workspace/target/*',
+                                filter: 'target/**',
                                 fingerprintArtifacts: true,
                                 target: "workspace/target/",
                                 flatten: true
