@@ -52,9 +52,8 @@ stage("Submit Release Pipelines") {
                             copyArtifacts(
                                 projectName: result.getProjectName(), // copy-up
                                 selector: specific(result.getNumber().toString()), // buildNumber need to be string not int
-                                filter: 'target/**',
+                                filter: '**/target/**/temurin/*.tar.gz, **/target/**/temurin/*.zip',
                                 fingerprintArtifacts: true,
-                                target: "workspace/target/",
                                 flatten: true
                             )
                         }
