@@ -54,6 +54,7 @@ stage("Submit Release Pipelines") {
                                 selector: specific(result.getNumber().toString()), // buildNumber need to be string not int
                                 filter: '**/*.tar.gz, **/*.zip',
                                 fingerprintArtifacts: true,
+                                target: "workspace",
                                 flatten: true
                             )
                         }
@@ -64,6 +65,7 @@ stage("Submit Release Pipelines") {
     }
     // Run downstream jobs in parallel
     parallel jobs
-
-    archiveArtifacts artifacts: "workspace/target/"
+    node("worker") {
+        archiveArtifacts artifacts: "workspace"
+    }
 }
