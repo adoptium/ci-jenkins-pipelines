@@ -52,9 +52,9 @@ stage("Submit Release Pipelines") {
                             copyArtifacts(
                                 projectName: result.getProjectName(), // copy-up
                                 selector: specific(result.getNumber().toString()), // buildNumber need to be string not int
-                                filter: 'target/**',
+                                filter: '**/*.tar.gz, **/*.zip',
                                 fingerprintArtifacts: true,
-                                target: "workspace/target/",
+                                target: "workspace",
                                 flatten: true
                             )
                         }
@@ -65,6 +65,7 @@ stage("Submit Release Pipelines") {
     }
     // Run downstream jobs in parallel
     parallel jobs
-
-    archiveArtifacts artifacts: "workspace/target/"
+    node("worker") {
+        archiveArtifacts artifacts: "workspace"
+    }
 }
