@@ -310,7 +310,10 @@ class Build {
                                     context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                     context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
                                     context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: true)]
+                                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
+                                    context.string(name: 'TIME_LIMIT', value: "${jobParams.TIME_LIMIT}")
+                            ]
+
                 }
             }
         } catch (Exception e) {
