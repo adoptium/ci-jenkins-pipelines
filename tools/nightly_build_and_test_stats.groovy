@@ -47,8 +47,7 @@ node ("worker") {
       featureReleases.each { featureRelease ->
         def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureRelease}/ea?image_type=jdk&os=linux&architecture=x64&jvm_impl=${apiVariant}'")
         def assetsJson = new JsonSlurper().parseText(assets)
-        if (featureRelease == 8){ assetsJson.remove(0) } // except [0] is set to jdk8u352-b05-ea to filter it out
-        def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset,
+        def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
         def assetTs = Instant.parse(ts).atZone(ZoneId.of("UTC"))
         def now = ZonedDateTime.now(ZoneId.of("UTC"))
         def days = ChronoUnit.DAYS.between(assetTs, now)
