@@ -45,7 +45,7 @@ node ("worker") {
       // is considered unhealthy.
       // TODO: account for disabled nightly pipelines
       featureReleases.each { featureRelease ->
-        def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureRelease}/ea?image_type=jdk&os=linux&architecture=x64&jvm_impl=${apiVariant}'")
+        def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureRelease}/ea?image_type=jdk&os=linux&architecture=x64&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
         def assetsJson = new JsonSlurper().parseText(assets)
         def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
         def assetTs = Instant.parse(ts).atZone(ZoneId.of("UTC"))
