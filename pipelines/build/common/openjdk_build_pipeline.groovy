@@ -158,7 +158,6 @@ class Build {
         jobParams.put("VENDOR_TEST_REPOS", vendorTestRepos)
         jobParams.put("VENDOR_TEST_BRANCHES", vendorTestBranches)
         jobParams.put("VENDOR_TEST_DIRS", vendorTestDirs)
-        jobParams.put("TIME_LIMIT", 1) // default smoketest to timeout after 1hr
         return jobParams
     }
 
@@ -311,7 +310,7 @@ class Build {
                                     context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
                                     context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
                                     context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
-                                    context.string(name: 'TIME_LIMIT', value: "${jobParams.TIME_LIMIT}")
+                                    context.string(name: 'TIME_LIMIT', value: "1")
                             ]
 
                 }
