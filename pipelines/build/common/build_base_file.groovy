@@ -743,18 +743,18 @@ class Builder implements Serializable {
             }
         }
         if (isTemurin) {
-            jdkVersion=getJavaVersionNumber()
-            //sdkUrl="${env.BUILD_URL}", this may be even clearer and better
-            sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
-            targets='sanity.jck,extended.jck,special.jck'
-            triggerRemoteJob abortTriggeredJob: true,
+            def jdkVersion=getJavaVersionNumber()
+            //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
+            def sdkUrl="${env.BUILD_URL}"
+            def targets='sanity.jck,extended.jck,special.jck'
+            context.triggerRemoteJob abortTriggeredJob: true,
                                 blockBuildUntilComplete: false,
                                 job: 'AQA_Test_Pipeline',
-                                parameters: MapParameters(parameters: [MapParameter(name: 'TARGETS', value: "${targets}"), 
-                                                                       MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                       MapParameter(name: 'TOP_LEVEL_SDK_URL', value: "${sdkUrl}"),
-                                                                       MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                       MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
+                                parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
+                                                                       context.MapParameter(name: 'TARGETS', value: targets),
+                                                                       context.MapParameter(name: 'TOP_LEVEL_SDK_URL', value: "${sdkUrl}"),
+                                                                       context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
+                                                                       context.MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
                                 remoteJenkinsName: 'temurin-compliance',
                                 shouldNotFailBuild: true,
                                 token: 'RemoteTrigger',
@@ -859,7 +859,6 @@ class Builder implements Serializable {
                                         } catch (FlowInterruptedException e) {
                                             throw new Exception("[ERROR] Copy artifact timeout (${pipelineTimeouts.COPY_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
                                         }
-
                                         // Checksum
                                         context.sh 'for file in $(ls target/*/*/*/*.tar.gz target/*/*/*/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
                                         def platform = ""
