@@ -22,7 +22,10 @@ class Config8 {
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile',
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell.dockerfile'
                 ],
-                test                 : 'default',
+                test                : [
+                        nightly: ["sanity.openjdk", "sanity.system", "extended.system", "sanity.perf", "sanity.functional", "extended.functional"],
+                        weekly : ["extended.openjdk", "extended.perf", "special.functional", "sanity.external"]
+                ],
                 configureArgs       : [
                         "openj9"      : '--enable-jitserver',
                         "dragonwell"  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
