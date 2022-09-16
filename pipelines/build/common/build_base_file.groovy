@@ -730,6 +730,39 @@ class Builder implements Serializable {
     }
 
     /*
+    Remote Trigger JCK tests for weekly temurin builds
+    */
+    def remoteTriggerJckTests(String platforms) {
+        boolean isTemurin = true
+        targetConfigurations
+        .each { target ->
+            target.value.each { variant ->
+                if ( !variant.equals("temurin")) {
+                    isTemurin = false
+                }
+            }
+        }
+        if (isTemurin) {
+            def jdkVersion=getJavaVersionNumber()
+            //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
+            def sdkUrl="${env.BUILD_URL}"
+            def targets='sanity.jck,extended.jck,special.jck'
+            context.triggerRemoteJob abortTriggeredJob: true,
+                                blockBuildUntilComplete: false,
+                                job: 'AQA_Test_Pipeline',
+                                parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
+                                                                       context.MapParameter(name: 'TARGETS', value: targets),
+                                                                       context.MapParameter(name: 'TOP_LEVEL_SDK_URL', value: "${sdkUrl}"),
+                                                                       context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
+                                                                       context.MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
+                                remoteJenkinsName: 'temurin-compliance',
+                                shouldNotFailBuild: true,
+                                token: 'RemoteTrigger',
+                                useCrumbCache: true,
+                                useJobInfoCache: true
+        }
+    }
+    /*
     Main function. This is what is executed remotely via the openjdkxx-pipeline and pr tester jobs
     */
     @SuppressWarnings("unused")
@@ -769,7 +802,7 @@ class Builder implements Serializable {
             context.echo "Force auto generate AQA test jobs: ${aqaAutoGen}"
             context.echo "Keep test reportdir: ${keepTestReportDir}"
             context.echo "Keep release logs: ${keepReleaseLogs}"
-
+            def buildPlatforms = ""
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
                     IndividualBuildConfig config = configuration.value
@@ -826,9 +859,19 @@ class Builder implements Serializable {
                                         } catch (FlowInterruptedException e) {
                                             throw new Exception("[ERROR] Copy artifact timeout (${pipelineTimeouts.COPY_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
                                         }
-
                                         // Checksum
                                         context.sh 'for file in $(ls target/*/*/*/*.tar.gz target/*/*/*/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
+                                        def platform = ""
+                                        if (config.ARCHITECTURE.contains("x64")) {
+                                            platform = "x86-64_" + config.TARGET_OS
+                                        } else {
+                                            platform = config.ARCHITECTURE + "_" + config.TARGET_OS
+                                        }
+                                        if (buildPlatforms == "") {
+                                            buildPlatforms = platform
+                                        } else {
+                                            buildPlatforms = buildPlatforms + "," + platform
+                                        }
 
                                         // Archive in Jenkins
                                         try {
@@ -851,7 +894,7 @@ class Builder implements Serializable {
                 }
             }
             context.parallel jobs
-
+            
             // publish to github if needed
             // Dont publish release automatically
             if (publish && !release) {
@@ -865,8 +908,10 @@ class Builder implements Serializable {
                 }
             } else if (publish && release) {
                 context.println "NOT PUBLISHING RELEASE AUTOMATICALLY"
+            } else if (release ) {
+                //remote trigger job https://ci.eclipse.org/temurin-compliance/job/AQA_Test_Pipeline/
+                remoteTriggerJckTests(buildPlatforms)
             }
-
         }
     }
 }
