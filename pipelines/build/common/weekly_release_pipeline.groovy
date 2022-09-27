@@ -55,7 +55,8 @@ stage("Submit Release Pipelines") {
                                 filter: '**/*.tar.gz, **/*.zip',
                                 fingerprintArtifacts: true,
                                 target: "workspace",
-                                flatten: true
+                                flatten: true,
+                                optional: true  // do not fail pipeline if not find matching filter
                             )
                         }
                     }
@@ -66,6 +67,6 @@ stage("Submit Release Pipelines") {
     // Run downstream jobs in parallel
     parallel jobs
     node("worker") {
-        archiveArtifacts artifacts: "workspace"
+        archiveArtifacts artifacts: "workspace/*"
     }
 }
