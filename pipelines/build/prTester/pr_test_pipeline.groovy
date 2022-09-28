@@ -199,7 +199,7 @@ Map<String, ?> defaultTestConfigurations = [
     ]
 ]
 
-List<Integer> defaultJavaVersions = [8, 11, 17, 18, 19]
+List<Integer> defaultJavaVersions = [8, 11, 17, 19]
 
 return {
     String branch,
