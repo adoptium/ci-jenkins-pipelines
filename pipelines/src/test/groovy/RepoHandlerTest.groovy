@@ -24,6 +24,7 @@ class RepoHandlerTest {
         Assertions.assertEquals(adoptJson.repository.build_branch, "master")
         Assertions.assertEquals(adoptJson.repository.pipeline_url, "https://github.com/adoptium/ci-jenkins-pipelines.git")
         Assertions.assertEquals(adoptJson.repository.pipeline_branch, "master")
+        Assertions.assertEquals(adoptJson.repository.helper_ref, "master")
 
         // Jenkins Details
         Assertions.assertTrue(adoptJson.jenkinsDetails instanceof Map)
@@ -78,6 +79,7 @@ class RepoHandlerTest {
         Assertions.assertEquals(userJson.repository.build_branch, "20")
         Assertions.assertEquals(userJson.repository.pipeline_url, "19")
         Assertions.assertEquals(userJson.repository.pipeline_branch, "21")
+        Assertions.assertEquals(userJson.repository.helper_ref, "24")
 
         // Jenkins Details
         Assertions.assertTrue(userJson.jenkinsDetails instanceof Map)

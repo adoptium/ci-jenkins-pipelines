@@ -64,7 +64,7 @@ node('worker') {
       // Checkout into user repository
       checkoutUserPipelines()
 
-      library(identifier: 'openjdk-jenkins-helper@master')
+      library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}")
 
       // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
       def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["rootDirectory"]
@@ -134,7 +134,7 @@ node('worker') {
       println "USE_ADOPT_SHELL_SCRIPTS = $useAdoptShellScripts"
 
       // Collect available JDK versions to check for generation (tip_version + 1 just in case it is out of date on a release day)
-      def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+      def JobHelper = library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}").JobHelper
       println "Querying Adopt Api for the JDK-Head number (tip_version)..."
 
       def response = JobHelper.getAvailableReleases(this)

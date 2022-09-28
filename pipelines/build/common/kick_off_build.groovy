@@ -52,7 +52,7 @@ node("worker") {
         userRemoteConfigs = new JsonSlurper().parseText(USER_REMOTE_CONFIGS) as Map
     }
 
-    library(identifier: 'openjdk-jenkins-helper@master')
+    library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}")
 
     try {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"

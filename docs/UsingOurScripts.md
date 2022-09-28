@@ -19,7 +19,9 @@ This file contains the default constants and paths used in the build scripts for
         // Git Url of the current repository.
         "pipeline_url"       : "https://github.com/adoptium/ci-jenkins-pipelines.git",
         // Git branch you wish to use when running the groovy scripts inside the pipeline_url
-        "pipeline_branch"    : "master"
+        "pipeline_branch"    : "master",
+        // Git branch of which checkout from https://github.com/adoptium/jenkins-helper.git repo. This can only be as branch or tag, not SHA1
+        "helper_ref"      : "master"
     },
     // Jenkins server details
     "jenkinsDetails"         : {

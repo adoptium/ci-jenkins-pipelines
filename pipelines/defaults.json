@@ -4,7 +4,8 @@
         "build_branch"       : "master",
         "test_dirs"          : "/test/functional",
         "pipeline_url"       : "https://github.com/adoptium/ci-jenkins-pipelines.git",
-        "pipeline_branch"    : "master"
+        "pipeline_branch"    : "master",
+        "helper_ref"         : "master"
     },
     "jenkinsDetails"         : {
         "rootUrl"            : "https://ci.adoptopenjdk.net",
