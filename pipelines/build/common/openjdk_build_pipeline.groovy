@@ -119,7 +119,8 @@ class Build {
             try {
                 context.timeout(time: buildTimeouts.API_REQUEST_TIMEOUT, unit: "HOURS") {
                     // Query the Adopt api to get the "tip_version"
-                    def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}").JobHelper
+                    String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                    def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
                     context.println "Querying Adopt Api for the JDK-Head number (tip_version)..."
 
                     def response = JobHelper.getAvailableReleases(context)
@@ -289,7 +290,8 @@ class Build {
             context.stage("smoke test") {
                 def jobParams = getSmokeTestJobParams()
                 def jobName = jobParams.TEST_JOB_NAME
-                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}").JobHelper
+                String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
                 if (!JobHelper.jobIsRunnable(jobName as String)) {
                     context.node('worker') {
                         context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
@@ -380,7 +382,8 @@ class Build {
                         }
 
                         def jobName = jobParams.TEST_JOB_NAME
-                        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}").JobHelper
+                        String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
 
                         // Create test job if AQA_AUTO_GEN is set to true, the job doesn't exist or is not runnable
                         if (aqaAutoGen || !JobHelper.jobIsRunnable(jobName as String)) {
@@ -1484,7 +1487,8 @@ class Build {
     If it doesn't find one or the timeout is set to 0 (default), it'll crash out. Otherwise, it'll return and jump onto the node.
     */
     def waitForANodeToBecomeActive(def label) {
-        def NodeHelper = context.library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}").NodeHelper
+        String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+        def NodeHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").NodeHelper
 
         // A node with the requested label is ready to go
         if (NodeHelper.nodeIsOnline(label)) {
@@ -1574,7 +1578,8 @@ class Build {
                 context.stage("queue") {
                     /* This loads the library containing two Helper classes, and causes them to be
                     imported/updated from their repo. Without the library being imported here, runTests method will fail to execute the post-build test jobs for reasons unknown.*/
-                    context.library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}")
+                    String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                    context.library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
                     // Set Github Commit Status
                     if (env.JOB_NAME.contains("pr-tester")) {

@@ -661,7 +661,9 @@ class Regeneration implements Serializable {
                 // If we're building jdk head, update the javaToBuild
                 context.println "[INFO] Querying Adoptium api to get the JDK-Head number"
 
-                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}").JobHelper
+                String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+
                 Integer jdkHeadNum = Integer.valueOf(JobHelper.getAvailableReleases(context).tip_version)
 
                 if (Integer.valueOf(versionNumbers[0]) == jdkHeadNum) {

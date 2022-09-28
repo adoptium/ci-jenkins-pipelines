@@ -77,7 +77,8 @@ node ("worker") {
 
     checkoutUserPipelines()
 
-    library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}")
+    String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+    library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
     // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
     def buildConfigurations = null
