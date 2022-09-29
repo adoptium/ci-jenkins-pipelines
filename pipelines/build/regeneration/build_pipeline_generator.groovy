@@ -136,7 +136,7 @@ node('worker') {
       println "USE_ADOPT_SHELL_SCRIPTS = $useAdoptShellScripts"
 
       // Collect available JDK versions to check for generation (tip_version + 1 just in case it is out of date on a release day)
-      String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+
       def JobHelper = library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
       println "Querying Adopt Api for the JDK-Head number (tip_version)..."
 
