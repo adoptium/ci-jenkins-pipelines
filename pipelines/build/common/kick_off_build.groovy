@@ -52,7 +52,7 @@ node("worker") {
         userRemoteConfigs = new JsonSlurper().parseText(USER_REMOTE_CONFIGS) as Map
     }
 
-    String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+    String helperRef = LOCAL_DEFAULTS_JSON['repository']['helper_ref']
     library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
     try {
