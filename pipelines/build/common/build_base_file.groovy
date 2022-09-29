@@ -46,6 +46,9 @@ class Builder implements Serializable {
     boolean release
     String releaseType
     String scmReference
+    String buildReference
+    String ciReference
+    String helperReference
     String aqaReference
     boolean aqaAutoGen
     String publishName
@@ -148,6 +151,9 @@ class Builder implements Serializable {
             DYNAMIC_LIST: dynamicList,
             NUM_MACHINES: numMachines,
             SCM_REF: scmReference,
+            BUILD_REF: buildReference,
+            CI_REF: ciReference,
+            HELPER_REF: helperReference,
             AQA_REF: aqaReference,
             AQA_AUTO_GEN: aqaAutoGen,
             BUILD_ARGS: buildArgs,
@@ -797,7 +803,10 @@ class Builder implements Serializable {
             context.echo "Use Adopt's Scripts: ${useAdoptShellScripts}"
             context.echo "Publish: ${publish}"
             context.echo "Release: ${release}"
-            context.echo "Tag/Branch name: ${scmReference}"
+            context.echo "OpenJDK Tag/Branch name: ${scmReference}"
+            context.echo "Temurin-build Tag/Branch name: ${buildReference}"
+            context.echo "Ci-jenkins-pipeline Tag/Branch name: ${ciReference}"
+            context.echo "Jenkins-helper Tag/Branch name: ${helperReference}"
             context.echo "AQA tests Release/Branch name: ${aqaReference}"
             context.echo "Force auto generate AQA test jobs: ${aqaAutoGen}"
             context.echo "Keep test reportdir: ${keepTestReportDir}"
@@ -929,6 +938,9 @@ return {
     String enableSigner,
     String releaseType,
     String scmReference,
+    String buildReference,
+    String ciReference,
+    String helperReference,
     String aqaReference,
     String aqaAutoGen,
     String overridePublishName,
@@ -988,6 +1000,9 @@ return {
             release: release,
             releaseType: releaseType,
             scmReference: scmReference,
+            buildReference: buildReference,
+            ciReference: ciReference,
+            helperReference: helperReference,
             aqaReference: aqaReference,
             aqaAutoGen: Boolean.parseBoolean(aqaAutoGen),
             publishName: publishName,
