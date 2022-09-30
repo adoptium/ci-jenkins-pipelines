@@ -26,6 +26,7 @@ if (!DEFAULTS_JSON) {
 }
 
 String url = DEFAULTS_JSON['repository']['pipeline_url']
+String helperRef = DEFAULTS_JSON['repository']['helper_ref']
 Closure prTest
 
 // Switch to controller node to load library groovy definitions
@@ -39,7 +40,8 @@ node('worker') {
         ]]
     ])
 
-    library(identifier: 'openjdk-jenkins-helper@master')
+
+    library(identifier: "openjdk-jenkins-helper@${helperRef}")
     prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
 }
 

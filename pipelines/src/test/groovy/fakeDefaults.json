@@ -3,7 +3,8 @@
         "build_url"          : "1",
         "build_branch"       : "20",
         "pipeline_url"       : "19",
-        "pipeline_branch"    : "21"
+        "pipeline_branch"    : "21",
+        "helper_ref"         : "24"
     },
     "jenkinsDetails"         : {
         "rootUrl"            : "3",

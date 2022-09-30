@@ -63,8 +63,10 @@ node('worker') {
 
             // Checkout into user repository
             checkoutUserPipelines()
+            
+            String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+            library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
-            library(identifier: 'openjdk-jenkins-helper@master')
 
             // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
             def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
@@ -123,6 +125,67 @@ node('worker') {
                 useAdoptShellScripts = true
             }
 
+            println "[INFO] Running generator script with the following configuration:"
+            println "REPOSITORY_URL = $repoUri"
+            println "REPOSITORY_BRANCH = $repoBranch"
+            println "JOB_ROOT = $jobRoot"
+            println "SCRIPT_FOLDER_PATH = $scriptFolderPath"
+            println "NIGHTLY_FOLDER_PATH = $nightlyFolderPath"
+            println "JOB_TEMPLATE_PATH = $jobTemplatePath"
+            println "ENABLE_PIPELINE_SCHEDULE = $enablePipelineSchedule"
+            println "USE_ADOPT_SHELL_SCRIPTS = $useAdoptShellScripts"
+
+            // Collect available JDK versions to check for generation (tip_version + 1 just in case it is out of date on a release day)
+            def JobHelper = library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+            println "Querying Adopt Api for the JDK-Head number (tip_version)..."
+
+            def response = JobHelper.getAvailableReleases(this)
+            int headVersion = (int) response.getAt("tip_version")
+
+            (8..headVersion+1).each({javaVersion ->
+
+                if (retiredVersions.contains(javaVersion)) {
+                println "[INFO] $javaVersion is a retired version that isn't currently built. Skipping generation..."
+                return
+                }
+
+            // Load useAdoptShellScripts. This determines whether we will checkout to adopt's repository before running make-adopt-build-farm.sh or if we use the user's bash scripts.
+            Boolean useAdoptShellScripts = false
+            if (params.USE_ADOPT_SHELL_SCRIPTS) {
+                useAdoptShellScripts = true
+            }
+
+            println "[INFO] Running generator script with the following configuration:"
+            println "REPOSITORY_URL = $repoUri"
+            println "REPOSITORY_BRANCH = $repoBranch"
+            println "JOB_ROOT = $jobRoot"
+            println "SCRIPT_FOLDER_PATH = $scriptFolderPath"
+            println "NIGHTLY_FOLDER_PATH = $nightlyFolderPath"
+            println "JOB_TEMPLATE_PATH = $jobTemplatePath"
+            println "ENABLE_PIPELINE_SCHEDULE = $enablePipelineSchedule"
+            println "USE_ADOPT_SHELL_SCRIPTS = $useAdoptShellScripts"
+
+            // Collect available JDK versions to check for generation (tip_version + 1 just in case it is out of date on a release day)
+            String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+            def JobHelper = library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+            println "Querying Adopt Api for the JDK-Head number (tip_version)..."
+
+            def response = JobHelper.getAvailableReleases(this)
+            int headVersion = (int) response.getAt("tip_version")
+
+            (8..headVersion+1).each({javaVersion ->
+
+                if (retiredVersions.contains(javaVersion)) {
+                println "[INFO] $javaVersion is a retired version that isn't currently built. Skipping generation..."
+                return
+                }
+
+            // Load useAdoptShellScripts. This determines whether we will checkout to adopt's repository before running make-adopt-build-farm.sh or if we use the user's bash scripts.
+            Boolean useAdoptShellScripts = false
+            if (params.USE_ADOPT_SHELL_SCRIPTS) {
+                useAdoptShellScripts = true
+            }
+
             println '[INFO] Running generator script with the following configuration:'
             println "REPOSITORY_URL = $repoUri"
             println "REPOSITORY_BRANCH = $repoBranch"
@@ -134,7 +197,7 @@ node('worker') {
             println "USE_ADOPT_SHELL_SCRIPTS = $useAdoptShellScripts"
 
             // Collect available JDK versions to check for generation (tip_version + 1 just in case it is out of date on a release day)
-            def JobHelper = library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+            def JobHelper = library(identifier: "openjdk-jenkins-helper@${DEFAULTS_JSON['repository']['helper_ref']}").JobHelper
             println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
 
             def response = JobHelper.getAvailableReleases(this)

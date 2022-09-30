@@ -36,7 +36,7 @@ There are three stages for each job regenerator.
 ```bash
 [INFO] Querying Adoptium API to get the JDK-Head number
 [Pipeline] library
-Loading library openjdk-jenkins-helper@master
+Loading library openjdk-jenkins-helper@${helperRef}
 Examining AdoptOpenJDK/openjdk-jenkins-helper
 Attempting to resolve master as a branch
 Resolved master as branch master at revision 3e6da943be88a2bcdff335cdb93d4baf1a7555a7

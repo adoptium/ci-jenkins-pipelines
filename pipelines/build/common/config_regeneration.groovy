@@ -249,11 +249,12 @@ class Regeneration implements Serializable {
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def buildRef = configuration.buildRef ?: DEFAULTS_JSON['repository']['build_branch']
+        def platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${DEFAULTS_JSON['configDirectories']['platform']}"
 
         if (configuration.containsKey('platformSpecificConfigPath')) {
             // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations.linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -651,7 +652,9 @@ class Regeneration implements Serializable {
                 // If we're building jdk head, update the javaToBuild
                 context.println '[INFO] Querying Adoptium api to get the JDK-Head number'
 
-                def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+
                 Integer jdkHeadNum = Integer.valueOf(JobHelper.getAvailableReleases(context).tip_version)
 
                 if (Integer.valueOf(versionNumbers[0]) == jdkHeadNum) {
