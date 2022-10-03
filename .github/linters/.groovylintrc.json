@@ -1,0 +1,30 @@
+{
+  "extends": "recommended",
+  "rules": {
+    "BlockEndsWithBlankLine": "off",
+    "BuilderMethodWithSideEffects": "off",
+    "CatchException": "off",
+    "ClassStartsWithBlankLine": "off",
+    "DuplicateMapLiteral": "off",
+    "DuplicateStringLiteral": "off",
+    "ExplicitCallToGetAtMethod": "off",
+    "ExplicitCallToMinusMethod": "off",
+    "ExplicitHashMapInstantiation": "off",
+    "FactoryMethodName": "off",
+    "FieldName": "off",
+    "Indentation": "off",
+    "Instanceof": "off",
+    "LineLength": "off",
+    "NestedBlockDepth": "off",
+    "ParameterCount": "off",
+    "ParameterName": "off",
+    "PropertyName": "off",
+    "SerializableClassMustDefineSerialVersionUID": "off",
+    "SpaceInsideParentheses": "off",
+    "SpaceAroundOperator": "off",
+    "ThrowExceptionFromFinallyBlock": "off",
+    "UnnecessaryGString": "off",
+    "VariableName": "off",
+    "VariableTypeRequired": "off"
+  }
+}
