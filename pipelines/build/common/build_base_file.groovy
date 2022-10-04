@@ -905,7 +905,7 @@ class Builder implements Serializable {
             context.parallel jobs
             
             // publish to github if needed
-            // Dont publish release automatically
+            // Don't publish release automatically
             if (publish && !release) {
                 //During testing just remove the publish
                 try {
@@ -917,8 +917,9 @@ class Builder implements Serializable {
                 }
             } else if (publish && release) {
                 context.println "NOT PUBLISHING RELEASE AUTOMATICALLY"
-            } else if (release ) {
+            } else if (release && enableTests) {
                 //remote trigger job https://ci.eclipse.org/temurin-compliance/job/AQA_Test_Pipeline/
+                context.echo "Trigger the remote JCK jobs"
                 remoteTriggerJckTests(buildPlatforms)
             }
         }
