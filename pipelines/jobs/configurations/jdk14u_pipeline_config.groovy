@@ -1,5 +1,6 @@
 class Config14 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
@@ -19,7 +20,7 @@ class Config14 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
                         weekly : []
                 ],
-                additionalFileNameTag: "macosXL",
+                additionalFileNameTag: 'macosXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
         ],
 
@@ -35,9 +36,9 @@ class Config14 {
                         weekly : []
                 ],
                 configureArgs       : [
-                        "openj9"      : '--disable-ccache --enable-dtrace=auto --enable-jitserver',
-                        "hotspot"     : '--disable-ccache --enable-dtrace=auto',
-                        "SapMachine"  : '--disable-ccache --enable-dtrace=auto'
+                        'openj9'      : '--disable-ccache --enable-dtrace=auto --enable-jitserver',
+                        'hotspot'     : '--disable-ccache --enable-dtrace=auto',
+                        'SapMachine'  : '--disable-ccache --enable-dtrace=auto'
                 ]
         ],
 
@@ -52,7 +53,7 @@ class Config14 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system'],
                         weekly : []
                 ],
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace=auto --enable-jitserver'
         ],
 
@@ -80,7 +81,7 @@ class Config14 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
                         weekly : []
                 ],
-                additionalFileNameTag: "windowsXL",
+                additionalFileNameTag: 'windowsXL',
                 configureArgs        : '--with-noncompressedrefs'
         ],
 
@@ -129,7 +130,7 @@ class Config14 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system'],
                         weekly : []
                 ],
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace=auto'
         ],
 
@@ -141,8 +142,8 @@ class Config14 {
                         weekly : []
                 ],
                 configureArgs       : [
-                        "hotspot"     : '--disable-ccache --enable-dtrace=auto',
-                        "openj9"      : '--disable-ccache --enable-dtrace=auto --enable-jitserver'
+                        'hotspot'     : '--disable-ccache --enable-dtrace=auto',
+                        'openj9'      : '--disable-ccache --enable-dtrace=auto --enable-jitserver'
                 ]
         ],
 
@@ -163,7 +164,7 @@ class Config14 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system'],
                         weekly : []
                 ],
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace=auto'
         ],
 
@@ -178,7 +179,7 @@ class Config14 {
                 configureArgs       : '--enable-dtrace=auto'
         ],
   ]
-  
+
 }
 
 Config14 config = new Config14()

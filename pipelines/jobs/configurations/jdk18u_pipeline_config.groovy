@@ -1,5 +1,6 @@
 class Config18 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
@@ -10,7 +11,7 @@ class Config18 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -29,11 +30,11 @@ class Config18 {
                         openj9      : '!(centos6||rhel6)'
                 ],
                 configureArgs       : [
-                        "openj9"    : '--enable-dtrace --enable-jitserver',
-                        "temurin"   : '--enable-dtrace'
+                        'openj9'    : '--enable-dtrace --enable-jitserver',
+                        'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-source-archive --create-jre-image --create-sbom'
+                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom'
                 ]
         ],
 
@@ -44,7 +45,7 @@ class Config18 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -55,17 +56,17 @@ class Config18 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
-        
+
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012&&vs2019',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -76,7 +77,7 @@ class Config18 {
                 additionalNodeLabels: 'win2016&&vs2019',
                 test                : false,
                 buildArgs       : [
-                        "temurin"   : '--create-jre-image --create-sbom --cross-compile'
+                        'temurin'   : '--create-jre-image --create-sbom --cross-compile'
                 ]
         ],
 
@@ -86,7 +87,7 @@ class Config18 {
                 additionalNodeLabels: 'win2012&&vs2019',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--jvm-variant client,server --create-jre-image --create-sbom'
+                        'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom'
                 ]
         ],
 
@@ -100,10 +101,9 @@ class Config18 {
                 test                : 'default',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
-
 
         s390xLinux    : [
                 os                  : 'linux',
@@ -111,7 +111,7 @@ class Config18 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -121,11 +121,11 @@ class Config18 {
                 additionalNodeLabels: 'centos7',
                 test                : 'default',
                 configureArgs       : [
-                        "temurin"     : '--enable-dtrace',
-                        "openj9"      : '--enable-dtrace --enable-jitserver'
+                        'temurin'     : '--enable-dtrace',
+                        'openj9'      : '--enable-dtrace --enable-jitserver'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -137,17 +137,17 @@ class Config18 {
                 configureArgs : '--enable-dtrace',
                 testDynamic          : false,
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
-        
+
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
                 additionalNodeLabels: 'macos11',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -160,7 +160,7 @@ class Config18 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        "temurin"   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ]
   ]

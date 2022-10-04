@@ -1,5 +1,4 @@
 import java.nio.file.NoSuchFileException
-import java.util.regex.Matcher
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
@@ -20,184 +19,184 @@ limitations under the License.
 /* This script is the pipeline script for creating jobs via pipeline_jobs_generator_jdkX */
 
 String javaVersion = params.JAVA_VERSION
-String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
+String ADOPT_DEFAULTS_FILE_URL = 'https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json'
 String DEFAULTS_FILE_URL = (params.DEFAULTS_URL) ?: ADOPT_DEFAULTS_FILE_URL
 
-node ("worker") {
-  // Retrieve Adopt Defaults
-  def getAdopt = new URL(ADOPT_DEFAULTS_FILE_URL).openConnection()
-  Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map
-  if (!ADOPT_DEFAULTS_JSON || !Map.class.isInstance(ADOPT_DEFAULTS_JSON)) {
-    throw new Exception("[ERROR] No ADOPT_DEFAULTS_JSON found at ${ADOPT_DEFAULTS_FILE_URL} or it is not a valid JSON object. Please ensure this path is correct and leads to a JSON or Map object file. NOTE: Since this adopt's defaults and unlikely to change location, this is likely a network or GitHub issue.")
-  }
-
-  // Retrieve User Defaults
-  def getUser = new URL(DEFAULTS_FILE_URL).openConnection()
-  Map<String, ?> DEFAULTS_JSON = new JsonSlurper().parseText(getUser.getInputStream().getText()) as Map
-  if (!DEFAULTS_JSON || !Map.class.isInstance(DEFAULTS_JSON)) {
-    throw new Exception("[ERROR] No DEFAULTS_JSON found at ${DEFAULTS_FILE_URL}. Please ensure this path is correct and it leads to a JSON or Map object file.")
-  }
-
-  try {
-    // Load git url and branch and gitBranch. These determine where we will be pulling configs from.
-    def repoUri = (params.REPOSITORY_URL) ?: DEFAULTS_JSON["repository"]["pipeline_url"]
-    def repoBranch = (params.REPOSITORY_BRANCH) ?: DEFAULTS_JSON["repository"]["pipeline_branch"]
-
-    // Load credentials to be used in checking out. This is in case we are checking out a URL that is not Adopts and they don't have their ssh key on the machine.
-    def checkoutCreds = (params.CHECKOUT_CREDENTIALS) ?: ""
-    def remoteConfigs = new JsonSlurper().parseText('{ "url": "" }') as Map
-    remoteConfigs.url = repoUri
-
-    if (checkoutCreds != "") {
-      // This currently does not work with user credentials due to https://issues.jenkins.io/browse/JENKINS-60349
-      remoteConfigs.credentials = "${checkoutCreds}"
-    } else {
-      println "[WARNING] CHECKOUT_CREDENTIALS not specified! Checkout to $repoUri may fail if you do not have your ssh key on this machine."
+node('worker') {
+    // Retrieve Adopt Defaults
+    def getAdopt = new URL(ADOPT_DEFAULTS_FILE_URL).openConnection()
+    Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map
+    if (!ADOPT_DEFAULTS_JSON || !Map.isInstance(ADOPT_DEFAULTS_JSON)) {
+        throw new Exception("[ERROR] No ADOPT_DEFAULTS_JSON found at ${ADOPT_DEFAULTS_FILE_URL} or it is not a valid JSON object. Please ensure this path is correct and leads to a JSON or Map object file. NOTE: Since this adopt's defaults and unlikely to change location, this is likely a network or GitHub issue.")
     }
+
+    // Retrieve User Defaults
+    def getUser = new URL(DEFAULTS_FILE_URL).openConnection()
+    Map<String, ?> DEFAULTS_JSON = new JsonSlurper().parseText(getUser.getInputStream().getText()) as Map
+    if (!DEFAULTS_JSON || !Map.isInstance(DEFAULTS_JSON)) {
+        throw new Exception("[ERROR] No DEFAULTS_JSON found at ${DEFAULTS_FILE_URL}. Please ensure this path is correct and it leads to a JSON or Map object file.")
+    }
+
+    try {
+        // Load git url and branch and gitBranch. These determine where we will be pulling configs from.
+        def repoUri = (params.REPOSITORY_URL) ?: DEFAULTS_JSON['repository']['pipeline_url']
+        def repoBranch = (params.REPOSITORY_BRANCH) ?: DEFAULTS_JSON['repository']['pipeline_branch']
+
+        // Load credentials to be used in checking out. This is in case we are checking out a URL that is not Adopts and they don't have their ssh key on the machine.
+        def checkoutCreds = (params.CHECKOUT_CREDENTIALS) ?: ''
+        def remoteConfigs = new JsonSlurper().parseText('{ "url": "" }') as Map
+        remoteConfigs.url = repoUri
+
+        if (checkoutCreds != '') {
+            // This currently does not work with user credentials due to https://issues.jenkins.io/browse/JENKINS-60349
+            remoteConfigs.credentials = "${checkoutCreds}"
+    } else {
+            println "[WARNING] CHECKOUT_CREDENTIALS not specified! Checkout to $repoUri may fail if you do not have your ssh key on this machine."
+        }
 
     /*
     Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
     */
-    def checkoutAdoptPipelines = { ->
-      checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["pipeline_branch"] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
+        def checkoutAdoptPipelines = { ->
+            checkout([$class: 'GitSCM',
+        branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
+        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]
       ])
-    }
+        }
 
     /*
     Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
     */
-    def checkoutUserPipelines = { ->
-      checkout([$class: 'GitSCM',
+        def checkoutUserPipelines = { ->
+            checkout([$class: 'GitSCM',
         branches: [ [ name: repoBranch ] ],
         userRemoteConfigs: [ remoteConfigs ]
       ])
-    }
-
-    checkoutUserPipelines()
-
-    library(identifier: 'openjdk-jenkins-helper@master')
-
-    // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
-    def buildConfigurations = null
-    def buildConfigPath = (params.BUILD_CONFIG_PATH) ? "${WORKSPACE}/${BUILD_CONFIG_PATH}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}"
-
-    try {
-      buildConfigurations = load "${buildConfigPath}/${javaVersion}_pipeline_config.groovy"
-    } catch (NoSuchFileException e) {
-      try {
-        println "[WARNING] ${buildConfigPath}/${javaVersion}_pipeline_config.groovy does not exist, chances are we want a U version..."
-
-        buildConfigurations = load "${buildConfigPath}/${javaVersion}u_pipeline_config.groovy"
-        javaVersion += "u"
-      } catch (NoSuchFileException e2) {
-        println "[WARNING] U version does not exist. Likelihood is we are generating from a repository that isn't Adopt's. Pulling Adopt's build config in..."
-
-        checkoutAdoptPipelines()
-        try {
-          buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}_pipeline_config.groovy"
-        } catch (NoSuchFileException e3) {
-          buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}u_pipeline_config.groovy"
-          javaVersion += "u"
         }
+
         checkoutUserPipelines()
-      }
-    }
 
-    if (buildConfigurations == null) {
-      throw new Exception("[ERROR] Could not find buildConfigurations for ${javaVersion}")
-    }
+        library(identifier: 'openjdk-jenkins-helper@master')
 
-    // Load targetConfigurations from config file. This is what is being run in the nightlies
-    def targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${javaVersion}.groovy" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${javaVersion}.groovy"
+        // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
+        def buildConfigurations = null
+        def buildConfigPath = (params.BUILD_CONFIG_PATH) ? "${WORKSPACE}/${BUILD_CONFIG_PATH}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}"
 
-    try {
-      load targetConfigPath
+        try {
+            buildConfigurations = load "${buildConfigPath}/${javaVersion}_pipeline_config.groovy"
     } catch (NoSuchFileException e) {
-      println "[WARNING] ${targetConfigPath} does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightly config in..."
-      checkoutAdoptPipelines()
-      load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}"
-      checkoutUserPipelines()
-    }
+            try {
+                println "[WARNING] ${buildConfigPath}/${javaVersion}_pipeline_config.groovy does not exist, chances are we want a U version..."
 
-    if (targetConfigurations == null) {
-      throw new Exception("[ERROR] Could not find targetConfigurations for ${javaVersion}")
-    }
+                buildConfigurations = load "${buildConfigPath}/${javaVersion}u_pipeline_config.groovy"
+                javaVersion += 'u'
+      } catch (NoSuchFileException e2) {
+                println "[WARNING] U version does not exist. Likelihood is we are generating from a repository that isn't Adopt's. Pulling Adopt's build config in..."
 
-    // Pull in other parametrised values (or use defaults if they're not defined)
-    def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON["jenkinsDetails"]["rootDirectory"]
-    def jenkinsBuildRoot = (params.JENKINS_BUILD_ROOT) ?: "${DEFAULTS_JSON['jenkinsDetails']['rootUrl']}/job/${jobRoot}/"
+                checkoutAdoptPipelines()
+                try {
+                    buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}_pipeline_config.groovy"
+        } catch (NoSuchFileException e3) {
+                    buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}u_pipeline_config.groovy"
+                    javaVersion += 'u'
+                }
+                checkoutUserPipelines()
+            }
+        }
 
-    def jobTemplatePath = (params.JOB_TEMPLATE_PATH) ?: DEFAULTS_JSON["templateDirectories"]["downstream"]
-    if (!fileExists(jobTemplatePath)) {
-      println "[WARNING] ${jobTemplatePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-      checkoutAdoptPipelines()
-      jobTemplatePath = ADOPT_DEFAULTS_JSON['templateDirectories']['downstream']
-      println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
-      checkoutUserPipelines()
-    }
+        if (buildConfigurations == null) {
+            throw new Exception("[ERROR] Could not find buildConfigurations for ${javaVersion}")
+        }
 
-    def scriptPath = (params.SCRIPT_PATH) ?: DEFAULTS_JSON["scriptDirectories"]["downstream"]
-    if (!fileExists(scriptPath)) {
-      println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-      checkoutAdoptPipelines()
-      scriptPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['downstream']
-      println "[SUCCESS] The path is now ${scriptPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
-      checkoutUserPipelines()
-    }
+        // Load targetConfigurations from config file. This is what is being run in the nightlies
+        def targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${javaVersion}.groovy" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${javaVersion}.groovy"
 
-    def baseFilePath = (params.BASE_FILE_PATH) ?: DEFAULTS_JSON["baseFileDirectories"]["downstream"]
-    if (!fileExists(baseFilePath)) {
-      println "[WARNING] ${baseFilePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-      checkoutAdoptPipelines()
-      baseFilePath = ADOPT_DEFAULTS_JSON['baseFileDirectories']['downstream']
-      println "[SUCCESS] The path is now ${baseFilePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
-      checkoutUserPipelines()
-    }
-
-    def excludes = (params.EXCLUDES_LIST) ?: ""
-    def jenkinsCreds = (params.JENKINS_AUTH) ?: ""
-    Integer sleepTime = 900
-    if (params.SLEEP_TIME) {
-      sleepTime = SLEEP_TIME as Integer
-    }
-
-    println "[INFO] Running regeneration script with the following configuration:"
-    println "VERSION: $javaVersion"
-    println "REPOSITORY URL: $repoUri"
-    println "REPOSITORY BRANCH: $repoBranch"
-    println "BUILD CONFIGURATIONS: ${JsonOutput.prettyPrint(JsonOutput.toJson(buildConfigurations))}"
-    println "JOBS TO GENERATE: ${JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations))}"
-    println "JOB ROOT: $jobRoot"
-    println "JENKINS ROOT: $jenkinsBuildRoot"
-    println "JOB TEMPLATE PATH: $jobTemplatePath"
-    println "SCRIPT PATH: $scriptPath"
-    println "BASE FILE PATH: $baseFilePath"
-    println "EXCLUDES LIST: $excludes"
-    println "SLEEP_TIME: $sleepTime"
-    if (jenkinsCreds == "") { println "[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error codes." }
-
-    // Load regen script and execute base file
-    Closure regenerationScript
-    def regenScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['regeneration']
-    try {
-      regenerationScript = load "${WORKSPACE}/${regenScriptPath}"
+        try {
+            load targetConfigPath
     } catch (NoSuchFileException e) {
-      println "[WARNING] ${regenScriptPath} does not exist in your chosen repository. Using adopt's script path instead"
-      checkoutAdoptPipelines()
-      regenerationScript = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['scriptDirectories']['regeneration']}"
-      checkoutUserPipelines()
-    }
+            println "[WARNING] ${targetConfigPath} does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightly config in..."
+            checkoutAdoptPipelines()
+            load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}"
+            checkoutUserPipelines()
+        }
 
-    if (jenkinsCreds != "") {
-      withCredentials([usernamePassword(
+        if (targetConfigurations == null) {
+            throw new Exception("[ERROR] Could not find targetConfigurations for ${javaVersion}")
+        }
+
+        // Pull in other parametrised values (or use defaults if they're not defined)
+        def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
+        def jenkinsBuildRoot = (params.JENKINS_BUILD_ROOT) ?: "${DEFAULTS_JSON['jenkinsDetails']['rootUrl']}/job/${jobRoot}/"
+
+        def jobTemplatePath = (params.JOB_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['downstream']
+        if (!fileExists(jobTemplatePath)) {
+            println "[WARNING] ${jobTemplatePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
+            checkoutAdoptPipelines()
+            jobTemplatePath = ADOPT_DEFAULTS_JSON['templateDirectories']['downstream']
+            println "[SUCCESS] The path is now ${jobTemplatePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+            checkoutUserPipelines()
+        }
+
+        def scriptPath = (params.SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['downstream']
+        if (!fileExists(scriptPath)) {
+            println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
+            checkoutAdoptPipelines()
+            scriptPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['downstream']
+            println "[SUCCESS] The path is now ${scriptPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+            checkoutUserPipelines()
+        }
+
+        def baseFilePath = (params.BASE_FILE_PATH) ?: DEFAULTS_JSON['baseFileDirectories']['downstream']
+        if (!fileExists(baseFilePath)) {
+            println "[WARNING] ${baseFilePath} does not exist in your chosen repository. Updating it to use Adopt's instead"
+            checkoutAdoptPipelines()
+            baseFilePath = ADOPT_DEFAULTS_JSON['baseFileDirectories']['downstream']
+            println "[SUCCESS] The path is now ${baseFilePath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+            checkoutUserPipelines()
+        }
+
+        def excludes = (params.EXCLUDES_LIST) ?: ''
+        def jenkinsCreds = (params.JENKINS_AUTH) ?: ''
+        Integer sleepTime = 900
+        if (params.SLEEP_TIME) {
+            sleepTime = SLEEP_TIME as Integer
+        }
+
+        println '[INFO] Running regeneration script with the following configuration:'
+        println "VERSION: $javaVersion"
+        println "REPOSITORY URL: $repoUri"
+        println "REPOSITORY BRANCH: $repoBranch"
+        println "BUILD CONFIGURATIONS: ${JsonOutput.prettyPrint(JsonOutput.toJson(buildConfigurations))}"
+        println "JOBS TO GENERATE: ${JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations))}"
+        println "JOB ROOT: $jobRoot"
+        println "JENKINS ROOT: $jenkinsBuildRoot"
+        println "JOB TEMPLATE PATH: $jobTemplatePath"
+        println "SCRIPT PATH: $scriptPath"
+        println "BASE FILE PATH: $baseFilePath"
+        println "EXCLUDES LIST: $excludes"
+        println "SLEEP_TIME: $sleepTime"
+        if (jenkinsCreds == '') { println '[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error codes.' }
+
+        // Load regen script and execute base file
+        Closure regenerationScript
+        def regenScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['regeneration']
+        try {
+            regenerationScript = load "${WORKSPACE}/${regenScriptPath}"
+    } catch (NoSuchFileException e) {
+            println "[WARNING] ${regenScriptPath} does not exist in your chosen repository. Using adopt's script path instead"
+            checkoutAdoptPipelines()
+            regenerationScript = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['scriptDirectories']['regeneration']}"
+            checkoutUserPipelines()
+        }
+
+        if (jenkinsCreds != '') {
+            withCredentials([usernamePassword(
           credentialsId: '${JENKINS_AUTH}',
           usernameVariable: 'jenkinsUsername',
           passwordVariable: 'jenkinsToken'
       )]) {
-        String jenkinsCredentials = "$jenkinsUsername:$jenkinsToken"
-        regenerationScript(
+                String jenkinsCredentials = "$jenkinsUsername:$jenkinsToken"
+                regenerationScript(
           javaVersion,
           buildConfigurations,
           targetConfigurations,
@@ -219,7 +218,7 @@ node ("worker") {
         ).regenerate()
       }
     } else {
-      regenerationScript(
+            regenerationScript(
         javaVersion,
         buildConfigurations,
         targetConfigurations,
@@ -239,14 +238,12 @@ node ("worker") {
         checkoutCreds,
         false
       ).regenerate()
-    }
+        }
 
-    println "[SUCCESS] All done!"
-
+        println '[SUCCESS] All done!'
   } finally {
-    // Always clean up, even on failure (doesn't delete the generated jobs)
-    println "[INFO] Cleaning up..."
-    cleanWs deleteDirs: true
-  }
-
+        // Always clean up, even on failure (doesn't delete the generated jobs)
+        println '[INFO] Cleaning up...'
+        cleanWs deleteDirs: true
+    }
 }

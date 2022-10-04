@@ -25,32 +25,33 @@ This file is a job that regenerates all of the build configurations in pipelines
 2) Attempts to create downstream job dsl's for each pipeline job configuration
 */
 class Regeneration implements Serializable {
+
     private final String javaVersion
     private final Map<String, Map<String, ?>> buildConfigurations
     private final Map<String, ?> targetConfigurations
     private final Map<String, ?> DEFAULTS_JSON
     private final Map<String, ?> excludedBuilds
     private Integer sleepTime
-    private final def currentBuild
-    private final def context
+    private final currentBuild
+    private final context
 
-    private final def jobRootDir
-    private final def gitRemoteConfigs
-    private final def gitBranch
+    private final jobRootDir
+    private final gitRemoteConfigs
+    private final gitBranch
 
-    private final def jobTemplatePath
+    private final jobTemplatePath
 
-    private final def baseFilePath
-    private final def scriptPath
-    private final def jenkinsBuildRoot
-    private final def jenkinsCreds
-    private final def checkoutCreds
+    private final baseFilePath
+    private final scriptPath
+    private final jenkinsBuildRoot
+    private final jenkinsCreds
+    private final checkoutCreds
     private final Boolean prBuilder
 
     private String javaToBuild
     private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
 
-    private final String EXCLUDED_CONST = "EXCLUDED"
+    private final String EXCLUDED_CONST = 'EXCLUDED'
 
     /*
     Constructor
@@ -101,7 +102,7 @@ class Regeneration implements Serializable {
     * @param variant
     */
     static String getConfigureArgs(Map<String, ?> configuration, String variant) {
-        def configureArgs = ""
+        def configureArgs = ''
 
         if (configuration.containsKey('configureArgs')) {
             def configConfigureArgs
@@ -123,7 +124,7 @@ class Regeneration implements Serializable {
         def archLabelVal = configuration.arch
 
         // Workaround for cross compiled architectures
-        if (configuration.containsKey("crossCompile")) {
+        if (configuration.containsKey('crossCompile')) {
             def configArchLabelVal
 
             if (isMap(configuration.crossCompile)) {
@@ -146,8 +147,8 @@ class Regeneration implements Serializable {
     If this isn't specified, the openjdk_build_pipeline.groovy will assume we are not building the jdk inside of a container.
     */
     def getDockerImage(Map<String, ?> configuration, String variant) {
-        def dockerImageValue = ""
-        if (configuration.containsKey("dockerImage")) {
+        def dockerImageValue = ''
+        if (configuration.containsKey('dockerImage')) {
             if (isMap(configuration.dockerImage)) {
                 dockerImageValue = (configuration.dockerImage as Map<String, ?>).get(variant)
             } else {
@@ -158,9 +159,9 @@ class Regeneration implements Serializable {
     }
 
     def getDockerArgs(Map<String, ?> configuration, String variant) {
-        def dockerArgsValue = ""
+        def dockerArgsValue = ''
 
-        if (configuration.containsKey("dockerArgs")) {
+        if (configuration.containsKey('dockerArgs')) {
             if (isMap(configuration.dockerArgs)) {
                 dockerArgsValue = (configuration.dockerArgs as Map<String, ?>).get(variant)
             } else {
@@ -177,8 +178,8 @@ class Regeneration implements Serializable {
     If a dockerFile is not specified, the openjdk_build_pipeline.groovy will attempt to pull one from DockerHub.
     */
     def getDockerFile(Map<String, ?> configuration, String variant) {
-        def dockerFileValue = ""
-        if (configuration.containsKey("dockerFile")) {
+        def dockerFileValue = ''
+        if (configuration.containsKey('dockerFile')) {
             if (isMap(configuration.dockerFile)) {
                 dockerFileValue = (configuration.dockerFile as Map<String, ?>).get(variant)
             } else {
@@ -194,8 +195,8 @@ class Regeneration implements Serializable {
     Defaults to &&dockerBuild in openjdk_build_pipeline.groovy if it's not supplied in the build configuration.
     */
     def getDockerNode(Map<String, ?> configuration, String variant) {
-        def dockerNodeValue = ""
-        if (configuration.containsKey("dockerNode")) {
+        def dockerNodeValue = ''
+        if (configuration.containsKey('dockerNode')) {
             if (isMap(configuration.dockerNode)) {
                 dockerNodeValue = (configuration.dockerNode as Map<String, ?>).get(variant)
             } else {
@@ -211,8 +212,8 @@ class Regeneration implements Serializable {
     If not specified, defaults to '' which will be DockerHub.
     */
     def getDockerRegistry(Map<String, ?> configuration, String variant) {
-        def dockerRegistryValue = ""
-        if (configuration.containsKey("dockerRegistry")) {
+        def dockerRegistryValue = ''
+        if (configuration.containsKey('dockerRegistry')) {
             if (isMap(configuration.dockerRegistry)) {
                 dockerRegistryValue = (configuration.dockerRegistry as Map<String, ?>).get(variant)
             } else {
@@ -227,8 +228,8 @@ class Regeneration implements Serializable {
     If used, this will wrap the docker pull with a docker login.
     */
     def getDockerCredential(Map<String, ?> configuration, String variant) {
-        def dockerCredentialValue = ""
-        if (configuration.containsKey("dockerCredential")) {
+        def dockerCredentialValue = ''
+        if (configuration.containsKey('dockerCredential')) {
             if (isMap(configuration.dockerCredential)) {
                 dockerCredentialValue = (configuration.dockerCredential as Map<String, ?>).get(variant)
             } else {
@@ -243,14 +244,14 @@ class Regeneration implements Serializable {
     This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
-        def splitUserUrl = ((String)DEFAULTS_JSON['repository']['build_url']).minus(".git").split('/')
+        def splitUserUrl = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
         // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
         def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
 
-        if (configuration.containsKey("platformSpecificConfigPath")) {
+        if (configuration.containsKey('platformSpecificConfigPath')) {
             // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations.linux.sh
             platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${configuration.platformSpecificConfigPath}"
         }
@@ -264,10 +265,10 @@ class Regeneration implements Serializable {
     * @return
     */
     def formAdditionalBuildNodeLabels(Map<String, ?> configuration, String variant) {
-        def buildTag = "build"
+        def buildTag = 'build'
         def labels = "${buildTag}"
 
-        if (configuration.containsKey("additionalNodeLabels")) {
+        if (configuration.containsKey('additionalNodeLabels')) {
             def additionalNodeLabels
 
             if (isMap(configuration.additionalNodeLabels)) {
@@ -291,9 +292,9 @@ class Regeneration implements Serializable {
     * @return
     */
     def formAdditionalTestLabels(Map<String, ?> configuration, String variant) {
-        def labels = ""
+        def labels = ''
 
-        if (configuration.containsKey("additionalTestLabels")) {
+        if (configuration.containsKey('additionalTestLabels')) {
             def additionalTestLabels
 
             if (isMap(configuration.additionalTestLabels)) {
@@ -327,7 +328,7 @@ class Regeneration implements Serializable {
             }
         }
 
-        return ""
+        return ''
     }
 
     /*
@@ -336,9 +337,9 @@ class Regeneration implements Serializable {
     */
     List<String> getTestList(Map<String, ?> configuration) {
         List<String> testList = []
-        if (configuration.containsKey("test") && configuration.get("test")) {
+        if (configuration.containsKey('test') && configuration.get('test')) {
             if (isMap(configuration.test)) {
-                testList = (configuration.test as Map).get("nightly") as List<String> // no need to check for release
+                testList = (configuration.test as Map).get('nightly') as List<String> // no need to check for release
             }
             testList = defaultTestList
         }
@@ -350,9 +351,9 @@ class Regeneration implements Serializable {
     * @param configuration
     */
     Map<String, ?> getDynamicParams() {
-        List<String> testLists = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["testLists"]
-        List<String> numMachines = DEFAULTS_JSON["testDetails"]["defaultDynamicParas"]["numMachines"]
-        return ["testLists": testLists, "numMachines": numMachines]
+        List<String> testLists = DEFAULTS_JSON['testDetails']['defaultDynamicParas']['testLists']
+        List<String> numMachines = DEFAULTS_JSON['testDetails']['defaultDynamicParas']['numMachines']
+        return ['testLists': testLists, 'numMachines': numMachines]
     }
     /*
     * Checks if the platform/arch/variant is in the EXCLUDES_LIST Parameter.
@@ -370,11 +371,9 @@ class Regeneration implements Serializable {
         String estimatedKey = stringArch + stringOs.capitalize()
 
         if (excludedBuilds.containsKey(estimatedKey)) {
-
             if (excludedBuilds[estimatedKey].contains(variant)) {
                 overridePlatform = true
             }
-
         }
 
         return overridePlatform
@@ -388,7 +387,6 @@ class Regeneration implements Serializable {
     */
     IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant, String javaToBuild) {
         try {
-
             // Check if it's in the excludes list
             if (overridePlatform(platformConfig, variant)) {
                 context.println "[INFO] Excluding $platformConfig.os: $variant from $javaToBuild regeneration due to it being in the EXCLUDES_LIST..."
@@ -419,9 +417,9 @@ class Regeneration implements Serializable {
 
             def testList = getTestList(platformConfig)
 
-            def dynamicList = getDynamicParams().get("testLists")
+            def dynamicList = getDynamicParams().get('testLists')
 
-            def numMachines = getDynamicParams().get("numMachines")
+            def numMachines = getDynamicParams().get('numMachines')
 
             return new IndividualBuildConfig( // final build config
                 JAVA_TO_BUILD: javaToBuild,
@@ -431,17 +429,17 @@ class Regeneration implements Serializable {
                 TEST_LIST: testList,
                 DYNAMIC_LIST: dynamicList,
                 NUM_MACHINES: numMachines,
-                SCM_REF: "",
-                BUILD_REF: "",
-                CI_REF: "",
-                HELPER_REF: "",
-                AQA_REF: "",
+                SCM_REF: '',
+                BUILD_REF: '',
+                CI_REF: '',
+                HELPER_REF: '',
+                AQA_REF: '',
                 AQA_AUTO_GEN: false,
                 BUILD_ARGS: buildArgs,
                 NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${archLabel}",
                 ADDITIONAL_TEST_LABEL: "${additionalTestLabels}",
                 KEEP_TEST_REPORTDIR: false,
-                ACTIVE_NODE_TIMEOUT: "",
+                ACTIVE_NODE_TIMEOUT: '',
                 CODEBUILD: platformConfig.codebuild as Boolean,
                 DOCKER_IMAGE: dockerImage,
                 DOCKER_ARGS: dockerArgs,
@@ -451,13 +449,13 @@ class Regeneration implements Serializable {
                 DOCKER_CREDENTIAL: dockerCredential,
                 PLATFORM_CONFIG_LOCATION: platformSpecificConfigPath,
                 CONFIGURE_ARGS: getConfigureArgs(platformConfig, variant),
-                OVERRIDE_FILE_NAME_VERSION: "",
+                OVERRIDE_FILE_NAME_VERSION: '',
                 USE_ADOPT_SHELL_SCRIPTS: true,
                 ADDITIONAL_FILE_NAME_TAG: platformConfig.additionalFileNameTag as String,
                 JDK_BOOT_VERSION: platformConfig.bootJDK as String,
                 RELEASE: false,
-                PUBLISH_NAME: "",
-                ADOPT_BUILD_NUMBER: "",
+                PUBLISH_NAME: '',
+                ADOPT_BUILD_NUMBER: '',
                 ENABLE_TESTS: DEFAULTS_JSON['testDetails']['enableTests'] as Boolean,
                 ENABLE_TESTDYNAMICPARALLEL: DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean,
                 ENABLE_INSTALLERS: true,
@@ -475,8 +473,8 @@ class Regeneration implements Serializable {
     * Checks if the parameter is a map
     * @param possibleMap
     */
-    static def isMap(possibleMap) {
-        return Map.class.isInstance(possibleMap)
+    static isMap(possibleMap) {
+        return Map.isInstance(possibleMap)
     }
 
     /**
@@ -487,43 +485,43 @@ class Regeneration implements Serializable {
     */
     def createJob(jobName, jobFolder, IndividualBuildConfig config) {
         Map<String, ?> params = config.toMap().clone() as Map
-        params.put("JOB_NAME", jobName)
-        params.put("JOB_FOLDER", jobFolder)
-        params.put("VARIANT", config.VARIANT)
-        params.put("SCRIPT_PATH", scriptPath)
+        params.put('JOB_NAME', jobName)
+        params.put('JOB_FOLDER', jobFolder)
+        params.put('VARIANT', config.VARIANT)
+        params.put('SCRIPT_PATH', scriptPath)
 
-        params.put("GIT_URL", gitRemoteConfigs['url'])
-        params.put("GIT_BRANCH", gitBranch)
+        params.put('GIT_URL', gitRemoteConfigs['url'])
+        params.put('GIT_BRANCH', gitBranch)
 
         // We have to use JsonSlurpers throughout the code for instantiating maps for consistancy and parsing reasons
         Map userRemoteConfigs = new JsonSlurper().parseText('{"branch" : "", "remotes": ""}') as Map
         userRemoteConfigs.branch = gitBranch
         userRemoteConfigs.remotes = gitRemoteConfigs
-        params.put("USER_REMOTE_CONFIGS", JsonOutput.prettyPrint(JsonOutput.toJson(userRemoteConfigs)))
+        params.put('USER_REMOTE_CONFIGS', JsonOutput.prettyPrint(JsonOutput.toJson(userRemoteConfigs)))
 
         def repoHandler = new RepoHandler(userRemoteConfigs)
         repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
 
-        params.put("DEFAULTS_JSON", JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)))
+        params.put('DEFAULTS_JSON', JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)))
         Map ADOPT_DEFAULTS_JSON = repoHandler.getAdoptDefaultsJson()
-        params.put("ADOPT_DEFAULTS_JSON", JsonOutput.prettyPrint(JsonOutput.toJson(ADOPT_DEFAULTS_JSON)))
+        params.put('ADOPT_DEFAULTS_JSON', JsonOutput.prettyPrint(JsonOutput.toJson(ADOPT_DEFAULTS_JSON)))
 
-        params.put("BUILD_CONFIG", config.toJson())
+        params.put('BUILD_CONFIG', config.toJson())
 
-        if (baseFilePath != DEFAULTS_JSON["baseFileDirectories"]["downstream"]) {
-            params.put("CUSTOM_BASEFILE_LOCATION", baseFilePath)
+        if (baseFilePath != DEFAULTS_JSON['baseFileDirectories']['downstream']) {
+            params.put('CUSTOM_BASEFILE_LOCATION', baseFilePath)
         }
 
         // Pass in checkout creds if needs be
-        if (checkoutCreds != "") {
-            params.put("CHECKOUT_CREDENTIALS", checkoutCreds)
+        if (checkoutCreds != '') {
+            params.put('CHECKOUT_CREDENTIALS', checkoutCreds)
         } else {
-            params.put("CHECKOUT_CREDENTIALS", "")
+            params.put('CHECKOUT_CREDENTIALS', '')
         }
 
         // Make sure the dsl knows if we're building inside the pr tester
         if (prBuilder) {
-            params.put("PR_BUILDER", true)
+            params.put('PR_BUILDER', true)
         }
 
         // Execute job dsl, using adopt's template if the user doesn't have one
@@ -573,9 +571,9 @@ class Regeneration implements Serializable {
             def getJenkins = new URL(query).openConnection()
 
             // Set request credentials if they exist
-            if (jenkinsCreds != "") {
-                def jenkinsAuth = "Basic " + new String(Base64.getEncoder().encode(jenkinsCreds.getBytes()))
-                getJenkins.setRequestProperty ("Authorization", jenkinsAuth)
+            if (jenkinsCreds != '') {
+                def jenkinsAuth = 'Basic ' + new String(Base64.getEncoder().encode(jenkinsCreds.getBytes()))
+                getJenkins.setRequestProperty('Authorization', jenkinsAuth)
             }
 
             def response = new JsonSlurper().parseText(getJenkins.getInputStream().getText())
@@ -589,7 +587,7 @@ class Regeneration implements Serializable {
     /**
     * Main function. Ran from build_job_generator.groovy, this will be what jenkins will run first.
     */
-    @SuppressWarnings("unused")
+    @SuppressWarnings('unused')
     def regenerate() {
         context.timestamps {
             def versionNumbers = javaVersion =~ /\d+/
@@ -598,8 +596,7 @@ class Regeneration implements Serializable {
             * Stage: Check that the pipeline isn't in in-progress or queued up. Once clear, run the regeneration job
             */
             context.stage("Check $javaVersion pipeline status") {
-
-                if (jobRootDir.contains("pr-tester")) {
+                if (jobRootDir.contains('pr-tester')) {
                     // No need to check if we're going to overwrite anything for the PR tester since concurrency isn't enabled -> https://github.com/adoptium/temurin-build/pull/2155
                     context.println "[SUCCESS] Don't need to check if the pr-tester is running as concurrency is disabled. Running regeneration job..."
                 } else {
@@ -607,9 +604,8 @@ class Regeneration implements Serializable {
                     def getPipelines = queryAPI("${jenkinsBuildRoot}/api/json?tree=jobs[name]&pretty=true&depth1")
 
                     // Parse api response to only extract the relevant pipeline
-                    getPipelines.jobs.name.each{ pipeline ->
+                    getPipelines.jobs.name.each { pipeline ->
                         if (pipeline == "openjdk${versionNumbers[0]}-pipeline") {
-
                             Boolean inProgress = true
                             while (inProgress) {
                                 // Check if pipeline is in progress using api
@@ -625,7 +621,6 @@ class Regeneration implements Serializable {
                                         context.println "[SUCCESS] ${pipeline} has not been run before. Running regeneration job..."
                                         inProgress = false
                                     }
-
                                 } else {
                                     inProgress = pipelineInProgress.building as Boolean
                                 }
@@ -638,18 +633,14 @@ class Regeneration implements Serializable {
                                     // Sleep for a bit, then check again...
                                     context.println "[INFO] ${pipeline} is running. Sleeping for ${sleepTime} seconds while waiting for ${pipeline} to complete..."
 
-                                    context.sleep(time: sleepTime, unit: "SECONDS")
+                                    context.sleep(time: sleepTime, unit: 'SECONDS')
                                 }
-
                             }
 
                             context.println "[SUCCESS] ${pipeline} is idle. Running regeneration job..."
                         }
-
                     }
-
                 }
-
             } // end check stage
 
             /*
@@ -657,15 +648,14 @@ class Regeneration implements Serializable {
             * jdk8u-linux-x64-openj9, etc.)
             */
             context.stage("Regenerate $javaVersion pipeline jobs") {
-
                 // If we're building jdk head, update the javaToBuild
-                context.println "[INFO] Querying Adoptium api to get the JDK-Head number"
+                context.println '[INFO] Querying Adoptium api to get the JDK-Head number'
 
                 def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
                 Integer jdkHeadNum = Integer.valueOf(JobHelper.getAvailableReleases(context).tip_version)
 
                 if (Integer.valueOf(versionNumbers[0]) == jdkHeadNum) {
-                    javaToBuild = "jdk"
+                    javaToBuild = 'jdk'
                     context.println "[INFO] This IS JDK-HEAD. javaToBuild is ${javaToBuild}."
                 } else {
                     javaToBuild = "${javaVersion}"
@@ -674,61 +664,55 @@ class Regeneration implements Serializable {
 
                 // Regenerate each os and arch
                 targetConfigurations.keySet().each { osarch ->
-
                     context.println "[INFO] Regenerating: $osarch"
 
                         for (def variant in targetConfigurations.get(osarch)) {
+                        context.println "[INFO] Regenerating variant $osarch: $variant..."
 
-                            context.println "[INFO] Regenerating variant $osarch: $variant..."
+                        // Construct configuration for downstream job
+                        Map<String, IndividualBuildConfig> jobConfigurations = [:]
+                        String name = null
+                        Boolean keyFound = false
 
-                            // Construct configuration for downstream job
-                            Map<String, IndividualBuildConfig> jobConfigurations = [:]
-                            String name = null
-                            Boolean keyFound = false
-
-                            // Using a foreach here as containsKey doesn't work for some reason
-                            buildConfigurations.keySet().each { key ->
+                        // Using a foreach here as containsKey doesn't work for some reason
+                        buildConfigurations.keySet().each { key ->
                                 if (key == osarch) {
+                                //For build type, generate a configuration
+                                context.println "[INFO] FOUND MATCH! buildConfiguration key: ${key} and config file key: ${osarch}"
+                                keyFound = true
 
-                                    //For build type, generate a configuration
-                                    context.println "[INFO] FOUND MATCH! buildConfiguration key: ${key} and config file key: ${osarch}"
-                                    keyFound = true
+                                def platformConfig = buildConfigurations.get(key) as Map<String, ?>
 
-                                    def platformConfig = buildConfigurations.get(key) as Map<String, ?>
+                                name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
 
-                                    name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
-
-                                    if (platformConfig.containsKey('additionalFileNameTag')) {
-                                        name += "-${platformConfig.additionalFileNameTag}"
-                                    }
-
-                                    jobConfigurations[name] = buildConfiguration(platformConfig, variant, javaToBuild)
+                                if (platformConfig.containsKey('additionalFileNameTag')) {
+                                    name += "-${platformConfig.additionalFileNameTag}"
                                 }
-                            }
 
-                            if (keyFound == false) {
-                                context.println "[WARNING] Config file key: ${osarch} not recognised. Valid configuration keys for ${javaToBuild} are ${buildConfigurations.keySet()}.\n[WARNING] ${osarch} WILL NOT BE REGENERATED! Setting build result to UNSTABLE..."
-                                currentBuild.result = "UNSTABLE"
+                                jobConfigurations[name] = buildConfiguration(platformConfig, variant, javaToBuild)
+                                }
+                        }
+
+                        if (keyFound == false) {
+                            context.println "[WARNING] Config file key: ${osarch} not recognised. Valid configuration keys for ${javaToBuild} are ${buildConfigurations.keySet()}.\n[WARNING] ${osarch} WILL NOT BE REGENERATED! Setting build result to UNSTABLE..."
+                            currentBuild.result = 'UNSTABLE'
                             } else {
-                                // Skip variant job make if it's marked as excluded
-                                if (jobConfigurations.get(name) == EXCLUDED_CONST) {
-                                    continue
-                                }
+                            // Skip variant job make if it's marked as excluded
+                            if (jobConfigurations.get(name) == EXCLUDED_CONST) {
+                                continue
+                            }
                                 // Make job
                                 else if (jobConfigurations.get(name) != null) {
-                                    makeJob(jobConfigurations, name)
+                                makeJob(jobConfigurations, name)
                                 // Unexpected error when building or getting the configuration
                                 } else {
-                                    throw new Exception("[ERROR] IndividualBuildConfig is malformed or null for key: ${osarch} : ${variant}.")
+                                throw new Exception("[ERROR] IndividualBuildConfig is malformed or null for key: ${osarch} : ${variant}.")
                                 }
-                            }
-
+                        }
                         } // end variant for loop
 
                         context.println "[SUCCESS] ${osarch} completed!\n"
-
                 } // end key foreach loop
-
             } // end stage
         } // end timestamps
     } // end regenerate()
@@ -756,12 +740,12 @@ return {
     Boolean prBuilder
         ->
 
-        def excludedBuilds = [:]
-        if (excludes != "" && excludes != null) {
-            excludedBuilds = new JsonSlurper().parseText(excludes) as Map
-        }
+    def excludedBuilds = [:]
+    if (excludes != '' && excludes != null) {
+        excludedBuilds = new JsonSlurper().parseText(excludes) as Map
+    }
 
-        return new Regeneration(
+    return new Regeneration(
             javaVersion,
             buildConfigurations,
             targetConfigurations,

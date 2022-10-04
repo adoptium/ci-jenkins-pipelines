@@ -1,16 +1,17 @@
 class Config11 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
                 additionalNodeLabels : 'macos10.14',
                 test                : 'default',
                 configureArgs       : [
-                        "openj9"      : '--enable-dtrace=auto --with-cmake',
-                        "temurin"     : '--enable-dtrace=auto'
+                        'openj9'      : '--enable-dtrace=auto --with-cmake',
+                        'temurin'     : '--enable-dtrace=auto'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -22,20 +23,20 @@ class Config11 {
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
                 test                : [
-                        nightly: ["sanity.openjdk", "sanity.system", "extended.system", "sanity.perf", "sanity.functional", "extended.functional"],
-                        weekly : ["extended.openjdk", "extended.perf", "special.functional", "sanity.external"]
+                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional'],
+                        weekly : ['extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external']
                 ],
                 configureArgs       : [
-                        "openj9"      : '--enable-jitserver --enable-dtrace=auto',
-                        "temurin"     : '--enable-dtrace=auto',
-                        "corretto"    : '--enable-dtrace=auto',
-                        "SapMachine"  : '--enable-dtrace=auto',
-                        "dragonwell"  : '--enable-dtrace=auto --enable-unlimited-crypto --with-jvm-variants=server --with-zlib=system --with-jvm-features=zgc',
-                        "fast_startup": '--enable-dtrace=auto',
-                        "bisheng"     : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server --disable-warnings-as-errors'
+                        'openj9'      : '--enable-jitserver --enable-dtrace=auto',
+                        'temurin'     : '--enable-dtrace=auto',
+                        'corretto'    : '--enable-dtrace=auto',
+                        'SapMachine'  : '--enable-dtrace=auto',
+                        'dragonwell'  : '--enable-dtrace=auto --enable-unlimited-crypto --with-jvm-variants=server --with-zlib=system --with-jvm-features=zgc',
+                        'fast_startup': '--enable-dtrace=auto',
+                        'bisheng'     : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server --disable-warnings-as-errors'
                 ],
                 buildArgs            : [
-                        "temurin"     : '--create-source-archive --create-sbom'
+                        'temurin'     : '--create-source-archive --create-sbom'
                 ]
         ],
 
@@ -46,7 +47,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -57,7 +58,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -82,7 +83,7 @@ class Config11 {
                 additionalNodeLabels: 'win2016&&vs2019',
                 test                : false,
                 buildArgs       : [
-                        "temurin"   : '--jvm-variant client,server --create-sbom --cross-compile'
+                        'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile'
                 ]
         ],
 
@@ -106,7 +107,7 @@ class Config11 {
                 test                : 'default',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -116,7 +117,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace=auto',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -126,7 +127,7 @@ class Config11 {
                 test                : false,
                 configureArgs       : '--enable-dtrace=auto',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -136,11 +137,11 @@ class Config11 {
                 additionalNodeLabels : 'centos7',
                 test                : 'default',
                 configureArgs       : [
-                        "temurin"     : '--enable-dtrace=auto',
-                        "openj9"      : '--enable-dtrace=auto --enable-jitserver'
+                        'temurin'     : '--enable-dtrace=auto',
+                        'openj9'      : '--enable-dtrace=auto --enable-jitserver'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
 
         ],
@@ -152,7 +153,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : '--disable-ccache',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -165,7 +166,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace=auto',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -181,37 +182,37 @@ class Config11 {
                         dragonwell: 'armv8.2'
                 ],
                 configureArgs       : [
-                        "temurin"   : '--enable-dtrace=auto',
-                        "openj9"    : '--enable-dtrace=auto',
-                        "corretto"  : '--enable-dtrace=auto',
-                        "dragonwell": "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
-                        "bisheng"   : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
+                        'temurin'   : '--enable-dtrace=auto',
+                        'openj9'    : '--enable-dtrace=auto',
+                        'corretto'  : '--enable-dtrace=auto',
+                        'dragonwell': "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
+                        'bisheng'   : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
                 ],
                 testDynamic        : false,
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
         riscv64Linux      :  [
                 os                   : 'linux',
                 dockerImage          : [
-                        "openj9"     : 'adoptopenjdk/centos6_build_image',
-                        "bisheng"    : 'adoptopenjdk/centos6_build_image'
+                        'openj9'     : 'adoptopenjdk/centos6_build_image',
+                        'bisheng'    : 'adoptopenjdk/centos6_build_image'
                 ],
                 arch                 : 'riscv64',
                 crossCompile         : [
-                        "openj9"     : 'x64',
-                        "bisheng"    : 'x64'
+                        'openj9'     : 'x64',
+                        'bisheng'    : 'x64'
                 ],
                 buildArgs            : [
-                        "openj9"     : '--cross-compile',
-                        "bisheng"    : '--cross-compile --branch risc-v',
-                        "temurin"    : '--create-sbom'
+                        'openj9'     : '--cross-compile',
+                        'bisheng'    : '--cross-compile --branch risc-v',
+                        'temurin'    : '--create-sbom'
                 ],
                 configureArgs        : [
-                        "openj9"     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
-                        "bisheng"    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
+                        'openj9'     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
+                        'bisheng'    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
                 ],
                 test                : [
                         nightly: ['sanity.openjdk'],
