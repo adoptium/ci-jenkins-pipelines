@@ -22,6 +22,13 @@ stage("Submit Release Pipelines") {
 
     def Map<String, String> jobs = [:]
 
+    // Ensure workspace is clean so we don't archive any old failed pipeline artifacts
+    node("worker") {
+        println "[INFO] Cleaning up controller worker workspace prior to running pipelines.."
+        // Fail if unable to clean..
+        cleanWs notFailBuild: false
+    }
+
     // For each variant create a release pipeline job
     scmRefs.each{ variant ->
         def variantName = variant.key
@@ -67,6 +74,11 @@ stage("Submit Release Pipelines") {
     // Run downstream jobs in parallel
     parallel jobs
     node("worker") {
-        archiveArtifacts artifacts: "workspace/*"
+        try {
+            archiveArtifacts artifacts: "workspace/*"
+        } finally {
+            println "[INFO] Cleaning up controller worker workspace..."
+            cleanWs notFailBuild: true
+        }
     }
 }
