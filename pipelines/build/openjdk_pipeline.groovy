@@ -22,6 +22,11 @@ def buildConfigurations = null
 Map<String, ?> DEFAULTS_JSON = null
 
 node ("worker") {
+    // Ensure workspace is clean so we don't archive any old failed pipeline artifacts
+    println "[INFO] Cleaning up controller worker workspace prior to running pipelines.."
+    // Fail if unable to clean..
+    cleanWs notFailBuild: false
+
     // Load defaultsJson. These are passed down from the build_pipeline_generator and is a JSON object containing user's default constants.
     if (!params.defaultsJson || defaultsJson == "") {
         throw new Exception("[ERROR] No User Defaults JSON found! Please ensure the defaultsJson parameter is populated and not altered during parameter declaration.")
@@ -99,41 +104,48 @@ node ("worker") {
 
 // If a parameter below hasn't been declared above, it is declared in the jenkins job itself
 if (scmVars != null || configureBuild != null || buildConfigurations != null) {
-    configureBuild(
-        javaToBuild,
-        buildConfigurations,
-        targetConfigurations,
-        DEFAULTS_JSON,
-        activeNodeTimeout,
-        dockerExcludes,
-        enableTests,
-        enableTestDynamicParallel,
-        enableInstallers,
-        enableSigner,
-        releaseType,
-        scmReference,
-        buildReference,
-        ciReference,
-        helperReference,
-        aqaReference,
-        aqaAutoGen,
-        overridePublishName,
-        useAdoptBashScripts,
-        additionalConfigureArgs,
-        scmVars,
-        additionalBuildArgs,
-        overrideFileNameVersion,
-        cleanWorkspaceBeforeBuild,
-        cleanWorkspaceAfterBuild,
-        cleanWorkspaceBuildOutputAfterBuild,
-        adoptBuildNumber,
-        propagateFailures,
-        keepTestReportDir,
-        keepReleaseLogs,
-        currentBuild,
-        this,
-        env
-    ).doBuild()
+    try {
+        configureBuild(
+            javaToBuild,
+            buildConfigurations,
+            targetConfigurations,
+            DEFAULTS_JSON,
+            activeNodeTimeout,
+            dockerExcludes,
+            enableTests,
+            enableTestDynamicParallel,
+            enableInstallers,
+            enableSigner,
+            releaseType,
+            scmReference,
+            buildReference,
+            ciReference,
+            helperReference,
+            aqaReference,
+            aqaAutoGen,
+            overridePublishName,
+            useAdoptBashScripts,
+            additionalConfigureArgs,
+            scmVars,
+            additionalBuildArgs,
+            overrideFileNameVersion,
+            cleanWorkspaceBeforeBuild,
+            cleanWorkspaceAfterBuild,
+            cleanWorkspaceBuildOutputAfterBuild,
+            adoptBuildNumber,
+            propagateFailures,
+            keepTestReportDir,
+            keepReleaseLogs,
+            currentBuild,
+            this,
+            env
+        ).doBuild()
+    } finally {
+        node ("worker") {
+            println "[INFO] Cleaning up controller worker workspace..."
+            cleanWs notFailBuild: true
+        }
+    }
 } else {
     throw new Exception("[ERROR] One or more setup parameters are null.\nscmVars = ${scmVars}\nconfigureBuild = ${configureBuild}\nbuildConfigurations = ${buildConfigurations}")
 }
