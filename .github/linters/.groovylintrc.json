@@ -1,30 +1,26 @@
 {
   "extends": "recommended",
   "rules": {
-    "BlockEndsWithBlankLine": "off",
-    "BuilderMethodWithSideEffects": "off",
-    "CatchException": "off",
-    "ClassStartsWithBlankLine": "off",
-    "DuplicateMapLiteral": "off",
-    "DuplicateStringLiteral": "off",
-    "ExplicitCallToGetAtMethod": "off",
-    "ExplicitCallToMinusMethod": "off",
-    "ExplicitHashMapInstantiation": "off",
-    "FactoryMethodName": "off",
-    "FieldName": "off",
-    "Indentation": "off",
-    "Instanceof": "off",
-    "LineLength": "off",
-    "NestedBlockDepth": "off",
-    "ParameterCount": "off",
-    "ParameterName": "off",
-    "PropertyName": "off",
-    "SerializableClassMustDefineSerialVersionUID": "off",
-    "SpaceInsideParentheses": "off",
-    "SpaceAroundOperator": "off",
+    "design.BuilderMethodWithSideEffects": "off",
+    "exceptions.CatchException": "off",
+    "dry.DuplicateMapLiteral": "off",
+    "dry.DuplicateStringLiteral": "off",
+    "groovyism.ExplicitHashMapInstantiation": "off",
+    "name.FactoryMethodName": "off",
+    "naming.FieldName": "off",
+    "unnecessary.Instanceof": "off",
+    "formatting.LineLength": "off",
+    "size.NestedBlockDepth": {
+      "maxNestedBlockDepth": 12
+    },
+    "size.ParameterCount": {
+      "maxParameters": 10
+    },
+    "name.ParameterName": "off",
+    "name.PropertyName": "off",
+    "serialization.SerializableClassMustDefineSerialVersionUID": "off",
     "ThrowExceptionFromFinallyBlock": "off",
-    "UnnecessaryGString": "off",
-    "VariableName": "off",
-    "VariableTypeRequired": "off"
+    "naming.VariableName": "off",
+    "convention.VariableTypeRequired": "off"
   }
 }
