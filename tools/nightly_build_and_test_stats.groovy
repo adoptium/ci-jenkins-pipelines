@@ -30,7 +30,7 @@ node('worker') {
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
 
-    def healthStatus = [ 'jdk8': null, 'jdk11': null, 'jdk17': null]
+    def healthStatus = [ 'jdk8': null, 'jdk11': null, 'jdk17': null, 'jdk18': null]
     def testStats = []
 
     stage('getPipelineStatus') {
