@@ -179,7 +179,8 @@ node('worker') {
                                 target = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}u.groovy"
                             } catch (NoSuchFileException e4) {
                                 println "[WARNING] No config found for JDK${javaVersion} in the User's or Adopt's repository. Skipping generation..."
-                                continue // break and move to next element in the loop
+                                // break and move to next element in the loop
+                                return /* groovylint-disable-line ReturnNullFromCatchBlock */
                             }
                         }
                         checkoutUserPipelines()
