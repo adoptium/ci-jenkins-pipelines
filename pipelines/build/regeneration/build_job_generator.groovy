@@ -192,7 +192,7 @@ node('worker') {
 
         if (jenkinsCreds != '') {
             withCredentials([usernamePassword(
-          credentialsId: '${JENKINS_AUTH}',
+          credentialsId: "${JENKINS_AUTH}",
           usernameVariable: 'jenkinsUsername',
           passwordVariable: 'jenkinsToken'
       )]) {
