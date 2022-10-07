@@ -1410,10 +1410,10 @@ class Build {
                                         context.unstash 'jmods'
                                         context.withEnv(["macos_base_path=${macos_base_path}"]) {
                                             // groovylint-disable
-                                            context.sh '''
+                                            context.sh """
                                                 #!/bin/bash
                                                 set -eu
-                                                echo "Signing JMOD files"
+                                                echo 'Signing JMOD files'
                                                 TMP_DIR="${macos_base_path}/"
                                                 ENTITLEMENTS="$WORKSPACE/entitlements.plist"
                                                 FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
@@ -1427,7 +1427,7 @@ class Build {
                                                     chmod --reference="${dir}/unsigned_${file}" "$f"
                                                     rm -rf "${dir}/unsigned_${file}"
                                                 done
-                                            '''
+                                            """
                                             // groovylint-enable
                                         }
                                         context.stash name: 'signed_jmods', includes: "${macos_base_path}/**/*"
