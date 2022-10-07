@@ -66,7 +66,7 @@ class Build {
     String openjdkSource = ''
     String openjdk_built_config = ''
     String dockerImageDigest = ''
-    Map<String,String> dependency_version = new HashMap<String,String>()
+    HashMap<String,String> dependency_version = [:]
     String crossCompileVersionPath = ''
     Map variantVersion = [:]
 
