@@ -2,6 +2,9 @@ import common.RepoHandler
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
+/**
+ * Javadoc for Class RepoHandlerTest
+ */
 class RepoHandlerTest {
 
     private Map testRemote = [
