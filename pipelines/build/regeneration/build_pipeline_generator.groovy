@@ -162,8 +162,12 @@ node('worker') {
                     SCRIPT              : "${scriptFolderPath}/openjdk_pipeline.groovy",
                     disableJob          : false,
                     pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
+<<<<<<< HEAD
                     adoptScripts        : false,
                     releaseType         : 'Nightly' 
+=======
+                    adoptScripts        : false
+>>>>>>> 112beac (fix: ReturnNullFromCatchBlock return -> continue)
                 ]
 
                 def target
@@ -184,9 +188,7 @@ node('worker') {
                                 target = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}u.groovy"
                             } catch (NoSuchFileException e4) {
                                 println "[WARNING] No config found for JDK${javaVersion} in the User's or Adopt's repository. Skipping generation..."
-                                // break and move to next element in the loop
-                                // groovylint-disable-next-line
-                                return
+                                continue // break and move to next element in the loop
                             }
                         }
                         checkoutUserPipelines()
@@ -284,7 +286,7 @@ node('worker') {
                 println "[SUCCESS] THE FOLLOWING PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER"
                 println generatedPipelines
             }
-            }
+        }
     } finally {
         // Always clean up, even on failure (doesn't delete the created jobs)
         println '[INFO] Cleaning up...'
