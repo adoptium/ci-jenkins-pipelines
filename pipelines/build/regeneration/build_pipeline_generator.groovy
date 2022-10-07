@@ -28,9 +28,9 @@ node('worker') {
     */
         def checkoutAdoptPipelines = { ->
             checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]
-      ])
+                branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
+                userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]
+            ])
         }
 
     /*
@@ -38,9 +38,9 @@ node('worker') {
     */
         def checkoutUserPipelines = { ->
             checkout([$class: 'GitSCM',
-        branches: [ [ name: repoBranch ] ],
-        userRemoteConfigs: [ remoteConfigs ]
-      ])
+                branches: [ [ name: repoBranch ] ],
+                userRemoteConfigs: [ remoteConfigs ]
+            ])
         }
 
         timestamps {
@@ -57,7 +57,7 @@ node('worker') {
             if (checkoutCreds != '') {
                 // NOTE: This currently does not work with user credentials due to https://issues.jenkins.io/browse/JENKINS-60349
                 remoteConfigs.put('credentials', "${checkoutCreds}")
-      } else {
+            } else {
                 println "[WARNING] CHECKOUT_CREDENTIALS not specified! Checkout to $repoUri may fail if you do not have your ssh key on this machine."
             }
 
@@ -70,10 +70,10 @@ node('worker') {
             // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
             def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
 
-      /*
-      Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root.
-      These are the top level pipeline jobs.
-      */
+        /*
+        Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root.
+        These are the top level pipeline jobs.
+        */
             def scriptFolderPath = (params.SCRIPT_FOLDER_PATH) ?: DEFAULTS_JSON['scriptDirectories']['upstream']
 
             if (!fileExists(scriptFolderPath)) {
@@ -84,10 +84,10 @@ node('worker') {
                 checkoutUserPipelines()
             }
 
-      /*
-      Load nightlyFolderPath. This is the folder where the configurations/jdkxx_pipeline_config.groovy code is located compared to the repository root.
-      These define what the default set of nightlies will be.
-      */
+        /*
+        Load nightlyFolderPath. This is the folder where the configurations/jdkxx_pipeline_config.groovy code is located compared to the repository root.
+        These define what the default set of nightlies will be.
+        */
             def nightlyFolderPath = (params.NIGHTLY_FOLDER_PATH) ?: DEFAULTS_JSON['configDirectories']['nightly']
 
             if (!fileExists(nightlyFolderPath)) {
@@ -98,10 +98,10 @@ node('worker') {
                 checkoutUserPipelines()
             }
 
-      /*
-      Load jobTemplatePath. This is where the pipeline_job_template.groovy code is located compared to the repository root.
-      This actually sets up the pipeline job using the parameters above.
-      */
+        /*
+        Load jobTemplatePath. This is where the pipeline_job_template.groovy code is located compared to the repository root.
+        This actually sets up the pipeline job using the parameters above.
+        */
             def jobTemplatePath = (params.JOB_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['upstream']
 
             if (!fileExists(jobTemplatePath)) {
@@ -135,7 +135,6 @@ node('worker') {
             println "USE_ADOPT_SHELL_SCRIPTS = $useAdoptShellScripts"
 
             // Collect available JDK versions to check for generation (tip_version + 1 just in case it is out of date on a release day)
-            String helperRef = DEFAULTS_JSON['repository']['helper_ref']
             def JobHelper = library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
             println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
 
@@ -149,36 +148,36 @@ node('worker') {
                 }
 
                 def config = [
-          TEST                : false,
-          GIT_URL             : repoUri,
-          BRANCH              : repoBranch,
-          BUILD_FOLDER        : jobRoot,
-          CHECKOUT_CREDENTIALS: checkoutCreds,
-          JAVA_VERSION        : javaVersion,
-          JOB_NAME            : "openjdk${javaVersion}-pipeline",
-          SCRIPT              : "${scriptFolderPath}/openjdk_pipeline.groovy",
-          disableJob          : false,
-          pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
-          adoptScripts        : false
-        ]
+                    TEST                : false,
+                    GIT_URL             : repoUri,
+                    BRANCH              : repoBranch,
+                    BUILD_FOLDER        : jobRoot,
+                    CHECKOUT_CREDENTIALS: checkoutCreds,
+                    JAVA_VERSION        : javaVersion,
+                    JOB_NAME            : "openjdk${javaVersion}-pipeline",
+                    SCRIPT              : "${scriptFolderPath}/openjdk_pipeline.groovy",
+                    disableJob          : false,
+                    pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
+                    adoptScripts        : false
+                ]
 
                 def target
                 try {
                     target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
-        } catch (NoSuchFileException e) {
+                } catch (NoSuchFileException e) {
                     try {
                         println "[WARNING] jdk${javaVersion}.groovy does not exist, chances are we want a jdk${javaVersion}u.groovy file. Trying ${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
                         target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
-          } catch (NoSuchFileException e2) {
+                    } catch (NoSuchFileException e2) {
                         println "[WARNING] jdk${javaVersion}u.groovy does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightlies in..."
 
                         checkoutAdoptPipelines()
                         try {
                             target = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}.groovy"
-            } catch (NoSuchFileException e3) {
+                        } catch (NoSuchFileException e3) {
                             try {
                                 target = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}u.groovy"
-              } catch (NoSuchFileException e4) {
+                            } catch (NoSuchFileException e4) {
                                 println "[WARNING] No config found for JDK${javaVersion} in the User's or Adopt's repository. Skipping generation..."
                                 return
                             }
@@ -192,7 +191,7 @@ node('worker') {
                 // hack as jenkins groovy does not seem to allow us to check if disableJob exists
                 try {
                     config.put('disableJob', target.disableJob)
-        } catch (Exception ex) {
+                } catch (Exception ex) {
                     config.put('disableJob', false)
                 }
 
@@ -218,7 +217,7 @@ node('worker') {
                 // Create the nightly job, using adopt's template if the user's one fails
                 try {
                     jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: config
-        } catch (Exception e) {
+                } catch (Exception e) {
                     println "${e}\n[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
                     checkoutAdoptPipelines()
                     jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['upstream'], ignoreExisting: false, additionalParameters: config
@@ -257,7 +256,7 @@ node('worker') {
 
                 try {
                     jobDsl targets: weeklyTemplatePath, ignoreExisting: false, additionalParameters: config
-        } catch (Exception e) {
+                } catch (Exception e) {
                     println "${e}\n[WARNING] Something went wrong when creating the weekly job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
                     checkoutAdoptPipelines()
                     jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weeklyTemplatePath'], ignoreExisting: false, additionalParameters: config
@@ -277,9 +276,9 @@ node('worker') {
                 println generatedPipelines
             }
             }
-  } finally {
+    } finally {
         // Always clean up, even on failure (doesn't delete the created jobs)
         println '[INFO] Cleaning up...'
         cleanWs deleteDirs: true
-            }
-        }
+    }
+}
