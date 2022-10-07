@@ -14,7 +14,7 @@
       "maxNestedBlockDepth": 12
     },
     "size.ParameterCount": {
-      "maxParameters": 10
+      "maxParameters": 18
     },
     "name.ParameterName": "off",
     "name.PropertyName": "off",
