@@ -1,6 +1,6 @@
 // Build once a day
 CRON_SETTINGS = '''H H * * *'''
-NODE_LABEL = "dockerBuild&&linux&&x64"
+NODE_LABEL = 'dockerBuild&&linux&&x64'
 
 pipeline {
     agent none
@@ -18,7 +18,7 @@ pipeline {
                         build('asmtools')
                     }
                 }
-                stage("jtreg") {
+                stage('jtreg') {
                     agent {
                         label NODE_LABEL
                     }

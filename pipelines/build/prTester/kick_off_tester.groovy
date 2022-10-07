@@ -29,12 +29,12 @@ String url = DEFAULTS_JSON['repository']['pipeline_url']
 Closure prTest
 
 // Switch to controller node to load library groovy definitions
-node("worker") {
+node('worker') {
     checkout([
         $class: 'GitSCM',
         branches: [[name: branch]],
         userRemoteConfigs: [[
-            refspec: " +refs/pull/*/head:refs/remotes/origin/pr/*/head +refs/heads/master:refs/remotes/origin/master +refs/heads/*:refs/remotes/origin/*",
+            refspec: ' +refs/pull/*/head:refs/remotes/origin/pr/*/head +refs/heads/master:refs/remotes/origin/master +refs/heads/*:refs/remotes/origin/*',
             url: url
         ]]
     ])

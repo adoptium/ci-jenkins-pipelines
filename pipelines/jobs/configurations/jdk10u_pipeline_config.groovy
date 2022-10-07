@@ -1,5 +1,6 @@
 class Config10 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
@@ -105,11 +106,11 @@ class Config10 {
                 additionalNodeLabels : 'centos6',
                 arch                 : 'x64',
                 test                 : false,
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
         ],
   ]
-  
+
 }
 
 Config10 config = new Config10()

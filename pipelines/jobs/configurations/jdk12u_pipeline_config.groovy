@@ -1,5 +1,6 @@
 class Config12 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
@@ -19,7 +20,7 @@ class Config12 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
                         weekly : []
                 ],
-                additionalFileNameTag: "macosXL",
+                additionalFileNameTag: 'macosXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
         ],
 
@@ -28,7 +29,7 @@ class Config12 {
                 arch                : 'x64',
                 additionalNodeLabels: 'centos6',
                 test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf','sanity.external'],
+                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external'],
                         weekly : ['special.functional']
                 ],
                 configureArgs        : '--disable-ccache --enable-dtrace=auto'
@@ -59,7 +60,7 @@ class Config12 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
                         weekly : []
                 ],
-                additionalFileNameTag: "windowsXL",
+                additionalFileNameTag: 'windowsXL',
                 configureArgs        : '--with-noncompressedrefs'
         ],
 
@@ -153,10 +154,11 @@ class Config12 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system'],
                         weekly : []
                 ],
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace=auto'
         ],
   ]
+
 }
 
 Config12 config = new Config12()

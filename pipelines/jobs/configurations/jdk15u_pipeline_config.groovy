@@ -1,5 +1,6 @@
 class Config15 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
@@ -13,7 +14,7 @@ class Config15 {
                 arch                 : 'x64',
                 additionalNodeLabels : 'macos10.14',
                 test                 : 'default',
-                additionalFileNameTag: "macosXL",
+                additionalFileNameTag: 'macosXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace'
         ],
 
@@ -32,8 +33,8 @@ class Config15 {
                         openj9      : '!(centos6||rhel6)'
                 ],
                 configureArgs       : [
-                        "openj9"      : '--enable-dtrace --enable-jitserver',
-                        "hotspot"     : '--enable-dtrace'
+                        'openj9'      : '--enable-dtrace --enable-jitserver',
+                        'hotspot'     : '--enable-dtrace'
                 ]
         ],
 
@@ -48,7 +49,7 @@ class Config15 {
                 additionalTestLabels: [
                         openj9      : '!(centos6||rhel6)'
                 ],
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs       : '--with-noncompressedrefs --enable-dtrace --enable-jitserver'
         ],
 
@@ -64,7 +65,7 @@ class Config15 {
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                : 'default',
-                additionalFileNameTag: "windowsXL",
+                additionalFileNameTag: 'windowsXL',
                 configureArgs        : '--with-noncompressedrefs'
         ],
 
@@ -99,7 +100,7 @@ class Config15 {
                 os                   : 'linux',
                 arch                 : 's390x',
                 test                 : 'default',
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace'
         ],
 
@@ -109,8 +110,8 @@ class Config15 {
                 additionalNodeLabels: 'centos7',
                 test                : 'default',
                 configureArgs       : [
-                        "hotspot"     : '--enable-dtrace',
-                        "openj9"      : '--enable-dtrace --enable-jitserver'
+                        'hotspot'     : '--enable-dtrace',
+                        'openj9'      : '--enable-dtrace --enable-jitserver'
                 ]
         ],
 
@@ -119,7 +120,7 @@ class Config15 {
                 arch                 : 'ppc64le',
                 additionalNodeLabels : 'centos7',
                 test                 : 'default',
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace'
         ],
 
@@ -143,7 +144,7 @@ class Config15 {
                 dockerImage          : 'adoptopenjdk/centos7_build_image',
                 arch                 : 'aarch64',
                 test                 : 'default',
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace'
         ],
   ]

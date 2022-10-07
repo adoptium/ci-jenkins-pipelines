@@ -5,20 +5,20 @@ class JenkinsTypeCheckHelperExtension extends GroovyTypeCheckingExtensionSupport
     Object run() {
         unresolvedProperty {
             pexp ->
-                if (pexp.propertyAsString.equals("scmVars")) {
-                    storeType(var, classNodeFor(ScmVarsStub))
-                    handled = true
+                if (pexp.propertyAsString.equals('scmVars')) {
+                storeType(var, classNodeFor(ScmVarsStub))
+                handled = true
                 }
         }
 
         unresolvedVariable {
             var ->
-                if (var.name.equals("JobHelper")) {
-                    storeType(var, classNodeFor(JobHelper))
-                    handled = true
-                } else if (var.name.equals("NodeHelper")) {
-                    storeType(var, classNodeFor(NodeHelper))
-                    handled = true
+                if (var.name.equals('JobHelper')) {
+                storeType(var, classNodeFor(JobHelper))
+                handled = true
+                } else if (var.name.equals('NodeHelper')) {
+                storeType(var, classNodeFor(NodeHelper))
+                handled = true
                 }
         }
 
@@ -27,7 +27,8 @@ class JenkinsTypeCheckHelperExtension extends GroovyTypeCheckingExtensionSupport
                     && name == 'format') {
                 handled = true
                 return newMethod('format', classNodeFor(Date))
-            }
+                    }
         }
     }
+
 }

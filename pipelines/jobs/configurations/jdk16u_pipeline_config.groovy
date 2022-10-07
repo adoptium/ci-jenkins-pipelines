@@ -1,5 +1,6 @@
 class Config16 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
@@ -23,8 +24,8 @@ class Config16 {
                         openj9      : '!(centos6||rhel6)'
                 ],
                 configureArgs       : [
-                        "openj9"      : '--enable-dtrace --enable-jitserver',
-                        "hotspot"     : '--enable-dtrace'
+                        'openj9'      : '--enable-dtrace --enable-jitserver',
+                        'hotspot'     : '--enable-dtrace'
                 ]
         ],
 
@@ -64,7 +65,6 @@ class Config16 {
                 ]
         ],
 
-
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
@@ -86,7 +86,6 @@ class Config16 {
                 cleanWorkspaceAfterBuild: true
         ],
 
-
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
@@ -100,8 +99,8 @@ class Config16 {
                 additionalNodeLabels: 'centos7',
                 test                : 'default',
                 configureArgs       : [
-                        "hotspot"     : '--enable-dtrace',
-                        "openj9"      : '--enable-dtrace --enable-jitserver'
+                        'hotspot'     : '--enable-dtrace',
+                        'openj9'      : '--enable-dtrace --enable-jitserver'
                 ]
 
         ],

@@ -1,5 +1,5 @@
 plugins {
-  id "com.github.johnrengelman.shadow" version "6.0.0"
+    id 'com.github.johnrengelman.shadow' version '6.0.0'
 }
 
 group 'adoptopenjdk'
@@ -26,7 +26,7 @@ repositories {
         url 'https://repo.jenkins-ci.org/releases'
     }
     maven {
-        url "https://repo.jenkins-ci.org/public"
+        url 'https://repo.jenkins-ci.org/public'
     }
 }
 

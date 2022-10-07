@@ -1,5 +1,6 @@
 class Config8 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac        : [
                 os                  : 'mac',
                 arch                : 'x64',
@@ -10,7 +11,7 @@ class Config8 {
                 ],
                 test                 : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -24,11 +25,11 @@ class Config8 {
                 ],
                 test                 : 'default',
                 configureArgs       : [
-                        "openj9"      : '--enable-jitserver',
-                        "dragonwell"  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
+                        'openj9'      : '--enable-jitserver',
+                        'dragonwell'  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-source-archive --create-sbom'
+                        'temurin'   : '--create-source-archive --create-sbom'
                 ]
         ],
 
@@ -39,7 +40,7 @@ class Config8 {
                 test                : 'default',
                 configureArgs       : '--disable-headful',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -50,7 +51,7 @@ class Config8 {
                 test                : 'default',
                 configureArgs       : '--disable-headful',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -60,7 +61,7 @@ class Config8 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 test                 : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -84,7 +85,7 @@ class Config8 {
                 test                 : 'default',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -96,7 +97,7 @@ class Config8 {
                         openj9: 'default'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -105,7 +106,7 @@ class Config8 {
                 arch: 'sparcv9',
                 test: 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -114,7 +115,7 @@ class Config8 {
                 arch                : 'x64',
                 test                : 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -124,10 +125,10 @@ class Config8 {
                 additionalNodeLabels : 'centos7',
                 test                 : 'default',
                 configureArgs       : [
-                        "openj9"      : '--enable-jitserver'
+                        'openj9'      : '--enable-jitserver'
                 ],
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -139,7 +140,7 @@ class Config8 {
                 dockerArgs: '--platform linux/arm/v7',
                 test: 'default',
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -153,7 +154,7 @@ class Config8 {
                 test                 : 'default',
                 testDynamic          : false,
                 buildArgs           : [
-                        "temurin"   : '--create-sbom'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
   ]

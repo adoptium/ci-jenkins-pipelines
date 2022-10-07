@@ -21,8 +21,8 @@ limitations under the License.
 
 String buildFolder = "$JOB_FOLDER"
 
-if (!binding.hasVariable('GIT_URL')) GIT_URL = "https://github.com/adoptium/ci-jenkins-pipelines.git"
-if (!binding.hasVariable('GIT_BRANCH')) GIT_BRANCH = "master"
+if (!binding.hasVariable('GIT_URL')) GIT_URL = 'https://github.com/adoptium/ci-jenkins-pipelines.git'
+if (!binding.hasVariable('GIT_BRANCH')) GIT_BRANCH = 'master'
 
 isLightweight = true
 if (binding.hasVariable('PR_BUILDER')) {
@@ -41,7 +41,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 git {
                     remote {
                         url(GIT_URL)
-                        refspec(" +refs/pull/*:refs/remotes/origin/pr/* +refs/heads/master:refs/remotes/origin/master +refs/heads/*:refs/remotes/origin/*")
+                        refspec(' +refs/pull/*:refs/remotes/origin/pr/* +refs/heads/master:refs/remotes/origin/master +refs/heads/*:refs/remotes/origin/*')
                         credentials("${CHECKOUT_CREDENTIALS}")
                     }
                     branch("${GIT_BRANCH}")
@@ -57,17 +57,17 @@ pipelineJob("$buildFolder/$JOB_NAME") {
     }
     properties {
         // Hide all non Temurin builds from public view
-        if (VARIANT != "temurin") {
+        if (VARIANT != 'temurin') {
             authorizationMatrix {
                 inheritanceStrategy {
                     // Do not inherit permissions from global configuration
                     nonInheriting()
-                } 
-                permissions(['hudson.model.Item.Build:AdoptOpenJDK*build', 'hudson.model.Item.Build:AdoptOpenJDK*build-triage', 
+                }
+                permissions(['hudson.model.Item.Build:AdoptOpenJDK*build', 'hudson.model.Item.Build:AdoptOpenJDK*build-triage',
                 'hudson.model.Item.Cancel:AdoptOpenJDK*build', 'hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
                 'hudson.model.Item.Configure:AdoptOpenJDK*build', 'hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
                 'hudson.model.Item.Read:AdoptOpenJDK*build', 'hudson.model.Item.Read:AdoptOpenJDK*build-triage',
-                 // eclipse-temurin-bot needs read access for TRSS
+                // eclipse-temurin-bot needs read access for TRSS
                 'hudson.model.Item.Read:eclipse-temurin-bot',
                 'hudson.model.Item.Workspace:AdoptOpenJDK*build', 'hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
                 'hudson.model.Run.Update:AdoptOpenJDK*build', 'hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
