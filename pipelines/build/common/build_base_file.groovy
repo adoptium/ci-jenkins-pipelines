@@ -84,7 +84,7 @@ class Builder implements Serializable {
     It uses several helper functions to pull in and parse the build configuration for the job.
     This overrides the default IndividualBuildConfig generated in config_regeneration.groovy.
     */
-    IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant) { 
+    IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant) {
         // Query the Adopt api to get the "tip_version"
         String helperRef = DEFAULTS_JSON['repository']['helper_ref']
         def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
@@ -493,18 +493,18 @@ class Builder implements Serializable {
 
     /*
     Retrieves the platformSpecificConfigPath from the build configurations.
-    This determines where the location of the operating system setup files are in comparison to the repository root. 
+    This determines where the location of the operating system setup files are in comparison to the repository root.
     The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
-        def splitUserUrl = ((String)DEFAULTS_JSON['repository']['build_url']).minus(".git").split('/')
+        def splitUserUrl = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
         // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         def buildRef = configuration.buildRef ?: DEFAULTS_JSON['repository']['build_branch']
         // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
         def platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${DEFAULTS_JSON['configDirectories']['platform']}"
-        if (configuration.containsKey("platformSpecificConfigPath")) {
+        if (configuration.containsKey('platformSpecificConfigPath')) {
             // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations.linux.sh
             platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${configuration.platformSpecificConfigPath}"
         }

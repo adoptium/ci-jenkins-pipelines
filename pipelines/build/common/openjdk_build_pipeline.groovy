@@ -147,11 +147,11 @@ class Build {
         jobParams.put('TEST_JOB_NAME', "${env.JOB_NAME}_SmokeTests")
         jobParams.put('BUILD_LIST', 'functional/buildAndPackage')
         def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
-        def vendorTestRepos = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url'])- ('.git')
+        def vendorTestRepos = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git')
         def vendorTestBranches = ADOPT_DEFAULTS_JSON['repository']['build_branch']
         def vendorTestDirs = ADOPT_DEFAULTS_JSON['repository']['test_dirs']
         if (!useAdoptShellScripts) {
-            vendorTestRepos = ((String)DEFAULTS_JSON['repository']['build_url']).minus(".git")
+            vendorTestRepos = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git')
             vendorTestBranches = buildConfig.BUILD_REF ?: DEFAULTS_JSON['repository']['build_branch']  // use BUILD_CONFIGURATION's branch if exists
             vendorTestDirs = DEFAULTS_JSON['repository']['test_dirs']
         }
@@ -1213,7 +1213,7 @@ class Build {
             def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS)
             repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
 
-            /* 
+            /*
                 if BUILD_REF, CI_REF are set in BUILD_CONFIGURATION, overwrite branch value in DEFAULTS_JSON
                 so we can re-use the same logic down: get config either from DEFAULT_JSON or ADPOT_DEFULAT_JSON(enable useAdoptShellScripts)
             */
@@ -1520,7 +1520,7 @@ class Build {
     def updateGithubCommitStatus(STATE, MESSAGE) {
         // workaround https://issues.jenkins-ci.org/browse/JENKINS-38674
         // get url and branch from jenkins job's params not variable USER_REMOTE_CONFIGS
-        String repoUrl = USER_REMOTE_CONFIGS["remotes"]["url"]
+        String repoUrl = USER_REMOTE_CONFIGS['remotes']['url']
         Map paramUserRemoteConfigs = new JsonSlurper().parseText(context.USER_REMOTE_CONFIGS)
         String commitSha = paramUserRemoteConfigs['branch']
 
@@ -1552,8 +1552,8 @@ class Build {
     /*
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
     Running in downstream build job jdk-*-*-* called by kick_off_build.groovy
-    */ 
-    @SuppressWarnings("unused")
+    */
+    @SuppressWarnings('unused')
     def build() {
         context.timestamps {
             try {
@@ -1578,7 +1578,7 @@ class Build {
                 def helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
                 // TODO: remove println "Wen3: current helperRef is ${helperRef}"
 
-                context.stage("queue") {
+                context.stage('queue') {
                     /* This loads the library containing two Helper classes, and causes them to be
                     imported/updated from their repo. Without the library being imported here, runTests method will fail to execute the post-build test jobs for reasons unknown.*/
                     context.library(identifier: "openjdk-jenkins-helper@${helperRef}")

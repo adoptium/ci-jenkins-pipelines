@@ -63,10 +63,9 @@ node('worker') {
 
             // Checkout into user repository
             checkoutUserPipelines()
-            
+
             String helperRef = DEFAULTS_JSON['repository']['helper_ref']
             library(identifier: "openjdk-jenkins-helper@${helperRef}")
-
 
             // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
             def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
@@ -333,14 +332,14 @@ node('worker') {
             // Fail if nothing was generated
             if (generatedPipelines == []) {
                 throw new Exception('[ERROR] NO PIPELINES WERE GENERATED!')
-      } else {
+            } else {
                 println "[SUCCESS] THE FOLLOWING PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER"
                 println generatedPipelines
             }
-        }
+            }
   } finally {
         // Always clean up, even on failure (doesn't delete the created jobs)
         println '[INFO] Cleaning up...'
         cleanWs deleteDirs: true
-    }
-}
+            }
+        }

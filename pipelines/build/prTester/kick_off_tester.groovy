@@ -40,7 +40,6 @@ node('worker') {
         ]]
     ])
 
-
     library(identifier: "openjdk-jenkins-helper@${helperRef}")
     prTest = load DEFAULTS_JSON['scriptDirectories']['tester']
 }
@@ -53,4 +52,3 @@ prTest(
         url,
         DEFAULTS_JSON
 ).runTests()
-
