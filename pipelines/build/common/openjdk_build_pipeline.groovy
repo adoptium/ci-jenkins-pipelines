@@ -1346,7 +1346,7 @@ class Build {
                                                     chmod --reference="${dir}/unsigned_${file}" "$f"
                                                     rm -rf "${dir}/unsigned_${file}"
                                                 done
-                                            '''
+                                            '''/* groovylint-disable-line GStringExpressionWithinString */
                                         }
                                         context.stash name: 'signed_jmods', includes: "${macos_base_path}/**/*"
                                     }
