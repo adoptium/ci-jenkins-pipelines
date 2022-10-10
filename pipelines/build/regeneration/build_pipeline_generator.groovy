@@ -180,7 +180,8 @@ node('worker') {
                             } catch (NoSuchFileException e4) {
                                 println "[WARNING] No config found for JDK${javaVersion} in the User's or Adopt's repository. Skipping generation..."
                                 // break and move to next element in the loop
-                                return /* groovylint-disable-line ReturnNullFromCatchBlock */
+                                // groovylint-disable-next-line
+                                return
                             }
                         }
                         checkoutUserPipelines()
