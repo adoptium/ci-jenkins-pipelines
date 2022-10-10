@@ -460,7 +460,7 @@ class Regeneration implements Serializable {
                 ENABLE_TESTDYNAMICPARALLEL: DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean,
                 ENABLE_INSTALLERS: true,
                 ENABLE_SIGNER: true,
-                CLEAN_WORKSPACE: true,
+                CLEAN_WORKSPACE_BEFORE_BUILD: true,
                 CLEAN_WORKSPACE_AFTER: true,
                 CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER: false
             )

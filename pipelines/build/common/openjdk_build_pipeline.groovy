@@ -1546,7 +1546,7 @@ class Build {
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
                 def enableSigner = Boolean.valueOf(buildConfig.ENABLE_SIGNER)
                 def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
-                def cleanWorkspace = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE)
+                def cleanWorkspace = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_BEFORE_BUILD)
                 def cleanWorkspaceAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_AFTER)
                 def cleanWorkspaceBuildOutputAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER)
 
