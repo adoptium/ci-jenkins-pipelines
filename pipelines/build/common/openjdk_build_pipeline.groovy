@@ -291,7 +291,6 @@ class Build {
                 def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
                 if (!JobHelper.jobIsRunnable(jobName as String)) {
                     context.node('worker') {
-                        // TODO: replace below master to aqaReference
                         context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
                         def templatePath = 'testJobTemplate'
                         context.println "Smoke test job doesn't exist, create test job: ${jobName}"
@@ -1066,7 +1065,6 @@ class Build {
             // To save on spam, only print out the metadata the first time
             if (!metaWrittenOut && initialWrite) {
                 context.println '===METADATA OUTPUT==='
-                // TODO: below can use helper's .toJson()
                 context.println JsonOutput.prettyPrint(JsonOutput.toJson(data.asMap()))
                 context.println '=/=METADATA OUTPUT=/='
                 metaWrittenOut = true
@@ -1576,7 +1574,6 @@ class Build {
 
                 // Get branch/tag of temurin-build, ci-jenkins-pipeline and jenkins-helper repo from BUILD_CONFIGURATION or defaultsJson
                 def helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
-                // TODO: remove println "Wen3: current helperRef is ${helperRef}"
 
                 context.stage('queue') {
                     /* This loads the library containing two Helper classes, and causes them to be

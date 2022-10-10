@@ -57,9 +57,7 @@ node('worker') {
         userRemoteConfigs['branch'] = buildConf.get('CI_REF') ?: userRemoteConfigs['branch']
     }
 
-    //TODO: remove println "Wen1: verified -- current USER_REMOTE_CONFIGS is ${userRemoteConfigs}"
     String helperRef = buildConf.get('HELPER_REF') ?: LOCAL_DEFAULTS_JSON['repository']['helper_ref']
-    // TODO: remove println "Wen2: verified -- current helperRef is ${helperRef}"
     library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
     try {
