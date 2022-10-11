@@ -131,9 +131,9 @@ class Builder implements Serializable {
         def platformCleanWorkspaceAfterBuild = getCleanWorkspaceAfterBuild(platformConfig)
 
         // Always clean on mac due to https://github.com/adoptium/temurin-build/issues/1980
-        def cleanWorkspace = cleanWorkspaceBeforeBuild
+        def cleanWorkspaceBefore = cleanWorkspaceBeforeBuild
         if (platformConfig.os == 'mac') {
-            cleanWorkspace = true
+            cleanWorkspaceBefore = true
         }
 
         def cleanWsAfter = cleanWorkspaceAfterBuild
