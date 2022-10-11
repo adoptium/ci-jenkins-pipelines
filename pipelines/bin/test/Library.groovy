@@ -1,0 +1,5 @@
+@interface Library {
+
+    String value()
+
+}
