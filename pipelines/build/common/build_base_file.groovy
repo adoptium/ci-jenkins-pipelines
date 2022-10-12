@@ -136,10 +136,10 @@ class Builder implements Serializable {
             cleanWorkspaceBefore = true
         }
 
-        def cleanWsAfter = cleanWorkspaceAfterBuild
+        def cleanWorkspaceAfter = cleanWorkspaceAfterBuild
         if (platformCleanWorkspaceAfterBuild) {
             // Platform override specified
-            cleanWsAfter = platformCleanWorkspaceAfterBuild
+            cleanWorkspaceAfter = platformCleanWorkspaceAfterBuild
         }
 
         return new IndividualBuildConfig(
@@ -182,7 +182,7 @@ class Builder implements Serializable {
             ENABLE_INSTALLERS: enableInstallers,
             ENABLE_SIGNER: enableSigner,
             CLEAN_WORKSPACE_BEFORE: cleanWorkspaceBefore,
-            CLEAN_WORKSPACE_AFTER: cleanWsAfter,
+            CLEAN_WORKSPACE_AFTER: cleanWorkspaceAfter,
             CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER: cleanWorkspaceBuildOutputAfterBuild
         )
     }
