@@ -1,5 +1,5 @@
 /*
-Jenkins job does comparision for two different build artifacts
+Jenkins job does comparison for two different build artifacts
 If they are identical, build pass; or fail
 */
 
@@ -9,6 +9,7 @@ pipeline {
         choice(choices: ['linux', 'mac', 'windows'], name: 'platform', description:'select release on different platform')
         string(name: 'URL1', defaultValue: '', description: 'URL to one version of the build artifacts\ne.g.: https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk18-pipeline/lastSuccessfulBuild/artifact/target/linux/x64/temurin/OpenJDK18U-jdk_x64_linux_hotspot_2022-06-11-23-30.tar.gz')
         string(name: 'URL2', defaultValue: '', description: 'URL to the other version of the build artifacts\ne.g.: https://github.com/adoptium/temurin19-binaries/releases/download/jdk-2022-06-09-19-11-beta/OpenJDK-jdk_x64_linux_hotspot_2022-06-09-03-31.tar.gz')
+        string(name: 'excludeFiles', defaultValue: 'classes_nocoops.jsa', description: 'File names to be excluded while doing the comparison, separated by `;`')
     }
 
     stages {
@@ -37,7 +38,12 @@ pipeline {
                         if (params.platform != 'linux') {
                             "prep${platform}" ('url1Dir1', 'url1Dir2')
                         }
-                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2'
+                        def excludeFlags=""
+                        def excludeFileList = excludeFiles.split(';')
+                        for(String excludeFile in excludeFileList) {
+                            excludeFlags="${excludeFlags} --exclude=${excludeFile}"
+                        }
+                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2 ${excludeFlags}'
                         if (retVal != 0) {
                             currentBuild.result = 'FAILURE'
                             error 'Error: two builds are not the same!'
@@ -66,7 +72,7 @@ def prepmac(String jdk1, String jdk2, String localCert='defaultpath') {
 }
 
 /*
-TODO: placeholder for windows comparision
+TODO: placeholder for windows comparison
 def prepwindows(String jdk1, String jdk2, ...) {
    sh "./tools/reproduce_comparison/compareWindows.sh ..."
 }
