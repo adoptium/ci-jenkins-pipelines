@@ -387,7 +387,7 @@ job[openjdk_build_docker_multiarch] --load--> load[Jenkinsfile] --stage1-->
 
 stage1[Docker build stage]
 
-stage1 --> 11[linux x64] --> stagecheck{ build all pass}
+stage1 --> 11[linux x64] --> stagecheck{ builds all pass}
 
 stage1 --> 12[linux aarch64]--> stagecheck
 
