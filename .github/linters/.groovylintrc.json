@@ -1,0 +1,26 @@
+{
+  "extends": "recommended",
+  "rules": {
+    "design.BuilderMethodWithSideEffects": "off",
+    "exceptions.CatchException": "off",
+    "dry.DuplicateMapLiteral": "off",
+    "dry.DuplicateStringLiteral": "off",
+    "groovyism.ExplicitHashMapInstantiation": "off",
+    "name.FactoryMethodName": "off",
+    "naming.FieldName": "off",
+    "unnecessary.Instanceof": "off",
+    "formatting.LineLength": "off",
+    "size.NestedBlockDepth": {
+      "maxNestedBlockDepth": 12
+    },
+    "size.ParameterCount": {
+      "maxParameters": 10
+    },
+    "name.ParameterName": "off",
+    "name.PropertyName": "off",
+    "serialization.SerializableClassMustDefineSerialVersionUID": "off",
+    "ThrowExceptionFromFinallyBlock": "off",
+    "naming.VariableName": "off",
+    "convention.VariableTypeRequired": "off"
+  }
+}

@@ -26,11 +26,10 @@ class PullRequestTestPipeline implements Serializable {
     Map<String, ?> DEFAULTS_JSON
     List<Integer> javaVersions
 
-    String BUILD_FOLDER = "build-scripts-pr-tester/build-test"
-    String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
+    String BUILD_FOLDER = 'build-scripts-pr-tester/build-test'
+    String ADOPT_DEFAULTS_FILE_URL = 'https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json'
     def getAdopt = new URL(ADOPT_DEFAULTS_FILE_URL).openConnection()
     Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map
-
 
     /*
     * Creates a configuration for the top level pipeline job
@@ -46,11 +45,11 @@ class PullRequestTestPipeline implements Serializable {
                 JOB_NAME            : "openjdk${javaVersion}-pipeline",
                 SCRIPT              : "${DEFAULTS_JSON['scriptDirectories']['upstream']}/openjdk_pipeline.groovy",
                 disableJob          : false,
-                pipelineSchedule    : "0 0 31 2 0", // 31st Feb so will never run
+                pipelineSchedule    : '0 0 31 2 0', // 31st Feb so will never run
                 targetConfigurations: testConfigurations,
                 defaultsJson        : DEFAULTS_JSON,
                 adoptDefaultsJson   : ADOPT_DEFAULTS_JSON,
-                CHECKOUT_CREDENTIALS: "",
+                CHECKOUT_CREDENTIALS: '',
                 adoptScripts        : true,
                 enableTests         : false,
                 enableTestDynamicParallel : false
@@ -61,12 +60,12 @@ class PullRequestTestPipeline implements Serializable {
     * Generates the top level pipeline job
     */
     def generatePipelineJob(def javaVersion) {
-        context.println "[INFO] Running Pipeline Generation Script..."
+        context.println '[INFO] Running Pipeline Generation Script...'
         Map<String, ?> config = generateConfig(javaVersion)
         context.checkout([$class: 'GitSCM', userRemoteConfigs: [[url: config.GIT_URL]], branches: [[name: branch]]])
 
         context.println "JDK${javaVersion} disableJob = ${config.disableJob}"
-        context.jobDsl targets: DEFAULTS_JSON["templateDirectories"]["upstream"], ignoreExisting: false, additionalParameters: config
+        context.jobDsl targets: DEFAULTS_JSON['templateDirectories']['upstream'], ignoreExisting: false, additionalParameters: config
     }
 
     /*
@@ -77,14 +76,14 @@ class PullRequestTestPipeline implements Serializable {
         Boolean pipelineFailed = false
 
         // Load generation scripts
-        context.node("worker") {
+        context.node('worker') {
             context.println "loading ${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
             Closure regenerationScript = context.load "${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
 
             javaVersions.each({ javaVersion ->
                 // generate top level job
                 generatePipelineJob(javaVersion)
-                context.println "[INFO] Running downstream jobs regeneration script..."
+                context.println '[INFO] Running downstream jobs regeneration script...'
 
                 // Load platform specific build configs
                 def buildConfigurations
@@ -100,7 +99,7 @@ class PullRequestTestPipeline implements Serializable {
                 }
 
                 String actualJavaVersion = updateRepo ? "jdk${javaVersion}u" : "jdk${javaVersion}"
-                def excludedBuilds = ""
+                def excludedBuilds = ''
 
                 // Generate downstream pipeline jobs
                 regenerationScript(
@@ -112,13 +111,13 @@ class PullRequestTestPipeline implements Serializable {
                     900,
                     currentBuild,
                     context,
-                    "build-scripts-pr-tester/build-test",
+                    'build-scripts-pr-tester/build-test',
                     [ url: gitRepo ],
                     branch,
-                    DEFAULTS_JSON["templateDirectories"]["downstream"],
-                    DEFAULTS_JSON["baseFileDirectories"]["downstream"],
-                    DEFAULTS_JSON["scriptDirectories"]["downstream"],
-                    "https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test",
+                    DEFAULTS_JSON['templateDirectories']['downstream'],
+                    DEFAULTS_JSON['baseFileDirectories']['downstream'],
+                    DEFAULTS_JSON['scriptDirectories']['downstream'],
+                    'https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test',
                     null,
                     null,
                     true
@@ -133,13 +132,13 @@ class PullRequestTestPipeline implements Serializable {
                 run tests quick 8           run jdk8
                 run tests quick 11,17,19    run jdk11, 17 and 19
             */
-            String[] commentsList=context.params.ghprbCommentBody.trim().split('run tests quick')
+            String[] commentsList = context.params.ghprbCommentBody.trim().split('run tests quick')
             switch (commentsList.size()) {
                 case 0:
                     javaVersions = [17]
                     break
                 case 1:
-                    javaVersions= javaVersions
+                    javaVersions = javaVersions
                     break
                 case 2:
                     javaVersions = commentsList[1].tokenize(',[]').collect { it as int }
@@ -153,8 +152,8 @@ class PullRequestTestPipeline implements Serializable {
                             context.build job: "${BUILD_FOLDER}/openjdk${javaVersion}-pipeline",
                                 propagate: true,
                                 parameters: [
-                                    context.string(name: 'releaseType', value: "Nightly Without Publish"),
-                                    context.string(name: 'activeNodeTimeout', value: "0")
+                                    context.string(name: 'releaseType', value: 'Nightly Without Publish'),
+                                    context.string(name: 'activeNodeTimeout', value: '0')
                                 ]
                         } catch (err) {
                             context.println "[ERROR] ${actualJavaVersion} PIPELINE FAILED\n$err"
@@ -168,38 +167,39 @@ class PullRequestTestPipeline implements Serializable {
         context.parallel jobs
 
         // Move to "worker" workspace context to perform clean up...
-        context.node("worker") {
+        context.node('worker') {
             // Only clean up the space if the tester passed
             if (!pipelineFailed) {
-                context.println "[INFO] Cleaning up..."
+                context.println '[INFO] Cleaning up...'
                 context.cleanWs notFailBuild: true
             } else {
-                context.println "[ERROR] Pipelines failed. Setting build result to FAILURE..."
+                context.println '[ERROR] Pipelines failed. Setting build result to FAILURE...'
                 currentBuild.result = 'FAILURE'
             }
         }
     }
+
 }
 
 Map<String, ?> defaultTestConfigurations = [
-    "x64Linux": [
-        "temurin"
+    'x64Linux': [
+        'temurin'
     ],
-    "x64AlpineLinux" : [
-        "temurin"
+    'x64AlpineLinux' : [
+        'temurin'
     ],
-    "aarch64Linux": [
-        "temurin"
+    'aarch64Linux': [
+        'temurin'
     ],
-    "x64Windows": [
-        "temurin"
+    'x64Windows': [
+        'temurin'
     ],
-    "x64Mac": [
-        "temurin"
+    'x64Mac': [
+        'temurin'
     ]
 ]
 
-List<Integer> defaultJavaVersions = [8, 11, 17, 18, 19]
+List<Integer> defaultJavaVersions = [8, 11, 17, 19]
 
 return {
     String branch,
@@ -210,24 +210,23 @@ return {
     String testConfigurations = null,
     String versions = null
         ->
-        Map<String, ?> testConfig = defaultTestConfigurations
-        List<Integer> javaVersions = defaultJavaVersions
-        Map<String, ?> defaultsJson = DEFAULTS_JSON
+    Map<String, ?> testConfig = defaultTestConfigurations
+    List<Integer> javaVersions = defaultJavaVersions
+    Map<String, ?> defaultsJson = DEFAULTS_JSON
 
-        if (gitRepo == null) {
-            gitRepo = DEFAULTS_JSON['repository']['pipeline_url']
-        }
+    if (gitRepo == null) {
+        gitRepo = DEFAULTS_JSON['repository']['pipeline_url']
+    }
 
-        if (testConfigurations != null) {
-            testConfig = new JsonSlurper().parseText(testConfigurations) as Map
-        }
+    if (testConfigurations != null) {
+        testConfig = new JsonSlurper().parseText(testConfigurations) as Map
+    }
 
-        if (versions != null) {
-            javaVersions = new JsonSlurper().parseText(versions) as List<Integer>
-        }
+    if (versions != null) {
+        javaVersions = new JsonSlurper().parseText(versions) as List<Integer>
+    }
 
-
-        return new PullRequestTestPipeline(
+    return new PullRequestTestPipeline(
             gitRepo: gitRepo,
             branch: branch,
             testConfigurations: testConfig,

@@ -24,25 +24,25 @@ Downstream job root executor file, it sets up the library and runs the bash scri
 // We have to declare JSON defaults again because we're utilising it's content at start of job
 def LOCAL_DEFAULTS_JSON = new JsonSlurper().parseText(DEFAULTS_JSON) as Map
 if (!LOCAL_DEFAULTS_JSON) {
-    throw new Exception("[ERROR] No User Defaults JSON found! Please ensure the DEFAULTS_JSON parameter is populated and not altered during parameter declaration.")
+    throw new Exception('[ERROR] No User Defaults JSON found! Please ensure the DEFAULTS_JSON parameter is populated and not altered during parameter declaration.')
 }
 def ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(ADOPT_DEFAULTS_JSON) as Map
 if (!ADOPT_DEFAULTS_JSON) {
-    throw new Exception("[ERROR] No Adopt Defaults JSON found! Please ensure the ADOPT_DEFAULTS_JSON parameter is populated and not altered during parameter declaration.")
+    throw new Exception('[ERROR] No Adopt Defaults JSON found! Please ensure the ADOPT_DEFAULTS_JSON parameter is populated and not altered during parameter declaration.')
 }
 
-def baseFilePath = (params.CUSTOM_BASEFILE_LOCATION) ?: LOCAL_DEFAULTS_JSON["baseFileDirectories"]["downstream"]
+def baseFilePath = (params.CUSTOM_BASEFILE_LOCATION) ?: LOCAL_DEFAULTS_JSON['baseFileDirectories']['downstream']
 
 def userRemoteConfigs = [:]
 def downstreamBuilder = null
-node("worker") {
+node('worker') {
     /*
     Changes dir to Adopt's pipeline repo. Use closures as functions aren't accepted inside node blocks
     */
     def checkoutAdoptPipelines = { ->
-      checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["pipeline_branch"] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
+        checkout([$class: 'GitSCM',
+        branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
+        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]
       ])
     }
 
@@ -62,7 +62,6 @@ node("worker") {
         downstreamBuilder = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['baseFileDirectories']['downstream']}"
         checkout scm
     }
-
 }
 
 downstreamBuilder(

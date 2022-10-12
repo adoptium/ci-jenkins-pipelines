@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-stage("Submit Release Pipelines") {
+stage('Submit Release Pipelines') {
     // Map of <variant> : <scmRef>
     def Map<String, String> scmRefs = new JsonSlurper().parseText("${params.scmReferences}") as Map
 
@@ -22,15 +22,22 @@ stage("Submit Release Pipelines") {
 
     def Map<String, String> jobs = [:]
 
+    // Ensure workspace is clean so we don't archive any old failed pipeline artifacts
+    node('worker') {
+        println '[INFO] Cleaning up controller worker workspace prior to running pipelines..'
+        // Fail if unable to clean..
+        cleanWs notFailBuild: false
+    }
+
     // For each variant create a release pipeline job
-    scmRefs.each{ variant ->
+    scmRefs.each { variant ->
         def variantName = variant.key
         def scmRef = variant.value
         def Map<String, List<String>> targetConfig = [:]
 
-        targetConfigurations.each{ target ->
+        targetConfigurations.each { target ->
             if (target.value.contains(variantName)) {
-                targetConfig.put(target.key,[variantName])
+                targetConfig.put(target.key, [variantName])
             }
         }
 
@@ -47,15 +54,16 @@ stage("Submit Release Pipelines") {
                             ]
                     // For reproducible builds (releaseType==Release) to have comparison on multiple builds' artifacts.
                     // Copy artifacts from downstream and archive again on weekly-pipeline. For details, see issue: https://github.com/adoptium/ci-jenkins-pipelines/issues/301
-                    if ( result.getCurrentResult() == "SUCCESS" ) {
-                        node("worker") {
+                    if (result.getCurrentResult() == 'SUCCESS') {
+                        node('worker') {
                             copyArtifacts(
                                 projectName: result.getProjectName(), // copy-up
                                 selector: specific(result.getNumber().toString()), // buildNumber need to be string not int
                                 filter: '**/*.tar.gz, **/*.zip',
                                 fingerprintArtifacts: true,
-                                target: "workspace",
-                                flatten: true
+                                target: 'workspace',
+                                flatten: true,
+                                optional: true  // do not fail pipeline if not find matching filter
                             )
                         }
                     }
@@ -65,7 +73,12 @@ stage("Submit Release Pipelines") {
     }
     // Run downstream jobs in parallel
     parallel jobs
-    node("worker") {
-        archiveArtifacts artifacts: "workspace"
+    node('worker') {
+        try {
+            archiveArtifacts artifacts: 'workspace/*'
+        } finally {
+            println '[INFO] Cleaning up controller worker workspace...'
+            cleanWs notFailBuild: true
+        }
     }
 }

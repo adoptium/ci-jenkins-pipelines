@@ -15,33 +15,34 @@ pipeline {
         stage('Lets Compare') {
             agent {
                 label "${params.platform}&&build" // build label enables comparisons to be done
-            } 
+            }
             steps {
                 script {
                     try {
+                        cleanWs()
                         echo "Fetching artifact1 from ${params.URL1}"
                         def ret1 = sh returnStatus: true, script: "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
                         if (ret1 != 0) {
-                            currentBuild.result = "UNSTABLE"
-                            error "Stopping after download and uncompress tar file"
+                            currentBuild.result = 'UNSTABLE'
+                            error 'Stopping after download and uncompress tar file'
                         }
                         echo "Fetching artifact2 from ${params.URL2}"
                         def ret2 = sh returnStatus: true, script: "mkdir url1Dir2 && wget -q ${params.URL2} -O - | tar -xz -C url1Dir2"
-                        if (ret2 != 0) { 
-                            currentBuild.result = "UNSTABLE"
-                            error "Stopping after download and uncompress tar file"
+                        if (ret2 != 0) {
+                            currentBuild.result = 'UNSTABLE'
+                            error 'Stopping after download and uncompress tar file'
                         }
 
                         // call extra platform specific function
-                        if ( params.platform != 'linux' ) { 
-                            "prep${platform}" ("url1Dir1", "url1Dir2") 
+                        if (params.platform != 'linux') {
+                            "prep${platform}" ('url1Dir1', 'url1Dir2')
                         }
-                        def retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2"
-                        if (retVal != 0 ){
+                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2'
+                        if (retVal != 0) {
                             currentBuild.result = 'FAILURE'
-                            error "Error: two builds are not the same!"
+                            error 'Error: two builds are not the same!'
                         } else {
-                            echo "Success: two builds are the same!"
+                            echo 'Success: two builds are the same!'
                         }
                     } catch (Exception err) {
                         echo err.getMessage()
@@ -59,9 +60,9 @@ pipeline {
 set correct defaultpath for localCert
 see: https://github.com/adoptium/temurin-build/issues/3015#issuecomment-1175322612
 */
-def prepmac(String jdk1, String jdk2, String localCert="defaultpath") {
-   sh "chmod 776 ${WORKSPACE}/tools/reproduce_comparison/compareMacOS.sh"
-   sh "${WORKSPACE}/tools/reproduce_comparison/compareMacOS.sh $jdk1 $jdk2 $localCert skip"
+def prepmac(String jdk1, String jdk2, String localCert='defaultpath') {
+    sh "chmod 776 ${WORKSPACE}/tools/reproduce_comparison/compareMacOS.sh"
+    sh "${WORKSPACE}/tools/reproduce_comparison/compareMacOS.sh $jdk1 $jdk2 $localCert skip"
 }
 
 /*
