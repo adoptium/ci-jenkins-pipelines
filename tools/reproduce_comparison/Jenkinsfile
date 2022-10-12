@@ -38,12 +38,12 @@ pipeline {
                         if (params.platform != 'linux') {
                             "prep${platform}" ('url1Dir1', 'url1Dir2')
                         }
-                        excludeString=''
-                        IFS=';' read -ra ADDR <<< "$excludeFiles"
-                        for i in "${ADDR[@]}"; do
-                            excludeString="${excludeString} --exclude=$i"
-                        done
-                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2 ${excludeString}'
+                        def excludeFlags=""
+                        def excludeFileList = excludeFiles.split(';')
+                        for(String excludeFile in excludeFileList ) {
+                            excludeFlags="${excludeFlags} --exclude=${excludeFile}"
+                        }
+                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2 ${excludeFlags}'
                         if (retVal != 0) {
                             currentBuild.result = 'FAILURE'
                             error 'Error: two builds are not the same!'
