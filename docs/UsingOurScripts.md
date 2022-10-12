@@ -116,7 +116,7 @@ As an example, take a look at the [build-pipeline-generator](https://ci.adoptope
 ![Image of the SCRIPT_FOLDER_PATH parameter in jenkins](images/scriptFolderParam.png)
 The script will use whatever has been entered into the parameter field unless it has been left empty, in which case it will use whatever is in the user's `defaults.json['scriptDirectories']['upstream']` attribute.
 
-It will then evaluate the existence of that directory in the user's repository and, if it fails to find one, will checkout to adoptium/ci-jenkins-pipelines and use Adopt's `defaults.json` (the console log will warn the user of this occuring):
+It will then evaluate the existence of that directory in the user's repository and, if it fails to find one, will checkout to adoptium/ci-jenkins-pipelines and use Adopt's `defaults.json` (the console log will warn the user of this occurring):
 
 ```bash
 00:13:31  [WARNING] pipelines/build/common/weekly_release_pipeline.groovy does not exist in your chosen repository. Updating it to use Adopt's instead
