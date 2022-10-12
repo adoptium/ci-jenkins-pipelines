@@ -40,7 +40,7 @@ pipeline {
                         }
                         def excludeFlags=""
                         def excludeFileList = excludeFiles.split(';')
-                        for(String excludeFile in excludeFileList ) {
+                        for(String excludeFile in excludeFileList) {
                             excludeFlags="${excludeFlags} --exclude=${excludeFile}"
                         }
                         def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2 ${excludeFlags}'
