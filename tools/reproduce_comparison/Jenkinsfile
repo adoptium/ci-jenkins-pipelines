@@ -9,7 +9,7 @@ pipeline {
         choice(choices: ['linux', 'mac', 'windows'], name: 'platform', description:'select release on different platform')
         string(name: 'URL1', defaultValue: '', description: 'URL to one version of the build artifacts\ne.g.: https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk18-pipeline/lastSuccessfulBuild/artifact/target/linux/x64/temurin/OpenJDK18U-jdk_x64_linux_hotspot_2022-06-11-23-30.tar.gz')
         string(name: 'URL2', defaultValue: '', description: 'URL to the other version of the build artifacts\ne.g.: https://github.com/adoptium/temurin19-binaries/releases/download/jdk-2022-06-09-19-11-beta/OpenJDK-jdk_x64_linux_hotspot_2022-06-09-03-31.tar.gz')
-        string(name: 'excludeFile', defaultValue: 'classes_nocoops'. description: 'File name to be excluded while doing the comparison')
+        string(name: 'excludeFiles', defaultValue: 'classes_nocoops.jsa', description: 'File names to be excluded while doing the comparison, separated by `;`')
     }
 
     stages {
@@ -38,7 +38,12 @@ pipeline {
                         if (params.platform != 'linux') {
                             "prep${platform}" ('url1Dir1', 'url1Dir2')
                         }
-                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2 --exclude=${params.excludeFile}'
+                        excludeString=''
+                        IFS=';' read -ra ADDR <<< "$excludeFiles"
+                        for i in "${ADDR[@]}"; do
+                            excludeString="${excludeString} --exclude=$i"
+                        done
+                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2 ${excludeString}'
                         if (retVal != 0) {
                             currentBuild.result = 'FAILURE'
                             error 'Error: two builds are not the same!'
