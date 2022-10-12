@@ -26,7 +26,7 @@ These are the initial scripts that are the top level jobs that are invoked, this
 jobs for each configuration/platform then coordinates deploying the results to GitHub. The majority of the code that
 defines this stage is contained within [build_base_file.groovy](https://github.com/adoptium/temurin-build/blob/master/pipelines/build/common/build_base_file.groovy).
 
-#### Indiviual Build Jobs
+#### Individual Build Jobs
 
-This are invoked by the parent pipeline job and each build creates the archives/installers for a given platform. The majority
-of this code is defined in [openjdk_build_pipeline.groovy](https://github.com/adoptium/temurin-build/blob/master/pipelines/build/common/openjdk_build_pipeline.groovy)
+These are invoked by the parent pipeline job and each build creates the archives/installers for a given platform. The majority
+of this code is defined in [openjdk_build_pipeline.groovy](https://github.com/adoptium/temurin-build/blob/master/pipelines/build/common/openjdk_build_pipeline.groovy).
