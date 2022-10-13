@@ -485,6 +485,7 @@ class Build {
     Run the Sign downstream job. We run this job on windows and jdk8 hotspot & jdk13 mac builds.
     The job code signs and notarizes the binaries so they can run on these operating systems without encountering issues.
     */
+    def SIGN_NODE_LABEL = DEFAULTS_JSON['signNodeLabel']
     def sign(VersionInfo versionInfo) {
         // Sign and archive jobs if needed
         if (
@@ -493,7 +494,8 @@ class Build {
             context.stage('sign') {
                 def filter = ''
 
-                def nodeFilter = 'eclipse-codesign'
+                def nodeFilter = "${SIGN_NODE_LABEL}"
+                 
 
                 if (buildConfig.TARGET_OS == 'windows') {
                     filter = '**/OpenJDK*_windows_*.zip'
@@ -701,7 +703,8 @@ class Build {
             default: break
         }
 
-        def nodeFilter = 'eclipse-codesign'
+        /* groovylint-disable-next-line VariableTypeRequired */
+        def nodeFilter = "${SIGN_NODE_LABEL}"
 
         // Execute sign installer job
         def installerJob = context.build job: 'build-scripts/release/sign_installer',
