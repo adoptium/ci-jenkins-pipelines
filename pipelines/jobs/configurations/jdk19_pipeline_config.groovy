@@ -170,8 +170,10 @@ class Config19 {
         riscv64Linux      :  [
                 os                   : 'linux',
                 arch                 : 'riscv64',
-                configureArgs        : '--enable-dtrace --with-native-debug-symbols=none',
-                buildArgs            : '-r https://github.com/openjdk/riscv-port -b riscv-port --custom-cacerts false --disable-adopt-branch-safety --create-sbom',
+                configureArgs        : '--enable-dtrace',
+                buildArgs           : [
+                        'temurin'   : '--create-jre-image --create-sbom'
+                ],
                 test                : [
                         nightly: ['sanity.openjdk'],
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
