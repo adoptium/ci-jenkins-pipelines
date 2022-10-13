@@ -33,7 +33,7 @@
         "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy"
     },
     "testDetails"            : {
-        "enableTests"        : true,
+        "enableTests"        : false,
         "nightlyDefault"     : [
             "sanity.openjdk",
             "sanity.system",
