@@ -95,7 +95,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         stringParam('buildReference', '', 'Tag name or Branch name of temurin-build repo. Defaults to master')
         stringParam('ciReference', '', 'Tag name or Branch name of ci-jenkins-pipeline repo. Defaults to master')
         stringParam('helperReference', '', 'Tag name or Branch name of jenkins-helper repo. Defaults to master')
-        stringParam('aqaReference', '', 'Tag name or Branch name of aqa-tests. Defaults to master')
+        stringParam('aqaReference', 'v0.9.5-release', 'Tag name or Branch name of aqa-tests. Defaults to master')
         booleanParam('aqaAutoGen', false, 'If set to true, force auto generate AQA test jobs. Defaults to false')
         booleanParam('enableTests', runTests, 'If set to true the test pipeline will be executed')
         booleanParam('enableTestDynamicParallel', runParallel, 'If set to true test will be run parallel')
