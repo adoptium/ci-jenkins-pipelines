@@ -54,21 +54,23 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
 
     properties {
         // Hide top level pipeline access from the public as they contain non Temurin artefacts
-        authorizationMatrix {
-            inheritanceStrategy {
-                // Do not inherit permissions from global configuration
-                nonInheriting()
+        if (JENKINS_URL.contains('adopt')) {
+            authorizationMatrix {
+                inheritanceStrategy {
+                    // Do not inherit permissions from global configuration
+                    nonInheriting()
+                }
+                permissions(['hudson.model.Item.Build:AdoptOpenJDK*build', 'hudson.model.Item.Build:AdoptOpenJDK*build-triage',
+                'hudson.model.Item.Cancel:AdoptOpenJDK*build', 'hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
+                'hudson.model.Item.Configure:AdoptOpenJDK*build', 'hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
+                'hudson.model.Item.Read:AdoptOpenJDK*build', 'hudson.model.Item.Read:AdoptOpenJDK*build-triage',
+                // eclipse-temurin-bot needs read access for TRSS
+                'hudson.model.Item.Read:eclipse-temurin-bot',
+                // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance
+                'hudson.model.Item.Read:eclipse-temurin-compliance-bot',
+                'hudson.model.Item.Workspace:AdoptOpenJDK*build', 'hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
+                'hudson.model.Run.Update:AdoptOpenJDK*build', 'hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
             }
-            permissions(['hudson.model.Item.Build:AdoptOpenJDK*build', 'hudson.model.Item.Build:AdoptOpenJDK*build-triage',
-            'hudson.model.Item.Cancel:AdoptOpenJDK*build', 'hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
-            'hudson.model.Item.Configure:AdoptOpenJDK*build', 'hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
-            'hudson.model.Item.Read:AdoptOpenJDK*build', 'hudson.model.Item.Read:AdoptOpenJDK*build-triage',
-            // eclipse-temurin-bot needs read access for TRSS
-            'hudson.model.Item.Read:eclipse-temurin-bot',
-            // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance
-            'hudson.model.Item.Read:eclipse-temurin-compliance-bot',
-            'hudson.model.Item.Workspace:AdoptOpenJDK*build', 'hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
-            'hudson.model.Run.Update:AdoptOpenJDK*build', 'hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
         }
         pipelineTriggers {
             triggers {
