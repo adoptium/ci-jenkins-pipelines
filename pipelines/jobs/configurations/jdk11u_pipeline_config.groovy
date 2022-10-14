@@ -76,17 +76,6 @@ class Config11 {
                 test                : 'default'
         ],
 
-        aarch64Windows: [
-                os                  : 'windows',
-                arch                : 'aarch64',
-                crossCompile        : 'x64',
-                additionalNodeLabels: 'win2016&&vs2019',
-                test                : false,
-                buildArgs       : [
-                        'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile'
-                ]
-        ],
-
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
