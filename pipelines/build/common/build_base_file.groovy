@@ -904,7 +904,7 @@ class Builder implements Serializable {
             } else if (release && enableTests) {
                 //remote trigger job https://ci.eclipse.org/temurin-compliance/job/AQA_Test_Pipeline/
                 //exclude not supported platforms
-                List<String> excludePlats = [riscv64_linux, aarch64_windows]
+                List<String> excludePlats = ['riscv64_linux', 'aarch64_windows']
                 if ( javaToBuild == 'jdk8u' ) {
                     excludePlats.add('s390x_linux')
                 }
