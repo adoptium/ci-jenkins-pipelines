@@ -1,8 +1,8 @@
 # PR Testers
 
-openjdk-build is an open source project, therefore, we need to ensure the the code that is being deployed to our master branch doesn't break any existing code and actually works as expected.
-To achieve this level of testing, we use various jobs to compile, lint and test the code as well as running demo pipelines in a controlled sandbox environment if needs be.
-The demo pipelines are colloquially known as "The PR Tester" where the others are generally just referred to as "`checkname` check".
+openjdk-build is an open source project, therefore, we need to ensure that the code that is being deployed to our master branch doesn't break any existing code and actually works as expected.
+To achieve this level of testing, we use various jobs to compile, lint and test the code as well as running demo pipelines in a controlled sandbox environment if need be.
+The demo pipelines are colloquially known as "The PR Tester" and the others are generally just referred to as "`checkname` check".
 
 ## When they're used
 
@@ -74,7 +74,7 @@ If you're unsure if the tests failed because of your changes or not, check our [
 
 ##### `run tests quick`
 
-Simiar to `run tests` but runs a subset of jdk test jobs. Without specific jdk version, it uses 17, otherwise loops over given versions
+Similar to `run tests` but runs a subset of jdk test jobs. Without specific jdk version, it uses 17, otherwise loops over given versions
 Example:
 `run tests quick` is the same as `run tests quick 19`
 `run tests quick 11, 19, 8` generates all jobs then runs openjdk pipeline on 8, 11 and 19
