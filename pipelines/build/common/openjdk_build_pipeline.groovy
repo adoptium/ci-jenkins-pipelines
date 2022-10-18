@@ -414,7 +414,7 @@ class Build {
                                             parameters: [
                                                 context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                                                 context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                                context.string(name: 'SDK_RESOURCE', value: 'upstream'),
+                                                context.string(name: 'SDK_RESOURCE', value: "customized"),
                                                 context.string(name: 'JDK_REPO', value: jdkRepo),
                                                 context.string(name: 'JDK_BRANCH', value: jdkBranch),
                                                 context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
