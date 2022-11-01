@@ -802,7 +802,7 @@ class Builder implements Serializable {
             context.echo "Force auto generate AQA test jobs: ${aqaAutoGen}"
             context.echo "Keep test reportdir: ${keepTestReportDir}"
             context.echo "Keep release logs: ${keepReleaseLogs}"
-            def buildPlatforms = ''
+            List<String> buildPlatforms = []
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
                     IndividualBuildConfig config = configuration.value
@@ -866,12 +866,7 @@ class Builder implements Serializable {
                                         } else {
                                             platform = config.ARCHITECTURE + '_' + config.TARGET_OS
                                         }
-                                        if (buildPlatforms == '') {
-                                            buildPlatforms = platform
-                                        } else {
-                                            buildPlatforms = buildPlatforms + ',' + platform
-                                        }
-
+                                        buildPlatforms.add(platform)
                                         // Archive in Jenkins
                                         try {
                                             context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
@@ -908,8 +903,15 @@ class Builder implements Serializable {
                 context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY'
             } else if (release && enableTests) {
                 //remote trigger job https://ci.eclipse.org/temurin-compliance/job/AQA_Test_Pipeline/
+                //exclude not supported platforms
+                List<String> excludePlats = ['riscv64_linux', 'aarch64_windows']
+                if ( javaToBuild == 'jdk8u' ) {
+                    excludePlats.add('s390x_linux')
+                }
+                List<String> triggerPlatforms = buildPlatforms.minus(excludePlats)
+                def platformsAsString = triggerPlatforms.join(',')
                 context.echo 'Trigger the remote JCK jobs'
-                remoteTriggerJckTests(buildPlatforms)
+                remoteTriggerJckTests(platformsAsString)
             }
         }
     }

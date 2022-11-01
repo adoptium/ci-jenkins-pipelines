@@ -52,19 +52,6 @@ class Config16 {
                 test                : 'default'
         ],
 
-        // TODO: Enable testing (https://github.com/adoptium/ci-jenkins-pipelines/issues/77)
-        aarch64Windows: [
-                os                  : 'windows',
-                arch                : 'aarch64',
-                crossCompile        : 'x64',
-                buildArgs           : '--cross-compile',
-                additionalNodeLabels: 'win2016&&vs2019',
-                test                : [
-                        nightly: [],
-                        weekly : []
-                ]
-        ],
-
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',

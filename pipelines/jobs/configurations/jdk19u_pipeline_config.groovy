@@ -70,18 +70,6 @@ class Config19 {
                 ]
         ],
 
-        aarch64Windows: [
-                os                  : 'windows',
-                arch                : 'aarch64',
-                crossCompile        : 'x64',
-                additionalNodeLabels: 'win2016&&vs2019',
-                test                : false,
-                buildArgs       : [
-                        'temurin'   : '--create-jre-image --create-sbom --cross-compile'
-                ]
-
-        ],
-
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
@@ -170,8 +158,10 @@ class Config19 {
         riscv64Linux      :  [
                 os                   : 'linux',
                 arch                 : 'riscv64',
-                configureArgs        : '--enable-dtrace --with-native-debug-symbols=none',
-                buildArgs            : '-r https://github.com/openjdk/riscv-port -b riscv-port --custom-cacerts false --disable-adopt-branch-safety --create-sbom',
+                configureArgs        : '--enable-dtrace',
+                buildArgs           : [
+                        'temurin'   : '--create-jre-image --create-sbom'
+                ],
                 test                : [
                         nightly: ['sanity.openjdk'],
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
