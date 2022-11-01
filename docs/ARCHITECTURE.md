@@ -27,4 +27,3 @@ These are the first scripts run by the top level jobs. Which in turn invoke the 
 
 These are invoked by the parent pipeline job and each build creates the archives/installers for a given platform. The majority
 of this code is defined in [openjdk_build_pipeline.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/common/).
-
