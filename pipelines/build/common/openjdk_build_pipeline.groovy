@@ -1196,7 +1196,7 @@ class Build {
     Once the build completes, it will calculate its version output, commit the first metadata writeout, and archive the build results.
     */
     def buildScripts(
-        cleanWorkspace,
+        cleanWorkspaceBefore,
         cleanWorkspaceAfter,
         cleanWorkspaceBuildOutputAfter,
         filename,
@@ -1206,7 +1206,7 @@ class Build {
             // Create the repo handler with the user's defaults to ensure a temurin-build checkout is not null
             def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS)
             repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
-            if (cleanWorkspace) {
+            if (cleanWorkspaceBefore) {
                 try {
                     try {
                         context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
@@ -1546,7 +1546,7 @@ class Build {
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
                 def enableSigner = Boolean.valueOf(buildConfig.ENABLE_SIGNER)
                 def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
-                def cleanWorkspace = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE)
+                def cleanWorkspaceBefore = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_BEFORE)
                 def cleanWorkspaceAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_AFTER)
                 def cleanWorkspaceBuildOutputAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER)
 
@@ -1577,17 +1577,17 @@ class Build {
                         context.node(label) {
                             addNodeToBuildDescription()
                             // Cannot clean workspace from inside docker container
-                            if (cleanWorkspace) {
+                            if (cleanWorkspaceBefore) {
                                 try {
                                     context.timeout(time: buildTimeouts.CONTROLLER_CLEAN_TIMEOUT, unit: 'HOURS') {
                                         // Cannot clean workspace from inside docker container
-                                        if (cleanWorkspace) {
+                                        if (cleanWorkspaceBefore) {
                                             try {
                                                 context.cleanWs notFailBuild: true
                                             } catch (e) {
                                                 context.println "Failed to clean ${e}"
                                             }
-                                            cleanWorkspace = false
+                                            cleanWorkspaceBefore = false
                                         }
                                     }
                                 } catch (FlowInterruptedException e) {
@@ -1642,7 +1642,7 @@ class Build {
 
                                 context.docker.build('build-image', "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
                                     buildScripts(
-                                        cleanWorkspace,
+                                        cleanWorkspaceBefore,
                                         cleanWorkspaceAfter,
                                         cleanWorkspaceBuildOutputAfter,
                                         filename,
@@ -1652,7 +1652,7 @@ class Build {
                             } else {
                                 context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS) {
                                     buildScripts(
-                                        cleanWorkspace,
+                                        cleanWorkspaceBefore,
                                         cleanWorkspaceAfter,
                                         cleanWorkspaceBuildOutputAfter,
                                         filename,
@@ -1680,7 +1680,7 @@ class Build {
                                 context.echo("changing ${workspace}")
                                 context.ws(workspace) {
                                     buildScripts(
-                                        cleanWorkspace,
+                                        cleanWorkspaceBefore,
                                         cleanWorkspaceAfter,
                                         cleanWorkspaceBuildOutputAfter,
                                         filename,
@@ -1689,7 +1689,7 @@ class Build {
                                 }
                             } else {
                                 buildScripts(
-                                    cleanWorkspace,
+                                    cleanWorkspaceBefore,
                                     cleanWorkspaceAfter,
                                     cleanWorkspaceBuildOutputAfter,
                                     filename,
