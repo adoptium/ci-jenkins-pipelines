@@ -43,7 +43,8 @@ pipeline {
                         for(String excludeFile in excludeFileList) {
                             excludeFlags="${excludeFlags} --exclude=${excludeFile}"
                         }
-                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2 ${excludeFlags}'
+			echo "excludeFlags is ${excludeFlags}"
+                        def retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2 ${excludeFlags}"
                         if (retVal != 0) {
                             currentBuild.result = 'FAILURE'
                             error 'Error: two builds are not the same!'
