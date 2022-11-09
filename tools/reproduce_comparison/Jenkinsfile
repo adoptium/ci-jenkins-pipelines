@@ -22,13 +22,13 @@ pipeline {
                     try {
                         cleanWs()
                         echo "Fetching artifact1 from ${params.URL1}"
-                        def ret1 = sh returnStatus: true, script: "mkdir url1Dir1 && wget  ${params.URL1} -O - | tar -xz -C url1Dir1"
+                        def ret1 = sh returnStatus: true, script: "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
                         if (ret1 != 0) {
                             currentBuild.result = 'UNSTABLE'
                             error 'Stopping after download and uncompress tar file'
                         }
                         echo "Fetching artifact2 from ${params.URL2}"
-                        def ret2 = sh returnStatus: true, script: "mkdir url1Dir2 && wget  ${params.URL2} -O - | tar -xz -C url1Dir2"
+                        def ret2 = sh returnStatus: true, script: "mkdir url1Dir2 && wget -q ${params.URL2} -O - | tar -xz -C url1Dir2"
                         if (ret2 != 0) {
                             currentBuild.result = 'UNSTABLE'
                             error 'Stopping after download and uncompress tar file'
