@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Lets Compare') {
             agent {
-                label "${params.platform}&&build" // build label enables comparisons to be done
+                label "build&&${params.platform}&&build" // build label enables comparisons to be done
             }
             steps {
                 script {
