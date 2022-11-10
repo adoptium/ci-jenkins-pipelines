@@ -21,19 +21,21 @@ pipeline {
                 script {
                     try {
                         cleanWs()
-                        echo "Fetching artifact1 from ${params.URL1}"
-                        def ret1 = sh returnStatus: true, script: "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
-                        if (ret1 != 0) {
-                            currentBuild.result = 'UNSTABLE'
-                            error 'Stopping after download and uncompress tar file'
+                        // use Jenkins crendential to download JDK if source is from openjdkX-pipline
+                        withCredentials([usernamePassword(credentialsId: 'eclipse_temurin_bot_email_and_token', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                            echo "Fetching artifact1 from ${params.URL1}"
+                            def ret1 = sh returnStatus: true, script: "mkdir url1Dir1 && curl -s --user ${USERNAME}:${PASSWORD} ${params.URL1} | tar -xz  -C url1Dir1"
+                            if (ret1 != 0) {
+                                currentBuild.result = 'UNSTABLE'
+                                error 'Stopping after download and uncompress tar file'
+                            }
+                            echo "Fetching artifact2 from ${params.URL2}"
+                            def ret2 = sh returnStatus: true, script: "mkdir url1Dir2 && curl -s --user ${USERNAME}:${PASSWORD} ${params.URL2} | tar -xz  -C url1Dir2"
+                            if (ret2 != 0) {
+                                currentBuild.result = 'UNSTABLE'
+                                error 'Stopping after download and uncompress tar file'
+                            }
                         }
-                        echo "Fetching artifact2 from ${params.URL2}"
-                        def ret2 = sh returnStatus: true, script: "mkdir url1Dir2 && wget -q ${params.URL2} -O - | tar -xz -C url1Dir2"
-                        if (ret2 != 0) {
-                            currentBuild.result = 'UNSTABLE'
-                            error 'Stopping after download and uncompress tar file'
-                        }
-
                         // call extra platform specific function
                         if (params.platform != 'linux') {
                             "prep${platform}" ('url1Dir1', 'url1Dir2')
