@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Lets Compare') {
             agent {
-                label "${params.platform}&&build" // build label enables comparisons to be done
+                label "${params.platform}&&build&&x64" // build label enables comparisons to be done, set to x64 for linux, might need adjust for windows/mac
             }
             steps {
                 script {
@@ -43,7 +43,7 @@ pipeline {
                         for(String excludeFile in excludeFileList) {
                             excludeFlags="${excludeFlags} --exclude=${excludeFile}"
                         }
-                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2 ${excludeFlags}'
+                        def retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2 ${excludeFlags}"
                         if (retVal != 0) {
                             currentBuild.result = 'FAILURE'
                             error 'Error: two builds are not the same!'
