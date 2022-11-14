@@ -21,8 +21,12 @@ limitations under the License.
 
 String buildFolder = "$JOB_FOLDER"
 
-if (!binding.hasVariable('GIT_URL')) GIT_URL = 'https://github.com/adoptium/ci-jenkins-pipelines.git'
-if (!binding.hasVariable('GIT_BRANCH')) GIT_BRANCH = 'master'
+if (!binding.hasVariable('GIT_URL')) {
+    GIT_URL = 'https://github.com/adoptium/ci-jenkins-pipelines.git'
+}
+if (!binding.hasVariable('GIT_BRANCH')) {
+    GIT_BRANCH = 'master'
+}
 
 isLightweight = true
 if (binding.hasVariable('PR_BUILDER')) {
@@ -94,9 +98,9 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>DYNAMIC_LIST</strong></dt><dd>Comma separated list of tests, i.e: sanity.openjdk,sanity.perf,sanity.system</dd>
                 <dt><strong>NUM_MACHINES</strong></dt><dd>The number of machines for parallel=dynamic</dd>
                 <dt><strong>SCM_REF</strong></dt><dd>Source code ref to build, i.e branch, tag, commit id.</dd>
-                <dt><strong>BUILD_REF</strong></dt><dd>Specify temurin-build tag or branch.</dd>
-                <dt><strong>CI_REF</strong></dt><dd>Specify ci-jenkins-pipeline tag or branch.</dd>
-                <dt><strong>HELPER_REF</strong></dt><dd>Specify jenkins-helper tag or branch.</dd>
+                <dt><strong>BUILD_REF</strong></dt><dd>Specify temurin-build tag or branch or SHA1.</dd>
+                <dt><strong>CI_REF</strong></dt><dd>Specify ci-jenkins-pipeline tag or branch or SHA1.</dd>
+                <dt><strong>HELPER_REF</strong></dt><dd>Specify jenkins-helper tag or branch (we only support these two formats).</dd>
                 <dt><strong>AQA_REF</strong></dt><dd>Specific aqa-tests release or branch.</dd>
                 <dt><strong>AQA_AUTO_GEN</strong></dt><dd>If true, froce auto generate AQA test jobs.</dd>
                 <dt><strong>BUILD_ARGS</strong></dt><dd>args to pass to makejdk-any-platform.sh</dd>

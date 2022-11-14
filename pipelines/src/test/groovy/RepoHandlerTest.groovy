@@ -2,6 +2,9 @@ import common.RepoHandler
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
+/**
+ * Javadoc for Class RepoHandlerTest
+ */
 class RepoHandlerTest {
 
     private Map testRemote = [
@@ -23,6 +26,8 @@ class RepoHandlerTest {
         Assertions.assertEquals(adoptJson.repository.build_branch, 'master')
         Assertions.assertEquals(adoptJson.repository.pipeline_url, 'https://github.com/adoptium/ci-jenkins-pipelines.git')
         Assertions.assertEquals(adoptJson.repository.pipeline_branch, 'master')
+        // TODO: enable below check when code has merged to "master" , refer to file "pipelines/defaults.json"
+        // Assertions.assertEquals(adoptJson.repository.helper_ref, "master")
 
         // Jenkins Details
         Assertions.assertTrue(adoptJson.jenkinsDetails instanceof Map)
@@ -77,6 +82,8 @@ class RepoHandlerTest {
         Assertions.assertEquals(userJson.repository.build_branch, '20')
         Assertions.assertEquals(userJson.repository.pipeline_url, '19')
         Assertions.assertEquals(userJson.repository.pipeline_branch, '21')
+        // TODO: enable below check when code has merged to "master" , refer to file "pipelines/src/test/groovy/fakeDefaults.json"
+        //Assertions.assertEquals(userJson.repository.helper_ref, "24")
 
         // Jenkins Details
         Assertions.assertTrue(userJson.jenkinsDetails instanceof Map)

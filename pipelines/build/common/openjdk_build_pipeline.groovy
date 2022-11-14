@@ -105,7 +105,7 @@ class Build {
     }
 
     /*
-    Returns the java version number for this job (e.g. 8, 11, 15, 16)
+    Returns the java version number for this job (e.g. 8, 11, 17, ...)
     */
     Integer getJavaVersionNumber() {
         def javaToBuild = buildConfig.JAVA_TO_BUILD
@@ -118,7 +118,8 @@ class Build {
             try {
                 context.timeout(time: buildTimeouts.API_REQUEST_TIMEOUT, unit: 'HOURS') {
                     // Query the Adopt api to get the "tip_version"
-                    def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                    String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+                    def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
                     context.println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
 
                     def response = JobHelper.getAvailableReleases(context)
@@ -146,12 +147,12 @@ class Build {
         jobParams.put('TEST_JOB_NAME', "${env.JOB_NAME}_SmokeTests")
         jobParams.put('BUILD_LIST', 'functional/buildAndPackage')
         def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
-        def vendorTestRepos = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url'])- ('.git')
+        def vendorTestRepos = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git')
         def vendorTestBranches = ADOPT_DEFAULTS_JSON['repository']['build_branch']
         def vendorTestDirs = ADOPT_DEFAULTS_JSON['repository']['test_dirs']
         if (!useAdoptShellScripts) {
             vendorTestRepos = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git')
-            vendorTestBranches = DEFAULTS_JSON['repository']['build_branch']
+            vendorTestBranches = buildConfig.BUILD_REF ?: DEFAULTS_JSON['repository']['build_branch']  // use BUILD_CONFIGURATION's branch if exists
             vendorTestDirs = DEFAULTS_JSON['repository']['test_dirs']
         }
         jobParams.put('VENDOR_TEST_REPOS', vendorTestRepos)
@@ -286,7 +287,8 @@ class Build {
             context.stage('smoke test') {
                 def jobParams = getSmokeTestJobParams()
                 def jobName = jobParams.TEST_JOB_NAME
-                def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
                 if (!JobHelper.jobIsRunnable(jobName as String)) {
                     context.node('worker') {
                         context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
@@ -375,7 +377,8 @@ class Build {
                         }
 
                         def jobName = jobParams.TEST_JOB_NAME
-                        def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                        String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+                        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
 
                         // Create test job if AQA_AUTO_GEN is set to true, the job doesn't exist or is not runnable
                         if (aqaAutoGen || !JobHelper.jobIsRunnable(jobName as String)) {
@@ -1194,6 +1197,7 @@ class Build {
     /*
     Executed on a build node, the function checks out the repository and executes the build via ./make-adopt-build-farm.sh
     Once the build completes, it will calculate its version output, commit the first metadata writeout, and archive the build results.
+    Running in downstream job jdk-*-*-* build stage, called by build()
     */
     def buildScripts(
         cleanWorkspace,
@@ -1206,6 +1210,20 @@ class Build {
             // Create the repo handler with the user's defaults to ensure a temurin-build checkout is not null
             def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS)
             repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
+
+            /*
+                if BUILD_REF, CI_REF are set in BUILD_CONFIGURATION, overwrite branch value in DEFAULTS_JSON
+                so we can re-use the same logic down: get config either from DEFAULT_JSON or ADPOT_DEFULAT_JSON(enable useAdoptShellScripts)
+            */
+            DEFAULTS_JSON['repository']['build_branch'] = buildConfig.BUILD_REF ?: DEFAULTS_JSON['repository']['build_branch']
+            DEFAULTS_JSON['repository']['pipeline_branch'] = buildConfig.CI_REF ?: DEFAULTS_JSON['repository']['pipeline_branch']
+            DEFAULTS_JSON['repository']['helper_ref'] = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+
+            context.println 'Print out current value for DEFAULTS_JSON ' +
+                            'might be different from jenkins parameter DEFAULTS_JSON ' +
+                            'if some fields are overwritten by BUILD_CONFIGURATION '
+            context.println JsonOutput.toJson(DEFAULTS_JSON)
+
             if (cleanWorkspace) {
                 try {
                     try {
@@ -1309,6 +1327,7 @@ class Build {
                                         // Copy pre assembled binary ready for JMODs to be codesigned
                                         context.unstash 'jmods'
                                         context.withEnv(["macos_base_path=${macos_base_path}"]) {
+                                            // groovylint-disable
                                             context.sh '''
                                                 #!/bin/bash
                                                 set -eu
@@ -1327,6 +1346,7 @@ class Build {
                                                     rm -rf "${dir}/unsigned_${file}"
                                                 done
                                             '''
+                                            // groovylint-enable
                                         }
                                         context.stash name: 'signed_jmods', includes: "${macos_base_path}/**/*"
                                     }
@@ -1464,7 +1484,8 @@ class Build {
     If it doesn't find one or the timeout is set to 0 (default), it'll crash out. Otherwise, it'll return and jump onto the node.
     */
     def waitForANodeToBecomeActive(def label) {
-        def NodeHelper = context.library(identifier: 'openjdk-jenkins-helper@master').NodeHelper
+        String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+        def NodeHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").NodeHelper
 
         // A node with the requested label is ready to go
         if (NodeHelper.nodeIsOnline(label)) {
@@ -1498,8 +1519,10 @@ class Build {
 
     def updateGithubCommitStatus(STATE, MESSAGE) {
         // workaround https://issues.jenkins-ci.org/browse/JENKINS-38674
+        // get url and branch from jenkins job's params not variable USER_REMOTE_CONFIGS
         String repoUrl = USER_REMOTE_CONFIGS['remotes']['url']
-        String commitSha = USER_REMOTE_CONFIGS['branch']
+        Map paramUserRemoteConfigs = new JsonSlurper().parseText(context.USER_REMOTE_CONFIGS)
+        String commitSha = paramUserRemoteConfigs['branch']
 
         String shortJobName = env.JOB_NAME.split('/').last()
 
@@ -1528,12 +1551,13 @@ class Build {
 
     /*
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
+    Running in downstream build job jdk-*-*-* called by kick_off_build.groovy
     */
     @SuppressWarnings('unused')
     def build() {
         context.timestamps {
             try {
-                context.println 'Build config'
+                context.println 'Build config (BUILD_CONFIGURAION):'
                 context.println buildConfig.toJson()
 
                 def filename = determineFileName()
@@ -1550,10 +1574,13 @@ class Build {
                 def cleanWorkspaceAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_AFTER)
                 def cleanWorkspaceBuildOutputAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER)
 
+                // Get branch/tag of temurin-build, ci-jenkins-pipeline and jenkins-helper repo from BUILD_CONFIGURATION or defaultsJson
+                def helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+
                 context.stage('queue') {
                     /* This loads the library containing two Helper classes, and causes them to be
                     imported/updated from their repo. Without the library being imported here, runTests method will fail to execute the post-build test jobs for reasons unknown.*/
-                    context.library(identifier: 'openjdk-jenkins-helper@master')
+                    context.library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
                     // Set Github Commit Status
                     if (env.JOB_NAME.contains('pr-tester')) {
@@ -1620,7 +1647,7 @@ class Build {
                                 throw new Exception("[ERROR] Controller docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
                             }
 
-                            // Use our docker file if DOCKER_FILE is defined
+                            // Use our dockerfile if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: 'HOURS') {

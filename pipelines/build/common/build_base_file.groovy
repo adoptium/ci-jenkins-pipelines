@@ -86,8 +86,9 @@ class Builder implements Serializable {
     */
     IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant) {
         // Query the Adopt api to get the "tip_version"
-        def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-        context.println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
+        String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+        context.println 'Querying Adoptium API for the JDK-Head number (tip_version)...'
         def response = JobHelper.getAvailableReleases(context)
         int headVersion = (int) response[('tip_version')]
         context.println "Found Java Version Number: ${headVersion}"
@@ -492,18 +493,20 @@ class Builder implements Serializable {
 
     /*
     Retrieves the platformSpecificConfigPath from the build configurations.
-    This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
+    This determines where the location of the operating system setup files are in comparison to the repository root.
+    The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
         def splitUserUrl = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
         // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
+        def buildRef = configuration.buildRef ?: DEFAULTS_JSON['repository']['build_branch']
         // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${DEFAULTS_JSON['configDirectories']['platform']}"
         if (configuration.containsKey('platformSpecificConfigPath')) {
             // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations.linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -626,7 +629,8 @@ class Builder implements Serializable {
         try {
             context.timeout(time: pipelineTimeouts.API_REQUEST_TIMEOUT, unit: 'HOURS') {
                 // Query the Adopt api to get the "tip_version"
-                def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
                 context.println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
                 def response = JobHelper.getAvailableReleases(context)
                 return (int) response[('tip_version')]
@@ -761,6 +765,7 @@ class Builder implements Serializable {
     }
     /*
     Main function. This is what is executed remotely via the openjdkxx-pipeline and pr tester jobs
+    Running in the openjdkX-pipeline
     */
     @SuppressWarnings('unused')
     def doBuild() {
@@ -908,7 +913,7 @@ class Builder implements Serializable {
                 if ( javaToBuild == 'jdk8u' ) {
                     excludePlats.add('s390x_linux')
                 }
-                List<String> triggerPlatforms = buildPlatforms.minus(excludePlats)
+                List<String> triggerPlatforms = buildPlatforms - (excludePlats)
                 def platformsAsString = triggerPlatforms.join(',')
                 context.echo 'Trigger the remote JCK jobs'
                 remoteTriggerJckTests(platformsAsString)

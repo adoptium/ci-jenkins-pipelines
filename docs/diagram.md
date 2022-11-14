@@ -99,7 +99,7 @@ end
 subgraph 3
 
 s3["build/regeneration/build_job_generator.groovy"] --read and parse-->
-confile["defaults.json"] --checkout--> gitrepo["repository.pipeline_url@pipeline_branch"] --library--> library["openjdk-jenkins-helper@master"] 
+confile["defaults.json"] --checkout--> gitrepo["repository.pipeline_url@pipeline_branch"] --library--> library["openjdk-jenkins-helper@${helperRef}"] 
 
 library --load config--> Load1["Build Config:\npipelines/jobs/configurations/jdk*ver(u)_pipeline_config.groovy"]  --initial--> const
 library --load config --> Load2["Target Config:\npipelines/jobs/configurations/jdk*ver.groovy"]  --initial--> const
@@ -184,14 +184,14 @@ flowchart TD
 
 subgraph job
 
-starter["pipeline script: pipeline/build/common/kick_off_build.groovy"] --library--> library["openjdk-jenkins-helper@master"]  --load class--> Load1["pipelines/build/common/openjdk_build_pipeline.groovy"] --internal_call--> Builder["build()"]
+starter["pipeline script: pipeline/build/common/kick_off_build.groovy"] --library--> library["openjdk-jenkins-helper@${helperRef}"]  --load class--> Load1["pipelines/build/common/openjdk_build_pipeline.groovy"] --internal_call--> Builder["build()"]
 
 starter --parameter--> p1["LOCAL_DEFAULTS_JSON"] --pass--> Load1
 starter --parameter--> p2["ADOPT_DEFAULTS_JSON"] --pass--> Load1
 
 subgraph internal_build
 
-Builder --library--> library2["openjdk-jenkins-helper@master"] --> docker{"DOCKER_IMAGE"}
+Builder --library--> library2["openjdk-jenkins-helper@${helperRef}"] --> docker{"DOCKER_IMAGE"}
 
 docker --true: run--> dockerbuild["Jenkins'call: docker.build(build-image)"] --> sign
 docker --false:call_function--> CallbuildScript["buildScripts()"] --> sign{enableSigner} --true:call_function--> sign2["sign()"] --> testStage{enableTests}
