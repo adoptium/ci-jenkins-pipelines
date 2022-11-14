@@ -913,7 +913,7 @@ class Builder implements Serializable {
                 if ( javaToBuild == 'jdk8u' ) {
                     excludePlats.add('s390x_linux')
                 }
-                List<String> triggerPlatforms = buildPlatforms.minus(excludePlats)
+                List<String> triggerPlatforms = buildPlatforms - (excludePlats)
                 def platformsAsString = triggerPlatforms.join(',')
                 context.echo 'Trigger the remote JCK jobs'
                 remoteTriggerJckTests(platformsAsString)
