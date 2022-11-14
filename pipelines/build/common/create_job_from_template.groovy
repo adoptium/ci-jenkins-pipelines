@@ -100,7 +100,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>SCM_REF</strong></dt><dd>Source code ref to build, i.e branch, tag, commit id.</dd>
                 <dt><strong>BUILD_REF</strong></dt><dd>Specify temurin-build tag or branch or SHA1.</dd>
                 <dt><strong>CI_REF</strong></dt><dd>Specify ci-jenkins-pipeline tag or branch or SHA1.</dd>
-                <dt><strong>HELPER_REF</strong></dt><dd>Specify jenkins-helper tag or branch (only support these two format).</dd>
+                <dt><strong>HELPER_REF</strong></dt><dd>Specify jenkins-helper tag or branch (we only support these two formats).</dd>
                 <dt><strong>AQA_REF</strong></dt><dd>Specific aqa-tests release or branch.</dd>
                 <dt><strong>AQA_AUTO_GEN</strong></dt><dd>If true, froce auto generate AQA test jobs.</dd>
                 <dt><strong>BUILD_ARGS</strong></dt><dd>args to pass to makejdk-any-platform.sh</dd>
