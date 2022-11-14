@@ -51,6 +51,9 @@ targetConfigurations = [
         ],
         'sparcv9Solaris': [
                 'temurin'
+        ],
+        'loongarch64Linux': [
+               'loongson'
         ]
 ]
 
@@ -65,7 +68,8 @@ weekly_release_scmReferences = [
         'openj9'         : '',
         'corretto'       : '',
         'dragonwell'     : '',
-        'bisheng'        : ''
+        'bisheng'        : '',
+        'loongson'       : ''
 ]
 
 return this

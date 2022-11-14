@@ -97,6 +97,10 @@ labels:
     matcher:
       title: "bisheng"
       body: "bisheng"
+  - label: "loongson"
+    matcher:
+      title: "loongson"
+      body: "loongson"
   - label: "docker"
     matcher:
       title: "docker"
