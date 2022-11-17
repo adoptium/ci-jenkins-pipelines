@@ -743,6 +743,8 @@ class Builder implements Serializable {
                     }
             }
         }
+        // Temporarily disable remote Jck trigger until All Green exclusion task is complete
+        isTemurin = false
         if (isTemurin) {
             def jdkVersion = getJavaVersionNumber()
             //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
