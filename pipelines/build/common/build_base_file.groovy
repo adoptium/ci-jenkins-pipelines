@@ -731,41 +731,6 @@ class Builder implements Serializable {
     }
 
     /*
-    Remote Trigger JCK tests for weekly temurin builds
-    */
-    def remoteTriggerJckTests(String platforms) {
-        boolean isTemurin = true
-        targetConfigurations
-        .each { target ->
-            target.value.each { variant ->
-                    if (!variant.equals('temurin')) {
-                        isTemurin = false
-                    }
-            }
-        }
-        // Temporarily disable remote Jck trigger until All Green exclusion task is complete
-        isTemurin = false
-        if (isTemurin) {
-            def jdkVersion = getJavaVersionNumber()
-            //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
-            def sdkUrl = "${env.BUILD_URL}"
-            def targets = 'sanity.jck,extended.jck,special.jck'
-            context.triggerRemoteJob abortTriggeredJob: true,
-                                blockBuildUntilComplete: false,
-                                job: 'AQA_Test_Pipeline',
-                                parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                       context.MapParameter(name: 'TARGETS', value: targets),
-                                                                       context.MapParameter(name: 'TOP_LEVEL_SDK_URL', value: "${sdkUrl}"),
-                                                                       context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                       context.MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
-                                remoteJenkinsName: 'temurin-compliance',
-                                shouldNotFailBuild: true,
-                                token: 'RemoteTrigger',
-                                useCrumbCache: true,
-                                useJobInfoCache: true
-        }
-    }
-    /*
     Main function. This is what is executed remotely via the openjdkxx-pipeline and pr tester jobs
     Running in the openjdkX-pipeline
     */
@@ -809,7 +774,6 @@ class Builder implements Serializable {
             context.echo "Force auto generate AQA test jobs: ${aqaAutoGen}"
             context.echo "Keep test reportdir: ${keepTestReportDir}"
             context.echo "Keep release logs: ${keepReleaseLogs}"
-            List<String> buildPlatforms = []
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
                     IndividualBuildConfig config = configuration.value
@@ -867,13 +831,6 @@ class Builder implements Serializable {
                                         }
                                         // Checksum
                                         context.sh 'for file in $(ls target/*/*/*/*.tar.gz target/*/*/*/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
-                                        def platform = ''
-                                        if (config.ARCHITECTURE.contains('x64')) {
-                                            platform = 'x86-64_' + config.TARGET_OS
-                                        } else {
-                                            platform = config.ARCHITECTURE + '_' + config.TARGET_OS
-                                        }
-                                        buildPlatforms.add(platform)
                                         // Archive in Jenkins
                                         try {
                                             context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
@@ -908,17 +865,6 @@ class Builder implements Serializable {
                 }
             } else if (publish && release) {
                 context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY'
-            } else if (release && enableTests) {
-                //remote trigger job https://ci.eclipse.org/temurin-compliance/job/AQA_Test_Pipeline/
-                //exclude not supported platforms
-                List<String> excludePlats = ['riscv64_linux', 'aarch64_windows']
-                if ( javaToBuild == 'jdk8u' ) {
-                    excludePlats.add('s390x_linux')
-                }
-                List<String> triggerPlatforms = buildPlatforms - (excludePlats)
-                def platformsAsString = triggerPlatforms.join(',')
-                context.echo 'Trigger the remote JCK jobs'
-                remoteTriggerJckTests(platformsAsString)
             }
         }
     }
