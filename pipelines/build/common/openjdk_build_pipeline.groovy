@@ -1594,6 +1594,7 @@ class Build {
                 def enableTests = Boolean.valueOf(buildConfig.ENABLE_TESTS)
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
                 def enableSigner = Boolean.valueOf(buildConfig.ENABLE_SIGNER)
+                def isRelease = Boolean.valueOf(buildConfig.RELEASE)
                 def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
                 def cleanWorkspace = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE)
                 def cleanWorkspaceAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_AFTER)
@@ -1768,7 +1769,9 @@ class Build {
                     try {
                         runSmokeTests()
                         // Remote trigger eclispe temurin jck tests
-                        if (buildConfig.VARIANT == 'temurin' && buildConfig.RELEASE == 'release') {
+                        context.echo " let's try remote trigger"
+                        if (buildConfig.VARIANT == 'temurin' && isRelease) {
+                            context.echo " it's temurin and release"
                             def platform = ''
                             if (buildConfig.ARCHITECTURE.contains('x64')) {
                                 platform = 'x86-64_' + buildConfig.TARGET_OS

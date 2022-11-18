@@ -779,12 +779,14 @@ class Builder implements Serializable {
                     IndividualBuildConfig config = configuration.value
 
                     // jdk11u-linux-x64-hotspot
-                    def jobTopName = getJobName(configuration.key)
-                    def jobFolder = getJobFolder()
+                   // def jobTopName = getJobName(configuration.key)
+                   // def jobFolder = getJobFolder()
 
                     // i.e jdk11u/job/jdk11u-linux-x64-hotspot
-                    def downstreamJobName = "${jobFolder}/${jobTopName}"
-                    context.echo 'build name ' + downstreamJobName
+                    //test only
+                    //def downstreamJobName = "${jobFolder}/${jobTopName}"
+                    //context.echo 'build name ' + downstreamJobName
+                    def downstreamJobName = 'Sophia_jdk11u-linux-x64-temurin/'
 
                     context.catchError {
                         // Execute build job for configuration i.e jdk11u/job/jdk11u-linux-x64-hotspot
