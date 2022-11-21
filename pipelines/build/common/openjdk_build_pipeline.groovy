@@ -1768,10 +1768,8 @@ class Build {
                 if (enableTests) {
                     try {
                         runSmokeTests()
-                        // Remote trigger eclispe temurin jck tests
-                        context.echo " let's try remote trigger"
+                        // Remote trigger Eclispe Temurin JCK tests
                         if (buildConfig.VARIANT == 'temurin' && isRelease) {
-                            context.echo " it's temurin and release"
                             def platform = ''
                             if (buildConfig.ARCHITECTURE.contains('x64')) {
                                 platform = 'x86-64_' + buildConfig.TARGET_OS
@@ -1780,7 +1778,7 @@ class Build {
                             }           
                             if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
                                 if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                    context.echo "Remote trigger eclipse temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
+                                    context.echo "Remote trigger Eclipse temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
                                     remoteTriggerJckTests(platform)
                                 }
                             }
