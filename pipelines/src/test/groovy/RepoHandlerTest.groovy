@@ -123,7 +123,7 @@ class RepoHandlerTest {
         Assertions.assertTrue(userJson.testDetails.enableTests instanceof Boolean)
         Assertions.assertTrue(userJson.testDetails.enableTests)
         Assertions.assertEquals(userJson.testDetails.nightlyDefault, [ 'test1', 'test2', 'test3' ])
-        Assertions.assertEquals(userJson.testDetails.weeklyDefault, [ 'test4', 'test5', 'test6' ])
+        Assertions.assertEquals(userJson.testDetails.weeklyDefault, [ 'test4', 'test5', 'test6', "test7" ])
     }
 
     @Test
