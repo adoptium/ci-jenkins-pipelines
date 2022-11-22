@@ -102,6 +102,7 @@ class PullRequestTestPipeline implements Serializable {
                 def excludedBuilds = ''
 
                 // Generate downstream pipeline jobs
+                //TODO
                 regenerationScript(
                     actualJavaVersion,
                     buildConfigurations,
@@ -144,16 +145,21 @@ class PullRequestTestPipeline implements Serializable {
                     javaVersions = commentsList[1].tokenize(',[]').collect { it as int }
                     break
             }
-            // Run tester against the host pr
+            // Calling build-test/openjdkX-pipeline against PR
             javaVersions.each({ javaVersion ->
-                jobs["Test building Java ${javaVersion}"] = {
+                jobs["PR test JDK${javaVersion}"] = {
                     context.stage("Test building Java ${javaVersion}") {
                         try {
                             context.build job: "${BUILD_FOLDER}/openjdk${javaVersion}-pipeline",
                                 propagate: true,
                                 parameters: [
                                     context.string(name: 'releaseType', value: 'Nightly Without Publish'),
-                                    context.string(name: 'activeNodeTimeout', value: '0')
+                                    context.string(name: 'activeNodeTimeout', value: '0'),
+                                    context.string(name: 'ciReference', value: "${branch}"), // use PR's SHA1 for the generated openjdkX-pipeline
+                                    context.booleanParam(name: 'enableTestDynamicParallel', value: false), // not needed unless we enable test
+                                    context.booleanParam(name: 'enableInstallers', value: false), // never need this enabled in pr-test
+                                    context.booleanParam(name: 'useAdoptBashScripts', value: false), // should not use defaultsJson but adoptDefaultsJson
+                                    context.booleanParam(name: 'keepReleaseLogs', value: false) // never need this enabled in pr-test
                                 ]
                         } catch (err) {
                             context.println "[ERROR] ${actualJavaVersion} PIPELINE FAILED\n$err"
