@@ -465,6 +465,31 @@ class Build {
         return testStages
     }
 
+    def remoteTriggerJckTests(String platforms) {
+        def jdkVersion = getJavaVersionNumber()
+        //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
+        def filter = "*.tar.gz"
+        if (buildConfig.TARGET_OS.contains("windows")) {
+        	filter = "*.zip"
+        }
+        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${filter}/*zip*/target.zip"
+        context.echo "sdkUrl is ${sdkUrl}"
+        def targets = 'sanity.jck,extended.jck,special.jck'
+        context.triggerRemoteJob abortTriggeredJob: true,
+                            blockBuildUntilComplete: false,
+                            job: 'AQA_Test_Pipeline',
+                            parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
+                                                                    context.MapParameter(name: 'TARGETS', value: targets),
+                                                                    context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                                                                    context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
+                                                                    context.MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
+                            remoteJenkinsName: 'temurin-compliance',
+                            shouldNotFailBuild: true,
+                            token: 'RemoteTrigger',
+                            useCrumbCache: true,
+                            useJobInfoCache: true
+    }
+ 
     /*
     We use this function at the end of a build to parse a java version string and create a VersionInfo object for deployment in the metadata objects.
     E.g. 11.0.9+10-202010192351 would be one example of a matched string.
@@ -1569,6 +1594,7 @@ class Build {
                 def enableTests = Boolean.valueOf(buildConfig.ENABLE_TESTS)
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
                 def enableSigner = Boolean.valueOf(buildConfig.ENABLE_SIGNER)
+                def isRelease = Boolean.valueOf(buildConfig.RELEASE)
                 def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
                 def cleanWorkspace = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE)
                 def cleanWorkspaceAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_AFTER)
@@ -1742,6 +1768,22 @@ class Build {
                 if (enableTests) {
                     try {
                         runSmokeTests()
+                        // Remote trigger Eclispe Temurin JCK tests
+                        if (buildConfig.VARIANT == 'temurin' && isRelease) {
+                            def platform = ''
+                            if (buildConfig.ARCHITECTURE.contains('x64')) {
+                                platform = 'x86-64_' + buildConfig.TARGET_OS
+                            } else {
+                                platform = config.buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
+                            }           
+                            if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
+                                if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
+                                    context.echo "Remote trigger Eclipse temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
+                                    remoteTriggerJckTests(platform)
+                                }
+                            }
+                        }
+
                         if (buildConfig.TEST_LIST.size() > 0) {
                             def testStages = runAQATests()
                             context.parallel testStages
