@@ -79,6 +79,7 @@ class PullRequestTestPipeline implements Serializable {
         context.node('worker') {
             context.println "loading ${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
             Closure regenerationScript = context.load "${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
+            String actualJavaVersion = ""
 
             javaVersions.each({ javaVersion ->
                 // generate top level job
@@ -98,7 +99,7 @@ class PullRequestTestPipeline implements Serializable {
                     updateRepo = true
                 }
 
-                String actualJavaVersion = updateRepo ? "jdk${javaVersion}u" : "jdk${javaVersion}"
+                actualJavaVersion = updateRepo ? "jdk${javaVersion}u" : "jdk${javaVersion}"
                 def excludedBuilds = ''
 
                 // Generate downstream pipeline jobs
