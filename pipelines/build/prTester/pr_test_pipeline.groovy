@@ -39,7 +39,7 @@ class PullRequestTestPipeline implements Serializable {
                 PR_BUILDER          : true,
                 TEST                : false,
                 GIT_URL             : gitRepo,
-                BRANCH              : "${branch}",
+                BRANCH              : branch,
                 BUILD_FOLDER        : BUILD_FOLDER,
                 JAVA_VERSION        : javaVersion,
                 JOB_NAME            : "openjdk${javaVersion}-pipeline",
@@ -69,7 +69,7 @@ class PullRequestTestPipeline implements Serializable {
     }
 
     /*
-    * Main function, called from the pr tester in jenkins itself
+    * Main function, called from kick_off_tester.groovy by job "openjdk-build-pr-tester"
     */
     def runTests() {
         def jobs = [:]
@@ -102,7 +102,7 @@ class PullRequestTestPipeline implements Serializable {
                 actualJavaVersion = updateRepo ? "jdk${javaVersion}u" : "jdk${javaVersion}"
                 def excludedBuilds = ''
 
-                // Generate downstream pipeline jobs
+                // Generate downstream build jobs
                 //TODO
                 regenerationScript(
                     actualJavaVersion,
@@ -149,7 +149,7 @@ class PullRequestTestPipeline implements Serializable {
             // Calling build-test/openjdkX-pipeline against PR
             javaVersions.each({ javaVersion ->
                 jobs["PR test JDK${javaVersion}"] = {
-                    context.stage("Test building Java ${javaVersion}") {
+                    context.stage("Building pr-test Java ${javaVersion}") {
                         try {
                             context.build job: "${BUILD_FOLDER}/openjdk${javaVersion}-pipeline",
                                 propagate: true,
@@ -163,7 +163,7 @@ class PullRequestTestPipeline implements Serializable {
                                     context.booleanParam(name: 'keepReleaseLogs', value: false) // never need this enabled in pr-test
                                 ]
                         } catch (err) {
-                            context.println "[ERROR] ${actualJavaVersion} PIPELINE FAILED\n$err"
+                            context.println "[ERROR] JDK ${actualJavaVersion} PIPELINE FAILED\n$err"
                             pipelineFailed = true
                         }
                     }
@@ -171,7 +171,8 @@ class PullRequestTestPipeline implements Serializable {
             })
         } // End: node("worker")
 
-        context.parallel jobs
+        // for debug purpose, stop running job, uncommented later
+        // TODO: context.parallel jobs
 
         // Move to "worker" workspace context to perform clean up...
         context.node('worker') {
