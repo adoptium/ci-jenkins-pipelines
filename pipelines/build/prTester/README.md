@@ -14,15 +14,15 @@ Every new pull request to this repository that alters any groovy code OR that wi
 
 There are four "groups" of tests that can be run on each PR:
 
-- [#Test](#Test)
-- [#openjdk-build-pr-tester](#openjdk-build-pr-tester) (**OPTIONAL, SEE [#When they're used](#When-they're-used)**)
+- [Test](#Test)
+- [openjdk-build-pr-tester](#openjdk-build-pr-tester) (**OPTIONAL, SEE [#When they're used](#When-they're-used)**)
 
 The results of these jobs will appear as [GitHub Status Check Results](https://docs.github.com/en/github/administering-a-repository/about-required-status-checks) at the bottom of the PR being tested:
 ![Image of PR Tester Checks](./images/pr_tester_checks.png)
 
 ### Test
 
-This group consists of [GitHub Status Checks](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-status-checks) run inside GitHub itself. They unit test any code changes you have made.
+This group consists of [GitHub Status Checks Results](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-status-checks) run inside GitHub itself. They unit-test any code changes you have made.
 
 #### Groovy
 
@@ -39,8 +39,9 @@ cd pipelines/
 
 - **Seen in the PR Status Checks as `pipeline-build-check`, the job is located [here](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/)**
 - This job runs the a set of [sandbox pipelines](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test/) to test the changes that you have made to our codebase.
-- It first executes [kick_off_tester.groovy](pipelines/build/prTester/kick_off_tester.groovy) which in turn kicks off our [pr_test_pipeline](pipelines/build/prTester/pr_test_pipeline.groovy), the main base file for this job.
-- NOTE: This tester is only really worth running if your code changes affect our groovy code OR Jenkins environment. Otherwise, the [#Build](#Build) jobs are sufficient enough to flag any problems with your code.
+- It first executes [kick_off_tester.groovy](pipelines/build/prTester/kick_off_tester.groovy) which in turn kicks off our [pr_test_pipeline](pipelines/build/prTester/pr_test_pipeline.groovy), then main base file for this job.
+- NOTE: This tester is only really worth running if your code changes affect our groovy code OR Jenkins environment. Otherwise, the [Build](#Build) jobs are sufficient enough to flag any problems with your code.
+- NOTE2: Any PR change made into [kick_off_tester.groovy](pipelines/build/prTester/kick_off_tester.groovy) requires updates in [pipeline-build-check](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/) asking admin for assistant if you do not have permission to update job config.
 
 #### Usage
 
