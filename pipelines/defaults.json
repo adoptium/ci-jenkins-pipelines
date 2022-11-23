@@ -46,7 +46,9 @@
         "weeklyDefault"     : [
             "extended.openjdk",
             "extended.perf",
-            "special.functional"
+            "special.functional",
+            "dev.openjdk",
+            "dev.system"
         ],
         "enableTestDynamicParallel"      : true,
         "defaultDynamicParas": {
