@@ -1517,10 +1517,14 @@ class Build {
         }
     }
 
+    /* 
+        this function should only be used in pr-test
+    */
     def updateGithubCommitStatus(STATE, MESSAGE) {
         // workaround https://issues.jenkins-ci.org/browse/JENKINS-38674
-        // get url and branch from jenkins job's params not variable USER_REMOTE_CONFIGS
-        String repoUrl = USER_REMOTE_CONFIGS['remotes']['url']
+        // get repourl from job's DEFAULTS_JSON  points to upstream repo
+        String repoUrl = DEFAULTS_JSON['repository']['pipeline_url'] // USER_REMOTE_CONFIGS['remotes']['url']
+        // get branch/commit SHA1 from job's USER_REMOTE_CONFIGS which is the commits from PR
         Map paramUserRemoteConfigs = new JsonSlurper().parseText(context.USER_REMOTE_CONFIGS)
         String commitSha = paramUserRemoteConfigs['branch']
 
