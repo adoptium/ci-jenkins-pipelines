@@ -95,8 +95,7 @@ This file contains the default constants and paths used in the build scripts for
             "extended.perf",
             "special.functional",
             "dev.openjdk",
-            "dev.system",
-            "dev.functional"
+            "dev.system"
         ]
     },
     // Raw content URL of this (defaults.json) file. This is so the openjdk_build_pipeline.groovy script can set user default configs when checking out to the shell script repo

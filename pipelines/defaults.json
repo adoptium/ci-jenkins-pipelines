@@ -48,8 +48,7 @@
             "extended.perf",
             "special.functional",
             "dev.openjdk",
-            "dev.system",
-            "dev.functional"
+            "dev.system"
         ],
         "enableTestDynamicParallel"      : true,
         "defaultDynamicParas": {
