@@ -1259,11 +1259,8 @@ class Build {
                     if (useAdoptShellScripts) {
                         repoHandler.checkoutAdoptPipelines(context)
                     } else {
-                        context.println 'DEBUG1--'
                         repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
-                        context.println 'DEBUG2--'
                         repoHandler.checkoutUserPipelines(context)
-                        context.println 'DEBUG3--'
                     }
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
