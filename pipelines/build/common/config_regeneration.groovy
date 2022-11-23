@@ -593,7 +593,7 @@ class Regeneration implements Serializable {
         context.timestamps {
             def versionNumbers = javaVersion =~ /\d+/
 
-            /*  
+            /*
             * Stage: Check that the pipeline isn't in in-progress or queued up. Once clear, run the regeneration job
             */
             context.stage("Check $javaVersion pipeline status") {

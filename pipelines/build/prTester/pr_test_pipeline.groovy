@@ -103,7 +103,6 @@ class PullRequestTestPipeline implements Serializable {
                 def excludedBuilds = ''
 
                 // Generate downstream build jobs
-                //TODO
                 regenerationScript(
                     actualJavaVersion,
                     buildConfigurations,
@@ -171,8 +170,7 @@ class PullRequestTestPipeline implements Serializable {
             })
         } // End: node("worker")
 
-        // for debug purpose, stop running job, uncommented later
-        // TODO: context.parallel jobs
+        context.parallel jobs
 
         // Move to "worker" workspace context to perform clean up...
         context.node('worker') {
