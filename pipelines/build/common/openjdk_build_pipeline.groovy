@@ -362,7 +362,7 @@ class Build {
 
                         if (testType  == 'dev.openjdk') {
                             if (additionalTestLabel == '') {
-                                additionalTestLabel += 'sw.tool.docker'
+                                additionalTestLabel = 'sw.tool.docker'
                             } else {
                                 additionalTestLabel += '&&sw.tool.docker'
                             }
