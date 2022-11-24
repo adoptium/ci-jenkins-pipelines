@@ -360,6 +360,13 @@ class Build {
                             DYNAMIC_COMPILE = true
                         }
 
+                        if (testType  == 'dev.openjdk') {
+                            if (additionalTestLabel == '') {
+                                additionalTestLabel = 'sw.tool.docker'
+                            } else {
+                                additionalTestLabel += '&&sw.tool.docker'
+                            }
+                        }
                         def jobParams = getAQATestJobParams(testType)
                         def parallel = 'None'
                         def numMachinesPerTest = ''
