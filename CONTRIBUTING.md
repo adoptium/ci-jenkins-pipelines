@@ -5,7 +5,7 @@ You can contribute to this project in many different ways.  **We appreciate all 
 
 ## Project description
 
-ci-jenkins-pipelines is a project that contains the groovy code that powers our jenkins ci build system.
+ci-jenkins-pipelines is a project that contains the groovy code that powers our jenkins ci build tool.
 
 * <https://github.com/adoptium/ci-jenkins-pipelines>
 
@@ -39,7 +39,7 @@ Contact the Eclipse Foundation Webdev team via webdev@eclipse-foundation.org.
 
 Please let us know via our [issue tracker](https://github.com/adoptium/temurin-build/issues) if you find a problem, even if you don't have a fix for it.  The ideal issue report should be descriptive, and where possible include the steps we can take to reproduce the problem for ourselves.
 
-If you have a proposed fix for an issue, or an enhancement you would like to make to the code please describe it in an issue, then send us the code as a [Github pull request](https://help.github.com/articles/about-pull-requests) as described below.
+If you have a proposed fix for an issue, or an enhancement you would like to make to the code please describe it in an issue, then send us the code as a [GitHub pull request](https://help.github.com/articles/about-pull-requests) as described below.
 
 ## Pull requests
 
@@ -56,7 +56,7 @@ Use a descriptive title, and if it relates to an issue in our tracker please ref
 
 ### Pull request comment
 
-The PR comment should be formed by a one-line subject, followed by one line of white space, and one or more descriptive paragraphs, each separated by one line of white space. All of them should be finished by a dot.
+The PR comment should be formed by a one-line subject, followed by one line of whitespace, and one or more descriptive paragraphs, each separated by one line of whitespace. All of them should be finished by a dot.
 
 Where your PR fixes an issue, it should include a reference to the issue's identifier in the first line of the commit comment.  The comment should provide enough information for a reviewer to understand the changes and their relation to the rest of the code.
 

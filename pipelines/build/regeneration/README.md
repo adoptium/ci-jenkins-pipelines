@@ -90,7 +90,7 @@ Unreferenced items:
 ## Build Pipeline Generator
 
 This generator generates the [top level](https://ci.adoptopenjdk.net/job/build-scripts/) pipeline jobs. It works by iterating through the config files, defining a job dsl configuration for each version that has a version config file.
-It then calls [pipeline_job_template.groovy](pipelines/jobs/pipeline_job_template.groovy) to finalise the dsl. By default, the [job that runs this file](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/job/build-pipeline-generator/) has restricted read access so you will likely need to contact a jenkins admin to see the results of the job.
+It then calls [pipeline_job_template.groovy](/pipelines/jobs/pipeline_job_template.groovy) to finalise the dsl. By default, the [job that runs this file](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/job/build-pipeline-generator/) has restricted read access so you will likely need to contact a jenkins admin to see the results of the job.
 
 ## Downstream Test Jobs
 
