@@ -47,6 +47,7 @@ class Regeneration implements Serializable {
     private final jenkinsCreds
     private final checkoutCreds
     private final Boolean prBuilder
+    private final Boolean isReleaseBuilder
 
     private String javaToBuild
     private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
@@ -74,7 +75,8 @@ class Regeneration implements Serializable {
         String jenkinsBuildRoot,
         String jenkinsCreds,
         String checkoutCreds,
-        Boolean prBuilder
+        Boolean prBuilder,
+        Boolean isReleaseBuilder
     ) {
         this.javaVersion = javaVersion
         this.buildConfigurations = buildConfigurations
@@ -94,6 +96,7 @@ class Regeneration implements Serializable {
         this.jenkinsCreds = jenkinsCreds
         this.checkoutCreds = checkoutCreds
         this.prBuilder = prBuilder
+        this.isReleaseBuilder = isReleaseBuilder
     }
 
     /*
@@ -586,7 +589,7 @@ class Regeneration implements Serializable {
     }
 
     /**
-    * Main function. Ran from build_job_generator.groovy, this will be what jenkins will run first.
+    * Main function. Ran from pipelines/build/regeneration/build_job_generator.groovy, this will be what jenkins will run first.
     */
     @SuppressWarnings('unused')
     def regenerate() {
@@ -685,9 +688,12 @@ class Regeneration implements Serializable {
                                 keyFound = true
 
                                 def platformConfig = buildConfigurations.get(key) as Map<String, ?>
-
+                                // nightly job name
                                 name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
-
+                                // release job name
+                                if (isReleaseBuilder) {
+                                    name = "release-"+name
+                                }
                                 if (platformConfig.containsKey('additionalFileNameTag')) {
                                     name += "-${platformConfig.additionalFileNameTag}"
                                 }
