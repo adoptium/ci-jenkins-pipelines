@@ -16,7 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/* This script is the pipeline script for creating jobs via pipeline_jobs_generator_jdkX */
+/*
+    File used for generate downstream build jobs which are triggered by via [release_]pipeline_jobs_generator_jdkX, e.g:
+    - build-scripts/jobs/jdk11u/jdk11u-linux-arm-temurin
+    - build-scripts/release/jobs/release-jdk17u-mac-x64-temurin
+    - build-scripts-pr-tester/build-test/jobs/jdk19u/jdk19u-alpine-linux-x64-temurin
+*/
 
 String javaVersion = params.JAVA_VERSION
 String ADOPT_DEFAULTS_FILE_URL = 'https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json'
