@@ -30,13 +30,6 @@ node('worker') {
         if (!DEFAULTS_JSON || !Map.isInstance(DEFAULTS_JSON)) {
             throw new Exception("[ERROR] No DEFAULTS_JSON found at ${DEFAULTS_FILE_URL} or it is not a valid JSON object. Please ensure this path is correct and leads to a JSON or Map object file.")
         }
-
-        def checkoutAdoptPipelines = { ->
-            checkout([$class: 'GitSCM',
-                branches: [ [ name: params.releaseTag ] ],
-                userRemoteConfigs: [ [ url: "https://github.com/adoptium/ci-jenkins-pipelines.git" ] ]
-            ])
-        }
         timestamps {
             def generatedPipelines = []
 
@@ -86,7 +79,7 @@ node('worker') {
                         println "[WARNING] jdk${javaVersion}u_release.groovy does not exist, chances are we want a jdk${javaVersion}_release.groovy file. Trying ${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
                         target = load "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
                     } catch (NoSuchFileException e2) {
-                         throw new Exception("[ERROR] jdk${javaVersion}_release.groovy does not exist too.... Horrible!"
+                         throw new Exception("[ERROR] jdk${javaVersion}_release.groovy does not exist too.... Horrible!")
                     }
                 }
 
@@ -102,7 +95,7 @@ node('worker') {
                 try {
                     jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: config
                 } catch (Exception e) {
-                    throw new Exception("[ERROR] Something went wrong when creating the job dsl for jdk${javaVersion}..."
+                    throw new Exception("[ERROR] Something went wrong when creating the job dsl for jdk${javaVersion}...")
                 }
                 target.disableJob = false
                 // add sucessfully generated pipeline into list
@@ -128,6 +121,9 @@ node('worker') {
 node('worker') {
     releaseVersions.each({ javaVersion ->
         def jobName = "releasepipeline/release_pipeline_jobs_generator_jdk${javaVersion}u"
-        def testJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
+        def releaseBuildJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
+        if (releaseBuildJob.getResult() == 'SUCCESS') {
+            rintln "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
+        }
     })
 }
