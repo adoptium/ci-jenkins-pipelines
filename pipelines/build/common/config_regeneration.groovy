@@ -703,14 +703,13 @@ class Regeneration implements Serializable {
                             // Skip variant job make if it's marked as excluded
                             if (jobConfigurations.get(name) == EXCLUDED_CONST) {
                                 continue
-                            }
-                                // Make job
-                                else if (jobConfigurations.get(name) != null) {
+                            } // Make job
+                            else if (jobConfigurations.get(name) != null) {
                                 makeJob(jobConfigurations, name)
                                 // Unexpected error when building or getting the configuration
-                                } else {
+                            } else {
                                 throw new Exception("[ERROR] IndividualBuildConfig is malformed or null for key: ${osarch} : ${variant}.")
-                                }
+                            }
                         }
                         } // end variant for loop
 
