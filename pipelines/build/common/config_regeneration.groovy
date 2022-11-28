@@ -693,11 +693,12 @@ class Regeneration implements Serializable {
                                 // release job name
                                 if (isReleaseBuilder) {
                                     name = "release-"+name
+                                    context.println "[WEN] ${name}"
                                 }
                                 if (platformConfig.containsKey('additionalFileNameTag')) {
                                     name += "-${platformConfig.additionalFileNameTag}"
                                 }
-
+                                context.println "[WEN] ${name}"
                                 jobConfigurations[name] = buildConfiguration(platformConfig, variant, javaToBuild)
                                 }
                         }
