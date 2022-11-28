@@ -10,7 +10,6 @@ cleanWsBuildOutput = true
 isLightweight = true
 
 folder("${BUILD_FOLDER}")
-folder("${BUILD_FOLDER}/jobs")
 
 pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
     description('<h1>THIS IS AN AUTOMATICALLY GENERATED JOB DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1><p>This job is defined in release_pipeline_job_template.groovy in the ci-jenkins-pipelines repo, if you wish to change it modify that.</p>')
@@ -20,13 +19,13 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
                 git {
                     remote {
                         url("${GIT_URL}")
-                        refspec("${BgitRefSpec}")
+                        refspec("${gitRefSpec}")
                     }
                     branch("${releaseTag}")
                 }
             }
             scriptPath("${SCRIPT}")
-            lightweight("${isLightweight}")
+            lightweight(isLightweight)
         }
     }
     disabled(false)
@@ -64,10 +63,10 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         textParam('targetConfigurations', JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations)))
         stringParam('releaseType', 'Release', "only for release purpose")
         booleanParam('useAdoptBashScripts', false, "If enabled, the downstream job will pull and execute <code>make-adopt-build-farm.sh</code> from adoptium/temurin-build. If disabled, it will use whatever the job is running inside of at the time, usually it's the default repository in the configuration.")
-        tringParam('scmReference', "${releaseTag}", 'Tag name or Branch name from which openjdk source code repo to build. Nightly builds: Defaults to, Hotspot=dev, OpenJ9=openj9, others=master.</br>Release builds: For hotspot JDK8 this would be the OpenJDK tag, for hotspot JDK11+ this would be the Adopt merge tag for the desired OpenJDK tag eg.jdk-11.0.4+10_adopt, and for OpenJ9 this will be the release branch, eg.openj9-0.14.0.')
-        stringParam('buildReference', "${releaseTag}", 'SHA1 or Tag name or Branch name of temurin-build repo. Defaults to master')
-        stringParam('ciReference', "${releaseTag}", 'SHA1 or Tag name or Branch name of ci-jenkins-pipeline repo. Defaults to master')
-        stringParam('helperReference', "${releaseTag}", 'Tag name or Branch name of jenkins-helper repo. Defaults to master')
+        stringParam('scmReference', '', 'Tag name or Branch name from which openjdk source code repo to build')
+        stringParam('buildReference', releaseTag, 'SHA1 or Tag name or Branch name of temurin-build repo. Defaults to master')
+        stringParam('ciReference', releaseTag, 'SHA1 or Tag name or Branch name of ci-jenkins-pipeline repo. Defaults to master')
+        stringParam('helperReference', releaseTag, 'Tag name or Branch name of jenkins-helper repo. Defaults to master')
         stringParam('aqaReference', '', 'Tag name or Branch name of aqa-tests. Defaults to master')
         // special items need to modify per jdk8
         stringParam('overridePublishName', '', 'Most useful for jdk8 arm32 with a different scmReference tag')

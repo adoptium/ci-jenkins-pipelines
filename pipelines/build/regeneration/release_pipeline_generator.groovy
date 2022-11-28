@@ -35,18 +35,19 @@ node('worker') {
 
             String pipelineUrl = "https://github.com/adoptium/ci-jenkins-pipelines.git"
             def releaseTag = params.releaseTag
+            checkout changelog: false, poll: false, scm: [$class: 'GitSCM', branches: [[name: releaseTag]], userRemoteConfigs: [[url: pipelineUrl]]]
 
             String helperRef = params.helperTag ?: params.releaseTag
             library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
             // set where generated jobs will be located in the Jenkins
-            def jobRoot = "build-scripts/job/release/"
+            def jobRoot = DEFAULTS_JSON['jenkinsDetails']['rootDirectory'] // "build-scripts" same as weekly and nightly
             // set where our generation scripts should be located in the ci-jenkins-pipeline repo
-            def scriptFolderPath = "pipelines/build"
+            def scriptFolderPath =  DEFAULTS_JSON['scriptDirectories']['upstream'] // same as others: "pipelines/build"
             // set downstream jobs template path in ci-jenkins-pipleine repo
-            def jobTemplatePath = "pipelines/jobs/release_pipeline_job_template.groovy"
+            def jobTemplatePath =  DEFAULTS_JSON['templateDirectories']['release'] // "pipelines/jobs/release_pipeline_job_template.groovy"
             // set where release testconfig should be read out from
-            def releaseConfigPath = "pipelines/jobs/configurations"
+            def releaseConfigPath = DEFAULTS_JSON['configDirectories']['release'] // "pipelines/jobs/configurations"
 
             println '[INFO] Running official release generator script with the following configuration:'
             println "REPOSITORY_URL = ${pipelineUrl}"
@@ -60,7 +61,7 @@ node('worker') {
 
             releaseVersions.each({ javaVersion ->
                 def config = [
-                    TEST                        : false,
+                  //  TEST                        : false,
                     GIT_URL                     : pipelineUrl,
                     releaseTag                  : releaseTag,
                     BUILD_FOLDER                : jobRoot,
@@ -73,14 +74,15 @@ node('worker') {
 
                 def target
                 try {
-                    target = load "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}u_release.groovy"
+                    def uFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}u_release.groovy"
+                    def nonUFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
+                    if(fileExists(uFile)){
+                        target = load uFile
+                    } else{
+                        target = load nonUFile
+                    }                   
                 } catch (NoSuchFileException e) {
-                    try {
-                        println "[WARNING] jdk${javaVersion}u_release.groovy does not exist, chances are we want a jdk${javaVersion}_release.groovy file. Trying ${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
-                        target = load "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
-                    } catch (NoSuchFileException e2) {
-                         throw new Exception("[ERROR] jdk${javaVersion}_release.groovy does not exist too.... Horrible!")
-                    }
+                    throw new Exception("[ERROR] enable to load jdk${javaVersion}u_release.groovy nor jdk${javaVersion}_release.groovy does not exist!")
                 }
 
                 config.put('targetConfigurations', target.targetConfigurations)
@@ -95,9 +97,8 @@ node('worker') {
                 try {
                     jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: config
                 } catch (Exception e) {
-                    throw new Exception("[ERROR] Something went wrong when creating the job dsl for jdk${javaVersion}...")
+                    throw new Exception("[ERROR] ${e.message} ... Cannot create release pipeline for jdk${javaVersion}...")
                 }
-                target.disableJob = false
                 // add sucessfully generated pipeline into list
                 generatedPipelines.add(config['JOB_NAME'])
             })
