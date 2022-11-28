@@ -120,7 +120,7 @@ node('worker') {
 // Calling release-pipeline_jobs_generator_jdk11X per each jdk version listed in releaseVersions
 node('worker') {
     releaseVersions.each({ javaVersion ->
-        def jobName = "releasepipeline/release_pipeline_jobs_generator_jdk${javaVersion}u"
+        def jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}u"
         def releaseBuildJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
         if (releaseBuildJob.getResult() == 'SUCCESS') {
             rintln "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
