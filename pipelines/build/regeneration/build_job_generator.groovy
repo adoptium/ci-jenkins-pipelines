@@ -16,7 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/* This script is the pipeline script for creating jobs via pipeline_jobs_generator_jdkX */
+/*
+    File used for generate downstream build jobs which are triggered by via [release_]pipeline_jobs_generator_jdkX, e.g:
+    - build-scripts/jobs/jdk11u/jdk11u-linux-arm-temurin (when isReleaseBulider = false)
+    - build-scripts/release/jobs/release-jdk17u-mac-x64-temurin (when isReleaseBulider = true)
+    - build-scripts-pr-tester/build-test/jobs/jdk19u/jdk19u-alpine-linux-x64-temurin (when isReleaseBulider = false)
+*/
 
 String javaVersion = params.JAVA_VERSION
 String ADOPT_DEFAULTS_FILE_URL = 'https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json'
@@ -127,6 +132,12 @@ node('worker') {
 
         // Pull in other parametrised values (or use defaults if they're not defined)
         def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
+        // handle release downstream job
+        Boolean isReleaseBuilder = false
+        if (jobRoot.contains('release')) {
+            isReleaseBuilder = true
+        }
+
         def jenkinsBuildRoot = (params.JENKINS_BUILD_ROOT) ?: "${DEFAULTS_JSON['jenkinsDetails']['rootUrl']}/job/${jobRoot}/"
 
         def jobTemplatePath = (params.JOB_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['downstream']
@@ -176,6 +187,7 @@ node('worker') {
         println "BASE FILE PATH: $baseFilePath"
         println "EXCLUDES LIST: $excludes"
         println "SLEEP_TIME: $sleepTime"
+        println "IS RELEASE JOB:  $isReleaseBuilder" 
         if (jenkinsCreds == '') { println '[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error codes.' }
 
         // Load regen script and execute base file
@@ -215,7 +227,8 @@ node('worker') {
           jenkinsBuildRoot,
           jenkinsCredentials,
           checkoutCreds,
-          false
+          false,
+          isReleaseBuilder
         ).regenerate()
       }
     } else {
@@ -237,7 +250,8 @@ node('worker') {
         jenkinsBuildRoot,
         jenkinsCreds,
         checkoutCreds,
-        false
+        false,
+        isReleaseBuilder
       ).regenerate()
         }
 
