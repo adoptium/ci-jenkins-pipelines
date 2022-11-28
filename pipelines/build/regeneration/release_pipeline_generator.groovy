@@ -3,7 +3,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 // ensure releaseVersions is updated before create releaseTag
-def releaseVersions = [19] // TODO enable full list when testing done [8,11,17,19]
+def releaseVersions = [8,11,17,19]
 
 
 // Regenerate release-openjdkX-pipeline per each jdk version listed in releaseVersions
@@ -61,7 +61,6 @@ node('worker') {
 
             releaseVersions.each({ javaVersion ->
                 def config = [
-                  //  TEST                        : false,
                     GIT_URL                     : pipelineUrl,
                     releaseTag                  : releaseTag,
                     BUILD_FOLDER                : jobRoot,
@@ -80,7 +79,7 @@ node('worker') {
                         target = load uFile
                     } else{
                         target = load nonUFile
-                    }                   
+                    }              
                 } catch (NoSuchFileException e) {
                     throw new Exception("[ERROR] enable to load jdk${javaVersion}u_release.groovy nor jdk${javaVersion}_release.groovy does not exist!")
                 }
