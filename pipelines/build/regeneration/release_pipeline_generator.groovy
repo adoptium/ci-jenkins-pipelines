@@ -36,7 +36,7 @@ node('worker') {
             String pipelineUrl = "https://github.com/adoptium/ci-jenkins-pipelines.git"
             def releaseTag = params.releaseTag
 
-            String helperRef = "https://github.com/adoptium/jenkins-helper.git"
+            String helperRef = params.helperTag ?: params.releaseTag
             library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
             // set where generated jobs will be located in the Jenkins
