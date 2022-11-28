@@ -745,7 +745,8 @@ return {
     String jenkinsBuildRoot,
     String jenkinsCreds,
     String checkoutCreds,
-    Boolean prBuilder
+    Boolean prBuilder,
+    Boolean isReleaseBuilder
         ->
 
     def excludedBuilds = [:]
@@ -771,6 +772,7 @@ return {
             jenkinsBuildRoot,
             jenkinsCreds,
             checkoutCreds,
-            prBuilder
+            prBuilder,
+            isReleaseBuilder
         )
 }

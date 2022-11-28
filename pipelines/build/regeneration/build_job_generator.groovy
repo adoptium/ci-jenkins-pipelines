@@ -176,8 +176,8 @@ node('worker') {
 
         println '[INFO] Running regeneration script with the following configuration:'
         println "VERSION: $javaVersion"
-        println "REPOSITORY URL: $repoUri"
-        println "REPOSITORY BRANCH: $repoBranch"
+        println "CI REPOSITORY URL: $repoUri"
+        println "CI REPOSITORY BRANCH: $repoBranch"
         println "BUILD CONFIGURATIONS: ${JsonOutput.prettyPrint(JsonOutput.toJson(buildConfigurations))}"
         println "JOBS TO GENERATE: ${JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations))}"
         println "JOB ROOT: $jobRoot"
@@ -188,8 +188,7 @@ node('worker') {
         println "EXCLUDES LIST: $excludes"
         println "SLEEP_TIME: $sleepTime"
         println "IS RELEASE JOB:  $isReleaseBuilder" 
-        if (jenkinsCreds == '') { println '[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error codes.' }
-
+        
         // Load regen script and execute base file
         Closure regenerationScript
         def regenScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['regeneration']
@@ -202,60 +201,60 @@ node('worker') {
             checkoutUserPipelines()
         }
 
-        if (jenkinsCreds != '') {
-            withCredentials([usernamePassword(
-          credentialsId: "${JENKINS_AUTH}",
-          usernameVariable: 'jenkinsUsername',
-          passwordVariable: 'jenkinsToken'
-      )]) {
-                String jenkinsCredentials = "$jenkinsUsername:$jenkinsToken"
-                regenerationScript(
-          javaVersion,
-          buildConfigurations,
-          targetConfigurations,
-          DEFAULTS_JSON,
-          excludes,
-          sleepTime,
-          currentBuild,
-          this,
-          jobRoot,
-          remoteConfigs,
-          repoBranch,
-          jobTemplatePath,
-          baseFilePath,
-          scriptPath,
-          jenkinsBuildRoot,
-          jenkinsCredentials,
-          checkoutCreds,
-          false,
-          isReleaseBuilder
-        ).regenerate()
-      }
-    } else {
+    if (jenkinsCreds != '') {
+        withCredentials([usernamePassword(
+            credentialsId: "${JENKINS_AUTH}",
+            usernameVariable: 'jenkinsUsername',
+            passwordVariable: 'jenkinsToken'
+        )]) {
+            String jenkinsCredentials = "$jenkinsUsername:$jenkinsToken"
             regenerationScript(
-        javaVersion,
-        buildConfigurations,
-        targetConfigurations,
-        DEFAULTS_JSON,
-        excludes,
-        sleepTime,
-        currentBuild,
-        this,
-        jobRoot,
-        remoteConfigs,
-        repoBranch,
-        jobTemplatePath,
-        baseFilePath,
-        scriptPath,
-        jenkinsBuildRoot,
-        jenkinsCreds,
-        checkoutCreds,
-        false,
-        isReleaseBuilder
-      ).regenerate()
+                javaVersion,
+                buildConfigurations,
+                targetConfigurations,
+                DEFAULTS_JSON,
+                excludes,
+                sleepTime,
+                currentBuild,
+                this,
+                jobRoot,
+                remoteConfigs,
+                repoBranch,
+                jobTemplatePath,
+                baseFilePath,
+                scriptPath,
+                jenkinsBuildRoot,
+                jenkinsCredentials,
+                checkoutCreds,
+                false,
+                isReleaseBuilder
+            ).regenerate()
         }
-
-        println '[SUCCESS] All done!'
+    } else {
+        println '[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error code.'
+        regenerationScript(
+            javaVersion,
+            buildConfigurations,
+            targetConfigurations,
+            DEFAULTS_JSON,
+            excludes,
+            sleepTime,
+            currentBuild,
+            this,
+            jobRoot,
+            remoteConfigs,
+            repoBranch,
+            jobTemplatePath,
+            baseFilePath,
+            scriptPath,
+            jenkinsBuildRoot,
+            jenkinsCreds,
+            checkoutCreds,
+            false,
+            isReleaseBuilder
+        ).regenerate()
+    }
+    println '[SUCCESS] All done!'
   } finally {
         // Always clean up, even on failure (doesn't delete the generated jobs)
         println '[INFO] Cleaning up...'
