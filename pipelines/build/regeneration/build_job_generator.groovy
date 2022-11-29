@@ -126,10 +126,8 @@ node('worker') {
     def targetConfFile = ""
     def targetConfigPath = ""
     if(isReleaseBuilder) {
-        println "WEN: ${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['release']}"
-        println "WEN: ${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}"
         targetConfFile = "${javaVersion}_release.groovy"
-        targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['release']}/${targetConfFile}"
+        targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}/${targetConfFile}"
     } else {  // normal nightlies, can be extended for prototype later
         targetConfFile = "${javaVersion}.groovy"
         targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${targetConfFile}"
