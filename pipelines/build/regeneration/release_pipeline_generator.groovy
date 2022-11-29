@@ -106,8 +106,7 @@ node('worker') {
             if (generatedPipelines == []) {
                 throw new Exception('[ERROR] NO PIPELINES WERE GENERATED!')
             } else {
-                println "[SUCCESS] THE FOLLOWING PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER"
-                println generatedPipelines
+                println "[SUCCESS] THE FOLLOWING release PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER:\n${generatedPipelines}"
             }
         }
     } finally {
@@ -123,7 +122,7 @@ node('worker') {
         def jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}u"
         def releaseBuildJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
         if (releaseBuildJob.getResult() == 'SUCCESS') {
-            rintln "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
+            println "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
         }
     })
 }
