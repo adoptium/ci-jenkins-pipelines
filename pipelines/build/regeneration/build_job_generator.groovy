@@ -55,87 +55,85 @@ node('worker') {
         if (checkoutCreds != '') {
             // This currently does not work with user credentials due to https://issues.jenkins.io/browse/JENKINS-60349
             remoteConfigs.credentials = "${checkoutCreds}"
-    } else {
+        } else {
             println "[WARNING] CHECKOUT_CREDENTIALS not specified! Checkout to $repoUri may fail if you do not have your ssh key on this machine."
         }
 
-    /*
-    Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
-    */
-    def checkoutAdoptPipelines = { ->
-        checkout([$class: 'GitSCM',
-            branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
-            userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]
-        ])
-    }
-
-    /*
-    Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
-    */
-    def checkoutUserPipelines = { ->
-        checkout([$class: 'GitSCM',
-            branches: [ [ name: repoBranch ] ],
-            userRemoteConfigs: [ remoteConfigs ]
-        ])
-    }
-
-    checkoutUserPipelines()
-
-    String helperRef = DEFAULTS_JSON['repository']['helper_ref']
-    library(identifier: "openjdk-jenkins-helper@${helperRef}")
-
-    // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
-    def buildConfigurations = null
-    def buildConfigPath = (params.BUILD_CONFIG_PATH) ? "${WORKSPACE}/${BUILD_CONFIG_PATH}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}"
-
-    try {
-        buildConfigurations = load "${buildConfigPath}/${javaVersion}_pipeline_config.groovy"
-    } catch (NoSuchFileException e) {
-        try {
-            println "[WARNING] ${buildConfigPath}/${javaVersion}_pipeline_config.groovy does not exist, chances are we want a U version..."
-
-            buildConfigurations = load "${buildConfigPath}/${javaVersion}u_pipeline_config.groovy"
-            javaVersion += 'u'
-        } catch (NoSuchFileException e2) {
-            println "[WARNING] U version does not exist. Likelihood is we are generating from a repository that isn't Adopt's. Pulling Adopt's build config in..."
-
-            checkoutAdoptPipelines()
-            try {
-                buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}_pipeline_config.groovy"
-            } catch (NoSuchFileException e3) {
-                buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}u_pipeline_config.groovy"
-                javaVersion += 'u'
-            }
-            checkoutUserPipelines()
+        /*
+        Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
+        */
+        def checkoutAdoptPipelines = { ->
+            checkout([$class: 'GitSCM',
+                branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
+                userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]
+            ])
         }
+
+        /*
+        Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
+        */
+        def checkoutUserPipelines = { ->
+            checkout([$class: 'GitSCM',
+                branches: [ [ name: repoBranch ] ],
+                userRemoteConfigs: [ remoteConfigs ]
+            ])
+        }
+
+        String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+        library(identifier: "openjdk-jenkins-helper@${helperRef}")
+
+        // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
+        def buildConfigurations = null
+        def buildConfigPath = (params.BUILD_CONFIG_PATH) ? "${WORKSPACE}/${BUILD_CONFIG_PATH}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}"
+
+        try {
+            buildConfigurations = load "${buildConfigPath}/${javaVersion}_pipeline_config.groovy"
+        } catch (NoSuchFileException e) {
+            try {
+                println "[WARNING] ${buildConfigPath}/${javaVersion}_pipeline_config.groovy does not exist, chances are we want a U version..."
+
+                buildConfigurations = load "${buildConfigPath}/${javaVersion}u_pipeline_config.groovy"
+                javaVersion += 'u'
+            } catch (NoSuchFileException e2) {
+                println "[WARNING] U version does not exist. Likelihood is we are generating from a repository that isn't Adopt's. Pulling Adopt's build config in..."
+
+                checkoutAdoptPipelines()
+                try {
+                    buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}_pipeline_config.groovy"
+                } catch (NoSuchFileException e3) {
+                    buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}u_pipeline_config.groovy"
+                    javaVersion += 'u'
+                }
+                checkoutUserPipelines()
+            }
+        }
+
+        if (buildConfigurations == null) {
+            throw new Exception("[ERROR] Could not find buildConfigurations for ${javaVersion}")
+        }
+
+        // handle release downstream job
+        Boolean isReleaseBuilder = false
+        // Pull in other parametrised values (or use defaults if they're not defined)
+        def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
+        if (jobRoot.contains('release')) {
+            isReleaseBuilder = true
     }
 
-    if (buildConfigurations == null) {
-        throw new Exception("[ERROR] Could not find buildConfigurations for ${javaVersion}")
-    }
+        // Load targetConfigurations from config file. This is what is being run for nightlies or for release
+        def targetConfFile = ""
+        def targetConfigPath = ""
+        if(isReleaseBuilder) {
+            targetConfFile = "${javaVersion}_release.groovy"
+            targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}/${targetConfFile}"
+        } else {  // normal nightlies, can be extended for prototype later
+            targetConfFile = "${javaVersion}.groovy"
+            targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${targetConfFile}"
+        }
 
-    // handle release downstream job
-    Boolean isReleaseBuilder = false
-    // Pull in other parametrised values (or use defaults if they're not defined)
-    def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
-    if (jobRoot.contains('release')) {
-        isReleaseBuilder = true
-    }
-
-    // Load targetConfigurations from config file. This is what is being run for nightlies or for release
-    def targetConfFile = ""
-    def targetConfigPath = ""
-    if(isReleaseBuilder) {
-        targetConfFile = "${javaVersion}_release.groovy"
-        targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}/${targetConfFile}"
-    } else {  // normal nightlies, can be extended for prototype later
-        targetConfFile = "${javaVersion}.groovy"
-        targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${targetConfFile}"
-    }
-
-    try {
-        load targetConfigPath
-    } catch (NoSuchFileException e) {
+        try {
+            load targetConfigPath
+        } catch (NoSuchFileException e) {
             println "[WARNING] ${targetConfigPath} does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightly config in..."
             checkoutAdoptPipelines()
             load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}"

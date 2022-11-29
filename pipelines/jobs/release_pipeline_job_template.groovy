@@ -1,13 +1,13 @@
 import groovy.json.JsonOutput
 
-gitRefSpec = ''
-propagateFailures = false
-runTests = true
-runParallel = true
-runInstaller = true
-runSigner = true
-cleanWsBuildOutput = true
-isLightweight = true
+String gitRefSpec = ''
+Boolean propagateFailures = false
+Boolean runTests = true
+Boolean runParallel = true
+Boolean runInstaller = true
+Boolean runSigner = true
+Boolean cleanWsBuildOutput = true
+Boolean isLightweight = false  // since this is to checkout on a releaseTag, better to use false or might get not found tag/SHA1
 
 folder("${BUILD_FOLDER}")
 
