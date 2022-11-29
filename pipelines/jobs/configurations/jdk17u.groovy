@@ -1,39 +1,30 @@
 targetConfigurations = [
         'x64Mac'      : [
-                'temurin',
-                'openj9'
+                'temurin'
         ],
         'x64Linux'    : [
-                'temurin',
-                'openj9',
-                'bisheng'
+                'temurin'
         ],
         'x64AlpineLinux' : [
                 'temurin'
         ],
         'x64Windows'  : [
-                'temurin',
-                'openj9'
+                'temurin'
         ],
         'x32Windows'  : [
                 'temurin'
         ],
         'ppc64Aix'    : [
-                'temurin',
-                'openj9'
+                'temurin'
         ],
         'ppc64leLinux': [
-                'temurin',
-                'openj9'
+                'temurin'
         ],
         's390xLinux'  : [
-                'temurin',
-                'openj9'
+                'temurin'
         ],
         'aarch64Linux': [
-                'temurin',
-                'openj9',
-                'bisheng'
+                'temurin'
         ],
         'aarch64AlpineLinux' : [
                 'temurin'
@@ -55,8 +46,6 @@ triggerSchedule_weekly = 'TZ=UTC\n05 12 * * 7'
 weekly_release_scmReferences = [
         'temurin'        : '',
         'openj9'         : '',
-        'corretto'       : '',
-        'dragonwell'     : '',
         'bisheng'        : ''
 ]
 
