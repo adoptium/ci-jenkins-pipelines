@@ -24,7 +24,6 @@ targetConfigurations = [
                 'temurin'
         ],
         'aarch64Linux': [
-                'hotspot',
                 'temurin'
         ],
         'aarch64AlpineLinux' : [
@@ -50,10 +49,7 @@ triggerSchedule_weekly = 'TZ=UTC\n30 23 * * 6'
 // scmReferences to use for weekly release build
 weekly_release_scmReferences = [
         'hotspot'        : '',
-        'temurin'        : '',
-        'openj9'         : '',
-        'corretto'       : '',
-        'dragonwell'     : ''
+        'temurin'        : ''
 ]
 
 return this
