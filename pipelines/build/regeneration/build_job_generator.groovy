@@ -118,7 +118,7 @@ node('worker') {
         def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
         if (jobRoot.contains('release')) {
             isReleaseBuilder = true
-    }
+        }
 
         // Load targetConfigurations from config file. This is what is being run for nightlies or for release
         def targetConfFile = ""
