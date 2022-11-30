@@ -46,7 +46,7 @@ class Regeneration implements Serializable {
     private final jenkinsBuildRoot
     private final jenkinsCreds
     private final checkoutCreds
-    private final Boolean prBuilder
+    private final Boolean isPRBuilder
     private final Boolean isReleaseBuilder
 
     private String javaToBuild
@@ -75,7 +75,7 @@ class Regeneration implements Serializable {
         String jenkinsBuildRoot,
         String jenkinsCreds,
         String checkoutCreds,
-        Boolean prBuilder,
+        Boolean isPRBuilder,
         Boolean isReleaseBuilder
     ) {
         this.javaVersion = javaVersion
@@ -95,7 +95,7 @@ class Regeneration implements Serializable {
         this.jenkinsBuildRoot = jenkinsBuildRoot
         this.jenkinsCreds = jenkinsCreds
         this.checkoutCreds = checkoutCreds
-        this.prBuilder = prBuilder
+        this.isPRBuilder = isPRBuilder
         this.isReleaseBuilder = isReleaseBuilder
     }
 
@@ -524,7 +524,7 @@ class Regeneration implements Serializable {
         }
 
         // Make sure the dsl knows if we're building inside the pr tester
-        if (prBuilder) {
+        if (isPRBuilder) {
             params.put('PR_BUILDER', true)
         }
 
@@ -744,7 +744,7 @@ return {
     String jenkinsBuildRoot,
     String jenkinsCreds,
     String checkoutCreds,
-    Boolean prBuilder,
+    Boolean isPRBuilder,
     Boolean isReleaseBuilder
         ->
 
@@ -771,7 +771,7 @@ return {
             jenkinsBuildRoot,
             jenkinsCreds,
             checkoutCreds,
-            prBuilder,
+            isPRBuilder,
             isReleaseBuilder
         )
 }
