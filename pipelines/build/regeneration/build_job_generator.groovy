@@ -128,7 +128,7 @@ node('worker') {
             targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}/${targetConfFile}"
         } else {  // normal nightlies, can be extended for prototype later
             targetConfFile = "${javaVersion}.groovy"
-            targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${targetConfFile}"
+            targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${targetConfigFile}"
         }
 
         try {
