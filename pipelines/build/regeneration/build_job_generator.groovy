@@ -121,7 +121,7 @@ node('worker') {
         }
 
         // Load targetConfigurations from config file. This is what is being run for nightlies or for release
-        def targetConfFile = ""
+        def targetConfigFile = ""
         def targetConfigPath = ""
         if(isReleaseBuilder) {
             targetConfFile = "${javaVersion}_release.groovy"
