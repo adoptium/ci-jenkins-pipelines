@@ -472,7 +472,7 @@ class Build {
         return testStages
     }
 
-    def remoteTriggerJckTests(String platforms) {
+    def remoteTriggerJckTests(String platform) {
         def jdkVersion = getJavaVersionNumber()
         //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
         def filter = "*.tar.gz"
@@ -485,13 +485,18 @@ class Build {
         def parallel = 'None'
         def num_machines = '1'
         def remoteTargets = [:]
+        def additionalLabel = ''
+        if (jdkVersion >= 19 && platform == 'ppc64_aix') {
+                // Jck19+ AIX must run on AIX 7.2
+                additionalLabel = 'sw.os.aix.7_2'
+        }
 
         targets.each { target ->
             // For each requested test, i.e 'sanity.jck', 'extended.jck', 'special.jck', call test job
             try {
                 context.println "Remote trigger ${target}"
                 remoteTargets["${target}"] = {
-                    if ( "${target}" == 'extended.jck' && ("${platforms}" == 'x86-64_linux' || "${platforms}" == 'x86-64_windows' || "${platforms}" == 'x86-64_mac') ) {
+                    if ( "${target}" == 'extended.jck' && ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') ) {
                         parallel = 'Dynamic'
                         num_machines = '2'
                     }
@@ -504,7 +509,8 @@ class Build {
                                                                 context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
                                                                 context.MapParameter(name: 'PARALLEL', value: parallel),
                                                                 context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                context.MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
+                                                                context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
+                                                                context.MapParameter(name: 'LABEL_ADDITION', value: additionalLabel)]),
                         remoteJenkinsName: 'temurin-compliance',
                         shouldNotFailBuild: true,
                         token: 'RemoteTrigger',
