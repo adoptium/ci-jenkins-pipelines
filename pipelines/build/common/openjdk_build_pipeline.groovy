@@ -1812,7 +1812,7 @@ class Build {
                             if (buildConfig.ARCHITECTURE.contains('x64')) {
                                 platform = 'x86-64_' + buildConfig.TARGET_OS
                             } else {
-                                platform = config.buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
+                                platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
                             }           
                             if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
                                 if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
