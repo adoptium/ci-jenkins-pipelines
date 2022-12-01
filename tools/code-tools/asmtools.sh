@@ -5,23 +5,25 @@ set -euo pipefail
 WORKSPACE=$PWD
 
 function generateArtifact() {
-    local  branchOrTag=$1
-    export JAVA_HOME=$2
+    local  branchOrTag=${1}
+    export JAVA_HOME=${2}
     git checkout $branchOrTag
     echo "Moving into maven build..."
     pushd maven
+      echo "Removing asmtools $branchOrTag old maven wrapper"
+      rm -rf src target pom.xml
       #export JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF8 -Xdoclint:none -Dmaven.javadoc.skip=true -Dgpg.skip"
-      echo "Generating asmtools maven wrapper"
+      echo "Generating asmtools $branchOrTag maven wrapper"
       sh mvngen.sh
       echo "Cleaning possible previous run"
       mvn clean
-      echo "Running asmtools tests"
+      echo "Running asmtools $branchOrTag tests by $JAVA_HOME"
       mvn test || echo "Test now correctly fails, this have to be fixed upstream"
-      echo "Running asmtools build"
+      echo "Running asmtools $branchOrTag build by $JAVA_HOME"
       mvn package -DskipTests # mvn install will do much more, but I doubt we wish that (javadoc, sources, gpg sign...)
       echo "Moving down to target"
       pushd target
-        echo "Asmtools artifact:"
+        echo "Asmtools $branchOrTag artifact:"
         ls -l
         local mainArtifact=`ls asmtools*.jar`
         echo "Copying maven/target/$mainArtifact file to WORKSPACE($WORKSPACE)"
@@ -43,12 +45,14 @@ if [ ! -e asmtools ] ; then
   git clone https://github.com/openjdk/asmtools.git
 fi
 
+jdk08=`find /usr/lib/jvm/ -maxdepth 1 | sort | grep -e -1.8.0-  -e jdk-8   | head -n 1`
+jdk17=`find /usr/lib/jvm/ -maxdepth 1 | sort | grep -e -17-     -e jdk-17  | head -n 1`
 pushd asmtools
   latestRelease=`git tag -l | tail -n 2 | head -n 1`
-  generateArtifact "master" /usr/lib/jvm/java-1.8.0-openjdk
-  generateArtifact "at8" /usr/lib/jvm/java-17-openjdk
+  generateArtifact "master" "$jdk08"
+  generateArtifact "at8" "$jdk17"
   # 7.0-b09 had not yet have maven integration, enable with b10 out
-  # generateArtifact "$latestRelease" /usr/lib/jvm/java-1.8.0-openjdk 
+  # generateArtifact "$latestRelease" "$jdk08"
 popd
 
 echo "Creating checksums all asmtools*.jar"
