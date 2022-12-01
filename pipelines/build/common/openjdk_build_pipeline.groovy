@@ -481,20 +481,41 @@ class Build {
         }
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${filter}/*zip*/target.zip"
         context.echo "sdkUrl is ${sdkUrl}"
-        def targets = 'sanity.jck,extended.jck,special.jck'
-        context.triggerRemoteJob abortTriggeredJob: true,
-                            blockBuildUntilComplete: false,
-                            job: 'AQA_Test_Pipeline',
-                            parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                    context.MapParameter(name: 'TARGETS', value: targets),
-                                                                    context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                    context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                    context.MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
-                            remoteJenkinsName: 'temurin-compliance',
-                            shouldNotFailBuild: true,
-                            token: 'RemoteTrigger',
-                            useCrumbCache: true,
-                            useJobInfoCache: true
+        def targets = ['sanity.jck', 'extended.jck', 'special.jck']
+        def parallel = 'None'
+        def num_machines = '1'
+        def remoteTargets = [:]
+
+        targets.each { target ->
+            // For each requested test, i.e 'sanity.jck', 'extended.jck', 'special.jck', call test job
+            try {
+                context.println "Remote trigger ${target}"
+                remoteTargets["${target}"] = {
+                    if ( "${target}" == 'extended.jck' && ("${platforms}" == 'x86-64_linux' || "${platforms}" == 'x86-64_windows' || "${platforms}" == 'x86-64_mac') ) {
+                        parallel = 'Dynamic'
+                        num_machines = '2'
+                    }
+                    context.triggerRemoteJob abortTriggeredJob: true,
+                        blockBuildUntilComplete: false,
+                        job: 'AQA_Test_Pipeline',
+                        parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
+                                                                context.MapParameter(name: 'TARGETS', value: target),
+                                                                context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                                                                context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
+                                                                context.MapParameter(name: 'PARALLEL', value: parallel),
+                                                                context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
+                                                                context.MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
+                        remoteJenkinsName: 'temurin-compliance',
+                        shouldNotFailBuild: true,
+                        token: 'RemoteTrigger',
+                        useCrumbCache: true,
+                        useJobInfoCache: true
+                }
+            } catch (Exception e) {
+                context.println "Failed to remote trigger jck tests: ${e.message}"
+            }
+        }
+        return remoteTargets
     }
  
     /*
@@ -1790,7 +1811,8 @@ class Build {
                             if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
                                 if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
                                     context.echo "Remote trigger Eclipse temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                    remoteTriggerJckTests(platform)
+                                    def remoteTargets = remoteTriggerJckTests(platform)
+                                    context.parallel remoteTargets
                                 }
                             }
                         }
