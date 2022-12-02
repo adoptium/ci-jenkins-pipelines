@@ -16,7 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/* This script is the pipeline script for creating jobs via pipeline_jobs_generator_jdkX */
+/*
+    File used for generate downstream build jobs which are triggered by via [release_]pipeline_jobs_generator_jdkX, e.g:
+    
+    - build-scripts/jobs/jdk11u/jdk11u-linux-arm-temurin (when isReleaseBulider = false)
+    - build-scripts/release/jobs/release-jdk17u-mac-x64-temurin (when isReleaseBulider = true)
+    - build-scripts-pr-tester/build-test/jobs/jdk19u/jdk19u-alpine-linux-x64-temurin (when isReleaseBulider = false)
+*/
 
 String javaVersion = params.JAVA_VERSION
 String ADOPT_DEFAULTS_FILE_URL = 'https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json'
@@ -50,31 +56,29 @@ node('worker') {
         if (checkoutCreds != '') {
             // This currently does not work with user credentials due to https://issues.jenkins.io/browse/JENKINS-60349
             remoteConfigs.credentials = "${checkoutCreds}"
-    } else {
+        } else {
             println "[WARNING] CHECKOUT_CREDENTIALS not specified! Checkout to $repoUri may fail if you do not have your ssh key on this machine."
         }
 
-    /*
-    Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
-    */
+        /*
+        Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
+        */
         def checkoutAdoptPipelines = { ->
             checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]
-      ])
+                branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
+                userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]
+            ])
         }
 
-    /*
-    Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
-    */
+        /*
+        Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
+        */
         def checkoutUserPipelines = { ->
             checkout([$class: 'GitSCM',
-        branches: [ [ name: repoBranch ] ],
-        userRemoteConfigs: [ remoteConfigs ]
-      ])
+                branches: [ [ name: repoBranch ] ],
+                userRemoteConfigs: [ remoteConfigs ]
+            ])
         }
-
-        checkoutUserPipelines()
 
         String helperRef = DEFAULTS_JSON['repository']['helper_ref']
         library(identifier: "openjdk-jenkins-helper@${helperRef}")
@@ -85,19 +89,19 @@ node('worker') {
 
         try {
             buildConfigurations = load "${buildConfigPath}/${javaVersion}_pipeline_config.groovy"
-    } catch (NoSuchFileException e) {
+        } catch (NoSuchFileException e) {
             try {
                 println "[WARNING] ${buildConfigPath}/${javaVersion}_pipeline_config.groovy does not exist, chances are we want a U version..."
 
                 buildConfigurations = load "${buildConfigPath}/${javaVersion}u_pipeline_config.groovy"
                 javaVersion += 'u'
-      } catch (NoSuchFileException e2) {
+            } catch (NoSuchFileException e2) {
                 println "[WARNING] U version does not exist. Likelihood is we are generating from a repository that isn't Adopt's. Pulling Adopt's build config in..."
 
                 checkoutAdoptPipelines()
                 try {
                     buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}_pipeline_config.groovy"
-        } catch (NoSuchFileException e3) {
+                } catch (NoSuchFileException e3) {
                     buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaVersion}u_pipeline_config.groovy"
                     javaVersion += 'u'
                 }
@@ -109,12 +113,28 @@ node('worker') {
             throw new Exception("[ERROR] Could not find buildConfigurations for ${javaVersion}")
         }
 
-        // Load targetConfigurations from config file. This is what is being run in the nightlies
-        def targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${javaVersion}.groovy" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${javaVersion}.groovy"
+        // handle release downstream job
+        Boolean isReleaseBuilder = false
+        // Pull in other parametrised values (or use defaults if they're not defined)
+        def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
+        if (jobRoot.contains('release')) {
+            isReleaseBuilder = true
+        }
+
+        // Load targetConfigurations from config file. This is what is being run for nightlies or for release
+        def targetConfigFile = ""
+        def targetConfigPath = ""
+        if(isReleaseBuilder) {
+            targetConfigFile = "${javaVersion}_release.groovy"
+            targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}/${targetConfigFile}"
+        } else {  // normal nightlies, can be extended for prototype later
+            targetConfigFile = "${javaVersion}.groovy"
+            targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${targetConfigFile}"
+        }
 
         try {
             load targetConfigPath
-    } catch (NoSuchFileException e) {
+        } catch (NoSuchFileException e) {
             println "[WARNING] ${targetConfigPath} does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightly config in..."
             checkoutAdoptPipelines()
             load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}"
@@ -125,8 +145,6 @@ node('worker') {
             throw new Exception("[ERROR] Could not find targetConfigurations for ${javaVersion}")
         }
 
-        // Pull in other parametrised values (or use defaults if they're not defined)
-        def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
         def jenkinsBuildRoot = (params.JENKINS_BUILD_ROOT) ?: "${DEFAULTS_JSON['jenkinsDetails']['rootUrl']}/job/${jobRoot}/"
 
         def jobTemplatePath = (params.JOB_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['downstream']
@@ -165,8 +183,8 @@ node('worker') {
 
         println '[INFO] Running regeneration script with the following configuration:'
         println "VERSION: $javaVersion"
-        println "REPOSITORY URL: $repoUri"
-        println "REPOSITORY BRANCH: $repoBranch"
+        println "CI REPOSITORY URL: $repoUri"
+        println "CI REPOSITORY BRANCH: $repoBranch"
         println "BUILD CONFIGURATIONS: ${JsonOutput.prettyPrint(JsonOutput.toJson(buildConfigurations))}"
         println "JOBS TO GENERATE: ${JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations))}"
         println "JOB ROOT: $jobRoot"
@@ -176,14 +194,14 @@ node('worker') {
         println "BASE FILE PATH: $baseFilePath"
         println "EXCLUDES LIST: $excludes"
         println "SLEEP_TIME: $sleepTime"
-        if (jenkinsCreds == '') { println '[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error codes.' }
-
+        println "IS RELEASE JOB: $isReleaseBuilder" 
+        
         // Load regen script and execute base file
         Closure regenerationScript
         def regenScriptPath = (params.REGEN_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['regeneration']
         try {
             regenerationScript = load "${WORKSPACE}/${regenScriptPath}"
-    } catch (NoSuchFileException e) {
+        } catch (NoSuchFileException e) {
             println "[WARNING] ${regenScriptPath} does not exist in your chosen repository. Using adopt's script path instead"
             checkoutAdoptPipelines()
             regenerationScript = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['scriptDirectories']['regeneration']}"
@@ -192,57 +210,59 @@ node('worker') {
 
         if (jenkinsCreds != '') {
             withCredentials([usernamePassword(
-          credentialsId: "${JENKINS_AUTH}",
-          usernameVariable: 'jenkinsUsername',
-          passwordVariable: 'jenkinsToken'
-      )]) {
+                credentialsId: "${JENKINS_AUTH}",
+                usernameVariable: 'jenkinsUsername',
+                passwordVariable: 'jenkinsToken'
+            )]) {
                 String jenkinsCredentials = "$jenkinsUsername:$jenkinsToken"
                 regenerationScript(
-          javaVersion,
-          buildConfigurations,
-          targetConfigurations,
-          DEFAULTS_JSON,
-          excludes,
-          sleepTime,
-          currentBuild,
-          this,
-          jobRoot,
-          remoteConfigs,
-          repoBranch,
-          jobTemplatePath,
-          baseFilePath,
-          scriptPath,
-          jenkinsBuildRoot,
-          jenkinsCredentials,
-          checkoutCreds,
-          false
-        ).regenerate()
-      }
-    } else {
+                    javaVersion,
+                    buildConfigurations,
+                    targetConfigurations,
+                    DEFAULTS_JSON,
+                    excludes,
+                    sleepTime,
+                    currentBuild,
+                    this,
+                    jobRoot,
+                    remoteConfigs,
+                    repoBranch,
+                    jobTemplatePath,
+                    baseFilePath,
+                    scriptPath,
+                    jenkinsBuildRoot,
+                    jenkinsCredentials,
+                    checkoutCreds,
+                    false,
+                    isReleaseBuilder
+                ).regenerate()
+            }
+        } else {
+            println '[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error code.'
             regenerationScript(
-        javaVersion,
-        buildConfigurations,
-        targetConfigurations,
-        DEFAULTS_JSON,
-        excludes,
-        sleepTime,
-        currentBuild,
-        this,
-        jobRoot,
-        remoteConfigs,
-        repoBranch,
-        jobTemplatePath,
-        baseFilePath,
-        scriptPath,
-        jenkinsBuildRoot,
-        jenkinsCreds,
-        checkoutCreds,
-        false
-      ).regenerate()
+                javaVersion,
+                buildConfigurations,
+                targetConfigurations,
+                DEFAULTS_JSON,
+                excludes,
+                sleepTime,
+                currentBuild,
+                this,
+                jobRoot,
+                remoteConfigs,
+                repoBranch,
+                jobTemplatePath,
+                baseFilePath,
+                scriptPath,
+                jenkinsBuildRoot,
+                jenkinsCreds,
+                checkoutCreds,
+                false,
+                isReleaseBuilder
+            ).regenerate()
         }
-
         println '[SUCCESS] All done!'
-  } finally {
+    } finally {
         // Always clean up, even on failure (doesn't delete the generated jobs)
         println '[INFO] Cleaning up...'
         cleanWs deleteDirs: true

@@ -46,7 +46,8 @@ class Regeneration implements Serializable {
     private final jenkinsBuildRoot
     private final jenkinsCreds
     private final checkoutCreds
-    private final Boolean prBuilder
+    private final Boolean isPRBuilder
+    private final Boolean isReleaseBuilder
 
     private String javaToBuild
     private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
@@ -74,7 +75,8 @@ class Regeneration implements Serializable {
         String jenkinsBuildRoot,
         String jenkinsCreds,
         String checkoutCreds,
-        Boolean prBuilder
+        Boolean isPRBuilder,
+        Boolean isReleaseBuilder
     ) {
         this.javaVersion = javaVersion
         this.buildConfigurations = buildConfigurations
@@ -93,7 +95,8 @@ class Regeneration implements Serializable {
         this.jenkinsBuildRoot = jenkinsBuildRoot
         this.jenkinsCreds = jenkinsCreds
         this.checkoutCreds = checkoutCreds
-        this.prBuilder = prBuilder
+        this.isPRBuilder = isPRBuilder
+        this.isReleaseBuilder = isReleaseBuilder
     }
 
     /*
@@ -521,7 +524,7 @@ class Regeneration implements Serializable {
         }
 
         // Make sure the dsl knows if we're building inside the pr tester
-        if (prBuilder) {
+        if (isPRBuilder) {
             params.put('PR_BUILDER', true)
         }
 
@@ -586,7 +589,7 @@ class Regeneration implements Serializable {
     }
 
     /**
-    * Main function. Ran from build_job_generator.groovy, this will be what jenkins will run first.
+    * Main function. Ran from pipelines/build/regeneration/build_job_generator.groovy, this will be what jenkins will run first.
     */
     @SuppressWarnings('unused')
     def regenerate() {
@@ -597,9 +600,9 @@ class Regeneration implements Serializable {
             * Stage: Check that the pipeline isn't in in-progress or queued up. Once clear, run the regeneration job
             */
             context.stage("Check $javaVersion pipeline status") {
-                if (jobRootDir.contains('pr-tester')) {
+                if (jobRootDir.contains('pr-tester') || jobRootDir.contains('release')) {
                     // No need to check if we're going to overwrite anything for the PR tester since concurrency isn't enabled -> https://github.com/adoptium/temurin-build/pull/2155
-                    context.println "[SUCCESS] Don't need to check if the pr-tester is running as concurrency is disabled. Running regeneration job..."
+                    context.println "[SUCCESS] Skip check if pr-tester or release pipeline is running as concurrency is disabled. Running regeneration job..."
                 } else {
                     // Get all pipelines
                     def getPipelines = queryAPI("${jenkinsBuildRoot}/api/json?tree=jobs[name]&pretty=true&depth1")
@@ -685,13 +688,15 @@ class Regeneration implements Serializable {
                                 keyFound = true
 
                                 def platformConfig = buildConfigurations.get(key) as Map<String, ?>
-
+                                // default nightly job name (can be altered later depending on the type of run)
                                 name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
-
+                                // release job name
+                                if (isReleaseBuilder) {
+                                    name = "release-"+name
+                                }
                                 if (platformConfig.containsKey('additionalFileNameTag')) {
                                     name += "-${platformConfig.additionalFileNameTag}"
                                 }
-
                                 jobConfigurations[name] = buildConfiguration(platformConfig, variant, javaToBuild)
                                 }
                         }
@@ -739,7 +744,8 @@ return {
     String jenkinsBuildRoot,
     String jenkinsCreds,
     String checkoutCreds,
-    Boolean prBuilder
+    Boolean isPRBuilder,
+    Boolean isReleaseBuilder
         ->
 
     def excludedBuilds = [:]
@@ -765,6 +771,7 @@ return {
             jenkinsBuildRoot,
             jenkinsCreds,
             checkoutCreds,
-            prBuilder
+            isPRBuilder,
+            isReleaseBuilder
         )
 }
