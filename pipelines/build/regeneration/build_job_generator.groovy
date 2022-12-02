@@ -18,6 +18,7 @@ limitations under the License.
 
 /*
     File used for generate downstream build jobs which are triggered by via [release_]pipeline_jobs_generator_jdkX, e.g:
+    
     - build-scripts/jobs/jdk11u/jdk11u-linux-arm-temurin (when isReleaseBulider = false)
     - build-scripts/release/jobs/release-jdk17u-mac-x64-temurin (when isReleaseBulider = true)
     - build-scripts-pr-tester/build-test/jobs/jdk19u/jdk19u-alpine-linux-x64-temurin (when isReleaseBulider = false)
