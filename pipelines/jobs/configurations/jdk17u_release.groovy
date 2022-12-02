@@ -30,4 +30,5 @@ targetConfigurations = [
                 'temurin'
         ]
 ]
+
 return this
