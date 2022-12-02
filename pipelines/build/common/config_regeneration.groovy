@@ -688,7 +688,7 @@ class Regeneration implements Serializable {
                                 keyFound = true
 
                                 def platformConfig = buildConfigurations.get(key) as Map<String, ?>
-                                // nightly job name
+                                // default nightly job name (can be altered later depending on the type of run)
                                 name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
                                 // release job name
                                 if (isReleaseBuilder) {
