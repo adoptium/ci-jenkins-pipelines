@@ -194,7 +194,7 @@ node('worker') {
         println "BASE FILE PATH: $baseFilePath"
         println "EXCLUDES LIST: $excludes"
         println "SLEEP_TIME: $sleepTime"
-        println "IS RELEASE JOB:  $isReleaseBuilder" 
+        println "IS RELEASE JOB: $isReleaseBuilder" 
         
         // Load regen script and execute base file
         Closure regenerationScript
