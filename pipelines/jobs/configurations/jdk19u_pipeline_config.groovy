@@ -89,7 +89,7 @@ class Config19 {
                 ],
                 test                : 'default',
                 additionalTestLabels: [
-                        temurin      : 'aix720'
+                        temurin      : 'sw.os.aix.7_2'
                 ],
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
