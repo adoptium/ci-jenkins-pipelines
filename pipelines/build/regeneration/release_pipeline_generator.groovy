@@ -117,7 +117,7 @@ node('worker') {
     }
 }
 
-// Calling release-pipeline_jobs_generator_jdk11X per each jdk version listed in releaseVersions
+// Calling release-pipeline_jobs_generator_jdk<version> per each jdk version listed in releaseVersions
 node('worker') {
     releaseVersions.each({ javaVersion ->
         def jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}u"
