@@ -485,11 +485,7 @@ class Build {
         def parallel = 'None'
         def num_machines = '1'
         def remoteTargets = [:]
-        def additionalLabel = ''
-        if (jdkVersion >= 19 && platform == 'ppc64_aix') {
-                // Jck19+ AIX must run on AIX 7.2
-                additionalLabel = 'sw.os.aix.7_2'
-        }
+        def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
         targets.each { target ->
             // For each requested test, i.e 'sanity.jck', 'extended.jck', 'special.jck', call test job
@@ -510,7 +506,7 @@ class Build {
                                                                 context.MapParameter(name: 'PARALLEL', value: parallel),
                                                                 context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
                                                                 context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                context.MapParameter(name: 'LABEL_ADDITION', value: additionalLabel)]),
+                                                                context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel)]),
                         remoteJenkinsName: 'temurin-compliance',
                         shouldNotFailBuild: true,
                         token: 'RemoteTrigger',
