@@ -90,7 +90,7 @@ node('worker') {
                 config.put('defaultsJson', DEFAULTS_JSON)
                 config.put('adoptDefaultsJson', ADOPT_DEFAULTS_JSON)
 
-                if(${javaVersion} != "8") { // for jdk11+, need extra config args to pass down
+                if(${javaVersion} >= "11") { // for jdk11+, need extra config args to pass down
                     config.put('additionalConfigureArgs', "--without-version-pre --without-version-opt")
                 }
 
