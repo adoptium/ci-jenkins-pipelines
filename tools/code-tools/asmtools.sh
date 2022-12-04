@@ -47,11 +47,11 @@ fi
 jvm_dir="/usr/lib/jvm/"
 find ${jvm_dir} -maxdepth 1 | sort
 echo "Available jdks 8 in ${jvm_dir}:"
-find ${jvm_dir} -maxdepth 1 | sort | grep -e -1.8.0-  -e jdk-8
+find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8
 echo "Available jdks 17 in ${jvm_dir}:"
-find ${jvm_dir} -maxdepth 1 | sort | grep -e -17-     -e jdk-17
-jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e -1.8.0-  -e jdk-8   | head -n 1))
-jdk17=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e -17-     -e jdk-17  | head -n 1))
+find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17
+jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8   | head -n 1))
+jdk17=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17  | head -n 1))
 pushd asmtools
   latestRelease=`git tag -l | tail -n 2 | head -n 1`
   generateArtifact "master" "$jdk08"
