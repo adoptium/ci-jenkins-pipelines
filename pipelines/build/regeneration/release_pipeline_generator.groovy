@@ -41,6 +41,8 @@ node('worker') {
             String helperRef = params.helperTag ?: params.releaseTag
             library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
+            String aqaRef = params.aqaTag
+
             // set where generated jobs will be located in the Jenkins
             def jobRoot = DEFAULTS_JSON['jenkinsDetails']['rootDirectory'] // "build-scripts" same as weekly and nightly
             // set where our generation scripts should be located in the ci-jenkins-pipeline repo
@@ -53,6 +55,7 @@ node('worker') {
             println '[INFO] Running official release generator script with the following configuration:'
             println "REPOSITORY_URL = ${pipelineUrl}"
             println "REPOSITORY_TAG = ${releaseTag}"
+            println "AQA_TEST_TAG = ${aqaRef}"
             println "JOB_ROOT = ${jobRoot}"
             println "SCRIPT_FOLDER_PATH = ${scriptFolderPath}"
             println "RELEASE_CONFIG_PATH = ${releaseConfigPath}"
@@ -64,6 +67,7 @@ node('worker') {
                 def config = [
                     GIT_URL                     : pipelineUrl,
                     releaseTag                  : releaseTag,
+                    aqaTag                      : aqaRef,
                     BUILD_FOLDER                : jobRoot,
                     CHECKOUT_CREDENTIALS        : "",
                     JAVA_VERSION                : javaVersion,
