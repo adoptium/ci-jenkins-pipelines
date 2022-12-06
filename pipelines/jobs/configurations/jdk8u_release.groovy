@@ -23,9 +23,6 @@ targetConfigurations = [
         'aarch64Linux'  : [
                 'temurin'
         ],
-        'arm32Linux'  : [
-                'temurin'
-        ],
         'x64Solaris': [
                 'temurin'
         ],

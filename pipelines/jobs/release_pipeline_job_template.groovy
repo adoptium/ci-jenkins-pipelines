@@ -70,7 +70,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         stringParam('aqaReference', '', 'Tag name or Branch name of aqa-tests. Defaults to master')
         // special items need to modify per jdk8
         stringParam('overridePublishName', '', 'Most useful for jdk8 arm32 with a different scmReference tag')
-        stringParam('additionalConfigureArgs', "--without-version-pre --without-version-opt", "Additional arguments that will be ultimately passed to OpenJDK's <code>./configure</code>")
+        stringParam('additionalConfigureArgs', '', "Additional arguments that will be ultimately passed to OpenJDK's <code>./configure</code>. jdk8 might have a different one!")
 
         // default value not matter for release
         stringParam('jdkVersion', "${JAVA_VERSION}")
