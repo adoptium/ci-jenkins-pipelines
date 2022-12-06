@@ -327,9 +327,7 @@ class Build {
         def jdkBranch = getJDKBranch()
         def jdkRepo = getJDKRepo()
         def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == 'openj9') ? buildConfig.SCM_REF : 'master'
-
-        def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-
+ 
         List testList = buildConfig.TEST_LIST
         List dynamicList = buildConfig.DYNAMIC_LIST
         List numMachines = buildConfig.NUM_MACHINES
@@ -346,8 +344,8 @@ class Build {
         testList.each { testType ->
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
             try {
-                context.println "Running test: ${testType}"
                 testStages["${testType}"] = {
+                    context.println "Running test: ${testType}"
                     context.stage("${testType}") {
                         def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
                         if (("${testType}".contains('openjdk')) || ("${testType}".contains('jck'))) {
@@ -359,8 +357,9 @@ class Build {
                         if (("${testType}".contains('functional')) || ("${testType}".contains('external'))) {
                             DYNAMIC_COMPILE = true
                         }
-
+                        def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
                         if (testType  == 'dev.openjdk') {
+                            context.println "${testType} need extra label sw.tool.docker"
                             if (additionalTestLabel == '') {
                                 additionalTestLabel = 'sw.tool.docker'
                             } else {
