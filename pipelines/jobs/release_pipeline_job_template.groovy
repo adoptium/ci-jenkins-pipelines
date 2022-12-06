@@ -7,7 +7,7 @@ Boolean runParallel = true
 Boolean runInstaller = true
 Boolean runSigner = true
 Boolean cleanWsBuildOutput = true
-Boolean isLightweight = false  // since this is to checkout on a releaseTag, better to use false or might get not found tag/SHA1
+Boolean isLightweight = false  // since this is to checkout on a releaseTag, better to use false or might not found tag/SHA1 on the tip
 
 folder("${BUILD_FOLDER}")
 
@@ -67,7 +67,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         stringParam('buildReference', releaseTag, 'SHA1 or Tag name or Branch name of temurin-build repo. Defaults to master')
         stringParam('ciReference', releaseTag, 'SHA1 or Tag name or Branch name of ci-jenkins-pipeline repo. Defaults to master')
         stringParam('helperReference', releaseTag, 'Tag name or Branch name of jenkins-helper repo. Defaults to master')
-        stringParam('aqaReference', '', 'Tag name or Branch name of aqa-tests. Defaults to master')
+        stringParam('aqaReference', aqaTag, 'Tag name or Branch name of aqa-tests. Defaults to master')
         // special items need to modify per jdk8
         stringParam('overridePublishName', '', 'Most useful for jdk8 arm32 with a different scmReference tag')
         stringParam('additionalConfigureArgs', '', "Additional arguments that will be ultimately passed to OpenJDK's <code>./configure</code>. jdk8 might have a different one!")
