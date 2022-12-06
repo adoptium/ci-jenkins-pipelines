@@ -69,4 +69,5 @@ pushd $REPO_DIR
   for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
       sha256sum $file > $file.sha256sum.txt
   done
+  git checkout master
 popd
