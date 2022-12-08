@@ -498,11 +498,19 @@ class Build {
                     def parallel = 'Dynamic'
                     def num_machines = '2'
                     def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsParallel}"
+                    def targets = ""
+                    targetsParallel.each{ target ->
+                        if (targets == "") {
+                            targets = "${target}"
+                        } else {
+                            targets = "${targets},${target}
+                        }
+                    }
                     context.triggerRemoteJob abortTriggeredJob: true,
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
                         parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                context.MapParameter(name: 'TARGETS', value: target),
+                                                                context.MapParameter(name: 'TARGETS', value: targets),
                                                                 context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                 context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
                                                                 context.MapParameter(name: 'PARALLEL', value: parallel),
@@ -528,11 +536,19 @@ class Build {
                     def parallel = 'None'
                     def num_machines = '1'
                     def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsSingle}"
+                    def targets = ""
+                    targetsParallel.each{ target ->
+                        if (targets == "") {
+                            targets = "${target}"
+                        } else {
+                            targets = "${targets},${target}
+                        }
+                    }
                     context.triggerRemoteJob abortTriggeredJob: true,
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
                         parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                context.MapParameter(name: 'TARGETS', value: target),
+                                                                context.MapParameter(name: 'TARGETS', value: targets),
                                                                 context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                 context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
                                                                 context.MapParameter(name: 'PARALLEL', value: parallel),
