@@ -503,7 +503,7 @@ class Build {
                         if (targets == "") {
                             targets = "${target}"
                         } else {
-                            targets = "${targets},${target}
+                            targets = "${targets},${target}"
                         }
                     }
                     context.triggerRemoteJob abortTriggeredJob: true,
@@ -541,7 +541,7 @@ class Build {
                         if (targets == "") {
                             targets = "${target}"
                         } else {
-                            targets = "${targets},${target}
+                            targets = "${targets},${target}"
                         }
                     }
                     context.triggerRemoteJob abortTriggeredJob: true,
