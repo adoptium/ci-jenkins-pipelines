@@ -491,14 +491,14 @@ class Build {
             targets['parallel'] = 'extended.jck'
         }
 
-        targets.each { targetKey, targetValue -> 
+        targets.each { targetMode, targetTests -> 
             try {
-                context.println "Remote trigger: ${targetValue}"
-                remoteTargets["${targetValue}"] = {
-                    def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetValue}"
+                context.println "Remote trigger: ${targetTests}"
+                remoteTargets["${targetTests}"] = {
+                    def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
                     def parallel = 'None'
                     def num_machines = '1'
-                    if ("${targetKey}" == 'parallel') {
+                    if ("${targetMode}" == 'parallel') {
                          parallel = 'Dynamic'
                          num_machines = '2'
                     }
@@ -507,7 +507,7 @@ class Build {
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
                         parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                context.MapParameter(name: 'TARGETS', value: "${targetValue}"),
+                                                                context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
                                                                 context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                 context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
                                                                 context.MapParameter(name: 'PARALLEL', value: parallel),
