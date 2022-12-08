@@ -18,6 +18,15 @@ function generateArtifact() {
       sh mvngen.sh
       echo "Cleaning possible previous run"
       mvn clean
+      pushd ../..
+        tar --exclude='**asmtools*.jar' \
+            --exclude='**asmtools*.tar.gz' \
+            --exclude='**asmtools*.txt' \
+            --exclude='**asmtools*.jar.html' \
+            --exclude='**asmtools*.jar.md' \
+            --exclude='**src.tar.gz' \
+        -czf src.tar.gz asmtools
+      popd
       echo "Running asmtools $branchOrTag tests by $JAVA_HOME"
       mvn test 2>&1 | tee $testLog || echo "Test now correctly fails, this have to be fixed upstream"
       echo "Running asmtools $branchOrTag build by $JAVA_HOME"
@@ -42,6 +51,12 @@ function generateArtifact() {
         else
           echo "No test results!"
         fi
+        pushd ../..
+          echo "Copying README files and src archive to RESULTS_DIR($RESULTS_DIR)"
+          cp -v README.html $RESULTS_DIR/$mainArtifact.html
+          cp -v README.md $RESULTS_DIR/$mainArtifact.md
+          mv -v ../src.tar.gz $RESULTS_DIR/$mainArtifact.src.tar.gz
+        popd
       popd
     popd
 }
@@ -63,18 +78,22 @@ function hashArtifacts() {
   done
 }
 
+function detectJdks() {
+  jvm_dir="/usr/lib/jvm/"
+  find ${jvm_dir} -maxdepth 1 | sort
+  echo "Available jdks 8 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8
+  echo "Available jdks 17 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17
+  jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8   | head -n 1))
+  jdk17=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17  | head -n 1))
+}
+	
 REPO_DIR="asmtools"
 if [ ! -e $REPO_DIR ] ; then
   git clone https://github.com/openjdk/$REPO_DIR.git
 fi
-jvm_dir="/usr/lib/jvm/"
-find ${jvm_dir} -maxdepth 1 | sort
-echo "Available jdks 8 in ${jvm_dir}:"
-find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8
-echo "Available jdks 17 in ${jvm_dir}:"
-find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17
-jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8   | head -n 1))
-jdk17=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17  | head -n 1))
+detectJdks
 pushd $REPO_DIR
   RESULTS_DIR="$(pwd)"
   latestRelease=`git tag -l | tail -n 2 | head -n 1`
