@@ -31,4 +31,7 @@ targetConfigurations = [
         ]
 ]
 
+// 18:05 Mon, Wed, Fri
+triggerSchedule_prototype = 'TZ=UTC\n05 18 * * 1,3,5'
+
 return this
