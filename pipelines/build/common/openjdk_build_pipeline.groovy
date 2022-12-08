@@ -537,7 +537,7 @@ class Build {
                     def num_machines = '1'
                     def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsSingle}"
                     def targets = ""
-                    targetsParallel.each{ target ->
+                    targetsSingle.each{ target ->
                         if (targets == "") {
                             targets = "${target}"
                         } else {
