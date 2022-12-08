@@ -123,7 +123,7 @@ class Config11 {
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                additionalNodeLabels : 'centos7',
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
                         'temurin'     : '--enable-dtrace=auto',

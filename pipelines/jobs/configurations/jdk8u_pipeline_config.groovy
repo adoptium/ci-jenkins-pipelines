@@ -122,8 +122,8 @@ class Config8 {
         ppc64leLinux  : [
                 os  : 'linux',
                 arch: 'ppc64le',
-                additionalNodeLabels : 'centos7',
-                test                 : 'default',
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
+                test                : 'default',
                 configureArgs       : [
                         'openj9'      : '--enable-jitserver'
                 ],
