@@ -46,6 +46,23 @@ function generateArtifact() {
     popd
 }
 
+function renameLegacyCoreArtifacts() {
+  echo "copying 'core' maven names to legacy ant names"
+  for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
+      if echo $file | grep -q -e core ; then
+      local nwFile=$(echo $file | sed "s/-core//")
+      cp -v $file $nwFile
+      fi
+  done
+}
+
+function hashArtifacts() {
+  echo "Creating checksums all asmtools*.jar"
+  for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
+      sha256sum $file > $file.sha256sum.txt
+  done
+}
+
 REPO_DIR="asmtools"
 if [ ! -e $REPO_DIR ] ; then
   git clone https://github.com/openjdk/$REPO_DIR.git
@@ -65,9 +82,12 @@ pushd $REPO_DIR
   generateArtifact "at8" "$jdk17"
   # 7.0-b09 had not yet have maven integration, enable with b10 out
   # generateArtifact "$latestRelease" "$jdk08"
-  echo "Creating checksums all asmtools*.jar"
-  for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
-      sha256sum $file > $file.sha256sum.txt
-  done
+  renameLegacyCoreArtifacts
+  hashArtifacts
+  releaseCandidate=asmtools-core-7.0.b10-ea.jar
+  releaseName=asmtools.jar
+  echo "manually renaming  $releaseCandidate as $releaseName to provide latest-stable-recomended file"
+  cp -v $releaseCandidate $releaseName
+  echo "reseting repo back to master"
   git checkout master
 popd
