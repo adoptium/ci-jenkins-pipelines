@@ -471,6 +471,7 @@ class Build {
         return testStages
     }
 
+    // Temurin remote jck trigger
     def remoteTriggerJckTests(String platform) {
         def jdkVersion = getJavaVersionNumber()
         //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
@@ -482,6 +483,22 @@ class Build {
         context.echo "sdkUrl is ${sdkUrl}"
         def remoteTargets = [:]
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
+
+        // Determine from the platform the Jck jtx exclude platform
+        def excludePlat
+        if (platform.contains("aix")) {
+            excludePlat = "aix"
+        } else if (platform.contains("mac")) {
+            excludePlat = "mac"
+        } else if (platform.contains("windows")) {
+            excludePlat = "windows"
+        } else if (platform.contains("solaris")) {
+            excludePlat = "solaris"
+        } else {
+            excludePlat = "linux"
+        }
+
+        def appOptions="customJtx=/home/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}"
 
         def targets = ['serial': 'sanity.jck,extended.jck,special.jck']
 
@@ -514,6 +531,7 @@ class Build {
                                                                 context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
                                                                 context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
                                                                 context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
+                                                                context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
                                                                 context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel)]),
                         remoteJenkinsName: 'temurin-compliance',
                         shouldNotFailBuild: true,
