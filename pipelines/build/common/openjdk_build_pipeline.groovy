@@ -498,14 +498,7 @@ class Build {
                     def parallel = 'Dynamic'
                     def num_machines = '2'
                     def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsParallel}"
-                    def targets = ""
-                    targetsParallel.each{ target ->
-                        if (targets == "") {
-                            targets = "${target}"
-                        } else {
-                            targets = "${targets},${target}"
-                        }
-                    }
+                    def targets = targetsParallel.join(",")
                     context.triggerRemoteJob abortTriggeredJob: true,
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
@@ -536,14 +529,7 @@ class Build {
                     def parallel = 'None'
                     def num_machines = '1'
                     def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsSingle}"
-                    def targets = ""
-                    targetsSingle.each{ target ->
-                        if (targets == "") {
-                            targets = "${target}"
-                        } else {
-                            targets = "${targets},${target}"
-                        }
-                    }
+                    def targets = targetsSingle.join(",")
                     context.triggerRemoteJob abortTriggeredJob: true,
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
