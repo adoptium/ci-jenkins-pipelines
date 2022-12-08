@@ -486,19 +486,22 @@ class Build {
 
         // Determine from the platform the Jck jtx exclude platform
         def excludePlat
+        def excludeRoot = "/home"
         if (platform.contains("aix")) {
             excludePlat = "aix"
         } else if (platform.contains("mac")) {
             excludePlat = "mac"
+            excludeRoot = "/Users"
         } else if (platform.contains("windows")) {
             excludePlat = "windows"
+            excludeRoot = "c:/Users"
         } else if (platform.contains("solaris")) {
             excludePlat = "solaris"
         } else {
             excludePlat = "linux"
         }
 
-        def appOptions="customJtx=/home/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
+        def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
 
         def targets = ['serial': 'sanity.jck,extended.jck,special.jck']
 
