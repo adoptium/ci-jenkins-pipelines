@@ -498,7 +498,7 @@ class Build {
             excludePlat = "linux"
         }
 
-        def appOptions="customJtx=/home/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}"
+        def appOptions="customJtx=/home/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
 
         def targets = ['serial': 'sanity.jck,extended.jck,special.jck']
 
