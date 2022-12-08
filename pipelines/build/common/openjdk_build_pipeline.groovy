@@ -481,9 +481,7 @@ class Build {
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${filter}/*zip*/target.zip"
         context.echo "sdkUrl is ${sdkUrl}"
         def targetsSingle = ['sanity.jck', 'extended.jck', 'special.jck']
-        def parallel = 'None'
         def targetsParallel = []
-        def num_machines = '1'
         def remoteTargets = [:]
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
@@ -497,9 +495,9 @@ class Build {
             try {
                 context.println "Remote trigger ${targetsParallel}"
                 remoteTargets["${targetsParallel}"] = {
-                    parallel = 'Dynamic'
-                    num_machines = '2'
-                    displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsParallel}"
+                    def parallel = 'Dynamic'
+                    def num_machines = '2'
+                    def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsParallel}"
                     context.triggerRemoteJob abortTriggeredJob: true,
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
@@ -527,9 +525,9 @@ class Build {
             try {
                 context.println "Remote trigger ${targetsSingle}"
                 remoteTargets["${targetsSingle}"] = {
-                    parallel = 'None'
-                    num_machines = '1'
-                    displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsSingle}"
+                    def parallel = 'None'
+                    def num_machines = '1'
+                    def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsSingle}"
                     context.triggerRemoteJob abortTriggeredJob: true,
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
