@@ -498,7 +498,7 @@ class Build {
                     def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetValue}"
                     def parallel = 'None'
                     def num_machines = '1'
-                    if (targetKey == 'parallel') {
+                    if ("${targetKey}" == 'parallel') {
                          parallel = 'Dynamic'
                          num_machines = '2'
                     }
@@ -507,7 +507,7 @@ class Build {
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
                         parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                context.MapParameter(name: 'TARGETS', value: ${targetValue}),
+                                                                context.MapParameter(name: 'TARGETS', value: "${targetValue}"),
                                                                 context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                 context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
                                                                 context.MapParameter(name: 'PARALLEL', value: parallel),
