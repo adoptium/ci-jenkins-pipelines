@@ -480,61 +480,34 @@ class Build {
         }
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${filter}/*zip*/target.zip"
         context.echo "sdkUrl is ${sdkUrl}"
-        def targetsSingle = ['sanity.jck', 'extended.jck', 'special.jck']
-        def targetsParallel = []
         def remoteTargets = [:]
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
+        def targets = ['serial': 'sanity.jck,extended.jck,special.jck']
+
         if ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') {
             // Primary platforms run extended.jck in Parallel
-            targetsSingle = ['sanity.jck', 'special.jck']
-            targetsParallel = ['extended.jck']
+            targets['serial']   = 'sanity.jck,special.jck'
+            targets['parallel'] = 'extended.jck'
         }
 
-        if (targetsParallel.size() > 0) {
+        targets.each { target -> 
             try {
-                context.println "Remote trigger ${targetsParallel}"
-                remoteTargets["${targetsParallel}"] = {
-                    def parallel = 'Dynamic'
-                    def num_machines = '2'
-                    def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsParallel}"
-                    def targets = targetsParallel.join(",")
-                    context.triggerRemoteJob abortTriggeredJob: true,
-                        blockBuildUntilComplete: false,
-                        job: 'AQA_Test_Pipeline',
-                        parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                context.MapParameter(name: 'TARGETS', value: targets),
-                                                                context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                context.MapParameter(name: 'PARALLEL', value: parallel),
-                                                                context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel)]),
-                        remoteJenkinsName: 'temurin-compliance',
-                        shouldNotFailBuild: true,
-                        token: 'RemoteTrigger',
-                        useCrumbCache: true,
-                        useJobInfoCache: true
-                }
-            } catch (Exception e) {
-                context.println "Failed to remote trigger jck tests: ${e.message}"
-            }
-        }
-
-        if (targetsSingle.size() > 0) {
-            try {
-                context.println "Remote trigger ${targetsSingle}"
-                remoteTargets["${targetsSingle}"] = {
+                context.println "Remote trigger: ${target.value}"
+                remoteTargets["${target.value}"] = {
+                    def displayName = "${buildConfig.SCM_REF} : ${platform} : ${target.value}"
                     def parallel = 'None'
                     def num_machines = '1'
-                    def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetsSingle}"
-                    def targets = targetsSingle.join(",")
+                    if ( target.key == 'parallel') {
+                         parallel = 'Dynamic'
+                         num_machines = '2'
+                    }
+
                     context.triggerRemoteJob abortTriggeredJob: true,
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
                         parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                context.MapParameter(name: 'TARGETS', value: targets),
+                                                                context.MapParameter(name: 'TARGETS', value: ${target.value}),
                                                                 context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                 context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
                                                                 context.MapParameter(name: 'PARALLEL', value: parallel),
