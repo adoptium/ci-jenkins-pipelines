@@ -471,6 +471,7 @@ class Build {
         return testStages
     }
 
+    // Temurin remote jck trigger
     def remoteTriggerJckTests(String platform) {
         def jdkVersion = getJavaVersionNumber()
         //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
@@ -480,31 +481,61 @@ class Build {
         }
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${filter}/*zip*/target.zip"
         context.echo "sdkUrl is ${sdkUrl}"
-        def targets = ['sanity.jck', 'extended.jck', 'special.jck']
-        def parallel = 'None'
-        def num_machines = '1'
         def remoteTargets = [:]
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
 
-        targets.each { target ->
-            // For each requested test, i.e 'sanity.jck', 'extended.jck', 'special.jck', call test job
+        // Determine from the platform the Jck jtx exclude platform
+        def excludePlat
+        def excludeRoot = "/home"
+        if (platform.contains("aix")) {
+            excludePlat = "aix"
+        } else if (platform.contains("mac")) {
+            excludePlat = "mac"
+            excludeRoot = "/Users"
+        } else if (platform.contains("windows")) {
+            excludePlat = "windows"
+            excludeRoot = "c:/Users"
+        } else if (platform.contains("solaris")) {
+            excludePlat = "solaris"
+            excludeRoot = "/export/home"
+        } else {
+            excludePlat = "linux"
+        }
+
+        def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
+
+        def targets = ['serial': 'sanity.jck,extended.jck,special.jck']
+
+        if ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') {
+            // Primary platforms run extended.jck in Parallel
+            targets['serial']   = 'sanity.jck,special.jck'
+            targets['parallel'] = 'extended.jck'
+        }
+
+        targets.each { targetMode, targetTests -> 
             try {
-                context.println "Remote trigger ${target}"
-                remoteTargets["${target}"] = {
-                    if ( "${target}" == 'extended.jck' && ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') ) {
-                        parallel = 'Dynamic'
-                        num_machines = '2'
+                context.println "Remote trigger: ${targetTests}"
+                remoteTargets["${targetTests}"] = {
+                    def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
+                    def parallel = 'None'
+                    def num_machines = '1'
+                    if ("${targetMode}" == 'parallel') {
+                         parallel = 'Dynamic'
+                         num_machines = '2'
                     }
+
                     context.triggerRemoteJob abortTriggeredJob: true,
                         blockBuildUntilComplete: false,
                         job: 'AQA_Test_Pipeline',
                         parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                context.MapParameter(name: 'TARGETS', value: target),
+                                                                context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
                                                                 context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                 context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
                                                                 context.MapParameter(name: 'PARALLEL', value: parallel),
                                                                 context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
                                                                 context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
+                                                                context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
+                                                                context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
                                                                 context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel)]),
                         remoteJenkinsName: 'temurin-compliance',
                         shouldNotFailBuild: true,
@@ -516,6 +547,7 @@ class Build {
                 context.println "Failed to remote trigger jck tests: ${e.message}"
             }
         }
+
         return remoteTargets
     }
  
