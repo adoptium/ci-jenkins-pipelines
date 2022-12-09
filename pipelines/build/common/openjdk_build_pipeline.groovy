@@ -497,6 +497,7 @@ class Build {
             excludeRoot = "c:/Users"
         } else if (platform.contains("solaris")) {
             excludePlat = "solaris"
+            excludeRoot = "/export/home"
         } else {
             excludePlat = "linux"
         }
