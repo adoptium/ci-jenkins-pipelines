@@ -311,11 +311,9 @@ node('worker') {
 
                 // if has a triggerSchedule_prototype variable set then use it or fall back to triggerSchedule_nightly
                 if (enablePipelineSchedule.toBoolean()){
-                    if (binding.variables["targetPrototype.triggerSchedule_prototype"]) {
-                        config.put('pipelineSchedule', targetPrototype.triggerSchedule_prototype)
-                    } else {
-                        config.put('pipelineSchedule', targetNightly.triggerSchedule_nightly)
-                    }
+                    config.put('pipelineSchedule', targetNightly.triggerSchedule_nightly)
+                } else {
+                    config.remove('pipelineSchedule')
                 }
                 // genereate pipeline
                 println "[INFO] FINAL CONFIG FOR PROTOTYPE JDK${javaVersion}"
