@@ -38,7 +38,7 @@ def build(stageName) {
             checkout scm
             checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/openjdk/${stageName}"]]])
             sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
-            archiveArtifacts artifacts: "${stageName}/*.tar.gz, ${stageName}/${stageName}.jar, ${stageName}/${stageName}.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt", followSymlinks: false
+            archiveArtifacts artifacts: "${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md", followSymlinks: false
         } catch (Exception e) {
             slackSend channel: 'jenkins', color: 'danger', message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}", teamDomain: 'adoptium'
             throw new Exception("[ERROR] ${stageName} FAILED\n${e}")
