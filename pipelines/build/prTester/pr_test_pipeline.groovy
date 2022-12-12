@@ -121,8 +121,7 @@ class PullRequestTestPipeline implements Serializable {
                     'https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test',
                     null,
                     null,
-                    true,
-                    false
+                    "pr-test"
                 ).regenerate()
 
                 context.println "[SUCCESS] Regeneration on ${javaVersion} all done!"

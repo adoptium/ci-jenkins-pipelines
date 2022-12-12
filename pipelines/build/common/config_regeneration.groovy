@@ -46,8 +46,7 @@ class Regeneration implements Serializable {
     private final jenkinsBuildRoot
     private final jenkinsCreds
     private final checkoutCreds
-    private final Boolean isPRBuilder
-    private final Boolean isReleaseBuilder
+    private final jobType
 
     private String javaToBuild
     private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
@@ -75,8 +74,7 @@ class Regeneration implements Serializable {
         String jenkinsBuildRoot,
         String jenkinsCreds,
         String checkoutCreds,
-        Boolean isPRBuilder,
-        Boolean isReleaseBuilder
+        String jobType
     ) {
         this.javaVersion = javaVersion
         this.buildConfigurations = buildConfigurations
@@ -95,8 +93,7 @@ class Regeneration implements Serializable {
         this.jenkinsBuildRoot = jenkinsBuildRoot
         this.jenkinsCreds = jenkinsCreds
         this.checkoutCreds = checkoutCreds
-        this.isPRBuilder = isPRBuilder
-        this.isReleaseBuilder = isReleaseBuilder
+        this.jobType = jobType
     }
 
     /*
@@ -524,7 +521,7 @@ class Regeneration implements Serializable {
         }
 
         // Make sure the dsl knows if we're building inside the pr tester
-        if (isPRBuilder) {
+        if (jobType == "pr-test") {
             params.put('PR_BUILDER', true)
         }
 
@@ -688,11 +685,11 @@ class Regeneration implements Serializable {
                                 keyFound = true
 
                                 def platformConfig = buildConfigurations.get(key) as Map<String, ?>
-                                // default nightly job name (can be altered later depending on the type of run)
+                                // default nightly or pr-test job name
                                 name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
-                                // release job name
-                                if (isReleaseBuilder) {
-                                    name = "release-"+name
+                                // release or prototype job name
+                                if (jobType != "nightly" && jobType != "pr-test") {
+                                    name = jobType+"-"+name
                                 }
                                 if (platformConfig.containsKey('additionalFileNameTag')) {
                                     name += "-${platformConfig.additionalFileNameTag}"
@@ -744,8 +741,7 @@ return {
     String jenkinsBuildRoot,
     String jenkinsCreds,
     String checkoutCreds,
-    Boolean isPRBuilder,
-    Boolean isReleaseBuilder
+    String jobType
         ->
 
     def excludedBuilds = [:]
@@ -771,7 +767,6 @@ return {
             jenkinsBuildRoot,
             jenkinsCreds,
             checkoutCreds,
-            isPRBuilder,
-            isReleaseBuilder
+            jobType
         )
 }
