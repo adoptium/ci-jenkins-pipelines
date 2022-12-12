@@ -105,8 +105,8 @@ pushd $REPO_DIR
   hashArtifacts
   releaseCandidate=asmtools-core-7.0.b10-ea.jar
   releaseName=asmtools.jar
-  echo "manually renaming  $releaseCandidate as $releaseName to provide latest-stable-recomended file"
+  echo "Manually renaming  $releaseCandidate as $releaseName to provide latest-stable-recommended file"
   ln -sfv $releaseCandidate $releaseName
-  echo "reseting repo back to master"
+  echo "Resetting repo back to master"
   git checkout master
 popd
