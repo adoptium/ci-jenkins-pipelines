@@ -124,7 +124,15 @@ node('worker') {
         } else {
             jobType = "nightly"
         }
-        loadConfigFile(${jobType})
+
+        def targetConfigFile = (jobType == "nightly") ? "${javaVersion}.groovy" : "${javaVersion}_${jobType}.groovy"
+        // println "DEBUG WEN: ${DEFAULTS_JSON['configDirectories'][jobType]}"
+        def targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories'][jobType]}/${targetConfigFile}"
+        if (!fileExists(targetConfigPath)) {
+            checkoutAdoptPipelines
+            targetConfigPath= "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories'][jobType]}/${targetConfigFile}"
+        }
+        load targetConfigPath
         checkoutUserPipelines
 
         if (targetConfigurations == null) {
@@ -251,14 +259,4 @@ node('worker') {
         println '[INFO] Cleaning up...'
         cleanWs deleteDirs: true
     }
-}
-
-def loadConfigFile(String jobType) {
-    def targetConfigFile = (jobType == "nightly") ? "${javaVersion}.groovy" : "${javaVersion}_${jobType}.groovy"
-    def targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']["${jobType}"]}/${targetConfigFile}"
-    if (!fileExists(targetConfigPath)) {
-        checkoutAdoptPipelines
-        targetConfigPath= "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']["${jobType}"]}/${targetConfigFile}"
-    }
-    load targetConfigPath
 }
