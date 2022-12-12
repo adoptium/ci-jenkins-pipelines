@@ -60,8 +60,8 @@ pipelineJob("$buildFolder/$JOB_NAME") {
         }
     }
     properties {
-        // Hide all non Temurin builds from public view
-        if (VARIANT != 'temurin') {
+        // Hide all non Temurin builds from public view on the Adoptium CI instance
+        if ((JENKINS_URL.contains('adopt')) && (VARIANT != 'temurin')) {
             authorizationMatrix {
                 inheritanceStrategy {
                     // Do not inherit permissions from global configuration
