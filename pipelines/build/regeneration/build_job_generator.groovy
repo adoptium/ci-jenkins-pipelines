@@ -22,7 +22,7 @@ limitations under the License.
     - build-scripts/jobs/jdk11u/jdk11u-linux-arm-temurin (jobType = "nightly")
     - build-scripts/jobs/jdk11u/prototype-jdk11u-linux-arm-temurin (when jobType = "prototype")
     - build-scripts/release/jobs/release-jdk17u-mac-x64-temurin (when jobType = "release")
-    - build-scripts-pr-tester/build-test/jobs/jdk19u/jdk19u-alpine-linux-x64-temurin (when jobType = "pr-test")
+    - build-scripts-pr-tester/build-test/jobs/jdk19u/jdk19u-alpine-linux-x64-temurin (when "pr-tester")
 */
 
 String javaVersion = params.JAVA_VERSION
@@ -114,19 +114,22 @@ node('worker') {
             throw new Exception("[ERROR] Could not find buildConfigurations for ${javaVersion}")
         }
 
-        // handle different type of downstream job: release, prototype
+        /*
+            handle different type of downstream job: release, prototype, nightly
+            could set to a "pr-tester" but most of the logic is same to nightly, wont gain much
+        */
         String jobType = ""
         def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
         if (jobRoot.contains('release')) {
             jobType = "release"
-        } else if (jobRoot.contains('prototype')) {
+            // either use root path or flag from job to determinate if it is prototype
+        } else if (jobRoot.contains('prototype') || params.IS_PROTOTYPE_JOB) {
             jobType = "prototype"
         } else {
             jobType = "nightly"
         }
 
         def targetConfigFile = (jobType == "nightly") ? "${javaVersion}.groovy" : "${javaVersion}_${jobType}.groovy"
-        // println "DEBUG WEN: ${DEFAULTS_JSON['configDirectories'][jobType]}"
         def targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories'][jobType]}/${targetConfigFile}"
         if (!fileExists(targetConfigPath)) {
             checkoutAdoptPipelines
