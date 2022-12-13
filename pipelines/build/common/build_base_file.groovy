@@ -671,13 +671,10 @@ class Builder implements Serializable {
     */
     def getBuildJobType() {
         if (currentBuild.fullProjectName.contains("prototype")){
-            context.echo "DEBUG WEN1"
             return "prototype"
         } else if (currentBuild.fullProjectName.contains("release")) {
-            context.echo "DEBUG WEN2"
             return "release"
         }
-        context.echo "DEBUG WEN3"
         return
     }
 
@@ -687,7 +684,6 @@ class Builder implements Serializable {
     def getJobName(displayName) {
         // if getBuildJobType return null, it is nightly or pr-tester
         def buildJobType = getBuildJobType() ? getBuildJobType()+"-" : ""
-        context.println('buildJobType is: ' + buildJobType)
         return "${javaToBuild}-${buildJobType}${displayName}"
     }
 
@@ -800,7 +796,6 @@ class Builder implements Serializable {
                     IndividualBuildConfig config = configuration.value
 
                     // jdk20-linux-x64-temuri
-                    context.echo "DEBUG: configuration.key" + configuration.key
                     def jobTopName = getJobName(configuration.key)
                     def jobFolder = getJobFolder()
                     /*
