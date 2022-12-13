@@ -664,11 +664,27 @@ class Builder implements Serializable {
         return "jdk${number}"
     }
 
+
+    /*
+    Returns the downstream build job's type by checking job folder's path
+    either it is "prototype" or "release" or the rest (can be nightly or pr-tester)
+    */
+    def getBuildJobType() {
+        if (currentBuild.fullProjectName.contains("prototype")){
+            return "prototype"
+        } else if (currentBuild.fullProjectName.contains("release")) {
+            return "release"
+        }
+        return
+    }
+
     /*
     Returns the job name of the target downstream job
     */
     def getJobName(displayName) {
-        return "${javaToBuild}-${displayName}"
+        // if getBuildJobType return null, it is nightly or pr-tester
+        def buildJobType = getBuildJobType() ? getBuildJobType()+"-" : ""
+        println "${javaToBuild}-${buildJobType}${displayName}"
     }
 
     /*
@@ -676,7 +692,8 @@ class Builder implements Serializable {
     */
     def getJobFolder() {
         def parentDir = currentBuild.fullProjectName.substring(0, currentBuild.fullProjectName.lastIndexOf('/'))
-        return parentDir + '/jobs/' + javaToBuild
+        def buildJobType = getBuildJobType() ? "/"+getBuildJobType() : ""
+        return parentDir + buildJobType + '/jobs/' + javaToBuild
     }
 
     /*
@@ -731,8 +748,8 @@ class Builder implements Serializable {
     }
 
     /*
-    Main function. This is what is executed remotely via the openjdkxx-pipeline and pr tester jobs
-    Running in the openjdkX-pipeline
+    Main function. This is what is executed remotely via the [release-|prototype-]openjdkxx-pipeline and pr-tester jobs
+    Running in the *openjdkX-pipeline
     */
     @SuppressWarnings('unused')
     def doBuild() {
@@ -778,11 +795,13 @@ class Builder implements Serializable {
                 jobs[configuration.key] = {
                     IndividualBuildConfig config = configuration.value
 
-                    // jdk11u-linux-x64-hotspot
+                    // jdk20-linux-x64-temuri
                     def jobTopName = getJobName(configuration.key)
                     def jobFolder = getJobFolder()
-
-                    // i.e jdk11u/job/jdk11u-linux-x64-hotspot
+                    /*
+                        build-scripts/jobs/jdk20/jdk20-linux-x64-temurin for nightly
+                        build-scripts/prototype/jobs/jdk20/jdk20-prototype-linux-aarch64-hotspot for prototype
+                    */
                     def downstreamJobName = "${jobFolder}/${jobTopName}"
                     context.echo 'build name ' + downstreamJobName
 
