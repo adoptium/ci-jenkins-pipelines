@@ -308,6 +308,8 @@ node('worker') {
                     throw new Exception("[ERROR] enable to load jdk${javaVersion}u_prototype.groovy nor jdk${javaVersion}_prototype.groovy does not exist!")
                 }
                 config.put('targetConfigurations', targetPrototype.targetConfigurations)
+                // no need upload prototype's result to github repo
+                config.put('releaseType', 'Nightly Without Publish')
 
                 // if has a triggerSchedule_prototype variable set then use it or fall back to triggerSchedule_nightly
                 if (enablePipelineSchedule.toBoolean()){
