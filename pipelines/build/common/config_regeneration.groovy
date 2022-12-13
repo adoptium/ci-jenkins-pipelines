@@ -551,7 +551,7 @@ class Regeneration implements Serializable {
         def jobTopName = "${javaToBuild}-${jobName}"
         def jobFolder = "${jobRootDir}/jobs/${javaToBuild}"
 
-        // i.e jdk8u/jobs/jdk8u-linux-x64-hotspot
+        // i.e build-scripts/jobs/jdk8u/jdk8u-linux-x64-hotspot
         def downstreamJobName = "${jobFolder}/${jobTopName}"
         context.println "[INFO] build name: ${downstreamJobName}"
 
@@ -594,10 +594,11 @@ class Regeneration implements Serializable {
             def versionNumbers = javaVersion =~ /\d+/
 
             /*
-            * Stage: Check that the pipeline isn't in in-progress or queued up. Once clear, run the regeneration job
+            * Stage: Check that nightly and prototype nightly pipeline isn't in in-progress or queued up. 
+            * Once clear, run the regeneration job
             */
             context.stage("Check $javaVersion pipeline status") {
-                if (jobRootDir.contains('pr-tester') || jobRootDir.contains('release')) {
+                if ((jobType =='release') || jobRootDir.contains('pr-tester')) { // use jobType or pr-tester in path
                     // No need to check if we're going to overwrite anything for the PR tester since concurrency isn't enabled -> https://github.com/adoptium/temurin-build/pull/2155
                     context.println "[SUCCESS] Skip check if pr-tester or release pipeline is running as concurrency is disabled. Running regeneration job..."
                 } else {
@@ -606,11 +607,11 @@ class Regeneration implements Serializable {
 
                     // Parse api response to only extract the relevant pipeline
                     getPipelines.jobs.name.each { pipeline ->
-                        if (pipeline == "openjdk${versionNumbers[0]}-pipeline") {
+                        if (pipeline == (jobType != "prototype" ? "openjdk${versionNumbers[0]}-pipeline" : "prototype-openjdk${versionNumbers[0]}-pipeline")) {
                             Boolean inProgress = true
                             while (inProgress) {
                                 // Check if pipeline is in progress using api
-                                context.println "[INFO] Checking if ${pipeline} is running..." //i.e. openjdk8-pipeline
+                                context.println "[INFO] Checking if ${pipeline} is running..." //i.e. openjdk8-pipeline or prototype-openjdk11-pipeline
 
                                 def pipelineInProgress = queryAPI("${jenkinsBuildRoot}/job/${pipeline}/lastBuild/api/json?pretty=true&depth1")
 
@@ -701,7 +702,7 @@ class Regeneration implements Serializable {
                         if (keyFound == false) {
                             context.println "[WARNING] Config file key: ${osarch} not recognised. Valid configuration keys for ${javaToBuild} are ${buildConfigurations.keySet()}.\n[WARNING] ${osarch} WILL NOT BE REGENERATED! Setting build result to UNSTABLE..."
                             currentBuild.result = 'UNSTABLE'
-                            } else {
+                        } else {
                             // Skip variant job make if it's marked as excluded
                             if (jobConfigurations.get(name) == EXCLUDED_CONST) {
                                 continue
