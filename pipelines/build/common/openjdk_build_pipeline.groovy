@@ -516,7 +516,7 @@ class Build {
             try {
                 context.println "Remote trigger: ${targetTests}"
                 remoteTargets["${targetTests}"] = {
-                    def displayName = "${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
+                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
                     def parallel = 'None'
                     def num_machines = '1'
                     if ("${targetMode}" == 'parallel') {
