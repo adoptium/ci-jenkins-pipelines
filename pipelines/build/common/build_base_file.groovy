@@ -725,7 +725,8 @@ class Builder implements Serializable {
                         context.string(name: 'TIMESTAMP', value: timestamp),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
-                        context.string(name: 'VERSION', value: determineReleaseToolRepoVersion())
+                        context.string(name: 'VERSION', value: determineReleaseToolRepoVersion()),
+                        context.string(name: 'ARTIFACTS_TO_SKIP', value: "**/*_fast_startup_*")  // Skip fast_startup variant
                     ]
         }
     }
