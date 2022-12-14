@@ -2,7 +2,7 @@ import groovy.json.JsonOutput
 
 folder("${BUILD_FOLDER}")
 
-def pipelineReleaseType = releaseType
+def pipelineReleaseType = "${releaseType}"
 
 pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
     description('<h1>THIS IS AN AUTOMATICALLY GENERATED JOB DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1><p>This job is defined in weekly_release_pipeline_job_template.groovy in the ci-jenkins-pipelines repo, if you wish to change it modify that.</p>')
