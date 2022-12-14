@@ -333,6 +333,47 @@ node('worker') {
 
                 /* logic of creating prototype pipeline done */
 
+
+                /* logic of creating prototype weekly pipeline start */
+                config.JOB_NAME = "weekly-prototype-openjdk${javaVersion}-pipeline"
+                config.SCRIPT = (params.WEEKLY_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['weekly']
+                if (!fileExists(config.SCRIPT)) {
+                    println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Updating it to use Adopt's instead"
+                    checkoutAdoptPipelines()
+                    config.SCRIPT = ADOPT_DEFAULTS_JSON['scriptDirectories']['weekly']
+                    println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+                    checkoutUserPipelines()
+                }
+                config.PIPELINE = "prototpye-openjdk${javaVersion}-pipeline"
+                if (enablePipelineSchedule.toBoolean()) {
+                    config.put('pipelineSchedule', targetNightly.triggerSchedule_weekly)
+                } else {
+                    config.remove('pipelineSchedule')
+                }
+                config.releaseType = "Nightly Without Publish"
+                config.put('targetConfigurations', targetPrototype.targetConfigurations) // explicit set it to make things clear
+                config.weekly_release_scmReferences = targetNightly.weekly_release_scmReferences
+
+                println "[INFO] CREATING JDK${javaVersion} WEEKLY PROTOTYPE PIPELINE WITH NEW CONFIG VALUES:"
+                println "JOB_NAME = ${config.JOB_NAME}"
+                println "SCRIPT = ${config.SCRIPT}"
+                println "PIPELINE = ${config.PIPELINE}"
+                println "releaseType = ${config.release}"  // no need to set releaseType to "release" for weekly prototoype pipeline
+                println "targetConfigurations = ${config.targetConfigurations}"
+                println "weekly_release_scmReferences = ${config.weekly_release_scmReferences}"
+
+                try {
+                    jobDsl targets: weeklyTemplatePath, ignoreExisting: false, additionalParameters: config
+                } catch (Exception e) {
+                    println "${e}\n[WARNING] Something went wrong when creating the weekly prototype job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
+                    checkoutAdoptPipelines()
+                    jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weeklyTemplatePath'], ignoreExisting: false, additionalParameters: config
+                    checkoutUserPipelines()
+                }
+                generatedPipelines.add(config['JOB_NAME'])
+                /* logic of creating prototype weekly pipeline done */
+
+
             })
 
             // Fail if nothing was generated
