@@ -89,7 +89,7 @@ node('worker') {
         def buildConfigPath = (params.BUILD_CONFIG_PATH) ? "${WORKSPACE}/${BUILD_CONFIG_PATH}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}"
         
         // Very first time to checkout ci-jenkins-pipeline repo
-        checkoutUserPipelines
+        checkoutUserPipelines()
 
         try {
             sh 'pwd; git remote -v; git branch'
