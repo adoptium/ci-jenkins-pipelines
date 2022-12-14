@@ -475,9 +475,10 @@ class Build {
     def remoteTriggerJckTests(String platform) {
         def jdkVersion = getJavaVersionNumber()
         //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
-        def filter = "*.tar.gz"
+        // We just need the JDK for Jck tests
+        def filter = "*-jdk_*.tar.gz"
         if (buildConfig.TARGET_OS.contains("windows")) {
-        	filter = "*.zip"
+        	filter = "*-jdk_*.zip"
         }
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${filter}/*zip*/target.zip"
         context.echo "sdkUrl is ${sdkUrl}"
