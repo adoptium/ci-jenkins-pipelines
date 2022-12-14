@@ -175,7 +175,8 @@ node('worker') {
                     SCRIPT              : "${scriptFolderPath}/openjdk_pipeline.groovy",
                     disableJob          : false,
                     pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
-                    adoptScripts        : false
+                    adoptScripts        : false,
+                    releaseType         : 'Nightyly'
                 ]
 
                 /* nightly */
@@ -267,11 +268,13 @@ node('worker') {
                 if (enablePipelineSchedule.toBoolean()) {
                     config.put('pipelineSchedule', targetNightly.triggerSchedule_weekly)
                 }
+                config.put('releaseType', "Release")
 
                 println "[INFO] CREATING JDK${javaVersion} WEEKLY RELEASE PIPELINE WITH NEW CONFIG VALUES:"
                 println "JOB_NAME = ${config.JOB_NAME}"
                 println "SCRIPT = ${config.SCRIPT}"
                 println "PIPELINE = ${config.PIPELINE}"
+                println "releaseType = ${config.releaseType}" 
                 println "weekly_release_scmReferences = ${config.weekly_release_scmReferences}"
 
                 try {
@@ -350,7 +353,7 @@ node('worker') {
                 } else {
                     config.remove('pipelineSchedule')
                 }
-                config.releaseType = "Nightly Without Publish"
+                config.put('releaseType', 'Nightly Without Publish')
                 config.put('targetConfigurations', targetPrototype.targetConfigurations) // explicit set it to make things clear
                 config.weekly_release_scmReferences = targetNightly.weekly_release_scmReferences
 
@@ -358,7 +361,7 @@ node('worker') {
                 println "JOB_NAME = ${config.JOB_NAME}"
                 println "SCRIPT = ${config.SCRIPT}"
                 println "PIPELINE = ${config.PIPELINE}"
-                println "releaseType = ${config.release}"  // no need to set releaseType to "release" for weekly prototoype pipeline
+                println "releaseType = ${config.releaseType}"  // no need to set releaseType to "release" for weekly prototoype pipeline
                 println "targetConfigurations = ${config.targetConfigurations}"
                 println "weekly_release_scmReferences = ${config.weekly_release_scmReferences}"
 
