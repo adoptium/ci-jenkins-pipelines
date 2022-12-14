@@ -317,8 +317,8 @@ node('worker') {
                 // if has a triggerSchedule_prototype variable set then use it or fall back to triggerSchedule_nightly
                 if (enablePipelineSchedule.toBoolean()){
                     config.put('pipelineSchedule', targetNightly.triggerSchedule_nightly)
-                } else {
-                    config.remove('pipelineSchedule')
+                } else { // empty to not run
+                    config.put('pipelineSchedule', '')
                 }
                 // genereate pipeline
                 println "[INFO] FINAL CONFIG FOR PROTOTYPE JDK${javaVersion}"
@@ -350,8 +350,8 @@ node('worker') {
                 config.PIPELINE = "prototpye-openjdk${javaVersion}-pipeline"
                 if (enablePipelineSchedule.toBoolean()) {
                     config.put('pipelineSchedule', targetNightly.triggerSchedule_weekly)
-                } else {
-                    config.remove('pipelineSchedule')
+                } else { // empty string will never run
+                    config.put('pipelineSchedule', '')
                 }
                 config.put('releaseType', 'Nightly Without Publish')
                 config.put('targetConfigurations', targetPrototype.targetConfigurations) // explicit set it to make things clear

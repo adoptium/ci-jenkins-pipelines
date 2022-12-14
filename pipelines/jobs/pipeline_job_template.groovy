@@ -10,6 +10,7 @@ cleanWsBuildOutput = true
 jdkVersion = "${JAVA_VERSION}"
 isLightweight = true
 jobReleaseType = "${releaseType}"
+pipelineSchedule = pipelineSchedule
 
 // if true means this is running in the pr builder pipeline
 if (binding.hasVariable('PR_BUILDER')) {
