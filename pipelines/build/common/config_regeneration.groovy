@@ -700,7 +700,7 @@ class Regeneration implements Serializable {
                         }
 
                         if (keyFound == false) {
-                            context.println "[WARNING] Config file key: ${osarch} not recognised. Valid configuration keys for ${javaToBuild} are ${buildConfigurations.keySet()}.\n[WARNING] ${osarch} WILL NOT BE REGENERATED! Setting build result to UNSTABLE..."
+                            context.println "[WARNING] Config file key: ${osarch} not recognised.\nValid configuration keys for ${javaToBuild} are ${buildConfigurations.keySet()}.\n[WARNING] ${osarch} WILL NOT BE REGENERATED! Setting build result to UNSTABLE..."
                             currentBuild.result = 'UNSTABLE'
                         } else {
                             // Skip variant job make if it's marked as excluded

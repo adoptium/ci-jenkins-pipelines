@@ -87,7 +87,10 @@ node('worker') {
         // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
         def buildConfigurations = null
         def buildConfigPath = (params.BUILD_CONFIG_PATH) ? "${WORKSPACE}/${BUILD_CONFIG_PATH}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}"
-
+        
+        // Very first time to checkout ci-jenkins-pipeline repo
+        checkoutUserPipelines
+        
         try {
             buildConfigurations = load "${buildConfigPath}/${javaVersion}_pipeline_config.groovy"
         } catch (NoSuchFileException e) {
