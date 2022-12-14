@@ -689,10 +689,14 @@ class Builder implements Serializable {
 
     /*
     Returns the jenkins folder of where it's assumed the downstream build jobs have been regenerated
+    e.g: 
+    nightly:    build-scripts/jobs/jdk11u/jdk11u-linux-aarch64-temurin
+    prototype:  build-scripts/jobs/prototype/jobs/jdk17u/jdk17u-prototype-mac-x64-openj9
+    release:    build-scripts/jobs/release/jobs/jdk19u/jdk19u-release-aix-ppc64-temurin
     */
     def getJobFolder() {
         def parentDir = currentBuild.fullProjectName.substring(0, currentBuild.fullProjectName.lastIndexOf('/'))
-        def buildJobType = getBuildJobType() ? "/"+getBuildJobType() : ""
+        def buildJobType = getBuildJobType() ? "/jobs/"+getBuildJobType() : ""
         return parentDir + buildJobType + '/jobs/' + javaToBuild
     }
 
