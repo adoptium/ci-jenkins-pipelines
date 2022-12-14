@@ -252,7 +252,7 @@ node('worker') {
                 config.JOB_NAME = "weekly-openjdk${javaVersion}-pipeline"
                 config.SCRIPT = (params.WEEKLY_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['weekly']
                 if (!fileExists(config.SCRIPT)) {
-                    println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Updating it to use Adopt's instead"
+                    println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Checkout Adopt's weekly"
                     checkoutAdoptPipelines()
                     config.SCRIPT = ADOPT_DEFAULTS_JSON['scriptDirectories']['weekly']
                     println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
@@ -338,7 +338,7 @@ node('worker') {
                 config.JOB_NAME = "weekly-prototype-openjdk${javaVersion}-pipeline"
                 config.SCRIPT = (params.WEEKLY_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['weekly']
                 if (!fileExists(config.SCRIPT)) {
-                    println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Updating it to use Adopt's instead"
+                    println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Checkout Adopt's weekly"
                     checkoutAdoptPipelines()
                     config.SCRIPT = ADOPT_DEFAULTS_JSON['scriptDirectories']['weekly']
                     println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
