@@ -53,5 +53,6 @@ weekly_release_scmReferences = [
         'corretto'       : '',
         'dragonwell'     : ''
 ]
+disableJob = true
 
 return this

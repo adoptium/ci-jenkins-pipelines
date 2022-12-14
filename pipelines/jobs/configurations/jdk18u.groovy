@@ -50,4 +50,6 @@ weekly_release_scmReferences = [
         'dragonwell'     : ''
 ]
 
+disableJob = true
+
 return this
