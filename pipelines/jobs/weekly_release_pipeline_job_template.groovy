@@ -38,6 +38,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
 
     parameters {
         stringParam('buildPipeline', "${BUILD_FOLDER}/${PIPELINE}", 'The build pipeline to invoke.')
+        stringParam('releaseType', "${releaseType}", 'valid value: Nightly, Weekly, Release, Nightly Without Publish' )
         textParam('scmReferences', JsonOutput.prettyPrint(JsonOutput.toJson(weekly_release_scmReferences)), 'The map of scmReferences for each variant.')
         textParam('targetConfigurations', JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations)), 'The map of platforms and variants to build.')
     }
