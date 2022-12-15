@@ -23,9 +23,9 @@ node('worker') {
         Map remoteConfigs = [:]
         def repoBranch = null
 
-        /*
-        Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
-        */
+    /*
+    Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
+    */
         def checkoutAdoptPipelines = { ->
             checkout([$class: 'GitSCM',
                 branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
@@ -33,9 +33,9 @@ node('worker') {
             ])
         }
 
-        /*
-        Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
-        */
+    /*
+    Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
+    */
         def checkoutUserPipelines = { ->
             checkout([$class: 'GitSCM',
                 branches: [ [ name: repoBranch ] ],
@@ -70,10 +70,10 @@ node('worker') {
             // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
             def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
 
-            /*
-            Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root.
-            These are the top level pipeline jobs.
-            */
+        /*
+        Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root.
+        These are the top level pipeline jobs.
+        */
             def scriptFolderPath = (params.SCRIPT_FOLDER_PATH) ?: DEFAULTS_JSON['scriptDirectories']['upstream']
 
             if (!fileExists(scriptFolderPath)) {
@@ -84,10 +84,10 @@ node('worker') {
                 checkoutUserPipelines()
             }
 
-            /*
-            Load nightlyFolderPath. This is the folder where the configurations/jdkxx_pipeline_config.groovy code is located compared to the repository root.
-            These define what the default set of nightlies will be.
-            */
+        /*
+        Load nightlyFolderPath. This is the folder where the configurations/jdkxx_pipeline_config.groovy code is located compared to the repository root.
+        These define what the default set of nightlies will be.
+        */
             def nightlyFolderPath = (params.NIGHTLY_FOLDER_PATH) ?: DEFAULTS_JSON['configDirectories']['nightly']
 
             if (!fileExists(nightlyFolderPath)) {
@@ -98,24 +98,10 @@ node('worker') {
                 checkoutUserPipelines()
             }
 
-            /*
-            Load prototypeFolderPath. This is the folder where the configurations/jdkxxu_pipeline_config.groovy code is located compared to the repository root.
-            These define what the default set of prototype will be.
-            */
-            def prototypeFolderPath = DEFAULTS_JSON['configDirectories']['prototype']
-
-            if (!fileExists(prototypeFolderPath)) {
-                println "[WARNING] ${prototypeFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
-                checkoutAdoptPipelines()
-                prototypeFolderPath = ADOPT_DEFAULTS_JSON['configDirectories']['prototype']
-                println "[SUCCESS] The path is now ${prototypeFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
-                checkoutUserPipelines()
-            }
-
-            /*
-            Load jobTemplatePath. This is where the pipeline_job_template.groovy code is located compared to the repository root.
-            This actually sets up the pipeline job using the parameters above.
-            */
+        /*
+        Load jobTemplatePath. This is where the pipeline_job_template.groovy code is located compared to the repository root.
+        This actually sets up the pipeline job using the parameters above.
+        */
             def jobTemplatePath = (params.JOB_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['upstream']
 
             if (!fileExists(jobTemplatePath)) {
@@ -144,7 +130,6 @@ node('worker') {
             println "JOB_ROOT = $jobRoot"
             println "SCRIPT_FOLDER_PATH = $scriptFolderPath"
             println "NIGHTLY_FOLDER_PATH = $nightlyFolderPath"
-            println "PROTOTYPE_FOLDER_PATH = $prototypeFolderPath"
             println "JOB_TEMPLATE_PATH = $jobTemplatePath"
             println "ENABLE_PIPELINE_SCHEDULE = $enablePipelineSchedule"
             println "USE_ADOPT_SHELL_SCRIPTS = $useAdoptShellScripts"
@@ -162,8 +147,6 @@ node('worker') {
                     return
                 }
 
-                // common settings for nightly weekly and prototype (can be overwritten in prototype section)
-                // also share: disableJob, pipelineSchedule, adoptScripts, enableTests, enableTestDynamicParallel, defaultsJson and adoptDefaultsJson
                 def config = [
                     TEST                : false,
                     GIT_URL             : repoUri,
@@ -175,27 +158,25 @@ node('worker') {
                     SCRIPT              : "${scriptFolderPath}/openjdk_pipeline.groovy",
                     disableJob          : false,
                     pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
-                    adoptScripts        : false,
-                    releaseType         : 'Nightly'
+                    adoptScripts        : false
                 ]
 
-                /* nightly */
-                def nightlyTarget
+                def target
                 try {
-                    nightlyTarget = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
+                    target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
                 } catch (NoSuchFileException e) {
                     try {
                         println "[WARNING] jdk${javaVersion}.groovy does not exist, chances are we want a jdk${javaVersion}u.groovy file. Trying ${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
-                        nightlyTarget = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
+                        target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
                     } catch (NoSuchFileException e2) {
                         println "[WARNING] jdk${javaVersion}u.groovy does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightlies in..."
 
                         checkoutAdoptPipelines()
                         try {
-                            nightlyTarget = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}.groovy"
+                            target = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}.groovy"
                         } catch (NoSuchFileException e3) {
                             try {
-                                nightlyTarget = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}u.groovy"
+                                target = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}u.groovy"
                             } catch (NoSuchFileException e4) {
                                 println "[WARNING] No config found for JDK${javaVersion} in the User's or Adopt's repository. Skipping generation..."
                                 // break and move to next element in the loop
@@ -207,17 +188,17 @@ node('worker') {
                     }
                 }
 
-                config.put('targetConfigurations', nightlyTarget.targetConfigurations)
+                config.put('targetConfigurations', target.targetConfigurations)
 
                 // hack as jenkins groovy does not seem to allow us to check if disableJob exists
                 try {
-                    config.put('disableJob', nightlyTarget.disableJob)
+                    config.put('disableJob', target.disableJob)
                 } catch (Exception ex) {
                     config.put('disableJob', false)
                 }
 
                 if (enablePipelineSchedule.toBoolean()) {
-                    config.put('pipelineSchedule', nightlyTarget.triggerSchedule_nightly)
+                    config.put('pipelineSchedule', target.triggerSchedule_nightly)
                 }
 
                 if (useAdoptShellScripts.toBoolean()) {
@@ -244,8 +225,8 @@ node('worker') {
                     jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['upstream'], ignoreExisting: false, additionalParameters: config
                     checkoutUserPipelines()
                 }
-                // TODO: check why we need this one
-                nightlyTarget.disableJob = false
+
+                target.disableJob = false
 
                 generatedPipelines.add(config['JOB_NAME'])
 
@@ -253,28 +234,26 @@ node('worker') {
                 config.JOB_NAME = "weekly-openjdk${javaVersion}-pipeline"
                 config.SCRIPT = (params.WEEKLY_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['weekly']
                 if (!fileExists(config.SCRIPT)) {
-                    println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Checkout Adopt's weekly config"
+                    println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Updating it to use Adopt's instead"
                     checkoutAdoptPipelines()
                     config.SCRIPT = ADOPT_DEFAULTS_JSON['scriptDirectories']['weekly']
                     println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
                     checkoutUserPipelines()
                 }
                 config.PIPELINE = "openjdk${javaVersion}-pipeline"
-                config.weekly_release_scmReferences = nightlyTarget.weekly_release_scmReferences
+                config.weekly_release_scmReferences = target.weekly_release_scmReferences
 
                 // Load weeklyTemplatePath. This is where the weekly_release_pipeline_job_template.groovy code is located compared to the repository root. This actually sets up the weekly pipeline job using the parameters above.
                 def weeklyTemplatePath = (params.WEEKLY_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['weekly']
 
                 if (enablePipelineSchedule.toBoolean()) {
-                    config.put('pipelineSchedule', nightlyTarget.triggerSchedule_weekly)
+                    config.put('pipelineSchedule', target.triggerSchedule_weekly)
                 }
-                config.put('releaseType', "Release")
 
                 println "[INFO] CREATING JDK${javaVersion} WEEKLY RELEASE PIPELINE WITH NEW CONFIG VALUES:"
                 println "JOB_NAME = ${config.JOB_NAME}"
                 println "SCRIPT = ${config.SCRIPT}"
                 println "PIPELINE = ${config.PIPELINE}"
-                println "releaseType = ${config.releaseType}" 
                 println "weekly_release_scmReferences = ${config.weekly_release_scmReferences}"
 
                 try {
@@ -286,97 +265,9 @@ node('worker') {
                     checkoutUserPipelines()
                 }
 
-                // TODO: check why we need this one
-                nightlyTarget.disableJob = false
+                target.disableJob = false
 
                 generatedPipelines.add(config['JOB_NAME'])
-
-                /* logic of creating prototype pipeline start*/
-
-                // update pipeline name and script
-                config.JOB_NAME = "prototype-openjdk${javaVersion}-pipeline"
-                config.SCRIPT = "${scriptFolderPath}/openjdk_pipeline.groovy"
-
-                // read out different target
-                def targetPrototype
-                try {
-                    def uFile = "${WORKSPACE}/${prototypeFolderPath}/jdk${javaVersion}u_prototype.groovy"
-                    def nonUFile = "${WORKSPACE}/${prototypeFolderPath}/jdk${javaVersion}_prototype.groovy"
-                    if(fileExists(uFile)) {
-                        targetPrototype = load uFile
-                    } else {
-                        targetPrototype = load nonUFile
-                    }
-                } catch (NoSuchFileException e) {
-                    throw new Exception("[ERROR] enable to load jdk${javaVersion}u_prototype.groovy nor jdk${javaVersion}_prototype.groovy does not exist!")
-                }
-                config.put('targetConfigurations', targetPrototype.targetConfigurations)
-                // no need upload prototype's result to github repo
-                config.put('releaseType', 'Nightly Without Publish')
-
-                // if has a triggerSchedule_prototype variable set then use it or fall back to triggerSchedule_nightly
-                if (enablePipelineSchedule.toBoolean()){
-                    config.put('pipelineSchedule', nightlyTarget.triggerSchedule_nightly)
-                } else { // empty to not run
-                    config.put('pipelineSchedule', '')
-                }
-                // genereate pipeline
-                println "[INFO] FINAL CONFIG FOR PROTOTYPE JDK${javaVersion}"
-                println JsonOutput.prettyPrint(JsonOutput.toJson(config))
-                try {
-                    jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: config
-                } catch (Exception e) {
-                    println "${e}\n[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
-                    checkoutAdoptPipelines()
-                    jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['upstream'], ignoreExisting: false, additionalParameters: config
-                    checkoutUserPipelines()
-                }
-                // add into list
-                generatedPipelines.add(config['JOB_NAME'])
-
-                /* logic of creating prototype pipeline done */
-
-
-                /* logic of creating prototype weekly pipeline start */
-                config.JOB_NAME = "weekly-prototype-openjdk${javaVersion}-pipeline"
-                config.SCRIPT = (params.WEEKLY_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['weekly']
-                if (!fileExists(config.SCRIPT)) {
-                    println "[WARNING] ${config.SCRIPT} does not exist, next to checkout Adopt's weekly"
-                    checkoutAdoptPipelines()
-                    config.SCRIPT = ADOPT_DEFAULTS_JSON['scriptDirectories']['weekly']
-                    println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
-                    checkoutUserPipelines()
-                }
-                config.PIPELINE = "prototpye-openjdk${javaVersion}-pipeline"
-                if (enablePipelineSchedule.toBoolean()) {
-                    config.put('pipelineSchedule', nightlyTarget.triggerSchedule_weekly)
-                } else { // empty string will never run
-                    config.put('pipelineSchedule', '')
-                }
-                config.put('releaseType', 'Nightly Without Publish')
-                config.put('targetConfigurations', targetPrototype.targetConfigurations) // explicit set it to make things clear
-                config.weekly_release_scmReferences = nightlyTarget.weekly_release_scmReferences
-
-                println "[INFO] CREATING JDK${javaVersion} WEEKLY PROTOTYPE PIPELINE WITH NEW CONFIG VALUES:"
-                println "JOB_NAME = ${config.JOB_NAME}"
-                println "SCRIPT = ${config.SCRIPT}"
-                println "PIPELINE = ${config.PIPELINE}"
-                println "releaseType = ${config.releaseType}"  // no need to set releaseType to "release" for weekly prototoype pipeline
-                println "targetConfigurations = ${config.targetConfigurations}"
-                println "weekly_release_scmReferences = ${config.weekly_release_scmReferences}"
-
-                try {
-                    jobDsl targets: weeklyTemplatePath, ignoreExisting: false, additionalParameters: config
-                } catch (Exception e) {
-                    println "${e}\n[WARNING] Something went wrong when creating the weekly prototype job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
-                    checkoutAdoptPipelines()
-                    jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weeklyTemplatePath'], ignoreExisting: false, additionalParameters: config
-                    checkoutUserPipelines()
-                }
-                generatedPipelines.add(config['JOB_NAME'])
-                /* logic of creating prototype weekly pipeline done */
-
-
             })
 
             // Fail if nothing was generated
