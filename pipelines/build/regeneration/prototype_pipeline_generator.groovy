@@ -253,6 +253,9 @@ node('worker') {
                     println "weekly_prototype_scmReferences = ${config.weekly_prototype_scmReferences}"
 
                     // genereate pipeline
+                    // Load weeklyTemplatePath.
+                    def weeklyTemplatePath = (params.WEEKLY_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['weekly']
+
                     try {
                         jobDsl targets: weeklyTemplatePath, ignoreExisting: false, additionalParameters: config
                     } catch (Exception e) {
