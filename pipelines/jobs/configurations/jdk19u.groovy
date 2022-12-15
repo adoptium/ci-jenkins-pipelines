@@ -45,7 +45,11 @@ triggerSchedule_weekly = 'TZ=UTC\n05 17 * * 7'
 
 // scmReferences to use for weekly release build
 weekly_release_scmReferences = [
-        'temurin'        : ''
+        'hotspot'        : '',
+        'temurin'        : '',
+        'openj9'         : '',
+        'corretto'       : '',
+        'dragonwell'     : ''
 ]
 
 return this
