@@ -691,7 +691,7 @@ class Regeneration implements Serializable {
                                 name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
                                 // release or prototype job name
                                 if (jobType != "nightly" && jobType != "pr-tester") {
-                                    name = jobType+"-"+name
+                                    name = jobType+"-" + name
                                 }
                                 if (platformConfig.containsKey('additionalFileNameTag')) {
                                     name += "-${platformConfig.additionalFileNameTag}"
