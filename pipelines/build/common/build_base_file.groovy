@@ -667,7 +667,7 @@ class Builder implements Serializable {
 
     /*
     Returns the downstream build job's type by checking job folder's path
-    either it is "prototype" or "release" or the rest (can be nightly or pr-tester)
+    can be "prototype" or "release" or null (in this case it is for the nightly or pr-tester)
     */
     def getBuildJobType() {
         if (currentBuild.fullProjectName.contains("prototype")){

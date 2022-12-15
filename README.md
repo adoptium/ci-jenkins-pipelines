@@ -80,9 +80,13 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 
 The nightly config files are the ones that follow the format `jdkxx(u).groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a simple groovy script that's contents can be [loaded in](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/#load-evaluate-a-groovy-source-file-into-the-pipeline-script) and accessed by another script.
 
+### Prototype pipeline/jobs
+
+The prototype config files are the ones that follow the format `jdkxx(u)_prototype.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
+
 #### targetConfigurations
 
-A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#Build).
+A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds, prototype builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#build).
 
 ```groovy
 targetConfigurations = [

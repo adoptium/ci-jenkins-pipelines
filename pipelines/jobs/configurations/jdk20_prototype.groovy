@@ -4,6 +4,9 @@ targetConfigurations = [
         ],
         'aarch64Windows' : [
                 'temurin'
+        ],
+        'riscv64Linux': [
+                'temurin'
         ]
 ]
 

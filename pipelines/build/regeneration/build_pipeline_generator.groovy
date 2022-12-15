@@ -23,9 +23,9 @@ node('worker') {
         Map remoteConfigs = [:]
         def repoBranch = null
 
-    /*
-    Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
-    */
+        /*
+        Changes dir to Adopt's repo. Use closures as functions aren't accepted inside node blocks
+        */
         def checkoutAdoptPipelines = { ->
             checkout([$class: 'GitSCM',
                 branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
@@ -33,9 +33,9 @@ node('worker') {
             ])
         }
 
-    /*
-    Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
-    */
+        /*
+        Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
+        */
         def checkoutUserPipelines = { ->
             checkout([$class: 'GitSCM',
                 branches: [ [ name: repoBranch ] ],
@@ -70,10 +70,10 @@ node('worker') {
             // Load jobRoot. This is where the openjdkxx-pipeline jobs will be created.
             def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
 
-        /*
-        Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root.
-        These are the top level pipeline jobs.
-        */
+            /*
+            Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root.
+            These are the top level pipeline jobs.
+            */
             def scriptFolderPath = (params.SCRIPT_FOLDER_PATH) ?: DEFAULTS_JSON['scriptDirectories']['upstream']
 
             if (!fileExists(scriptFolderPath)) {
@@ -84,10 +84,10 @@ node('worker') {
                 checkoutUserPipelines()
             }
 
-        /*
-        Load nightlyFolderPath. This is the folder where the configurations/jdkxx_pipeline_config.groovy code is located compared to the repository root.
-        These define what the default set of nightlies will be.
-        */
+            /*
+            Load nightlyFolderPath. This is the folder where the configurations/jdkxx_pipeline_config.groovy code is located compared to the repository root.
+            These define what the default set of nightlies will be.
+            */
             def nightlyFolderPath = (params.NIGHTLY_FOLDER_PATH) ?: DEFAULTS_JSON['configDirectories']['nightly']
 
             if (!fileExists(nightlyFolderPath)) {
@@ -98,10 +98,10 @@ node('worker') {
                 checkoutUserPipelines()
             }
 
-        /*
-        Load prototypeFolderPath. This is the folder where the configurations/jdkxxu_pipeline_config.groovy code is located compared to the repository root.
-        These define what the default set of prototype will be.
-        */
+            /*
+            Load prototypeFolderPath. This is the folder where the configurations/jdkxxu_pipeline_config.groovy code is located compared to the repository root.
+            These define what the default set of prototype will be.
+            */
             def prototypeFolderPath = DEFAULTS_JSON['configDirectories']['prototype']
 
             if (!fileExists(prototypeFolderPath)) {
@@ -112,10 +112,10 @@ node('worker') {
                 checkoutUserPipelines()
             }
 
-        /*
-        Load jobTemplatePath. This is where the pipeline_job_template.groovy code is located compared to the repository root.
-        This actually sets up the pipeline job using the parameters above.
-        */
+            /*
+            Load jobTemplatePath. This is where the pipeline_job_template.groovy code is located compared to the repository root.
+            This actually sets up the pipeline job using the parameters above.
+            */
             def jobTemplatePath = (params.JOB_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['upstream']
 
             if (!fileExists(jobTemplatePath)) {
@@ -180,22 +180,22 @@ node('worker') {
                 ]
 
                 /* nightly */
-                def targetNightly
+                def nightlyTarget
                 try {
-                    targetNightly = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
+                    nightlyTarget = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
                 } catch (NoSuchFileException e) {
                     try {
                         println "[WARNING] jdk${javaVersion}.groovy does not exist, chances are we want a jdk${javaVersion}u.groovy file. Trying ${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
-                        targetNightly = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
+                        nightlyTarget = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
                     } catch (NoSuchFileException e2) {
                         println "[WARNING] jdk${javaVersion}u.groovy does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightlies in..."
 
                         checkoutAdoptPipelines()
                         try {
-                            targetNightly = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}.groovy"
+                            nightlyTarget = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}.groovy"
                         } catch (NoSuchFileException e3) {
                             try {
-                                targetNightly = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}u.groovy"
+                                nightlyTarget = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}/jdk${javaVersion}u.groovy"
                             } catch (NoSuchFileException e4) {
                                 println "[WARNING] No config found for JDK${javaVersion} in the User's or Adopt's repository. Skipping generation..."
                                 // break and move to next element in the loop
@@ -207,17 +207,17 @@ node('worker') {
                     }
                 }
 
-                config.put('targetConfigurations', targetNightly.targetConfigurations)
+                config.put('targetConfigurations', nightlyTarget.targetConfigurations)
 
                 // hack as jenkins groovy does not seem to allow us to check if disableJob exists
                 try {
-                    config.put('disableJob', targetNightly.disableJob)
+                    config.put('disableJob', nightlyTarget.disableJob)
                 } catch (Exception ex) {
                     config.put('disableJob', false)
                 }
 
                 if (enablePipelineSchedule.toBoolean()) {
-                    config.put('pipelineSchedule', targetNightly.triggerSchedule_nightly)
+                    config.put('pipelineSchedule', nightlyTarget.triggerSchedule_nightly)
                 }
 
                 if (useAdoptShellScripts.toBoolean()) {
@@ -245,7 +245,7 @@ node('worker') {
                     checkoutUserPipelines()
                 }
                 // TODO: check why we need this one
-                targetNightly.disableJob = false
+                nightlyTarget.disableJob = false
 
                 generatedPipelines.add(config['JOB_NAME'])
 
@@ -260,13 +260,13 @@ node('worker') {
                     checkoutUserPipelines()
                 }
                 config.PIPELINE = "openjdk${javaVersion}-pipeline"
-                config.weekly_release_scmReferences = targetNightly.weekly_release_scmReferences
+                config.weekly_release_scmReferences = nightlyTarget.weekly_release_scmReferences
 
                 // Load weeklyTemplatePath. This is where the weekly_release_pipeline_job_template.groovy code is located compared to the repository root. This actually sets up the weekly pipeline job using the parameters above.
                 def weeklyTemplatePath = (params.WEEKLY_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['weekly']
 
                 if (enablePipelineSchedule.toBoolean()) {
-                    config.put('pipelineSchedule', targetNightly.triggerSchedule_weekly)
+                    config.put('pipelineSchedule', nightlyTarget.triggerSchedule_weekly)
                 }
                 config.put('releaseType', "Release")
 
@@ -287,7 +287,7 @@ node('worker') {
                 }
 
                 // TODO: check why we need this one
-                targetNightly.disableJob = false
+                nightlyTarget.disableJob = false
 
                 generatedPipelines.add(config['JOB_NAME'])
 
@@ -316,7 +316,7 @@ node('worker') {
 
                 // if has a triggerSchedule_prototype variable set then use it or fall back to triggerSchedule_nightly
                 if (enablePipelineSchedule.toBoolean()){
-                    config.put('pipelineSchedule', targetNightly.triggerSchedule_nightly)
+                    config.put('pipelineSchedule', nightlyTarget.triggerSchedule_nightly)
                 } else { // empty to not run
                     config.put('pipelineSchedule', '')
                 }
@@ -349,13 +349,13 @@ node('worker') {
                 }
                 config.PIPELINE = "prototpye-openjdk${javaVersion}-pipeline"
                 if (enablePipelineSchedule.toBoolean()) {
-                    config.put('pipelineSchedule', targetNightly.triggerSchedule_weekly)
+                    config.put('pipelineSchedule', nightlyTarget.triggerSchedule_weekly)
                 } else { // empty string will never run
                     config.put('pipelineSchedule', '')
                 }
                 config.put('releaseType', 'Nightly Without Publish')
                 config.put('targetConfigurations', targetPrototype.targetConfigurations) // explicit set it to make things clear
-                config.weekly_release_scmReferences = targetNightly.weekly_release_scmReferences
+                config.weekly_release_scmReferences = nightlyTarget.weekly_release_scmReferences
 
                 println "[INFO] CREATING JDK${javaVersion} WEEKLY PROTOTYPE PIPELINE WITH NEW CONFIG VALUES:"
                 println "JOB_NAME = ${config.JOB_NAME}"
