@@ -143,21 +143,38 @@ If this is present, the jenkins generators will still create the top-level pipel
 disableJob = true
 ```
 
-#### triggerSchedule_nightly / triggerSchedule_weekly
+#### triggerSchedule_nightly / triggerSchedule_weekly / triggerSchedule_prototype / triggerSchedule_weekly_prototype
 
 [Cron expression](https://crontab.guru/) that defines when (and how often) nightly and weekly builds will be executed
+in jdkXX(u).groovy
 
 ```groovy
 triggerSchedule_nightly="TZ=UTC\n05 18 * * 1,3,5"
 triggerSchedule_weekly="TZ=UTC\n05 12 * * 6"
 ```
 
-#### weekly_release_scmReferences
+in jdkXX(u)_prototype.groovy
 
-Source control references (e.g. tags) to use in the weekly release builds
+```groovy
+triggerSchedule_prototype="TZ=UTC\n15 18 * * 1,3,5"
+triggerSchedule_weekly_prototype="TZ=UTC\n25 12 * * 6"
+```
+
+#### weekly_release_scmReferences / weekly_prototype_scmReferences
+
+Source control references (e.g. tags) to use in the weekly release or weekly prototype builds
+in jdkXX(u).groovy
 
 ```groovy
 weekly_release_scmReferences = [
+        "temurin"        : "jdk8u282-b08"
+]
+```
+
+in jdkXX(u)_prototype.groovy
+
+```groovy
+weekly_prototype_scmReferences== [
         "temurin"        : "jdk8u282-b07",
         "openj9"         : "v0.24.0-release",
         "corretto"       : "",
