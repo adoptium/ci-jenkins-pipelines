@@ -235,7 +235,7 @@ node('worker') {
                         println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
                         checkoutUserPipelines()
                     }
-                    config.PIPELINE = "prototpye-openjdk${javaVersion}-pipeline"
+                    config.PIPELINE = "prototype-openjdk${javaVersion}-pipeline"
                     if (enablePipelineSchedule.toBoolean()) {
                         config.put('pipelineSchedule', targetPrototype.triggerSchedule_weekly_prototype)
                     } else { // empty string will never run
