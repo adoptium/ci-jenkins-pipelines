@@ -263,8 +263,9 @@ node('worker') {
                     }
                     // add into list
                     generatedPipelines.add(config['JOB_NAME'])
-                })
-            }
+                }
+            )
+
 
             // Fail if nothing was generated
             if (generatedPipelines == []) {
@@ -273,7 +274,7 @@ node('worker') {
                 println "[SUCCESS] THE FOLLOWING PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER"
                 println generatedPipelines
             }
-            }
+        }
     } finally {
         // Always clean up, even on failure (doesn't delete the created jobs)
         println '[INFO] Cleaning up...'
