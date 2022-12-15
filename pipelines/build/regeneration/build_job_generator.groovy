@@ -92,7 +92,6 @@ node('worker') {
         checkoutUserPipelines()
 
         try {
-            sh 'pwd; git remote -v; git branch'
             buildConfigurations = load "${buildConfigPath}/${javaVersion}_pipeline_config.groovy"
         } catch (NoSuchFileException e) {
             try {
