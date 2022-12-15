@@ -137,7 +137,7 @@ node('worker') {
         def targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories'][jobType]}/${targetConfigFile}"
         if (!fileExists(targetConfigPath)) {
             checkoutAdoptPipelines
-            targetConfigPath= "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories'][jobType]}/${targetConfigFile}"
+            targetConfigPath = "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories'][jobType]}/${targetConfigFile}"
         }
         load targetConfigPath
         checkoutUserPipelines
