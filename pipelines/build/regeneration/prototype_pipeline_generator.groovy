@@ -242,7 +242,7 @@ node('worker') {
                         config.put('pipelineSchedule', '')
                     }
                     config.put('targetConfigurations', targetPrototype.targetConfigurations) // explicit set it to make things clear
-                    config.weekly_prototype_scmReferences = targetPrototype.weekly_prototype_scmReferences
+                    config.weekly_release_scmReferences = targetPrototype.weekly_prototype_scmReferences
 
                     println "[INFO] CREATING JDK${javaVersion} WEEKLY PROTOTYPE PIPELINE WITH NEW CONFIG VALUES:"
                     println "JOB_NAME = ${config.JOB_NAME}"
@@ -250,7 +250,7 @@ node('worker') {
                     println "PIPELINE = ${config.PIPELINE}"
                     println "releaseType = ${config.releaseType}"
                     println "targetConfigurations = ${config.targetConfigurations}"
-                    println "weekly_prototype_scmReferences = ${config.weekly_prototype_scmReferences}"
+                    println "weekly_release_scmReferences = ${config.weekly_prototype_scmReferences}"
 
                     // genereate pipeline
                     // Load weeklyTemplatePath.
