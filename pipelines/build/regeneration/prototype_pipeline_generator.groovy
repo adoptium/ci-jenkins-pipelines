@@ -264,7 +264,7 @@ node('worker') {
                     // add into list
                     generatedPipelines.add(config['JOB_NAME'])
                 }
-            )
+            })
 
 
             // Fail if nothing was generated
