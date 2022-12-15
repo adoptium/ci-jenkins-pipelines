@@ -521,7 +521,7 @@ class Regeneration implements Serializable {
         }
 
         // Make sure the dsl knows if we're building inside the pr tester
-        if (jobType == "pr-test") {
+        if (jobType == "pr-tester") {
             params.put('PR_BUILDER', true)
         }
 
@@ -607,7 +607,8 @@ class Regeneration implements Serializable {
 
                     // Parse api response to only extract the relevant pipeline
                     getPipelines.jobs.name.each { pipeline ->
-                        if (pipeline == (jobType != "prototype" ? "openjdk${versionNumbers[0]}-pipeline" : "prototype-openjdk${versionNumbers[0]}-pipeline")) {
+                        def pipelineName = (jobType != "prototype" ? "openjdk${versionNumbers[0]}-pipeline" : "prototype-openjdk${versionNumbers[0]}-pipeline")
+                        if (pipeline == pipelineName) {
                             Boolean inProgress = true
                             while (inProgress) {
                                 // Check if pipeline is in progress using api
@@ -686,10 +687,10 @@ class Regeneration implements Serializable {
                                 keyFound = true
 
                                 def platformConfig = buildConfigurations.get(key) as Map<String, ?>
-                                // default nightly or pr-test job name
+                                // default nightly or pr-tester job name
                                 name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
                                 // release or prototype job name
-                                if (jobType != "nightly" && jobType != "pr-test") {
+                                if (jobType != "nightly" && jobType != "pr-tester") {
                                     name = jobType+"-"+name
                                 }
                                 if (platformConfig.containsKey('additionalFileNameTag')) {

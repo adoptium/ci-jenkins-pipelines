@@ -1605,7 +1605,7 @@ class Build {
     }
 
     /* 
-        this function should only be used in pr-test
+        this function should only be used in pr-tester
     */
     def updateGithubCommitStatus(STATE, MESSAGE) {
         // workaround https://issues.jenkins-ci.org/browse/JENKINS-38674
