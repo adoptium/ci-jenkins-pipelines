@@ -1,4 +1,4 @@
-targetConfigurations = [
+targetConfigurations = []
         // 'aarch64Linux': [
         //         'hotspot'
         // ],
@@ -8,7 +8,6 @@ targetConfigurations = [
         // 'riscv64Linux': [
         //         'temurin'
         // ]
-]
 
 // empty string as it wont get triggered now
 triggerSchedule_prototype = ''
