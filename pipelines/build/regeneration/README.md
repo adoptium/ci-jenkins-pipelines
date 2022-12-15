@@ -12,11 +12,11 @@ In the past, we created these dsl's in the [pipeline files](/pipelines/build). S
 Not only was this resource intensive and slow, but it also meant that concurrent builds were impossible due to the risk of one builds dsl's overwriting another's. This is why we have created pipeline job generators to create the dsl's for the pipelines to use, instead of creating them in the pipeline jobs.
 
 The job regenerators are essentially downstream job makers. They pull in the [targetConfigurations](/pipelines/jobs/configurations) and build the job DSL's for each possible downstream job.
-The pipelines can use these job dsl's to create their downstream jobs since they are created in the same node as them (the master one). This way, each of the pipelines has a fresh dsl each time, no matter how many builds are running at once.
+The pipelines can use these job dsl's to create their downstream jobs since they are created in the same node as them (the controller). This way, each of the pipelines has a fresh dsl each time, no matter how many builds are running at once.
 
 ## Where they are
 
-They are stored in the [utils](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/) folder of our jenkins server. The jobs themselves are called `pipeline_jobs_generator_jdk11u`, `pipeline_jobs_generator_jdk8u`, etc.
+They are stored in the [utils](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/) folder of our jenkins server. The jobs themselves are called `pipeline_jobs_generator_jdk11u`, `prototype-pipeline_jobs_generator_jdk11u`, etc.
 NOTE: When the JDK HEAD updates, these jobs will need to be updated too (see [RELEASING.md](https://github.com/adoptium/temurin-build/blob/master/RELEASING.md#steps-for-every-version)) for how to do so.
 
 ## How they work
@@ -24,8 +24,8 @@ NOTE: When the JDK HEAD updates, these jobs will need to be updated too (see [RE
 There are three stages for each job regenerator.
 
 - Execute the top level job:
-  - The jobs themselves are executed by GitHub Push on this repository. Each time there is a commit, all the pipeline regenerators are kicked off. This is so any potential changes to the [buildConfigurations](/pipelines/jobs/configurations/jdk8u_pipeline_config.groovy) and [targetConfigurations](/pipelines/jobs/configurations/jdk8u.groovy) are taken into account when creating a job dsl for each downstream job.
-  - Each of the jobs executes it's corresponding [regeneration](/pipelines/build/regeneration) file, passing down it's version, targeted OS/ARCH/VARIANT and specific build configurations to the main [config_regeneration](/pipelines/build/common/config_regeneration.groovy) file.
+  - The jobs themselves are executed by GitHub Push on this repository. Each time there is a commit, all the pipeline regenerators(except the ones for release) are kicked off. This is so any potential changes to the [buildConfigurations](/pipelines/jobs/configurations/jdk8u_pipeline_config.groovy) and [targetConfigurations](/pipelines/jobs/configurations/jdk8u.groovy) are taken into account when creating a job dsl for each downstream job.
+  - Each of the jobs executes its corresponding [regeneration](/pipelines/build/regeneration) file, passing down its version, targeted OS/ARCH/VARIANT and specific build configurations to the main [config_regeneration](/pipelines/build/common/config_regeneration.groovy) file.
 - Check if the corresponding pipeline is in progress:
   - Since we want to potentially avoid overwriting the job dsl's of any pipelines in progress, we use the [jenkins API](https://ci.adoptopenjdk.net/api/) to verify that there are no pipelines of that version queued or running. If there are, the job regenerator sleeps for 15mins and checks again afterwards. If not, it moves onto the next step.
 - Regenerate the downstream jobs, one at a time:
@@ -87,12 +87,19 @@ Unreferenced items:
 [SUCCESS] Regenerated configuration for job build-scripts/jobs/jdk/jdk-mac-x64-hotspot
 ```
 
-## Build Pipeline Generator
+### Build Pipeline Generator
 
-This generator generates the [top level](https://ci.adoptopenjdk.net/job/build-scripts/) pipeline jobs. It works by iterating through the config files, defining a job dsl configuration for each version that has a version config file.
+This standard generator generates the [top level](https://ci.adoptopenjdk.net/job/build-scripts/) pipeline jobs. It works by iterating through the config files, defining a job dsl configuration for each version that has a version config file.
 It then calls [pipeline_job_template.groovy](pipelines/jobs/pipeline_job_template.groovy) to finalise the dsl. By default, the [job that runs this file](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/job/build-pipeline-generator/) has restricted read access so you will likely need to contact a jenkins admin to see the results of the job.
 
-## Downstream Test Jobs
+There are another two generators:
+
+1. [release generator](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/job/release-build-pipeline-generator/) is only used to regenerate release pipelines.
+2. [prototype generator](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/job/prototype-pipeline-generator/) is used to regenerator prototype pipeline and weekly-prototype pipeline
+
+They work in the similar was as the standard one but use different config files
+
+### Downstream Test Jobs
 
 Existing [downstream test jobs](https://ci.adoptopenjdk.net/view/Test_openjdk/) are generated separately from the build ones, via the [Test_Job_Auto_Gen](https://ci.adoptopenjdk.net/view/Test_grinder/job/Test_Job_Auto_Gen/),
 [testJobTemplate](https://github.com/adoptium/aqa-tests/blob/master/buildenv/jenkins/testJobTemplate) resources in the aqa-tests repository.
