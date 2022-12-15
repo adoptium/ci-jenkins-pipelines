@@ -253,7 +253,7 @@ node('worker') {
                 config.JOB_NAME = "weekly-openjdk${javaVersion}-pipeline"
                 config.SCRIPT = (params.WEEKLY_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['weekly']
                 if (!fileExists(config.SCRIPT)) {
-                    println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Checkout Adopt's weekly"
+                    println "[WARNING] ${config.SCRIPT} does not exist in your chosen repository. Checkout Adopt's weekly config"
                     checkoutAdoptPipelines()
                     config.SCRIPT = ADOPT_DEFAULTS_JSON['scriptDirectories']['weekly']
                     println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
