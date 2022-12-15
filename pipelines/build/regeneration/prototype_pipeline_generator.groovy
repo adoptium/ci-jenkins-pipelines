@@ -2,6 +2,10 @@ import java.nio.file.NoSuchFileException
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
+/* 
+file used as jenkinsfile to generator prototype and weekly-prototype pipeline
+*/
+
 node('worker') {
     try {
         // Pull in Adopt defaults

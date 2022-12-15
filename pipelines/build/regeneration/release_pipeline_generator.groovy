@@ -2,6 +2,10 @@ import java.nio.file.NoSuchFileException
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
+/* 
+file used as jenkinsfile to generator official release pipeline
+*/
+
 // ensure releaseVersions is updated before create releaseTag
 def releaseVersions = [8,11,17,19]
 
