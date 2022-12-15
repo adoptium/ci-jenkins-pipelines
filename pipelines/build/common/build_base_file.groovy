@@ -696,7 +696,7 @@ class Builder implements Serializable {
     */
     def getJobFolder() {
         def parentDir = currentBuild.fullProjectName.substring(0, currentBuild.fullProjectName.lastIndexOf('/'))
-        def buildJobType = getBuildJobType() ? "/jobs/"+getBuildJobType() : ""
+        def buildJobType = getBuildJobType() ? "/jobs/" + getBuildJobType() : ""
         return parentDir + buildJobType + '/jobs/' + javaToBuild
     }
 
