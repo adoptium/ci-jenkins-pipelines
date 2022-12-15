@@ -551,7 +551,7 @@ class Regeneration implements Serializable {
         def jobTopName = "${javaToBuild}-${jobName}"
         def jobFolder = "${jobRootDir}/jobs/${javaToBuild}"
 
-        // i.e build-scripts/jobs/jdk8u/jdk8u-linux-x64-hotspot
+        // e.g build-scripts/jobs/jdk8u/jdk8u-linux-x64-hotspot
         def downstreamJobName = "${jobFolder}/${jobTopName}"
         context.println "[INFO] build name: ${downstreamJobName}"
 
