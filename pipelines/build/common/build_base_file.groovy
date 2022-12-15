@@ -683,7 +683,7 @@ class Builder implements Serializable {
     */
     def getJobName(displayName) {
         // if getBuildJobType return null, it is nightly or pr-tester
-        def buildJobType = getBuildJobType() ? getBuildJobType()+"-" : ""
+        def buildJobType = getBuildJobType() ? getBuildJobType() + "-" : ""
         return "${javaToBuild}-${buildJobType}${displayName}"
     }
 
