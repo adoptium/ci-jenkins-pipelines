@@ -1,11 +1,11 @@
 targetConfigurations = [
-        'aarch64Windows': [ 'temurin' ]
+        // 'aarch64Windows': [ 'temurin' ]
 ]
 
-// 03:30 Tue, Thur, Sat
-triggerSchedule_prototype = 'TZ=UTC\n30 03 * * 2,4,6'
-// 17:05 Sun
-triggerSchedule_weekly_prototype = 'TZ=UTC\n05 17 * * 7'
+// empty string as it wont get triggered now
+triggerSchedule_prototype = ''
+// empty string as it wont get triggered now
+triggerSchedule_weekly_prototype = ''
 
 // scmReferences to use for weekly prototype build
 weekly_prototype_scmReferences = [
