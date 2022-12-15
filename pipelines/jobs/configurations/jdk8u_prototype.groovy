@@ -33,5 +33,15 @@ targetConfigurations = [
 
 // 18:05 Mon, Wed, Fri
 triggerSchedule_prototype = 'TZ=UTC\n05 18 * * 1,3,5'
+// 12:05 Sat
+triggerSchedule_weekly_prototype = 'TZ=UTC\n05 12 * * 6'
 
+// scmReferences to use for weekly prototype build
+weekly_prototype_scmReferences = [
+        'temurin'        : '',
+        'openj9'         : '',
+        'corretto'       : '',
+        'dragonwell'     : '',
+        'bisheng'        : ''
+]
 return this
