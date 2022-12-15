@@ -250,7 +250,7 @@ node('worker') {
                     println "PIPELINE = ${config.PIPELINE}"
                     println "releaseType = ${config.releaseType}"
                     println "targetConfigurations = ${config.targetConfigurations}"
-                    println "weekly_release_scmReferences = ${config.weekly_prototype_scmReferences}"
+                    println "weekly_release_scmReferences = ${config.weekly_release_scmReferences}"
 
                     // genereate pipeline
                     // Load weeklyTemplatePath.
