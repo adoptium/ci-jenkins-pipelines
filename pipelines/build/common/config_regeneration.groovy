@@ -612,7 +612,7 @@ class Regeneration implements Serializable {
                             Boolean inProgress = true
                             while (inProgress) {
                                 // Check if pipeline is in progress using api
-                                context.println "[INFO] Checking if ${pipeline} is running..." //i.e. openjdk8-pipeline or prototype-openjdk11-pipeline
+                                context.println "[INFO] Checking if ${pipeline} is running..." // e.g. openjdk8-pipeline or prototype-openjdk11-pipeline
 
                                 def pipelineInProgress = queryAPI("${jenkinsBuildRoot}/job/${pipeline}/lastBuild/api/json?pretty=true&depth1")
 
