@@ -1,80 +1,112 @@
+
 #!/bin/bash
 # shellcheck disable=SC2035,SC2155
-set -eu
+set -euo pipefail
+WORKSPACE=$PWD
 
 function generateArtifact() {
-    tag=$1
-    version=$2
-
-    echo "tag=$tag"
-    echo "version=$version"
-
-    artifact=asmtools-$version
-
-    tagName=$(git describe --tags "$(git rev-list --tags --max-count=1)")
-    echo "Tag: ${tagName}"
-
-    git checkout "${tagName}"
-
-    # In WORKSPACE until here
-    echo "Moving into build..."
-    cd build
-
-    perl -p -i -e 's/"9"/"1.8"/g' build.xml
-
-    export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
-
-    echo "Building asmtools"
-
-    ant build
-
-    # WORKSPACE/asmtools/build/BUILD_DIR
-    echo "Moving down to ${BUILD_DIR}"
-    cd "${BUILD_DIR}"
-
-    echo "Asmtools artifact = $artifact"
-
-    echo "Copying release/lib/asmtools*.jar file to ../"
-    cp release/lib/asmtools*.jar ..
-
-    # WORKSPACE/asmtools/build/BUILD_DIR/dist
-    echo "Moving into $artifact-build/dist"
-    cd dist
-
-    echo "tar-ing ${artifact}.zip into ${artifact}.tar"
-    tar fcv "$artifact.tar" *.zip
-
-    echo "Moving ${artifact}.tar to ../.."
-    mv "$artifact.tar" ../..
-    # WORKSPACE/asmtools/build/
-    cd ../..
-
-    echo "gzipping ${artifact}.tar"
-    gzip -9 -f "${artifact}.tar"
-
-    if [ -d "$artifact-build" ];
-    then
-        mv "$artifact-build" asmtools/
-    fi
-
-    echo "Creating checksums for asmtools.jar and ${artifact}.tar.gz"
-    sha256sum asmtools.jar > asmtools.jar.sha256sum.txt
-    sha256sum "${artifact}.tar.gz" > "${artifact}.tar.gz.sha256sum.txt"
-
-    echo "Moving into asmtools"
-    cd asmtools
+    local  branchOrTag=${1}
+    export JAVA_HOME=${2}
+    local testLog=test.log
+    git checkout $branchOrTag
+    echo "Moving into maven build..."
+    pushd maven
+      echo "Removing asmtools $branchOrTag old maven wrapper"
+      rm -rf src target pom.xml $testLog
+      #export JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF8 -Xdoclint:none -Dmaven.javadoc.skip=true -Dgpg.skip"
+      echo "Generating asmtools $branchOrTag maven wrapper"
+      sh mvngen.sh
+      echo "Cleaning possible previous run"
+      mvn clean
+      pushd ../..
+        tar --exclude='**asmtools*.jar' \
+            --exclude='**asmtools*.tar.gz' \
+            --exclude='**asmtools*.txt' \
+            --exclude='**asmtools*.jar.html' \
+            --exclude='**asmtools*.jar.md' \
+            --exclude='**src.tar.gz' \
+        -czf src.tar.gz asmtools
+      popd
+      echo "Running asmtools $branchOrTag tests by $JAVA_HOME"
+      mvn test 2>&1 | tee $testLog || echo "Test now correctly fails, this have to be fixed upstream"
+      echo "Running asmtools $branchOrTag build by $JAVA_HOME"
+      mvn package -DskipTests # mvn install will do much more, but I doubt we wish that (javadoc, sources, gpg sign...)
+      echo "Moving down to target"
+      pushd target
+        echo "Asmtools $branchOrTag artifact:"
+        ls -l
+        local mainArtifact=`ls asmtools*.jar`
+        echo "Copying maven/target/$mainArtifact file to RESULTS_DIR($RESULTS_DIR)"
+        cp  $mainArtifact $RESULTS_DIR
+        if [ -e surefire-reports ] ; then
+          local testResults=`echo $mainArtifact | sed "s/.jar/-tests.tar.gz/"`
+          echo "Compressing and archiving test results as $testResults"
+          tar -czf $testResults surefire-reports
+          echo "Copying maven/target/$testResults file to RESULTS_DIR($RESULTS_DIR)"
+          cp  $testResults $RESULTS_DIR
+          pushd ..
+            echo "Moving maven/$testLog file to RESULTS_DIR($RESULTS_DIR)"
+            mv $testLog $RESULTS_DIR/$mainArtifact.tests.txt
+          popd
+        else
+          echo "No test results!"
+        fi
+        pushd ../..
+          echo "Copying README files and src archive to RESULTS_DIR($RESULTS_DIR)"
+          cp -v README.html $RESULTS_DIR/$mainArtifact.html
+          cp -v README.md $RESULTS_DIR/$mainArtifact.md
+          mv -v ../src.tar.gz $RESULTS_DIR/$mainArtifact.src.tar.gz
+        popd
+      popd
+    popd
 }
 
-cd asmtools
+function renameLegacyCoreArtifacts() {
+  echo "copying 'core' maven names to legacy ant names"
+  for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
+      if echo $file | grep -q -e core ; then
+      local nwFile=$(echo $file | sed "s/-core//")
+      ln -sfv $file $nwFile
+      fi
+  done
+}
 
-export PRODUCT_VERSION=$(grep "PRODUCT_VERSION     \= " build/productinfo.properties | awk '{print $3}')
-# shellcheck disable=SC2005,SC2046
-export BUILD_DIR=$(echo $(eval echo $(grep "BUILD_DIR = " build/build.properties | awk '{print $3}')))
+function hashArtifacts() {
+  echo "Creating checksums all asmtools*.jar"
+  for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
+      sha256sum $file > $file.sha256sum.txt
+  done
+}
 
-generateArtifact "tip" "${PRODUCT_VERSION}"
-
-cd ..
-mv *.jar.sha256sum.txt asmtools
-mv *.tar.gz.sha256sum.txt asmtools
-mv *.jar asmtools
-mv *.tar.gz asmtools
+function detectJdks() {
+  jvm_dir="/usr/lib/jvm/"
+  find ${jvm_dir} -maxdepth 1 | sort
+  echo "Available jdks 8 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8
+  echo "Available jdks 17 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17
+  jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8   | head -n 1))
+  jdk17=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17  | head -n 1))
+}
+	
+REPO_DIR="asmtools"
+if [ ! -e $REPO_DIR ] ; then
+  git clone https://github.com/openjdk/$REPO_DIR.git
+fi
+detectJdks
+pushd $REPO_DIR
+  RESULTS_DIR="$(pwd)"
+  latestRelease=`git tag -l | tail -n 2 | head -n 1`
+  generateArtifact "master" "$jdk08"
+  generateArtifact "at8" "$jdk17"
+  # 7.0-b09 had not yet have maven integration, enable with b10 out
+  # generateArtifact "$latestRelease" "$jdk08"
+  renameLegacyCoreArtifacts
+  hashArtifacts
+  releaseCandidate=asmtools-core-7.0.b10-ea.jar
+  releaseName=asmtools.jar
+  echo "Manually renaming  $releaseCandidate as $releaseName to provide latest-stable-recommended file"
+  ln -sfv $releaseCandidate $releaseName
+  echo "Resetting repo back to master"
+  git checkout master
+popd
