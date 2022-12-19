@@ -472,15 +472,10 @@ class Build {
     }
 
     // Temurin remote jck trigger
-    def remoteTriggerJckTests(String platform) {
+    def remoteTriggerJckTests(String platform, String jdkFileName) {
         def jdkVersion = getJavaVersionNumber()
-        //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
         // We just need the JDK for Jck tests
-        def filter = "*-jdk_*.tar.gz"
-        if (buildConfig.TARGET_OS.contains("windows")) {
-        	filter = "*-jdk_*.zip"
-        }
-        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${filter}/*zip*/target.zip"
+        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName}"
         context.echo "sdkUrl is ${sdkUrl}"
         def remoteTargets = [:]
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
@@ -1845,7 +1840,7 @@ class Build {
                             if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
                                 if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
                                     context.echo "Remote trigger Eclipse temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                    def remoteTargets = remoteTriggerJckTests(platform)
+                                    def remoteTargets = remoteTriggerJckTests(platform, filename)
                                     context.parallel remoteTargets
                                 }
                             }
