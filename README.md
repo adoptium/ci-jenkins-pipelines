@@ -87,13 +87,10 @@ The prototype config files are the ones that follow the format `jdkxx(u)_prototy
 #### targetConfigurations
 
 A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds, prototype builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#build).
+
 ### Release pipeline/jobs
 
 The release config files are the ones that follow the format `jdkxx(u)_release.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
-
-#### targetConfigurations
-
-A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#build).
 jdkxx(u)*.groovy
 
 ```groovy
@@ -395,4 +392,4 @@ Table generated with `generateBuildMatrix.sh`
 | windows-aarch64-temurin | N/A | [![Build Status](https://ci.adoptopenjdk.net/buildStatus/icon?job=build-scripts/jobs/jdk11u/jdk11u-windows-aarch64-temurin)](https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/jdk11u/job/jdk11u-windows-aarch64-temurin) | [![Build Status](https://ci.adoptopenjdk.net/buildStatus/icon?job=build-scripts/jobs/jdk17u/jdk17u-windows-aarch64-temurin)](https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/jdk17u/job/jdk17u-windows-aarch64-temurin) | N/A | [![Build Status](https://ci.adoptopenjdk.net/buildStatus/icon?job=build-scripts/jobs/jdk/jdk-windows-aarch64-temurin)](https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/jdk/job/jdk-windows-aarch64-temurin) |
 | solaris-sparcv9-temurin | [![Build Status](https://ci.adoptopenjdk.net/buildStatus/icon?job=build-scripts/jobs/jdk8u/jdk8u-solaris-sparcv9-temurin)](https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/jdk8u/job/jdk8u-solaris-sparcv9-temurin) | N/A | N/A | N/A | N/A | 
 | solaris-x64-temurin | [![Build Status](https://ci.adoptopenjdk.net/buildStatus/icon?job=build-scripts/jobs/jdk8u/jdk8u-solaris-x64-temurin)](https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/jdk8u/job/jdk8u-solaris-x64-temurin) | N/A | N/A | N/A | N/A | 
-<!-- markdownlint-enable -->git 
+<!-- markdownlint-enable -->
