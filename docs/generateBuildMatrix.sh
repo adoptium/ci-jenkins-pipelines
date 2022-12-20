@@ -2,10 +2,10 @@
 
 # Generates markdown table of build job status
 
-allPlatforms=("jdk8u" "jdk11u" "jdk17u" "jdk18u" "jdk19" "jdk")
+allPlatforms=("jdk8u" "jdk11u" "jdk17u" "jdk19u" "jdk")
 buildFile="/tmp/build.txt"
 buildJobFile="/tmp/build_jobs.txt"
-excludedKeywords=("SmokeTests" "hotspot" "corretto")
+excludedKeywords=("SmokeTests" "hotspot" "corretto" "bisheng" "dragonwell" "openj9")
 
 if [[ -f ${buildFile} ]]; then
   echo "Removing previous ${buildFile} ${buildJobFile} files"
@@ -22,7 +22,6 @@ for key in ${excludedKeywords[@]}; do
   sed -i "/${key}/d" ${buildJobFile}
 done
 
-exit 0
 # The sed command fails on Mac OS X, but those users can install gnu-sed
 echo "This will take a few minutes to complete."
 # Header row

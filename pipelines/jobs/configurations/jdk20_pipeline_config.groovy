@@ -157,15 +157,12 @@ class Config20 {
         ],
 
         riscv64Linux      :  [
-                os                   : 'linux',
-                arch                 : 'riscv64',
-                configureArgs        : '--enable-dtrace',
+                os                  : 'linux',
+                arch                : 'riscv64',
+                test                : 'default',
+                configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
-                ],
-                test                : [
-                        nightly: [],
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
                 ]
         ],
 
