@@ -36,8 +36,10 @@ This file contains the default constants and paths used in the build scripts for
         "downstream"         : "pipelines/build/common/create_job_from_template.groovy",
         // Upstream job template (e.g. openjdk8-pipeline)
         "upstream"           : "pipelines/jobs/pipeline_job_template.groovy",
-        // Weekly job template (e.g. weekly-openjdk8-pipeline)
-        "weekly"             : "pipelines/jobs/weekly_release_pipeline_job_template.groovy"
+        // Weekly job template (e.g. weekly-openjdk8-pipeline & weekly-prototype-openjdk17-pipeline)
+        "weekly"             : "pipelines/jobs/weekly_release_pipeline_job_template.groovy",
+        // Release job template (e.g release-opendjk11-pipeline)
+        "release"            : "pipelines/jobs/release_pipeline_job_template.groovy"
     },
     // Job configuration file paths (relative to this repository root)
     "configDirectories"      : {
@@ -45,6 +47,10 @@ This file contains the default constants and paths used in the build scripts for
         "build"              : "pipelines/jobs/configurations",
         // Nightly configs directory containing execution frequency, weekly tags, platforms to build.
         "nightly"            : "pipelines/jobs/configurations",
+        // Release configs directory containing platforms to build.
+        "release"            : "pipelines/jobs/configurations",
+        // Prototype configs directory containing execution frequency, weekly tags, platforms to build.
+        "prototype"          : "pipelines/jobs/configurations",
         // Bash platform script directory inside build_url containing jdk downloading and toolchain setups.
         "platform"           : "build-farm/platform-specific-configurations"
     },
@@ -88,7 +94,8 @@ This file contains the default constants and paths used in the build scripts for
         ],
         /*
         Test targets triggered in 'weekly' build pipelines running once per week
-        nightly + weekly to be run during a 'release' pipeline
+        nightly + weekly + jck to be run during a 'release' pipeline
+        nightly + weekly to be run during 'prototype weekly' pipeline
         */
         "weeklyDefault"     : [
             "extended.openjdk",
@@ -123,7 +130,7 @@ The script will use whatever has been entered into the parameter field unless it
 It will then evaluate the existence of that directory in the user's repository and, if it fails to find one, will checkout to adoptium/ci-jenkins-pipelines and use Adopt's `defaults.json` (the console log will warn the user of this occurring):
 
 ```bash
-00:13:31  [WARNING] pipelines/build/common/weekly_release_pipeline.groovy does not exist in your chosen repository. Updating it to use Adopt's instead
+[WARNING] pipelines/build/common/weekly_release_pipeline.groovy does not exist in your chosen repository. Updating it to use Adopt's instead
 ```
 
 NOTE: For the defaults that are paths to directories, the scripts will search for files of the same name as Adopt's.
