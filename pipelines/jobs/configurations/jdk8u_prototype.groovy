@@ -32,12 +32,12 @@ targetConfigurations = [
 ]
 
 // empty string as it wont get triggered now
-triggerSchedule_prototype = ''
+triggerSchedule_evaluation = ''
 // empty string as it wont get triggered now
-triggerSchedule_weekly_prototype = ''
+triggerSchedule_weekly_evaluation = ''
 
-// scmReferences to use for weekly prototype build
-weekly_prototype_scmReferences = [
+// scmReferences to use for weekly evaluation build
+weekly_evaluation_scmReferences = [
         'temurin'        : '',
         'openj9'         : '',
         'corretto'       : '',

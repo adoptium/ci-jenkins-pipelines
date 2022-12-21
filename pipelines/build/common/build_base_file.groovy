@@ -667,11 +667,11 @@ class Builder implements Serializable {
 
     /*
     Returns the downstream build job's type by checking job folder's path
-    can be "prototype" or "release" or null (in this case it is for the nightly or pr-tester)
+    can be "evaluation" or "release" or null (in this case it is for the nightly or pr-tester)
     */
     def getBuildJobType() {
-        if (currentBuild.fullProjectName.contains("prototype")){
-            return "prototype"
+        if (currentBuild.fullProjectName.contains("evaluation")){
+            return "evaluation"
         } else if (currentBuild.fullProjectName.contains("release")) {
             return "release"
         }
@@ -691,7 +691,7 @@ class Builder implements Serializable {
     Returns the jenkins folder of where we assume the downstream build jobs have been regenerated
     e.g: 
     nightly:    build-scripts/jobs/jdk11u/jdk11u-linux-aarch64-temurin
-    prototype:  build-scripts/jobs/prototype/jobs/jdk17u/jdk17u-prototype-mac-x64-openj9
+    evaluation:  build-scripts/jobs/evaluation/jobs/jdk17u/jdk17u-evaluation-mac-x64-openj9
     release:    build-scripts/jobs/release/jobs/jdk19u/jdk19u-release-aix-ppc64-temurin
     */
     def getJobFolder() {
@@ -752,7 +752,7 @@ class Builder implements Serializable {
     }
 
     /*
-    Main function. This is what is executed remotely via the [release-|prototype-]openjdkxx-pipeline and pr-tester jobs
+    Main function. This is what is executed remotely via the [release-|evaluation-]openjdkxx-pipeline and pr-tester jobs
     Running in the *openjdkX-pipeline
     */
     @SuppressWarnings('unused')
@@ -804,7 +804,7 @@ class Builder implements Serializable {
                     def jobFolder = getJobFolder()
                     /*
                         build-scripts/jobs/jdk20/jdk20-linux-x64-temurin for nightly
-                        build-scripts/prototype/jobs/jdk20/jdk20-prototype-linux-aarch64-hotspot for prototype
+                        build-scripts/evaluation/jobs/jdk20/jdk20-evaluation-linux-aarch64-hotspot for evaluation
                     */
                     def downstreamJobName = "${jobFolder}/${jobTopName}"
                     context.echo 'build name ' + downstreamJobName

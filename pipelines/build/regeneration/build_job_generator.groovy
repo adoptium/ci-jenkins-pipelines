@@ -20,7 +20,7 @@ limitations under the License.
     File used for generate downstream build jobs which are triggered by via [release_]pipeline_jobs_generator_jdkX, e.g:
     
     - build-scripts/jobs/jdk11u/jdk11u-linux-arm-temurin (jobType = "nightly")
-    - build-scripts/jobs/jdk11u/prototype-jdk11u-linux-arm-temurin (when jobType = "prototype")
+    - build-scripts/jobs/jdk11u/evaluation-jdk11u-linux-arm-temurin (when jobType = "evaluation")
     - build-scripts/release/jobs/release-jdk17u-mac-x64-temurin (when jobType = "release")
     - build-scripts-pr-tester/build-test/jobs/jdk19u/jdk19u-alpine-linux-x64-temurin (when "pr-tester")
 */
@@ -118,16 +118,16 @@ node('worker') {
         }
 
         /*
-            handle different type of downstream job: release, prototype, nightly
+            handle different type of downstream job: release, evaluation, nightly
             could set to a "pr-tester" but most of the logic is same to nightly, wont gain much
         */
         String jobType = ""
         def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
         if (jobRoot.contains('release')) {
             jobType = "release"
-            // either use root path or flag from job to determinate if it is prototype
-        } else if (jobRoot.contains('prototype') || params.IS_PROTOTYPE_JOB) {
-            jobType = "prototype"
+            // either use root path or flag from job to determinate if it is evaluation
+        } else if (jobRoot.contains('evaluation') || params.IS_EVALUATION_JOB) {
+            jobType = "evaluation"
         } else {
             jobType = "nightly"
         }

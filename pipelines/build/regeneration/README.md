@@ -16,7 +16,7 @@ The pipelines can use these job dsl's to create their downstream jobs since they
 
 ## Where they are
 
-They are stored in the [utils](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/) folder of our jenkins server. The jobs themselves are called `pipeline_jobs_generator_jdk11u`, `prototype-pipeline_jobs_generator_jdk11u`, etc.
+They are stored in the [utils](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/) folder of our jenkins server. The jobs themselves are called `pipeline_jobs_generator_jdk11u`, `evaluation-pipeline_jobs_generator_jdk11u`, etc.
 NOTE: When the JDK HEAD updates, these jobs will need to be updated too (see [RELEASING.md](https://github.com/adoptium/temurin-build/blob/master/RELEASING.md#steps-for-every-version)) for how to do so.
 
 ## How they work
@@ -95,7 +95,7 @@ It then calls [pipeline_job_template.groovy](pipelines/jobs/pipeline_job_templat
 There are another two generators:
 
 1. [release generator](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/job/release-build-pipeline-generator/) is only used to regenerate release pipelines.
-2. [prototype generator](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/job/prototype-pipeline-generator/) is used to regenerator prototype pipeline and weekly-prototype pipeline
+2. [evaluation generator](https://ci.adoptopenjdk.net/job/build-scripts/job/utils/job/evaluation-pipeline-generator/) is used to regenerator evaluation pipeline and weekly-evaluation pipeline
 
 They work in the similar was as the standard one but use different config files
 

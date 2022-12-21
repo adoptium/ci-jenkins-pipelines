@@ -80,13 +80,13 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 
 The nightly config files are the ones that follow the format `jdkxx(u).groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a simple groovy script that's contents can be [loaded in](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/#load-evaluate-a-groovy-source-file-into-the-pipeline-script) and accessed by another script.
 
-### Prototype pipeline/jobs
+### Evaluation pipeline/jobs
 
-The prototype config files are the ones that follow the format `jdkxx(u)_prototype.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
+The evaluation config files are the ones that follow the format `jdkxx(u)_evaluation.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
 
 #### targetConfigurations
 
-A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds, prototype builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#build).
+A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds, evaluation builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#build).
 
 ### Release pipeline/jobs
 
@@ -149,9 +149,9 @@ jdkxx(u).groovy
 disableJob = true
 ```
 
-#### triggerSchedule_nightly / triggerSchedule_weekly / triggerSchedule_prototype / triggerSchedule_weekly_prototype
+#### triggerSchedule_nightly / triggerSchedule_weekly / triggerSchedule_evaluation / triggerSchedule_weekly_evaluation
 
-[Cron expression](https://crontab.guru/) that defines when (and how often) nightly/prototype and weekly/weekly-prototype builds will be executed
+[Cron expression](https://crontab.guru/) that defines when (and how often) nightly/evaluation and weekly/weekly-evaluation builds will be executed
 
 in jdkxx(u).groovy
 
@@ -160,16 +160,16 @@ triggerSchedule_nightly="TZ=UTC\n05 18 * * 1,3,5"
 triggerSchedule_weekly="TZ=UTC\n05 12 * * 6"
 ```
 
-in jdkXX(u)_prototype.groovy
+in jdkXX(u)_evaluation.groovy
 
 ```groovy
-triggerSchedule_prototype="TZ=UTC\n15 18 * * 1,3,5"
-triggerSchedule_weekly_prototype="TZ=UTC\n25 12 * * 6"
+triggerSchedule_evaluation="TZ=UTC\n15 18 * * 1,3,5"
+triggerSchedule_weekly_evaluation="TZ=UTC\n25 12 * * 6"
 ```
 
-#### weekly_release_scmReferences / weekly_prototype_scmReferences
+#### weekly_release_scmReferences / weekly_evaluation_scmReferences
 
-Source control references (e.g. tags) to use in the weekly release or weekly prototype builds
+Source control references (e.g. tags) to use in the weekly release or weekly evaluation builds
 in jdkXX(u).groovy
 Use below two ways can set the job never to run:
 
@@ -187,10 +187,10 @@ weekly_release_scmReferences = [
 ]
 ```
 
-in jdkXX(u)_prototype.groovy
+in jdkXX(u)_evaluation.groovy
 
 ```groovy
-weekly_prototype_scmReferences== [
+weekly_evaluation_scmReferences== [
         "temurin"        : "jdk8u282-b07",
         "openj9"         : "v0.24.0-release",
         "corretto"       : "",

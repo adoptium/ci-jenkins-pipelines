@@ -21,7 +21,7 @@
         "build"              : "pipelines/jobs/configurations",
         "nightly"            : "pipelines/jobs/configurations",
         "release"            : "pipelines/jobs/configurations",
-        "prototype"          : "pipelines/jobs/configurations",
+        "evaluation"          : "pipelines/jobs/configurations",
         "platform"           : "build-farm/platform-specific-configurations"
     },
     "scriptDirectories"      : {

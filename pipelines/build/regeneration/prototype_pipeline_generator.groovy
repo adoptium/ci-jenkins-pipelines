@@ -3,7 +3,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 /* 
-file used as jenkinsfile to generator prototype and weekly-prototype pipeline
+file used as jenkinsfile to generator evaluation and weekly-evaluation pipeline
 */
 
 node('worker') {
@@ -89,16 +89,16 @@ node('worker') {
             }
 
             /*
-            Load prototypeFolderPath. This is the folder where the configurations/jdkxxu_pipeline_config.groovy code is located compared to the repository root.
-            These define what the default set of prototype will be.
+            Load evaluationFolderPath. This is the folder where the configurations/jdkxxu_pipeline_config.groovy code is located compared to the repository root.
+            These define what the default set of evaluation will be.
             */
-            def prototypeFolderPath = DEFAULTS_JSON['configDirectories']['prototype']
+            def evaluationFolderPath = DEFAULTS_JSON['configDirectories']['evaluation']
 
-            if (!fileExists(prototypeFolderPath)) {
-                println "[WARNING] ${prototypeFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
+            if (!fileExists(EvaluationFolderPath)) {
+                println "[WARNING] ${EvaluationFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
                 checkoutAdoptPipelines()
-                prototypeFolderPath = ADOPT_DEFAULTS_JSON['configDirectories']['prototype']
-                println "[SUCCESS] The path is now ${prototypeFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+                EvaluationFolderPath = ADOPT_DEFAULTS_JSON['configDirectories']['evaluation']
+                println "[SUCCESS] The path is now ${EvaluationFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
                 checkoutUserPipelines()
             }
 
@@ -133,7 +133,7 @@ node('worker') {
             println "REPOSITORY_BRANCH = $repoBranch"
             println "JOB_ROOT = $jobRoot"
             println "SCRIPT_FOLDER_PATH = $scriptFolderPath"
-            println "PROTOTYPE_FOLDER_PATH = $prototypeFolderPath"
+            println "EVALUATION_FOLDER_PATH = $evaluationFolderPath"
             println "JOB_TEMPLATE_PATH = $jobTemplatePath"
             println "ENABLE_PIPELINE_SCHEDULE = $enablePipelineSchedule"
             println "USE_ADOPT_SHELL_SCRIPTS = $useAdoptShellScripts"
@@ -155,7 +155,7 @@ node('worker') {
                         BUILD_FOLDER        : jobRoot,
                         CHECKOUT_CREDENTIALS: checkoutCreds,
                         JAVA_VERSION        : javaVersion,
-                        JOB_NAME            : "prototype-openjdk${javaVersion}-pipeline",
+                        JOB_NAME            : "evaluation-openjdk${javaVersion}-pipeline",
                         SCRIPT              : "${scriptFolderPath}/openjdk_pipeline.groovy",
                         disableJob          : false,
                         pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
@@ -163,44 +163,44 @@ node('worker') {
                         releaseType         : 'Nightly Without Publish' // no need to set releaseType to "release" for prototoype pipeline
                     ]
                 
-                    /* logic of creating prototype pipeline start*/
+                    /* logic of creating evaluation pipeline start*/
 
                     // read out different target
-                    def targetPrototype
+                    def targetEvaluation
                     try {
-                        def uFile = "${WORKSPACE}/${prototypeFolderPath}/jdk${javaVersion}u_prototype.groovy"
-                        def nonUFile = "${WORKSPACE}/${prototypeFolderPath}/jdk${javaVersion}_prototype.groovy"
+                        def uFile = "${WORKSPACE}/${EvaluationFolderPath}/jdk${javaVersion}u_evaluation.groovy"
+                        def nonUFile = "${WORKSPACE}/${EvaluationFolderPath}/jdk${javaVersion}_evaluation.groovy"
                         if(fileExists(uFile)) {
-                            targetPrototype = load uFile
+                            targetEvaluation = load uFile
                         } else {
-                            targetPrototype = load nonUFile
+                            targetEvaluation = load nonUFile
                         }
                     } catch (NoSuchFileException e) {
                         checkoutAdoptPipelines
                         try {
-                            def uFile2 = "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['prototype']}/jdk${javaVersion}u_prototype.groovy"
-                            def nonUFile2 = "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['prototype']}/jdk${javaVersion}_prototype.groovy"
+                            def uFile2 = "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['evaluation']}/jdk${javaVersion}u_evaluation.groovy"
+                            def nonUFile2 = "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['evaluation']}/jdk${javaVersion}_evaluation.groovy"
                             if(fileExists(uFile2)) {
-                                targetPrototype = load uFile2
+                                targetEvaluation = load uFile2
                             } else {
-                                targetPrototype = load nonUFile2
+                                targetEvaluation = load nonUFile2
                             }
                         } catch (NoSuchFileException e2) {
-                            throw new Exception("[ERROR] enable to load jdk${javaVersion}u_prototype.groovy nor jdk${javaVersion}_prototype.groovy does not exist!")
+                            throw new Exception("[ERROR] enable to load jdk${javaVersion}u_evaluation.groovy nor jdk${javaVersion}_evaluation.groovy does not exist!")
                         }
                     }
-                    config.put('targetConfigurations', targetPrototype.targetConfigurations)
+                    config.put('targetConfigurations', targetEvaluation.targetConfigurations)
 
-                    // if has a triggerSchedule_prototype variable set then use it or default to '0 0 31 2 0'/never run
+                    // if has a triggerSchedule_evaluation variable set then use it or default to '0 0 31 2 0'/never run
                     if (enablePipelineSchedule.toBoolean()){
-                        config.put('pipelineSchedule', targetPrototype.triggerSchedule_prototype)
+                        config.put('pipelineSchedule', targetEvaluation.triggerSchedule_evaluation)
                     } else { // empty to not run
                         config.put('pipelineSchedule', '')
                     }
 
                     // hack as jenkins groovy does not seem to allow us to check if disableJob exists
                     try {
-                        config.put('disableJob', targetPrototype.disableJob)
+                        config.put('disableJob', targetEvaluation.disableJob)
                     } catch (Exception ex) {
                         config.put('disableJob', false)
                     }
@@ -215,7 +215,7 @@ node('worker') {
                     config.put('adoptDefaultsJson', ADOPT_DEFAULTS_JSON)
 
                     // genereate pipeline
-                    println "[INFO] FINAL CONFIG FOR PROTOTYPE JDK${javaVersion}"
+                    println "[INFO] FINAL CONFIG FOR EVALUATION JDK${javaVersion}"
                     println JsonOutput.prettyPrint(JsonOutput.toJson(config))
                     try {
                         jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: config
@@ -229,8 +229,8 @@ node('worker') {
                     // add into list
                     generatedPipelines.add(config['JOB_NAME'])
     
-                    /* logic of creating prototype weekly pipeline start */
-                    config.JOB_NAME = "weekly-prototype-openjdk${javaVersion}-pipeline"
+                    /* logic of creating evaluation weekly pipeline start */
+                    config.JOB_NAME = "weekly-evaluation-openjdk${javaVersion}-pipeline"
                     config.SCRIPT = (params.WEEKLY_SCRIPT_PATH) ?: DEFAULTS_JSON['scriptDirectories']['weekly']
                     if (!fileExists(config.SCRIPT)) {
                         println "[WARNING] ${config.SCRIPT} does not exist, next to checkout Adopt's weekly"
@@ -239,16 +239,16 @@ node('worker') {
                         println "[SUCCESS] The path is now ${config.SCRIPT} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
                         checkoutUserPipelines()
                     }
-                    config.PIPELINE = "prototype-openjdk${javaVersion}-pipeline"
+                    config.PIPELINE = "evaluation-openjdk${javaVersion}-pipeline"
                     if (enablePipelineSchedule.toBoolean()) {
-                        config.put('pipelineSchedule', targetPrototype.triggerSchedule_weekly_prototype)
+                        config.put('pipelineSchedule', targetEvaluation.triggerSchedule_weekly_evaluation)
                     } else { // empty string will never run
                         config.put('pipelineSchedule', '')
                     }
-                    config.put('targetConfigurations', targetPrototype.targetConfigurations) // explicit set it to make things clear
-                    config.weekly_release_scmReferences = targetPrototype.weekly_prototype_scmReferences
+                    config.put('targetConfigurations', targetEvaluation.targetConfigurations) // explicit set it to make things clear
+                    config.weekly_release_scmReferences = targetEvaluation.weekly_evaluation_scmReferences
 
-                    println "[INFO] CREATING JDK${javaVersion} WEEKLY PROTOTYPE PIPELINE WITH NEW CONFIG VALUES:"
+                    println "[INFO] CREATING JDK${javaVersion} WEEKLY EVALUATION PIPELINE WITH NEW CONFIG VALUES:"
                     println "JOB_NAME = ${config.JOB_NAME}"
                     println "SCRIPT = ${config.SCRIPT}"
                     println "PIPELINE = ${config.PIPELINE}"
@@ -263,7 +263,7 @@ node('worker') {
                     try {
                         jobDsl targets: weeklyTemplatePath, ignoreExisting: false, additionalParameters: config
                     } catch (Exception e) {
-                        println "${e}\n[WARNING] Something went wrong when creating the weekly prototype job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
+                        println "${e}\n[WARNING] Something went wrong when creating the weekly evaluation job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
                         checkoutAdoptPipelines()
                         jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weeklyTemplatePath'], ignoreExisting: false, additionalParameters: config
                         checkoutUserPipelines()

@@ -594,7 +594,7 @@ class Regeneration implements Serializable {
             def versionNumbers = javaVersion =~ /\d+/
 
             /*
-            * Stage: Check that nightly and prototype nightly pipeline isn't in in-progress or queued up. 
+            * Stage: Check that nightly and evaluation nightly pipeline isn't in in-progress or queued up. 
             * Once clear, run the regeneration job
             */
             context.stage("Check $javaVersion pipeline status") {
@@ -607,12 +607,12 @@ class Regeneration implements Serializable {
 
                     // Parse api response to only extract the relevant pipeline
                     getPipelines.jobs.name.each { pipeline ->
-                        def pipelineName = (jobType != "prototype" ? "openjdk${versionNumbers[0]}-pipeline" : "prototype-openjdk${versionNumbers[0]}-pipeline")
+                        def pipelineName = (jobType != "evaluation" ? "openjdk${versionNumbers[0]}-pipeline" : "evaluation-openjdk${versionNumbers[0]}-pipeline")
                         if (pipeline == pipelineName) {
                             Boolean inProgress = true
                             while (inProgress) {
                                 // Check if pipeline is in progress using api
-                                context.println "[INFO] Checking if ${pipeline} is running..." // e.g. openjdk8-pipeline or prototype-openjdk11-pipeline
+                                context.println "[INFO] Checking if ${pipeline} is running..." // e.g. openjdk8-pipeline or evaluation-openjdk11-pipeline
 
                                 def pipelineInProgress = queryAPI("${jenkinsBuildRoot}/job/${pipeline}/lastBuild/api/json?pretty=true&depth1")
 
@@ -689,7 +689,7 @@ class Regeneration implements Serializable {
                                 def platformConfig = buildConfigurations.get(key) as Map<String, ?>
                                 // default nightly or pr-tester job name
                                 name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
-                                // release or prototype job name
+                                // release or evaluation job name
                                 if (jobType != "nightly" && jobType != "pr-tester") {
                                     name = jobType+"-" + name
                                 }

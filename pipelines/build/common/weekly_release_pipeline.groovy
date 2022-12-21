@@ -70,7 +70,7 @@ stage('Submit Release Pipelines') {
                 }
             }
         } else {
-            // This might happen when it is an empty prototype targetConfiguration, should disable pipeline or set trigger to ""
+            // This might happen when it is an empty evaluation targetConfiguration, should disable pipeline or set trigger to ""
             println '[WARNING] Empty targetConfigurations was given, will not trigger openjdk-pipeline...'
         }
     }
