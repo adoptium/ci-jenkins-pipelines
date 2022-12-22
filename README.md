@@ -147,7 +147,7 @@ disableJob = true
 
 #### triggerSchedule_nightly / triggerSchedule_weekly
 
-[Cron expression](https://crontab.guru/) that defines when (and how often) nightly/prototype and weekly/weekly-prototype builds will be executed
+[Cron expression](https://crontab.guru/) that defines when (and how often) nightly/evaluation and weekly/weekly-evaluation builds will be executed
 
 ```jdkxx(u)[_YY].groovy
 triggerSchedule_nightly="TZ=UTC\n05 18 * * 1,3,5"
