@@ -34,21 +34,21 @@ class DS12 c12
 
 ```
 
-### Prototype and Weekly-prototype pipeline
+### Evaluation and Weekly-evaluation pipeline
 
 ```mermaid
 
 flowchart TD
-PrototypeWeeklyTimer --run job--> PipelineWP["prototype Weekly Job:\nbuild-scripts/weekly-prototype-openjdk*ver-pipeline"]
+EvaluationWeeklyTimer --run job--> PipelineWP["evaluation Weekly Job:\nbuild-scripts/weekly-evaluation-openjdk*ver-pipeline"]
 
-PipelineWP --multiple trigger by variants and use 'Nightly Not Publish' as releaseType--> PipelineNP["Prototype Job:\nbuild-scripts/prototype-openjdk*ver-pipeline"]
+PipelineWP --multiple trigger by variants and use 'Nightly Not Publish' as releaseType--> PipelineNP["Evaluation Job:\nbuild-scripts/evaluation-openjdk*ver-pipeline"]
 
-PrototypeNightlyTimer --run job with 'Nightly Not Publish' as releaseType--> PipelineNP
+EvaluationNightlyTimer --run job with 'Nightly Not Publish' as releaseType--> PipelineNP
 
-PipelineNP --run downstream--> DS1P["Job:\nbuild-scripts/jobs/prototype/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
-PipelineNP --run downstream--> DS2P["Job:\nbuild-scripts/jobs/prototype/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
-PipelineNP --run downstream --> DS3P["Job:\nbuild-scripts/jobs/prototype/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
-PipelineNP --run downstream --> DS12P["Job:\nbuild-scripts/jobs/prototype/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"] 
+PipelineNP --run downstream--> DS1P["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+PipelineNP --run downstream--> DS2P["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+PipelineNP --run downstream --> DS3P["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+PipelineNP --run downstream --> DS12P["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"] 
 
 ```
 
@@ -61,7 +61,7 @@ flowchart
 subgraph 1
 
 Trigger[SCM change from GitHub] --trigger--> Seed21["Main Seed Job:\nbuild-scripts/utils/build-pipeline-generator"]
-Trigger --trigger--> Seed22["Prototype Seed Job:\nbuild-scripts/utils/prototype-pipeline-generator"]
+Trigger --trigger--> Seed22["Evaluation Seed Job:\nbuild-scripts/utils/evaluation-pipeline-generator"]
 
 end
 
@@ -70,8 +70,8 @@ subgraph 2
 Seed21 --create jobs--> Pipelinen1["Nightly Pipeline:\nbuild-scripts/openjdk*ver-pipeline"]
 Seed21 --create jobs--> Pipelinew1["Weekly Pipeline:\nbuild-scripts/weekly-openjdk*ver-pipeline"]
 
-Seed22 --create jobs--> Pipelinenp1["Prototype Pipeline:\nbuild-scripts/prototype-openjdk*ver-pipeline"]
-Seed22 --create jobs--> Pipelinewp1["Weekly Prototype Pipeline:\nbuild-scripts/weekly-prototype-openjdk*ver-pipeline"]
+Seed22 --create jobs--> Pipelinenp1["Evaluation Pipeline:\nbuild-scripts/evaluation-openjdk*ver-pipeline"]
+Seed22 --create jobs--> Pipelinewp1["Weekly Evaluation Pipeline:\nbuild-scripts/weekly-evaluation-openjdk*ver-pipeline"]
 
 end
 
@@ -83,11 +83,11 @@ Seed1--load--> Load1["Load Config: jobs/configurations/jdk*ver(u).groovy"]
 
 Call1 & Load1--> Pipelinew["Weekly Pipeline: build-scripts/weekly-openjdk*ver-pipeline"] & Pipelinen["Nightly Pipeline: build-scripts/openjdk*ver-pipeline"]
 
-Seed2["Prototype Seed Job:\nbuild-scripts/utils/prototype-pipeline-generator"] --use--> Call2["Jenkinsfile: build/regeneration/prototype_pipeline_generator.groovy"]
+Seed2["Evaluation Seed Job:\nbuild-scripts/utils/evaluation-pipeline-generator"] --use--> Call2["Jenkinsfile: build/regeneration/evaluation?pipeline_generator.groovy"]
 
-Seed2--load--> Load2["Load Config: jobs/configurations/jdk*ver(u)_prototype.groovy"]
+Seed2--load--> Load2["Load Config: jobs/configurations/jdk*ver(u)_evaluation.groovy"]
 
-Call2 & Load2--> Pipelinew2["Weekly Prototype Pipeline: build-scripts/weekly-prototype-openjdk*ver-pipeline"] & Pipelinen2["Prototype Pipeline: build-scripts/prototype-openjdk*ver-pipeline"]
+Call2 & Load2--> Pipelinew2["Weekly Evaluation Pipeline: build-scripts/weekly-evaluation-openjdk*ver-pipeline"] & Pipelinen2["Evaluation Pipeline: build-scripts/evaluation-openjdk*ver-pipeline"]
 
 end
 
@@ -109,14 +109,14 @@ flowchart LR
 subgraph 1
 
 Trigger2[SCM change from GitHub] --> Seed["Seed Job:\nbuild-scripts/utils/pipeline_jobs_generator_jdk*ver"]
-Trigger2 --> Seedp["Seed Job:\nbuild-scripts/utils/prototype-pipeline_jobs_generator_jdk*ver"]
+Trigger2 --> Seedp["Seed Job:\nbuild-scripts/utils/evaluation-pipeline_jobs_generator_jdk*ver"]
 
 Seed --create--> Downstream1["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
 Seed --create--> Downstream2["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
 Seed --create--> Downstream3["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
-Seedp --create--> Downstreamp1["Job:\nbuild-scripts/jobs/prototype/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
-Seedp --create--> Downstreamp2["Job:\nbuild-scripts/jobs/prototype/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
-Seedp --create--> Downstreamp3["Job:\nbuild-scripts/jobs/prototype/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
+Seedp --create--> Downstreamp1["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
+Seedp --create--> Downstreamp2["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
+Seedp --create--> Downstreamp3["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
 
 end
 
@@ -178,13 +178,13 @@ class DS12,Downstream4 c6
 
 ```
 
-## Mainflow logic of running Nightly and Prototype pipeline: build-scripts/openjdk\*ver-pipeline
+## Mainflow logic of running Nightly and Evaluation pipeline: build-scripts/openjdk\*ver-pipeline
 
 ```mermaid
 
 flowchart TD
 
-subgraph nightly_and_prototype_pipeline_job
+subgraph nightly_and_evaluation_pipeline_job
 
 Call[build/openjdk_pipeline.groovy] --load script-->
 Load1[build/common/build_base_file.groovy]

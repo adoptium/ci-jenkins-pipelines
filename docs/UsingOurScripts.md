@@ -36,7 +36,7 @@ This file contains the default constants and paths used in the build scripts for
         "downstream"         : "pipelines/build/common/create_job_from_template.groovy",
         // Upstream job template (e.g. openjdk8-pipeline)
         "upstream"           : "pipelines/jobs/pipeline_job_template.groovy",
-        // Weekly job template (e.g. weekly-openjdk8-pipeline & weekly-prototype-openjdk17-pipeline)
+        // Weekly job template (e.g. weekly-openjdk8-pipeline & weekly-evaluation-openjdk17-pipeline)
         "weekly"             : "pipelines/jobs/weekly_release_pipeline_job_template.groovy",
         // Release job template (e.g release-opendjk11-pipeline)
         "release"            : "pipelines/jobs/release_pipeline_job_template.groovy"
@@ -49,8 +49,8 @@ This file contains the default constants and paths used in the build scripts for
         "nightly"            : "pipelines/jobs/configurations",
         // Release configs directory containing platforms to build.
         "release"            : "pipelines/jobs/configurations",
-        // Prototype configs directory containing execution frequency, weekly tags, platforms to build.
-        "prototype"          : "pipelines/jobs/configurations",
+        // Evaluation configs directory containing execution frequency, weekly tags, platforms to build.
+        "evaluation"          : "pipelines/jobs/configurations",
         // Bash platform script directory inside build_url containing jdk downloading and toolchain setups.
         "platform"           : "build-farm/platform-specific-configurations"
     },
@@ -95,7 +95,7 @@ This file contains the default constants and paths used in the build scripts for
         /*
         Test targets triggered in 'weekly' build pipelines running once per week
         nightly + weekly + jck to be run during a 'release' pipeline
-        nightly + weekly to be run during 'prototype weekly' pipeline
+        nightly + weekly to be run during 'evaluation weekly' pipeline
         */
         "weeklyDefault"     : [
             "extended.openjdk",
