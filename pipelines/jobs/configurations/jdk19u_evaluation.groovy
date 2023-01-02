@@ -1,5 +1,10 @@
 targetConfigurations = [
-        // 'aarch64Windows': [ 'temurin' ]
+        'aarch64AlpineLinux' : [
+                'temurin'
+        ]
+        // 'aarch64Windows': [
+        //        'temurin'
+        //]
 ]
 
 // empty string as it wont get triggered now
