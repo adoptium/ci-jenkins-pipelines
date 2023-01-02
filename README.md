@@ -16,7 +16,7 @@ documentation.
 
 ## Configuration Files
 
-The [configurations](pipelines/jobs/configurations) directory contains two categories of configuration files that our jenkins pipelines use (Nicknamed [Build Configs](#build) and [Nightly Configs](#nightly) for short).
+The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory contains two categories of configuration files that our jenkins pipelines use (Nicknamed [#Build Configs](#build) and [#Nightly Configs](#nightly) for short).
 
 To ensure both configurations are not overridden in a race condition scenario by another job, the [job generators](pipelines/build/regeneration/README.md) ensure they remain in the sync with the repository.
 
@@ -80,13 +80,17 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 
 The nightly config files are the ones that follow the format `jdkxx(u).groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a simple groovy script that's contents can be [loaded in](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/#load-evaluate-a-groovy-source-file-into-the-pipeline-script) and accessed by another script.
 
-### Release pipeline/jobs
+### Evaluation pipeline/jobs
 
-The release config files are the ones that follow the format `jdkxx(u)_release.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
+The evaluation config files are the ones that follow the format `jdkxx(u)_evaluation.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
 
 #### targetConfigurations
 
-A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#build).
+A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds, evaluation builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#build).
+
+### Release pipeline/jobs
+
+The release config files are the ones that follow the format `jdkxx(u)_release.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
 jdkxx(u)*.groovy
 
 ```groovy
@@ -145,15 +149,28 @@ jdkxx(u).groovy
 disableJob = true
 ```
 
-#### triggerSchedule_nightly / triggerSchedule_weekly
+#### triggerSchedule_nightly / triggerSchedule_weekly / triggerSchedule_evaluation / triggerSchedule_weekly_evaluation
 
 [Cron expression](https://crontab.guru/) that defines when (and how often) nightly/evaluation and weekly/weekly-evaluation builds will be executed
 
-```jdkxx(u)[_YY].groovy
+in jdkxx(u).groovy
+
+```groovy
 triggerSchedule_nightly="TZ=UTC\n05 18 * * 1,3,5"
 triggerSchedule_weekly="TZ=UTC\n05 12 * * 6"
 ```
 
+in jdkXX(u)_evaluation.groovy
+
+```groovy
+triggerSchedule_evaluation="TZ=UTC\n15 18 * * 1,3,5"
+triggerSchedule_weekly_evaluation="TZ=UTC\n25 12 * * 6"
+```
+
+#### weekly_release_scmReferences / weekly_evaluation_scmReferences
+
+Source control references (e.g. tags) to use in the weekly release or weekly evaluation builds
+in jdkXX(u).groovy
 Use below two ways can set the job never to run:
 
 - do not set `triggerSchedule_nightly` or `triggerSchedule_weekly` in the groovy file
@@ -166,6 +183,14 @@ jdkxx(u).groovy
 
 ```groovy
 weekly_release_scmReferences = [
+        "temurin"        : "jdk8u282-b08"
+]
+```
+
+in jdkXX(u)_evaluation.groovy
+
+```groovy
+weekly_evaluation_scmReferences== [
         "temurin"        : "jdk8u282-b07",
         "openj9"         : "v0.24.0-release",
         "corretto"       : "",

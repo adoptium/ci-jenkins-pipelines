@@ -121,8 +121,7 @@ class PullRequestTestPipeline implements Serializable {
                     'https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test',
                     null,
                     null,
-                    true,
-                    false
+                    "pr-tester"
                 ).regenerate()
 
                 context.println "[SUCCESS] Regeneration on ${javaVersion} all done!"
@@ -149,7 +148,7 @@ class PullRequestTestPipeline implements Serializable {
             // Calling build-test/openjdkX-pipeline against PR
             javaVersions.each({ javaVersion ->
                 jobs["PR test JDK${javaVersion}"] = {
-                    context.stage("Building pr-test Java ${javaVersion}") {
+                    context.stage("Building pr-tester Java ${javaVersion}") {
                         try {
                             context.build job: "${BUILD_FOLDER}/openjdk${javaVersion}-pipeline",
                                 propagate: true,
@@ -160,7 +159,7 @@ class PullRequestTestPipeline implements Serializable {
                                     context.booleanParam(name: 'enableTestDynamicParallel', value: false), // not needed unless we enable test
                                     context.booleanParam(name: 'enableInstallers', value: false), // never need this enabled in pr-test
                                     context.booleanParam(name: 'useAdoptBashScripts', value: false), // should not use defaultsJson but adoptDefaultsJson
-                                    context.booleanParam(name: 'keepReleaseLogs', value: false) // never need this enabled in pr-test
+                                    context.booleanParam(name: 'keepReleaseLogs', value: false) // never need this enabled in pr-tester
                                 ]
                         } catch (err) {
                             context.println "[ERROR] JDK ${actualJavaVersion} PIPELINE FAILED\n$err"

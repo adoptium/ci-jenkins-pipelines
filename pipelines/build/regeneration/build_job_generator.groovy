@@ -19,9 +19,10 @@ limitations under the License.
 /*
     File used for generate downstream build jobs which are triggered by via [release_]pipeline_jobs_generator_jdkX, e.g:
     
-    - build-scripts/jobs/jdk11u/jdk11u-linux-arm-temurin (when isReleaseBulider = false)
-    - build-scripts/release/jobs/release-jdk17u-mac-x64-temurin (when isReleaseBulider = true)
-    - build-scripts-pr-tester/build-test/jobs/jdk19u/jdk19u-alpine-linux-x64-temurin (when isReleaseBulider = false)
+    - build-scripts/jobs/jdk11u/jdk11u-linux-arm-temurin (jobType = "nightly")
+    - build-scripts/jobs/jdk11u/evaluation-jdk11u-linux-arm-temurin (when jobType = "evaluation")
+    - build-scripts/release/jobs/release-jdk17u-mac-x64-temurin (when jobType = "release")
+    - build-scripts-pr-tester/build-test/jobs/jdk19u/jdk19u-alpine-linux-x64-temurin (when "pr-tester")
 */
 
 String javaVersion = params.JAVA_VERSION
@@ -86,6 +87,9 @@ node('worker') {
         // Load buildConfigurations from config file. This is what the nightlies & releases use to setup their downstream jobs
         def buildConfigurations = null
         def buildConfigPath = (params.BUILD_CONFIG_PATH) ? "${WORKSPACE}/${BUILD_CONFIG_PATH}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}"
+        
+        // Very first time to checkout ci-jenkins-pipeline repo
+        checkoutUserPipelines()
 
         try {
             buildConfigurations = load "${buildConfigPath}/${javaVersion}_pipeline_config.groovy"
@@ -113,33 +117,29 @@ node('worker') {
             throw new Exception("[ERROR] Could not find buildConfigurations for ${javaVersion}")
         }
 
-        // handle release downstream job
-        Boolean isReleaseBuilder = false
-        // Pull in other parametrised values (or use defaults if they're not defined)
+        /*
+            handle different type of downstream job: release, evaluation, nightly
+            could set to a "pr-tester" but most of the logic is same to nightly, wont gain much
+        */
+        String jobType = ""
         def jobRoot = (params.JOB_ROOT) ?: DEFAULTS_JSON['jenkinsDetails']['rootDirectory']
         if (jobRoot.contains('release')) {
-            isReleaseBuilder = true
+            jobType = "release"
+            // either use root path or flag from job to determinate if it is evaluation
+        } else if (jobRoot.contains('evaluation') || params.IS_EVALUATION_JOB) {
+            jobType = "evaluation"
+        } else {
+            jobType = "nightly"
         }
 
-        // Load targetConfigurations from config file. This is what is being run for nightlies or for release
-        def targetConfigFile = ""
-        def targetConfigPath = ""
-        if(isReleaseBuilder) {
-            targetConfigFile = "${javaVersion}_release.groovy"
-            targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['build']}/${targetConfigFile}"
-        } else {  // normal nightlies, can be extended for evaluation later
-            targetConfigFile = "${javaVersion}.groovy"
-            targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories']['nightly']}/${targetConfigFile}"
+        def targetConfigFile = (jobType == "nightly") ? "${javaVersion}.groovy" : "${javaVersion}_${jobType}.groovy"
+        def targetConfigPath = (params.TARGET_CONFIG_PATH) ? "${WORKSPACE}/${TARGET_CONFIG_PATH}/${targetConfigFile}" : "${WORKSPACE}/${DEFAULTS_JSON['configDirectories'][jobType]}/${targetConfigFile}"
+        if (!fileExists(targetConfigPath)) {
+            checkoutAdoptPipelines
+            targetConfigPath = "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories'][jobType]}/${targetConfigFile}"
         }
-
-        try {
-            load targetConfigPath
-        } catch (NoSuchFileException e) {
-            println "[WARNING] ${targetConfigPath} does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightly config in..."
-            checkoutAdoptPipelines()
-            load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['nightly']}"
-            checkoutUserPipelines()
-        }
+        load targetConfigPath
+        checkoutUserPipelines
 
         if (targetConfigurations == null) {
             throw new Exception("[ERROR] Could not find targetConfigurations for ${javaVersion}")
@@ -194,7 +194,7 @@ node('worker') {
         println "BASE FILE PATH: $baseFilePath"
         println "EXCLUDES LIST: $excludes"
         println "SLEEP_TIME: $sleepTime"
-        println "IS RELEASE JOB: $isReleaseBuilder" 
+        println "JOB TYPE: $jobType"
         
         // Load regen script and execute base file
         Closure regenerationScript
@@ -233,8 +233,7 @@ node('worker') {
                     jenkinsBuildRoot,
                     jenkinsCredentials,
                     checkoutCreds,
-                    false,
-                    isReleaseBuilder
+                    jobType
                 ).regenerate()
             }
         } else {
@@ -257,8 +256,7 @@ node('worker') {
                 jenkinsBuildRoot,
                 jenkinsCreds,
                 checkoutCreds,
-                false,
-                isReleaseBuilder
+                jobType
             ).regenerate()
         }
         println '[SUCCESS] All done!'

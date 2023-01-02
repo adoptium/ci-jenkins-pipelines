@@ -664,19 +664,40 @@ class Builder implements Serializable {
         return "jdk${number}"
     }
 
+
+    /*
+    Returns the downstream build job's type by checking job folder's path
+    can be "evaluation" or "release" or null (in this case it is for the nightly or pr-tester)
+    */
+    def getBuildJobType() {
+        if (currentBuild.fullProjectName.contains("evaluation")){
+            return "evaluation"
+        } else if (currentBuild.fullProjectName.contains("release")) {
+            return "release"
+        }
+        return
+    }
+
     /*
     Returns the job name of the target downstream job
     */
     def getJobName(displayName) {
-        return "${javaToBuild}-${displayName}"
+        // if getBuildJobType return null, it is nightly or pr-tester
+        def buildJobType = getBuildJobType() ? getBuildJobType() + "-" : ""
+        return "${javaToBuild}-${buildJobType}${displayName}"
     }
 
     /*
-    Returns the jenkins folder of where it's assumed the downstream build jobs have been regenerated
+    Returns the jenkins folder of where we assume the downstream build jobs have been regenerated
+    e.g: 
+    nightly:    build-scripts/jobs/jdk11u/jdk11u-linux-aarch64-temurin
+    evaluation:  build-scripts/jobs/evaluation/jobs/jdk17u/jdk17u-evaluation-mac-x64-openj9
+    release:    build-scripts/jobs/release/jobs/jdk19u/jdk19u-release-aix-ppc64-temurin
     */
     def getJobFolder() {
         def parentDir = currentBuild.fullProjectName.substring(0, currentBuild.fullProjectName.lastIndexOf('/'))
-        return parentDir + '/jobs/' + javaToBuild
+        def buildJobType = getBuildJobType() ? "/jobs/" + getBuildJobType() : ""
+        return parentDir + buildJobType + '/jobs/' + javaToBuild
     }
 
     /*
@@ -731,8 +752,8 @@ class Builder implements Serializable {
     }
 
     /*
-    Main function. This is what is executed remotely via the openjdkxx-pipeline and pr tester jobs
-    Running in the openjdkX-pipeline
+    Main function. This is what is executed remotely via the [release-|evaluation-]openjdkxx-pipeline and pr-tester jobs
+    Running in the *openjdkX-pipeline
     */
     @SuppressWarnings('unused')
     def doBuild() {
@@ -778,11 +799,13 @@ class Builder implements Serializable {
                 jobs[configuration.key] = {
                     IndividualBuildConfig config = configuration.value
 
-                    // jdk11u-linux-x64-hotspot
+                    // jdk20-linux-x64-temurin
                     def jobTopName = getJobName(configuration.key)
                     def jobFolder = getJobFolder()
-
-                    // i.e jdk11u/job/jdk11u-linux-x64-hotspot
+                    /*
+                        build-scripts/jobs/jdk20/jdk20-linux-x64-temurin for nightly
+                        build-scripts/evaluation/jobs/jdk20/jdk20-evaluation-linux-aarch64-hotspot for evaluation
+                    */
                     def downstreamJobName = "${jobFolder}/${jobTopName}"
                     context.echo 'build name ' + downstreamJobName
 

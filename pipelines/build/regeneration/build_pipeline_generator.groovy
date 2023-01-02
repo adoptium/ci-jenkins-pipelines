@@ -2,6 +2,10 @@ import java.nio.file.NoSuchFileException
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
+/* 
+file used as jenkinsfile to generator nightly and weekly pipeline
+*/
+
 node('worker') {
     try {
         // Pull in Adopt defaults
@@ -158,7 +162,8 @@ node('worker') {
                     SCRIPT              : "${scriptFolderPath}/openjdk_pipeline.groovy",
                     disableJob          : false,
                     pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
-                    adoptScripts        : false
+                    adoptScripts        : false,
+                    releaseType         : 'Nightly' 
                 ]
 
                 def target
@@ -249,11 +254,13 @@ node('worker') {
                 if (enablePipelineSchedule.toBoolean()) {
                     config.put('pipelineSchedule', target.triggerSchedule_weekly)
                 }
+                config.releaseType = "Release"
 
                 println "[INFO] CREATING JDK${javaVersion} WEEKLY RELEASE PIPELINE WITH NEW CONFIG VALUES:"
                 println "JOB_NAME = ${config.JOB_NAME}"
                 println "SCRIPT = ${config.SCRIPT}"
                 println "PIPELINE = ${config.PIPELINE}"
+                println "releaseType = ${config.releaseType}"
                 println "weekly_release_scmReferences = ${config.weekly_release_scmReferences}"
 
                 try {

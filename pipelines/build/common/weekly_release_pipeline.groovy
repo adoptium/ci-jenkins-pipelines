@@ -29,7 +29,7 @@ stage('Submit Release Pipelines') {
         cleanWs notFailBuild: false
     }
 
-    // For each variant create a release pipeline job
+    // For each variant, create a weekly pipeline job with release as "releaseType"
     scmRefs.each { variant ->
         def variantName = variant.key
         def scmRef = variant.value
@@ -69,6 +69,9 @@ stage('Submit Release Pipelines') {
                     }
                 }
             }
+        } else {
+            // This might happen when it is an empty evaluation targetConfiguration, should disable pipeline or set trigger to ""
+            println '[WARNING] Empty targetConfigurations was given, will not trigger openjdk-pipeline...'
         }
     }
     // Run downstream jobs in parallel

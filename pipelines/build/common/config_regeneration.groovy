@@ -46,8 +46,7 @@ class Regeneration implements Serializable {
     private final jenkinsBuildRoot
     private final jenkinsCreds
     private final checkoutCreds
-    private final Boolean isPRBuilder
-    private final Boolean isReleaseBuilder
+    private final jobType
 
     private String javaToBuild
     private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
@@ -75,8 +74,7 @@ class Regeneration implements Serializable {
         String jenkinsBuildRoot,
         String jenkinsCreds,
         String checkoutCreds,
-        Boolean isPRBuilder,
-        Boolean isReleaseBuilder
+        String jobType
     ) {
         this.javaVersion = javaVersion
         this.buildConfigurations = buildConfigurations
@@ -95,8 +93,7 @@ class Regeneration implements Serializable {
         this.jenkinsBuildRoot = jenkinsBuildRoot
         this.jenkinsCreds = jenkinsCreds
         this.checkoutCreds = checkoutCreds
-        this.isPRBuilder = isPRBuilder
-        this.isReleaseBuilder = isReleaseBuilder
+        this.jobType = jobType
     }
 
     /*
@@ -524,7 +521,7 @@ class Regeneration implements Serializable {
         }
 
         // Make sure the dsl knows if we're building inside the pr tester
-        if (isPRBuilder) {
+        if (jobType == "pr-tester") {
             params.put('PR_BUILDER', true)
         }
 
@@ -554,7 +551,7 @@ class Regeneration implements Serializable {
         def jobTopName = "${javaToBuild}-${jobName}"
         def jobFolder = "${jobRootDir}/jobs/${javaToBuild}"
 
-        // i.e jdk8u/jobs/jdk8u-linux-x64-hotspot
+        // e.g build-scripts/jobs/jdk8u/jdk8u-linux-x64-hotspot
         def downstreamJobName = "${jobFolder}/${jobTopName}"
         context.println "[INFO] build name: ${downstreamJobName}"
 
@@ -597,10 +594,11 @@ class Regeneration implements Serializable {
             def versionNumbers = javaVersion =~ /\d+/
 
             /*
-            * Stage: Check that the pipeline isn't in in-progress or queued up. Once clear, run the regeneration job
+            * Stage: Check that nightly and evaluation nightly pipeline isn't in in-progress or queued up. 
+            * Once clear, run the regeneration job
             */
             context.stage("Check $javaVersion pipeline status") {
-                if (jobRootDir.contains('pr-tester') || jobRootDir.contains('release')) {
+                if ((jobType == 'release') || jobRootDir.contains('pr-tester')) { // use jobType or pr-tester in path
                     // No need to check if we're going to overwrite anything for the PR tester since concurrency isn't enabled -> https://github.com/adoptium/temurin-build/pull/2155
                     context.println "[SUCCESS] Skip check if pr-tester or release pipeline is running as concurrency is disabled. Running regeneration job..."
                 } else {
@@ -609,11 +607,12 @@ class Regeneration implements Serializable {
 
                     // Parse api response to only extract the relevant pipeline
                     getPipelines.jobs.name.each { pipeline ->
-                        if (pipeline == "openjdk${versionNumbers[0]}-pipeline") {
+                        def pipelineName = (jobType != "evaluation" ? "openjdk${versionNumbers[0]}-pipeline" : "evaluation-openjdk${versionNumbers[0]}-pipeline")
+                        if (pipeline == pipelineName) {
                             Boolean inProgress = true
                             while (inProgress) {
                                 // Check if pipeline is in progress using api
-                                context.println "[INFO] Checking if ${pipeline} is running..." //i.e. openjdk8-pipeline
+                                context.println "[INFO] Checking if ${pipeline} is running..." // e.g. openjdk8-pipeline or evaluation-openjdk11-pipeline
 
                                 def pipelineInProgress = queryAPI("${jenkinsBuildRoot}/job/${pipeline}/lastBuild/api/json?pretty=true&depth1")
 
@@ -688,11 +687,11 @@ class Regeneration implements Serializable {
                                 keyFound = true
 
                                 def platformConfig = buildConfigurations.get(key) as Map<String, ?>
-                                // default nightly job name (can be altered later depending on the type of run)
+                                // default nightly or pr-tester job name
                                 name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
-                                // release job name
-                                if (isReleaseBuilder) {
-                                    name = "release-"+name
+                                // release or evaluation job name
+                                if (jobType != "nightly" && jobType != "pr-tester") {
+                                    name = jobType+"-" + name
                                 }
                                 if (platformConfig.containsKey('additionalFileNameTag')) {
                                     name += "-${platformConfig.additionalFileNameTag}"
@@ -702,9 +701,9 @@ class Regeneration implements Serializable {
                         }
 
                         if (keyFound == false) {
-                            context.println "[WARNING] Config file key: ${osarch} not recognised. Valid configuration keys for ${javaToBuild} are ${buildConfigurations.keySet()}.\n[WARNING] ${osarch} WILL NOT BE REGENERATED! Setting build result to UNSTABLE..."
+                            context.println "[WARNING] Config file key: ${osarch} not recognised.\nValid configuration keys for ${javaToBuild} are ${buildConfigurations.keySet()}.\n[WARNING] ${osarch} WILL NOT BE REGENERATED! Setting build result to UNSTABLE..."
                             currentBuild.result = 'UNSTABLE'
-                            } else {
+                        } else {
                             // Skip variant job make if it's marked as excluded
                             if (jobConfigurations.get(name) == EXCLUDED_CONST) {
                                 continue
@@ -744,8 +743,7 @@ return {
     String jenkinsBuildRoot,
     String jenkinsCreds,
     String checkoutCreds,
-    Boolean isPRBuilder,
-    Boolean isReleaseBuilder
+    String jobType
         ->
 
     def excludedBuilds = [:]
@@ -771,7 +769,6 @@ return {
             jenkinsBuildRoot,
             jenkinsCreds,
             checkoutCreds,
-            isPRBuilder,
-            isReleaseBuilder
+            jobType
         )
 }
