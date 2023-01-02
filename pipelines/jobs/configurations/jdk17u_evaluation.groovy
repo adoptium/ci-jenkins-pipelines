@@ -1,4 +1,7 @@
 targetConfigurations = [
+        'aarch64AlpineLinux' : [
+                'temurin'
+        ]
         // 'aarch64Windows': [
         //         'temurin'
         // ],

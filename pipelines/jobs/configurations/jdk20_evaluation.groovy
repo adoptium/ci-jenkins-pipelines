@@ -1,7 +1,10 @@
 targetConfigurations = [
-      'riscv64Linux': [
+        'riscv64Linux': [
                 'temurin'
-      ] 
+        ],
+        'aarch64AlpineLinux' : [
+                'temurin'
+        ]
 ]
         // 'aarch64Linux': [
         //         'hotspot'
