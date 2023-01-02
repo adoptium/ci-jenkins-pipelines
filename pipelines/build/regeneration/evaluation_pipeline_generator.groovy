@@ -94,11 +94,11 @@ node('worker') {
             */
             def evaluationFolderPath = DEFAULTS_JSON['configDirectories']['evaluation']
 
-            if (!fileExists(EvaluationFolderPath)) {
-                println "[WARNING] ${EvaluationFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
+            if (!fileExists(evaluationFolderPath)) {
+                println "[WARNING] ${evaluationFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
                 checkoutAdoptPipelines()
-                EvaluationFolderPath = ADOPT_DEFAULTS_JSON['configDirectories']['evaluation']
-                println "[SUCCESS] The path is now ${EvaluationFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+                evaluationFolderPath = ADOPT_DEFAULTS_JSON['configDirectories']['evaluation']
+                println "[SUCCESS] The path is now ${evaluationFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
                 checkoutUserPipelines()
             }
 
@@ -168,8 +168,8 @@ node('worker') {
                     // read out different target
                     def targetEvaluation
                     try {
-                        def uFile = "${WORKSPACE}/${EvaluationFolderPath}/jdk${javaVersion}u_evaluation.groovy"
-                        def nonUFile = "${WORKSPACE}/${EvaluationFolderPath}/jdk${javaVersion}_evaluation.groovy"
+                        def uFile = "${WORKSPACE}/${evaluationFolderPath}/jdk${javaVersion}u_evaluation.groovy"
+                        def nonUFile = "${WORKSPACE}/${evaluationFolderPath}/jdk${javaVersion}_evaluation.groovy"
                         if(fileExists(uFile)) {
                             targetEvaluation = load uFile
                         } else {

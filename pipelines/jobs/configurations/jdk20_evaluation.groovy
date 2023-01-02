@@ -1,18 +1,20 @@
-targetConfigurations = []
+targetConfigurations = [
+      'riscv64Linux': [
+                'temurin'
+      ] 
+]
         // 'aarch64Linux': [
         //         'hotspot'
         // ],
         // 'aarch64Windows' : [
         //         'temurin'
         // ],
-        // 'riscv64Linux': [
-        //         'temurin'
-        // ]
 
-// empty string as it wont get triggered now
-triggerSchedule_evaluation = ''
-// empty string as it wont get triggered now
-triggerSchedule_weekly_evaluation= ''
+
+// empty string as it wont get triggered
+triggerSchedule_evaluation = 'TZ=UTC\n30 03 * * 2,4,6'
+// empty string as it wont get triggered
+triggerSchedule_weekly_evaluation= 'TZ=UTC\n05 17 * * 7'
 
 // scmReferences to use for weekly evaluation release build
 weekly_evaluation_scmReferences = [
