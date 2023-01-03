@@ -65,14 +65,14 @@ class PullRequestTestPipeline implements Serializable {
         Map<String, ?> config = generateConfig(javaVersion)
         context.checkout([$class: 'GitSCM', userRemoteConfigs: [[url: config.GIT_URL]], branches: [[name: branch]]])
 
-        context.println "JDK${javaVersion} disableJob = ${config.disableJob}" 
+        context.println "JDK${javaVersion} disableJob = ${config.disableJob}"
         context.jobDsl targets: DEFAULTS_JSON['templateDirectories']['upstream'], ignoreExisting: false, additionalParameters: config
     }
 
     /*
     * Main function, called from kick_off_tester.groovy by job "openjdk-build-pr-tester"
     */
-    def runTests() { 
+    def runTests() {
         def jobs = [:]
         Boolean pipelineFailed = false
 
