@@ -1,7 +1,10 @@
 targetConfigurations = [
-        'x64AlpineLinux':       [
-                'temurin'
-        ]
+        'aarch64Linux'  : [
+                'temurin',
+                'openj9',
+                'dragonwell',
+                'bisheng'
+        ],
         // 'x64Mac'        : [
         //         'openj9'
         // ],
