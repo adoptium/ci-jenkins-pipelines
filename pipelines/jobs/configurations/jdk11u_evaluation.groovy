@@ -32,10 +32,10 @@ targetConfigurations = [
         // ]
 ]
 
-// empty string as it wont get triggered now
-triggerSchedule_evaluation = ''
-// empty string as it wont get triggered now
-triggerSchedule_weekly_evaluation= ''
+// if set to empty string then it wont get triggered
+triggerSchedule_evaluation =  'TZ=UTC\n05 18 * * 2,4'
+// if set to empty string then it wont get triggered
+triggerSchedule_weekly_evaluation= 'TZ=UTC\n05 17 * * 6'
 
 // scmReferences to use for weekly evaluation build
 weekly_evaluation_scmReferences = [
