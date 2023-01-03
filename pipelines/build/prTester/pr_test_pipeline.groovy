@@ -72,7 +72,7 @@ class PullRequestTestPipeline implements Serializable {
     /*
     * Main function, called from kick_off_tester.groovy by job "openjdk-build-pr-tester"
     */
-    def runTests() { 
+    def runTests() {
         def jobs = [:]
         Boolean pipelineFailed = false
 
