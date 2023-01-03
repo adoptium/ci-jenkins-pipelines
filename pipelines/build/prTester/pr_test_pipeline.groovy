@@ -52,7 +52,8 @@ class PullRequestTestPipeline implements Serializable {
                 CHECKOUT_CREDENTIALS: '',
                 adoptScripts        : true,
                 enableTests         : false,
-                enableTestDynamicParallel : false
+                enableTestDynamicParallel : false,
+                releaseType         : "pr-tester"
         ]
     }
 
