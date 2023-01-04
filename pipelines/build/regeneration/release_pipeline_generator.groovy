@@ -98,7 +98,7 @@ node('worker') {
                 config.put('defaultsJson', DEFAULTS_JSON)
                 config.put('adoptDefaultsJson', ADOPT_DEFAULTS_JSON)
 
-                if(javaVersion >= "11") { // for jdk11+, need extra config args to pass down
+                if(javaVersion >= 11) { // for jdk11+, need extra config args to pass down
                     config.put('additionalConfigureArgs', "--without-version-pre --without-version-opt")
                 }
 
@@ -136,6 +136,9 @@ node('worker') {
         def releaseBuildJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
         if (releaseBuildJob.getResult() == 'SUCCESS') {
             println "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
+        } else {
+            println "[FAILURE] Failed to create jdk${javaVersion} release downstream build jobs"
+            currentBuild.result = 'FAILURE'
         }
     })
 }
