@@ -569,16 +569,20 @@ class Regeneration implements Serializable {
     def queryAPI(String query) {
         // TODO: use sharedlib JobHelper.groovy queryJsonApi() instead
         try {
-            def getJenkins = new URL(query).openConnection()
+            HttpURLConnection getJenkins = new URL(query).openConnection()
 
             // Set request credentials if they exist
             if (jenkinsCreds != '') {
                 def jenkinsAuth = 'Basic ' + new String(Base64.getEncoder().encode(jenkinsCreds.getBytes()))
                 getJenkins.setRequestProperty('Authorization', jenkinsAuth)
+                getJenkins.setRequestMethod("GET")
             }
-
-            def response = new JsonSlurper().parseText(getJenkins.getInputStream().getText())
-            return response
+            // for 200 or 2XX as response code, main flow
+            if (getJenkins.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                return new JsonSlurper().parseText(getJenkins.getInputStream().getText())
+            } else { // when wrong credential(cannot access), wrong url (does not exist), wrong endpoint
+                return null
+            }
         } catch (Exception e) {
             // Failed to connect to jenkins api or a parsing error occurred
             throw new Exception("[ERROR] Failure on jenkins api connection or parsing.\n${e}")
