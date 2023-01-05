@@ -28,6 +28,10 @@ if (!binding.hasVariable('GIT_BRANCH')) {
     GIT_BRANCH = 'master'
 }
 
+if (binding.hasVariable('CHECKOUT_AS_TAG')) {
+    GIT_BRANCH = "refs/tags/"+GIT_BRANCH
+}
+
 isLightweight = true
 if (binding.hasVariable('PR_BUILDER')) {
     isLightweight = false

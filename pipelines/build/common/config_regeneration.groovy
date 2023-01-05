@@ -525,6 +525,11 @@ class Regeneration implements Serializable {
             params.put('PR_BUILDER', true)
         }
 
+        // Makre sure the dsl knows if we are building for release job which checkout by a tag not branch
+        if (jobType == "release") {
+            params.put('CHECKOUT_AS_TAG', true) // in dsl, we convert GIT_BRANCH to a tag then checkout
+        }
+
         // Execute job dsl, using adopt's template if the user doesn't have one
         def create = null
         try {
