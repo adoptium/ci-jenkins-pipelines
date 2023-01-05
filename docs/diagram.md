@@ -233,7 +233,8 @@ Builder --library--> library2["openjdk-jenkins-helper@${helperRef}"] --> docker{
 docker --true: run--> dockerbuild["Jenkins'call: docker.build(build-image)"] --> sign
 docker --false:call_function--> CallbuildScript["buildScripts()"] --> sign{enableSigner} --true:call_function--> sign2["sign()"] --> testStage{enableTests}
 sign{enableSigner} --"false" --> testStage
-testStage --"true:call_function"--> smoketest["runSmokeTests()"] --> parallel{"TEST_LIST.size() > 0"}
+testStage --"true:call_function"--> smoketest["runSmokeTests()"] --"is release" --> 
+remoteTriggerJckTests["remoteTriggerJckTests parallel"] --> parallel{"TEST_LIST.size() > 0"}
 testStage --"false"--> shouldInstaller
 parallel --"false"--> shouldInstaller
 
