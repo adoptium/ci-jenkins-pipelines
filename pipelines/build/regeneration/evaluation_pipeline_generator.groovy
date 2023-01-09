@@ -160,7 +160,7 @@ node('worker') {
                         disableJob          : false,
                         pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
                         adoptScripts        : false,
-                        releaseType         : 'Nightly Without Publish' // no need to set releaseType to "release" for prototoype pipeline
+                        releaseType         : 'Nightly' // enable upload even it is evaluation pipeline
                     ]
                 
                     /* logic of creating evaluation pipeline start*/
