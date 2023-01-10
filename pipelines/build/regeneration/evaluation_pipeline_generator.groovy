@@ -247,6 +247,7 @@ node('worker') {
                     }
                     config.put('targetConfigurations', targetEvaluation.targetConfigurations) // explicit set it to make things clear
                     config.weekly_release_scmReferences = targetEvaluation.weekly_evaluation_scmReferences
+                    config.releaseType = "Weekly" // overwrite releaseType for weekly evalucation pipeline: not set to Release(avoid trigger TCK but aqa weekly and no reproducible)
 
                     println "[INFO] CREATING JDK${javaVersion} WEEKLY EVALUATION PIPELINE WITH NEW CONFIG VALUES:"
                     println "JOB_NAME = ${config.JOB_NAME}"
