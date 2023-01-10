@@ -1,4 +1,6 @@
-targetConfigurations = [
+// when no target for evaluation, set it to null and disable scheduler below
+targetConfigurations = null
+//[
         // 'x64Mac'        : [
         //         'openj9'
         // ],
@@ -30,12 +32,12 @@ targetConfigurations = [
         // 'aarch64Windows': [
         //         'temurin'
         // ]
-]
+//]
 
 // if set to empty string then it wont get triggered
-triggerSchedule_evaluation =  'TZ=UTC\n05 18 * * 2,4'
+triggerSchedule_evaluation = ''
 // if set to empty string then it wont get triggered
-triggerSchedule_weekly_evaluation= 'TZ=UTC\n05 17 * * 6'
+triggerSchedule_weekly_evaluation= ''
 
 // scmReferences to use for weekly evaluation build
 weekly_evaluation_scmReferences = [
