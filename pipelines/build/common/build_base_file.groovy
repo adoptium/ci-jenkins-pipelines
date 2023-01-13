@@ -815,7 +815,7 @@ class Builder implements Serializable {
                             // Triggering downstream job ${downstreamJobName}
                             /* special handling for Mac release build issue/571 start*/
                                 if (downstreamJobName.contains("release-mac-x64-temurin") || downstreamJobName.contains("release-mac-aarch64-temurin")) {
-                                    config.USE_ADOPT_SHELL_SCRIPTS = "true"  
+                                    config.USE_ADOPT_SHELL_SCRIPTS = true
                                 }
                             /* special handling for Mac release build issue/571 done*/
 
