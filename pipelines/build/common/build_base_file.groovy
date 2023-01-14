@@ -798,9 +798,10 @@ class Builder implements Serializable {
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
                     // jdk20-linux-x64-temurin
-                    def jobTopName = getJobName(configuration.key)
+                    //TODO: uncomment def jobTopName = getJobName(configuration.key)
                     //TODO: uncomment def jobFolder = getJobFolder()
-                    def jobFolder = "build-scripts/jobs/release/jobs/jdk17u/" // mocking test
+                    def jobTopName = "jdk11u-release-mac-x64-temurin" //mocking test
+                    def jobFolder = "build-scripts/jobs/release/jobs/jdk17u" // mocking test
                     /*
                         build-scripts/jobs/jdk20/jdk20-linux-x64-temurin for nightly
                         build-scripts/evaluation/jobs/jdk20/jdk20-evaluation-linux-aarch64-hotspot for evaluation
