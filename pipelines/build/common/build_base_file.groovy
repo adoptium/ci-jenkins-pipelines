@@ -797,8 +797,6 @@ class Builder implements Serializable {
             context.echo "Keep release logs: ${keepReleaseLogs}"
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
-                    IndividualBuildConfig config = configuration.value
-
                     // jdk20-linux-x64-temurin
                     def jobTopName = getJobName(configuration.key)
                     def jobFolder = getJobFolder()
@@ -809,15 +807,18 @@ class Builder implements Serializable {
                     def downstreamJobName = "${jobFolder}/${jobTopName}"
                     context.echo 'build name ' + downstreamJobName
 
+                    /* TODO: special handling for Mac release build issue/571 start*/
+                    if (downstreamJobName.contains("release-mac-x64-temurin") || downstreamJobName.contains("release-mac-aarch64-temurin")) {
+                        configuration.value.USE_ADOPT_SHELL_SCRIPTS = true
+                    }
+                    /* special handling for Mac release build issue/571 done*/
+
+                    IndividualBuildConfig config = configuration.value
+
                     context.catchError {
                         // Execute build job for configuration i.e jdk11u/job/jdk11u-linux-x64-hotspot
                         context.stage(configuration.key) {
                             // Triggering downstream job ${downstreamJobName}
-                            /* special handling for Mac release build issue/571 start*/
-                                if (downstreamJobName.contains("release-mac-x64-temurin") || downstreamJobName.contains("release-mac-aarch64-temurin")) {
-                                    config.USE_ADOPT_SHELL_SCRIPTS = true
-                                }
-                            /* special handling for Mac release build issue/571 done*/
 
                             def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: config.toBuildParams()
 
