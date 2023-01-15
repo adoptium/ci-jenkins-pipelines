@@ -65,7 +65,7 @@ node('worker') {
             println "RELEASE_CONFIG_PATH = ${releaseConfigPath}"
             println "JOB_TEMPLATE_PATH = ${jobTemplatePath}"
             println "ENABLE_PIPELINE_SCHEDULE = false"
-            println "USE_ADOPT_SHELL_SCRIPTS = false"
+            println "USE_ADOPT_SHELL_SCRIPTS = true"
 
             releaseVersions.each({ javaVersion ->
                 def config = [
@@ -77,7 +77,7 @@ node('worker') {
                     JAVA_VERSION                : javaVersion,
                     JOB_NAME                    : "release-openjdk${javaVersion}-pipeline",
                     SCRIPT                      : "${scriptFolderPath}/openjdk_pipeline.groovy",
-                    adoptScripts                : false
+                    adoptScripts                : true // USE_ADOPT_SHELL_SCRIPTS
                 ]
 
                 def target

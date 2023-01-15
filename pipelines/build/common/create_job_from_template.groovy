@@ -28,8 +28,9 @@ if (!binding.hasVariable('GIT_BRANCH')) {
     GIT_BRANCH = 'master'
 }
 
+//TODO: need more logic to handle when it is a tag in format of "refs/tags/<tagName>"
 if (binding.hasVariable('CHECKOUT_AS_TAG')) {
-    GIT_BRANCH = "refs/tags/"+GIT_BRANCH
+    GIT_BRANCH = "refs/heads/"+GIT_BRANCH
 }
 
 isLightweight = true

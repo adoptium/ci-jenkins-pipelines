@@ -27,6 +27,9 @@ limitations under the License.
 
 String javaVersion = params.JAVA_VERSION
 String ADOPT_DEFAULTS_FILE_URL = 'https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json'
+if (params.REPOSITORY_BRANCH != "") { // mainly for release jobs to use tag
+    ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/${params.REPOSITORY_BRANCH}/pipelines/defaults.json"
+}
 String DEFAULTS_FILE_URL = (params.DEFAULTS_URL) ?: ADOPT_DEFAULTS_FILE_URL
 
 node('worker') {
