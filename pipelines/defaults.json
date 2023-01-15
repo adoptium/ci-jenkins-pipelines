@@ -1,11 +1,11 @@
 {
     "repository"             : {
         "build_url"          : "https://github.com/adoptium/temurin-build.git",
-        "build_branch"       : "v2023.01.03",
+        "build_branch"       : "v2023.01",
         "test_dirs"          : "/test/functional",
         "pipeline_url"       : "https://github.com/adoptium/ci-jenkins-pipelines.git",
-        "pipeline_branch"    : "v2023.01.03",
-        "helper_ref"         : "v2023.01.03"
+        "pipeline_branch"    : "v2023.01",
+        "helper_ref"         : "v2023.01"
     },
     "jenkinsDetails"         : {
         "rootUrl"            : "https://ci.adoptopenjdk.net",
