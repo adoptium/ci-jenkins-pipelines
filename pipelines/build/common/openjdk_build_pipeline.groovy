@@ -1762,7 +1762,7 @@ class Build {
                             } else {
                                 dockerImageDigest = dockerImageDigest.replaceAll("\\[", "").replaceAll("\\]", "")
                                 String dockerRunArg="-e \"BUILDIMAGESHA=$dockerImageDigest\""
-                                context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+dockerRunArg) {
+                                context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                     buildScripts(
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
