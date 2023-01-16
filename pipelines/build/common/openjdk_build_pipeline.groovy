@@ -148,15 +148,12 @@ class Build {
         jobParams.put('BUILD_LIST', 'functional/buildAndPackage')
         def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
         def vendorTestRepos = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git')
-        def vendorTestBranches = ADOPT_DEFAULTS_JSON['repository']['build_branch']
         def vendorTestDirs = ADOPT_DEFAULTS_JSON['repository']['test_dirs']
         if (!useAdoptShellScripts) {
             vendorTestRepos = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git')
-            vendorTestBranches = buildConfig.BUILD_REF ?: DEFAULTS_JSON['repository']['build_branch']  // use BUILD_CONFIGURATION's branch if exists
             vendorTestDirs = DEFAULTS_JSON['repository']['test_dirs']
         }
         jobParams.put('VENDOR_TEST_REPOS', vendorTestRepos)
-        jobParams.put('VENDOR_TEST_BRANCHES', vendorTestBranches)
         jobParams.put('VENDOR_TEST_DIRS', vendorTestDirs)
         return jobParams
     }
@@ -281,7 +278,12 @@ class Build {
     */
     def runSmokeTests() {
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-
+        def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
+        def vendorTestBranches = ADOPT_DEFAULTS_JSON['repository']['build_branch']
+        if (!useAdoptShellScripts) {
+            vendorTestBranches = buildConfig.BUILD_REF ?: DEFAULTS_JSON['repository']['build_branch']  // use BUILD_CONFIGURATION's branch if exists
+        }
+        
         try {
             context.println 'Running smoke test'
             context.stage('smoke test') {
@@ -297,6 +299,7 @@ class Build {
                         context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
                     }
                 }
+
                 context.catchError {
                     context.build job: jobName,
                             propagate: false,
@@ -309,6 +312,7 @@ class Build {
                                     context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
                                     context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
                                     context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
+                                    context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
                                     context.string(name: 'TIME_LIMIT', value: '1')
                             ]
                 }
