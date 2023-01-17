@@ -30,6 +30,7 @@ class Regeneration implements Serializable {
     private final Map<String, Map<String, ?>> buildConfigurations
     private final Map<String, ?> targetConfigurations
     private final Map<String, ?> DEFAULTS_JSON
+    private final Map<String, ?> ADOPT_DEFAULTS_JSON
     private final Map<String, ?> excludedBuilds
     private Integer sleepTime
     private final currentBuild
@@ -504,7 +505,6 @@ class Regeneration implements Serializable {
         repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
 
         params.put('DEFAULTS_JSON', JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)))
-        Map ADOPT_DEFAULTS_JSON = repoHandler.getAdoptDefaultsJson()
         params.put('ADOPT_DEFAULTS_JSON', JsonOutput.prettyPrint(JsonOutput.toJson(ADOPT_DEFAULTS_JSON)))
 
         params.put('BUILD_CONFIG', config.toJson())
