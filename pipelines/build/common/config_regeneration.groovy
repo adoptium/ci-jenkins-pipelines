@@ -62,6 +62,7 @@ class Regeneration implements Serializable {
         Map<String, Map<String, ?>> buildConfigurations,
         Map<String, ?> targetConfigurations,
         Map<String, ?> DEFAULTS_JSON,
+        Map<String, ?> ADOPT_DEFAULTS_JSON,
         Map<String, ?> excludedBuilds,
         Integer sleepTime,
         currentBuild,
@@ -81,6 +82,7 @@ class Regeneration implements Serializable {
         this.buildConfigurations = buildConfigurations
         this.targetConfigurations = targetConfigurations
         this.DEFAULTS_JSON = DEFAULTS_JSON
+        this.ADOPT_DEFAULTS_JSON = ADOPT_DEFAULTS_JSON
         this.excludedBuilds = excludedBuilds
         this.sleepTime = sleepTime
         this.currentBuild = currentBuild
