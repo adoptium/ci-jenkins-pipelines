@@ -223,7 +223,7 @@ node('worker') {
                     buildConfigurations,
                     targetConfigurations,
                     DEFAULTS_JSON,
-                    ADOPT_DEFAULTS_JSON，
+                    ADOPT_DEFAULTS_JSON,
                     excludes,
                     sleepTime,
                     currentBuild,
@@ -247,7 +247,7 @@ node('worker') {
                 buildConfigurations,
                 targetConfigurations,
                 DEFAULTS_JSON,
-                ADOPT_DEFAULTS_JSON，
+                ADOPT_DEFAULTS_JSON,
                 excludes,
                 sleepTime,
                 currentBuild,
