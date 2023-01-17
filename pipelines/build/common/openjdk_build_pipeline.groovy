@@ -613,8 +613,6 @@ class Build {
                             target: 'workspace/target/',
                             flatten: true)
 
-                    context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
-
                     writeMetadata(versionInfo, false)
                     context.archiveArtifacts artifacts: 'workspace/target/*'
                 }
@@ -739,7 +737,6 @@ class Build {
                 // Archive the Mac and Windows pkg/msi
                 if (buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') {
                     try {
-                        context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.pkg workspace/target/*.msi); do sha256sum "$file" > $file.sha256.txt ; done'
                         writeMetadata(versionData, false)
                         context.archiveArtifacts artifacts: 'workspace/target/*'
                     } catch (e) {
@@ -765,7 +762,6 @@ class Build {
                 if (buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') {
                     try {
                         signInstallerJob(versionData)
-                        context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.pkg workspace/target/*.msi); do sha256sum "$file" > $file.sha256.txt ; done'
                         writeMetadata(versionData, false)
                         context.archiveArtifacts artifacts: 'workspace/target/*'
                     } catch (e) {
@@ -1139,6 +1135,11 @@ class Build {
 
             data.binary_type = type
             data.sha256 = hash
+
+            // To generate sha256.txt
+            if (type != 'sbom') {
+                context.writeFile file: "${file}.sha256.txt", text: "${hash}  ${file}"
+            }
 
             // To save on spam, only print out the metadata the first time
             if (!metaWrittenOut && initialWrite) {
