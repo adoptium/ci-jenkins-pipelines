@@ -30,6 +30,7 @@ class Regeneration implements Serializable {
     private final Map<String, Map<String, ?>> buildConfigurations
     private final Map<String, ?> targetConfigurations
     private final Map<String, ?> DEFAULTS_JSON
+    private final Map<String, ?> ADOPT_DEFAULTS_JSON
     private final Map<String, ?> excludedBuilds
     private Integer sleepTime
     private final currentBuild
@@ -61,6 +62,7 @@ class Regeneration implements Serializable {
         Map<String, Map<String, ?>> buildConfigurations,
         Map<String, ?> targetConfigurations,
         Map<String, ?> DEFAULTS_JSON,
+        Map<String, ?> ADOPT_DEFAULTS_JSON,
         Map<String, ?> excludedBuilds,
         Integer sleepTime,
         currentBuild,
@@ -80,6 +82,7 @@ class Regeneration implements Serializable {
         this.buildConfigurations = buildConfigurations
         this.targetConfigurations = targetConfigurations
         this.DEFAULTS_JSON = DEFAULTS_JSON
+        this.ADOPT_DEFAULTS_JSON = ADOPT_DEFAULTS_JSON
         this.excludedBuilds = excludedBuilds
         this.sleepTime = sleepTime
         this.currentBuild = currentBuild
@@ -504,7 +507,6 @@ class Regeneration implements Serializable {
         repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
 
         params.put('DEFAULTS_JSON', JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)))
-        Map ADOPT_DEFAULTS_JSON = repoHandler.getAdoptDefaultsJson()
         params.put('ADOPT_DEFAULTS_JSON', JsonOutput.prettyPrint(JsonOutput.toJson(ADOPT_DEFAULTS_JSON)))
 
         params.put('BUILD_CONFIG', config.toJson())
@@ -739,6 +741,7 @@ return {
     Map<String, Map<String, ?>> buildConfigurations,
     Map<String, ?> targetConfigurations,
     Map<String, ?> DEFAULTS_JSON,
+    Map<String, ?> ADOPT_DEFAULTS_JSON,
     String excludes,
     Integer sleepTime,
     def currentBuild,
@@ -765,6 +768,7 @@ return {
             buildConfigurations,
             targetConfigurations,
             DEFAULTS_JSON,
+            ADOPT_DEFAULTS_JSON,
             excludedBuilds,
             sleepTime,
             currentBuild,
