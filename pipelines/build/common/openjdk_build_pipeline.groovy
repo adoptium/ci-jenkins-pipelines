@@ -613,8 +613,6 @@ class Build {
                             target: 'workspace/target/',
                             flatten: true)
 
-                    context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
-
                     writeMetadata(versionInfo, false)
                     context.archiveArtifacts artifacts: 'workspace/target/*'
                 }
@@ -826,6 +824,14 @@ class Build {
                parameters: params
 
             context.node('worker') {
+                try {
+                    context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                        context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
+                        context.archiveArtifacts artifacts: 'workspace/target/*.sha256.txt'
+                    }
+                } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS). Exiting...")
+                }
                 // Remove any previous workspace artifacts
                 context.sh 'rm -rf workspace/target/* || true'
                 context.copyArtifacts(
