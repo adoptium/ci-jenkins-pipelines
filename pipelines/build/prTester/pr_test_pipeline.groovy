@@ -109,7 +109,7 @@ class PullRequestTestPipeline implements Serializable {
                     buildConfigurations,
                     testConfigurations,
                     DEFAULTS_JSON,
-                    ADOPT_DEFAULTS_JSON，
+                    ADOPT_DEFAULTS_JSON,
                     excludedBuilds,
                     900,
                     currentBuild,
