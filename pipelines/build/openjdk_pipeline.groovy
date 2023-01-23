@@ -40,17 +40,29 @@ node('worker') {
         }
         
         def list = readFile("${propertyFile}").readLines()
+        def jdkBranch = ""
+        def jdkOpenj9Branch = ""
         for (item in list) {
             if (item.contains("JDK${params.jdkVersion}_BRANCH")) {
                 def branchInfo = item.split('=')
-                def branch = branchInfo[1]
-                if (branch != buildTag) {
-                    println "Warning: scmReference is ${buildTag}, which is different from ${item} in aqa-tests release branch . Please update aqa-tests release branch!"
-                    currentBuild.result = 'FAILURE'
-                    return
-                }
+                jdkBranch = branchInfo[1]
+                
+            } else if (item.contains("JDK${params.jdkVersion}_OPENJ9_BRANCH")) {
+                def branchInfo = item.split('=')
+                jdkOpenj9Branch = branchInfo[1]
+            }
+            if (jdkBranch && jdkOpenj9Branch) {
                 break
             }
+        }
+        if (jdkBranch == buildTag) {
+            println "[INFO] scmReference=${buildTag} matches with JDK${params.jdkVersion}_BRANCH=${jdkBranch} in ${propertyFile} in aqa-tests release branch."
+        } else if (jdkOpenj9Branch == buildTag) {
+            println "[INFO] scmReference=${buildTag} matches with JDK${params.jdkVersion}_OPENJ9_BRANCH=${jdkOpenj9Branch} in ${propertyFile} in aqa-tests release branch."
+        } else {
+            println "[ERROR] scmReference does not match with any JDK brnach in ${propertyFile} in aqa-tests release branch. Please update aqa-tests ${params.aqaReference} release branch. Set the current build result to FAILURE!"
+            currentBuild.result = 'FAILURE'
+            return
         }
     }
     // Load defaultsJson. These are passed down from the build_pipeline_generator and is a JSON object containing user's default constants.
