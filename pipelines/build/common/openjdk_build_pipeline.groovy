@@ -483,7 +483,10 @@ class Build {
         context.echo "sdkUrl is ${sdkUrl}"
         def remoteTargets = [:]
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-
+        def setupJCKRun = false
+        if (buildconfig.SCM_REF && buildconfig.AQA_REF && sdkUrl.contains("release")) {
+            setupJCKRun = true
+        }
         // Determine from the platform the Jck jtx exclude platform
         def excludePlat
         def excludeRoot = "/home"
@@ -536,7 +539,8 @@ class Build {
                                                                 context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
                                                                 context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
                                                                 context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
-                                                                context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel)]),
+                                                                context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                                context.MapParameter(name: 'SETUP_JCK_RUN', value: setupJCKRun)]),
                         remoteJenkinsName: 'temurin-compliance',
                         shouldNotFailBuild: true,
                         token: 'RemoteTrigger',
