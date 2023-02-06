@@ -1357,7 +1357,7 @@ class Build {
                 envVars.add("FILENAME=${filename}" as String)
 
                 // Use BUILD_REF override if specified
-                def adoptBranch = buildConfig.BUILD_REF ?: ${ADOPT_DEFAULTS_JSON['repository']['build_branch']}
+                def adoptBranch = buildConfig.BUILD_REF ?: ADOPT_DEFAULTS_JSON['repository']['build_branch']
 
                 // Add platform config path so it can be used if the user doesn't have one
                 def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
