@@ -1301,9 +1301,10 @@ class Build {
             context.println JsonOutput.toJson(DEFAULTS_JSON)
             context.println 'ADOPT_DEFAULTS_JSON: '
             context.println JsonOutput.toJson(ADOPT_DEFAULTS_JSON)
-            context.println 'buildConfig.CI_REF: ' + buildConfig.CI_REF
-            context.println 'buildConfig.BUILD_REF: ' + buildConfig.BUILD_REF
-            context.println 'buildConfig.HELPER_REF: ' + buildConfig.HELPER_REF
+            context.println 'Optional branch/tag/commitSHA overrides:'
+            context.println '    buildConfig.CI_REF: ' + buildConfig.CI_REF
+            context.println '    buildConfig.BUILD_REF: ' + buildConfig.BUILD_REF
+            context.println '    buildConfig.HELPER_REF: ' + buildConfig.HELPER_REF
 
             if (cleanWorkspace) {
                 try {
