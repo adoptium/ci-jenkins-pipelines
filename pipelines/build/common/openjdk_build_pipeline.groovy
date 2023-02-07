@@ -1354,11 +1354,12 @@ class Build {
                         repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                         repoHandler.checkoutUserPipelines(context)
                     }
-                    printGitRepoInfo()
 
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
                     context.sh(script: 'git clean -fdx')
+
+                    printGitRepoInfo()
                 }
             } catch (FlowInterruptedException e) {
                 throw new Exception("[ERROR] Node checkout workspace timeout (${buildTimeouts.NODE_CHECKOUT_TIMEOUT} HOURS) has been reached. Exiting...")
@@ -1482,8 +1483,8 @@ class Build {
                                 } else {
                                     repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                     repoHandler.checkoutUserPipelines(context)
-                                    printGitRepoInfo()
                                 }
+                                printGitRepoInfo()
                             } else {
                                 context.println "[CHECKOUT] Checking out to the user's temurin-build..."
                                 repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
@@ -1765,11 +1766,12 @@ class Build {
                                         } else {
                                             repoHandler.checkoutUserPipelines(context)
                                         }
-                                        printGitRepoInfo()
 
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/adoptium/infrastucture/issues/1553
                                         context.sh(script: 'git clean -fdx')
+
+                                        printGitRepoInfo()
                                     }
                                 } catch (FlowInterruptedException e) {
                                     throw new Exception("[ERROR] Controller docker file scm checkout timeout (${buildTimeouts.DOCKER_CHECKOUT_TIMEOUT} HOURS) has been reached. Exiting...")
