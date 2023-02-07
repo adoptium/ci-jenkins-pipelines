@@ -813,7 +813,12 @@ class Builder implements Serializable {
                         // Execute build job for configuration i.e jdk11u/job/jdk11u-linux-x64-hotspot
                         context.stage(configuration.key) {
                             // Triggering downstream job ${downstreamJobName}
-                            def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: config.toBuildParams()
+
+                            def buildJobParams = config.toBuildParams()
+                            // Pass down DEFAULTS_JSON
+                            buildJobParams.add(['$class': 'TextParameterValue', name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)) ])
+
+                            def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: buildJobParams
 
                             if (downstreamJob.getResult() == 'SUCCESS') {
                                 // copy artifacts from build
