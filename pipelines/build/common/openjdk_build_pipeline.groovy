@@ -1280,7 +1280,7 @@ class Build {
      Display the current git repo information
      */
     def printGitRepoInfo() {
-        context.println 'Checked out pipeline scripts:'
+        context.println 'Checked out repo:'
         context.sh(script: 'git status')
         context.println 'Checked out HEAD commit SHA:'
         context.sh(script: 'git rev-parse HEAD')
