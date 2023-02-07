@@ -1277,6 +1277,16 @@ class Build {
     }
 
     /*
+     Display the current git repo information
+     */
+    def printGitRepoInfo() {
+        context.println 'Checked out pipeline scripts:'
+        context.sh(script: 'git status')
+        context.println 'Checked out HEAD commit SHA:'
+        context.sh(script: 'git rev-parse HEAD')
+    }
+
+    /*
     Executed on a build node, the function checks out the repository and executes the build via ./make-adopt-build-farm.sh
     Once the build completes, it will calculate its version output, commit the first metadata writeout, and archive the build results.
     Running in downstream job jdk-*-*-* build stage, called by build()
@@ -1344,6 +1354,8 @@ class Build {
                         repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                         repoHandler.checkoutUserPipelines(context)
                     }
+                    printGitRepoInfo()
+
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
                     context.sh(script: 'git clean -fdx')
@@ -1378,6 +1390,7 @@ class Build {
                             if (useAdoptShellScripts) {
                                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                                 repoHandler.checkoutAdoptBuild(context)
+                                printGitRepoInfo()
                                 if (buildConfig.TARGET_OS == 'mac' && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
                                     def macSignBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
@@ -1408,6 +1421,7 @@ class Build {
                                         context.sh "rm -rf ${macos_base_path}/* || true"
 
                                         repoHandler.checkoutAdoptBuild(context)
+                                        printGitRepoInfo()
 
                                         // Copy pre assembled binary ready for JMODs to be codesigned
                                         context.unstash 'jmods'
@@ -1468,14 +1482,17 @@ class Build {
                                 } else {
                                     repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                     repoHandler.checkoutUserPipelines(context)
+                                    printGitRepoInfo()
                                 }
                             } else {
                                 context.println "[CHECKOUT] Checking out to the user's temurin-build..."
                                 repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                 repoHandler.checkoutUserBuild(context)
+                                printGitRepoInfo()
                                 context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
                                 repoHandler.checkoutUserPipelines(context)
+                                printGitRepoInfo()
                             }
                         }
                     } catch (FlowInterruptedException e) {
@@ -1748,6 +1765,7 @@ class Build {
                                         } else {
                                             repoHandler.checkoutUserPipelines(context)
                                         }
+                                        printGitRepoInfo()
 
                                         // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                                         // https://github.com/adoptium/infrastucture/issues/1553
