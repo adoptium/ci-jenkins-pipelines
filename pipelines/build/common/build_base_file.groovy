@@ -815,6 +815,15 @@ class Builder implements Serializable {
                             // Triggering downstream job ${downstreamJobName}
 
                             def buildJobParams = config.toBuildParams()
+
+                            // Pass down constructed USER_REMOTE_CONFIGS if useAdoptShellScripts is false
+                            if (!useAdoptShellScripts) {
+                                Map<String, ?> USER_REMOTE_CONFIGS = new Map<String, ?>()
+                                USER_REMOTE_CONFIGS['branch'] = ciReference ?: DEFAULTS_JSON["repository"]["pipeline_branch"]
+                                USER_REMOTE_CONFIGS['remotes']['url'] = DEFAULTS_JSON["repository"]["pipeline_url"]
+                                buildJobParams.add(['$class': 'TextParameterValue', name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(USER_REMOTE_CONFIGS)) ])
+                            }
+
                             // Pass down DEFAULTS_JSON
                             buildJobParams.add(['$class': 'TextParameterValue', name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)) ])
 
