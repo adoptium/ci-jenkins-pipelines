@@ -26,7 +26,7 @@ if (!DEFAULTS_JSON) {
     throw new Exception("[ERROR] No DEFAULTS_JSON found at ${DEFAULTS_FILE_URL}. Please ensure this path is correct and it leads to a JSON or Map object file.")
 }
 
-String url = gitRemoteConfigs // DEFAULTS_JSON['repository']['pipeline_url'] = url
+String url = gitRemoteConfigs // DEFAULTS_JSON['repository']['pipeline_url']
 String helperRef = DEFAULTS_JSON['repository']['helper_ref']
 Closure prTest
 
