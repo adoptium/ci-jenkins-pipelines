@@ -815,6 +815,16 @@ class Builder implements Serializable {
                             // Triggering downstream job ${downstreamJobName}
 
                             def buildJobParams = config.toBuildParams()
+
+                            // Pass down constructed USER_REMOTE_CONFIGS if useAdoptShellScripts is false
+                            // But not for pr-tester as it generates target jobs with required remoteConfigs
+                            if (!useAdoptShellScripts && !env.JOB_NAME.contains('pr-tester')) {
+                                def user_ci_branch = ciReference ?: DEFAULTS_JSON["repository"]["pipeline_branch"]
+                                def user_ci_url    = DEFAULTS_JSON["repository"]["pipeline_url"]
+                                Map<String, ?> USER_REMOTE_CONFIGS = ["branch": user_ci_branch, "remotes": ["url": user_ci_url]]
+                                buildJobParams.add(['$class': 'TextParameterValue', name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(USER_REMOTE_CONFIGS)) ])
+                            }
+
                             // Pass down DEFAULTS_JSON
                             buildJobParams.add(['$class': 'TextParameterValue', name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)) ])
 
