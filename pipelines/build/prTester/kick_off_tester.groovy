@@ -29,6 +29,7 @@ if (!DEFAULTS_JSON) {
 String url = gitRemoteConfigs
 // Ensure User default pipeline url points at user url
 DEFAULTS_JSON['repository']['pipeline_url'] = url
+context.println "URL = ${url}"
 String helperRef = DEFAULTS_JSON['repository']['helper_ref']
 Closure prTest
 
