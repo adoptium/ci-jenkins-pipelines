@@ -818,9 +818,9 @@ class Builder implements Serializable {
 
                             // Pass down constructed USER_REMOTE_CONFIGS if useAdoptShellScripts is false
                             if (!useAdoptShellScripts) {
-                                Map<String, ?> USER_REMOTE_CONFIGS = new Map<String, ?>()
-                                USER_REMOTE_CONFIGS['branch'] = ciReference ?: DEFAULTS_JSON["repository"]["pipeline_branch"]
-                                USER_REMOTE_CONFIGS['remotes']['url'] = DEFAULTS_JSON["repository"]["pipeline_url"]
+                                def user_ci_branch = ciReference ?: DEFAULTS_JSON["repository"]["pipeline_branch"]
+                                def user_ci_url    = DEFAULTS_JSON["repository"]["pipeline_url"]
+                                Map<String, ?> USER_REMOTE_CONFIGS = (["branch": user_ci_branch, "remotes": ["url": user_ci_url]]) as Map<String, ?>
                                 buildJobParams.add(['$class': 'TextParameterValue', name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(USER_REMOTE_CONFIGS)) ])
                             }
 
