@@ -226,6 +226,9 @@ return {
         gitRepo = DEFAULTS_JSON['repository']['pipeline_url']
     }
 
+    // Ensure user DEFAULTS_JSON pipeline url set to gitRepo
+    DEFAULTS_JSON['repository']['pipeline_url'] = gitRepo
+
     if (testConfigurations != null) {
         testConfig = new JsonSlurper().parseText(testConfigurations) as Map
     }
