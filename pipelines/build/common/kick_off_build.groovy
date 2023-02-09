@@ -58,7 +58,7 @@ node('worker') {
 
         // If using User scripts and USER_REMOTE_CONFIGS supplied ensure downstreamBuilder is loaded from the user repo
         def useAdoptShellScripts = Boolean.valueOf(buildConf.get('USE_ADOPT_SHELL_SCRIPTS'))
-        if (useAdoptShellScripts && params.USER_REMOTE_CONFIGS) {
+        if (!useAdoptShellScripts && params.USER_REMOTE_CONFIGS) {
             println "Checking out User pipelines url from userRemoteConfigs: ${userRemoteConfigs}"
             checkout([$class: 'GitSCM', userRemoteConfigs: [[url: userRemoteConfigs['remotes']['url']]], branches: [[name: userRemoteConfigs['branch']]] ])
         }
