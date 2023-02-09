@@ -60,7 +60,7 @@ node('worker') {
         def useAdoptShellScripts = Boolean.valueOf(buildConf.get('USE_ADOPT_SHELL_SCRIPTS'))
         if (useAdoptShellScripts && params.USER_REMOTE_CONFIGS) {
             println "Checking out User pipelines url from userRemoteConfigs: ${userRemoteConfigs}"
-            context.checkout([$class: 'GitSCM', userRemoteConfigs: userRemoteConfigs])
+            checkout([$class: 'GitSCM', userRemoteConfigs: userRemoteConfigs])
         }
     }
 
