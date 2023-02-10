@@ -55,6 +55,13 @@ node('worker') {
     if (BUILD_CONFIGURATION) { // overwrite branch from USER_REMOTE_CONFIGS if the value is not empty or null
         buildConf = new JsonSlurper().parseText(BUILD_CONFIGURATION) as Map
         userRemoteConfigs['branch'] = buildConf.get('CI_REF') ?: userRemoteConfigs['branch']
+
+        // If using User scripts and USER_REMOTE_CONFIGS supplied ensure downstreamBuilder is loaded from the user repo
+        def useAdoptShellScripts = Boolean.valueOf(buildConf.get('USE_ADOPT_SHELL_SCRIPTS'))
+        if (!useAdoptShellScripts && params.USER_REMOTE_CONFIGS) {
+            println "Checking out User pipelines url from userRemoteConfigs: ${userRemoteConfigs}"
+            checkout([$class: 'GitSCM', userRemoteConfigs: [[url: userRemoteConfigs['remotes']['url']]], branches: [[name: userRemoteConfigs['branch']]] ])
+        }
     }
 
     String helperRef = buildConf.get('HELPER_REF') ?: LOCAL_DEFAULTS_JSON['repository']['helper_ref']
