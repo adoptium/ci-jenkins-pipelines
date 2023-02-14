@@ -18,7 +18,7 @@ won't necessarily have access to see these links):
 I wrote this diagram partially for my own benefit in [issue 957](https://github.com/adoptium/temurin-build/issues/957) that lists the Jenkins jobs (`J`) and Groovy scripts from GitHub (`G`).
 I think it would be useful to incorporate this into the documentation (potentially annotated with a bit more info) so people can find their way around the myriad of script levels that we now have.
 
-Note that the "end-user" scripts start at `makejdk-any-platform.sh` and a
+Note that the "end user" scripts start at `makejdk-any-platform.sh` and a
 diagram of those relationships can be seen [here](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/docs/images/AdoptOpenJDK_Build_Script_Relationships.png)
 
 ```markdown
