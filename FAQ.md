@@ -18,7 +18,7 @@ won't necessarily have access to see these links):
 I wrote this diagram partially for my own benefit in [issue 957](https://github.com/adoptium/temurin-build/issues/957) that lists the Jenkins jobs (`J`) and Groovy scripts from GitHub (`G`).
 I think it would be useful to incorporate this into the documentation (potentially annotated with a bit more info) so people can find their way around the myriad of script levels that we now have.
 
-Note that the "end-user" scripts start at `makejdk-any-platform.sh` and a
+Note that the "end user" scripts start at `makejdk-any-platform.sh` and a
 diagram of those relationships can be seen [here](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/docs/images/AdoptOpenJDK_Build_Script_Relationships.png)
 
 ```markdown
@@ -84,6 +84,8 @@ If you're making changes ensure you follow the contribution guidelines in
 In order to test whether your changes work use the [test-build-script-pull-request](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/test-build-script-pull-request/) job!
 Pass it your fork name (e.g. `https://github.com/sxa555/openjdk-build`) and the name of the branch and it will run a build using your updated scripts.
 For more information, see the [PR testing documentation](pipelines/build/prTester/README.md).
+
+If you have permission to submit Jenkins builds you can follow the instructions [here](https://github.com/adoptium/ci-jenkins-pipelines/wiki/Building-your-own-branch-of-ci-jenkins-pipelines-or-temurin-build) on running a test build on your personal branch of ci-jenkins-pipelines or temurin-build.
 
 ## I want to use my own configuration files or scripts on my own Jenkins instance. How do I do it?
 
