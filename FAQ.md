@@ -85,6 +85,8 @@ In order to test whether your changes work use the [test-build-script-pull-reque
 Pass it your fork name (e.g. `https://github.com/sxa555/openjdk-build`) and the name of the branch and it will run a build using your updated scripts.
 For more information, see the [PR testing documentation](pipelines/build/prTester/README.md).
 
+If you have permission to submit Jenkins builds you can follow the instructions [here](https://github.com/adoptium/ci-jenkins-pipelines/wiki/Building-your-own-branch-of-ci-jenkins-pipelines-or-temurin-build) on running a test build on your personal branch of ci-jenkins-pipelines or temurin-build.
+
 ## I want to use my own configuration files or scripts on my own Jenkins instance. How do I do it?
 
 Check out [Adopt's guide](docs/UsingOurScripts.md) to setting up your own scripts and configurations (while not having to keep up with Adopt's changes)!
