@@ -83,11 +83,9 @@ class Config17 {
         ppc64Aix    : [
                 os                  : 'aix',
                 arch                : 'ppc64',
-                additionalNodeLabels: [
-                        temurin: 'xlc16&&aix710',
-                        openj9:  'xlc16&&aix715'
-                ],
+                additionalNodeLabels: 'xlc13&&aix720',
                 test                : 'default',
+                additionalTestLabels: 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
