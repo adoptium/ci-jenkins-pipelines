@@ -8,7 +8,7 @@
         "helper_ref"         : "master"
     },
     "jenkinsDetails"         : {
-        "rootUrl"            : "https://ci.adoptopenjdk.net",
+        "rootUrl"            : "https://ci.adoptium.net",
         "rootDirectory"      : "build-scripts"
     },
     "templateDirectories" : {

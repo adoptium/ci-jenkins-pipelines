@@ -37,11 +37,11 @@ cd pipelines/
 
 ### Openjdk-build-pr-tester
 
-- **Seen in the PR Status Checks as `pipeline-build-check`, the job is located [here](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/)**
-- This job runs the a set of [sandbox pipelines](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test/) to test the changes that you have made to our codebase.
+- **Seen in the PR Status Checks as `pipeline-build-check`, the job is located [here](https://ci.adoptium.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/)**
+- This job runs the a set of [sandbox pipelines](https://ci.adoptium.net/job/build-scripts-pr-tester/job/build-test/) to test the changes that you have made to our codebase.
 - It first executes [kick_off_tester.groovy](pipelines/build/prTester/kick_off_tester.groovy) which in turn kicks off our [pr_test_pipeline](pipelines/build/prTester/pr_test_pipeline.groovy), then main base file for this job.
-- NOTE: This tester is only really worth running if your code changes affect our groovy code OR Jenkins environment. Otherwise, the [Build](https://ci.adoptopenjdk.net/job/build-scripts/) jobs are sufficient enough to flag any problems with your code.
-- NOTE2: Any PR change made into [kick_off_tester.groovy](pipelines/build/prTester/kick_off_tester.groovy) requires updates in [pipeline-build-check](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/) asking admin for assistant if you do not have permission to update job config.
+- NOTE: This tester is only really worth running if your code changes affect our groovy code OR Jenkins environment. Otherwise, the [Build](https://ci.adoptium.net/job/build-scripts/) jobs are sufficient enough to flag any problems with your code.
+- NOTE2: Any PR change made into [kick_off_tester.groovy](pipelines/build/prTester/kick_off_tester.groovy) requires updates in [pipeline-build-check](https://ci.adoptium.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/) asking admin for assistant if you do not have permission to update job config.
 
 #### Usage
 
@@ -52,7 +52,7 @@ If you are on either list, the PR tester will run against your PR whenever you c
 
 - Executes a new [#openjdk-build-pr-tester](#openjdk-build-pr-tester) job against this PR. These jobs will populate the GitHub status checks field as described above.
 
-Please be patient as the tester does not run concurrently so it may take some time to execute the jobs if there is a long job queue. You can track the progress of it in [Jenkins](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/) OR look at the status check message:
+Please be patient as the tester does not run concurrently so it may take some time to execute the jobs if there is a long job queue. You can track the progress of it in [Jenkins](https://ci.adoptium.net/job/build-scripts-pr-tester/) OR look at the status check message:
 
 - Example of a PR that is in the queue:
   ![Image of queued tester](./images/pr_tester_queued.png)
@@ -85,4 +85,4 @@ Example:
 - **ADMIN COMMAND ONLY**
 - This command adds a new user to the whitelist but not to the admin list of the [#openjdk-build-pr-tester](#openjdk-build-pr-tester) job. As of typing this, there is [currently no way to check if you have the correct permissions](https://github.com/adoptium/temurin-build/issues/2055#issuecomment-688801090).
 - Should you want to be promoted to the whitelist, please contact one of the admins through [#infrastructure](https://adoptopenjdk.slack.com/archives/C53GHCXL4) in Slack.
-- Should you want the up to date admin or white list, check the configuration of the [openjdk-build-pr-tester](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/) job. If you don't have the permissions to view the configuration, then try out the `add to whitelist` and `run tests` commands on a test PR to see if they work.
+- Should you want the up to date admin or white list, check the configuration of the [openjdk-build-pr-tester](https://ci.adoptium.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/) job. If you don't have the permissions to view the configuration, then try out the `add to whitelist` and `run tests` commands on a test PR to see if they work.

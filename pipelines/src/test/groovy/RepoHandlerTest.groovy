@@ -30,7 +30,7 @@ class RepoHandlerTest {
 
         // Jenkins Details
         Assertions.assertTrue(adoptJson.jenkinsDetails instanceof Map)
-        Assertions.assertEquals(adoptJson.jenkinsDetails.rootUrl, 'https://ci.adoptopenjdk.net')
+        Assertions.assertEquals(adoptJson.jenkinsDetails.rootUrl, 'https://ci.adoptium.net')
         Assertions.assertEquals(adoptJson.jenkinsDetails.rootDirectory, 'build-scripts')
 
         // Templates
