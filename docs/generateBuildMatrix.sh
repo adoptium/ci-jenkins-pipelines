@@ -14,7 +14,7 @@ if [[ -f ${buildFile} ]]; then
 fi
 
 for i in ${allPlatforms[@]}; do
-    curl -s "https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/${i}/" | egrep -o "job/${i}-[^\/]+" >> ${buildJobFile}
+    curl -s "https://ci.adoptium.net/job/build-scripts/job/jobs/job/${i}/" | egrep -o "job/${i}-[^\/]+" >> ${buildJobFile}
 done
 
 # Filter out jobs matching excludedKeywords
@@ -41,9 +41,9 @@ do
     # buildName should be of the form: aix-ppc64-temurin
     echo -n "| ${buildName} | " >> ${buildFile}
     for i in ${allPlatforms[@]}; do
-        code=$(curl -L -s -o /dev/null -w "%{http_code}" "https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/${i}/job/${i}-${buildName}")
+        code=$(curl -L -s -o /dev/null -w "%{http_code}" "https://ci.adoptium.net/job/build-scripts/job/jobs/job/${i}/job/${i}-${buildName}")
         if [[ ${code} = 200 ]]; then
-            echo -n "[![Build Status](https://ci.adoptopenjdk.net/buildStatus/icon?job=build-scripts/jobs/${i}/${i}-${buildName})](https://ci.adoptopenjdk.net/job/build-scripts/job/jobs/job/${i}/job/${i}-${buildName})" >> "/tmp/build.txt"
+            echo -n "[![Build Status](https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/${i}/${i}-${buildName})](https://ci.adoptium.net/job/build-scripts/job/jobs/job/${i}/job/${i}-${buildName})" >> "/tmp/build.txt"
         else
             echo -n "N/A" >> ${buildFile}
         fi

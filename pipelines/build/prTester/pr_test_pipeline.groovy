@@ -120,7 +120,7 @@ class PullRequestTestPipeline implements Serializable {
                     DEFAULTS_JSON['templateDirectories']['downstream'],
                     DEFAULTS_JSON['baseFileDirectories']['downstream'],
                     DEFAULTS_JSON['scriptDirectories']['downstream'],
-                    'https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test',
+                    'https://ci.adoptium.net/job/build-scripts-pr-tester/job/build-test',
                     null,
                     null,
                     "pr-tester"

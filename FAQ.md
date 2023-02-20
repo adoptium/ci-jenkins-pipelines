@@ -81,7 +81,7 @@ For more information on other changes required, see [this document](https://gith
 If you're making changes ensure you follow the contribution guidelines in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-In order to test whether your changes work use the [test-build-script-pull-request](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/test-build-script-pull-request/) job!
+In order to test whether your changes work use the [test-build-script-pull-request](https://ci.adoptium.net/job/build-scripts-pr-tester/job/test-build-script-pull-request/) job!
 Pass it your fork name (e.g. `https://github.com/sxa555/openjdk-build`) and the name of the branch and it will run a build using your updated scripts.
 For more information, see the [PR testing documentation](pipelines/build/prTester/README.md).
 
