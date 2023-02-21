@@ -21,7 +21,6 @@ import java.time.temporal.ChronoUnit
 
 node('worker') {
     def variant = "${params.VARIANT}"
-    def jenkinsUrl = "${params.JENKINS_URL}"
     def trssUrl    = "${params.TRSS_URL}"
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
@@ -248,7 +247,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + jenkinsUrl + '/view/Tooling/job/nightlyBuildAndTestStats_' + variant + '/' + BUILD_NUMBER + '/console|Detail>')
+        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
     }
 
     stage('printPublishStats') {
