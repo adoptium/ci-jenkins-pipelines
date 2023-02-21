@@ -1,7 +1,7 @@
 import groovy.json.JsonOutput
 
 gitRefSpec = ''
-propagateFailures = false
+propagateFailures = true
 runTests = enableTests
 runParallel = enableTestDynamicParallel
 runInstaller = true

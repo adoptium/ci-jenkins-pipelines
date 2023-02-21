@@ -828,7 +828,7 @@ class Builder implements Serializable {
                             // Pass down DEFAULTS_JSON
                             buildJobParams.add(['$class': 'TextParameterValue', name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)) ])
 
-                            def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: buildJobParams
+                            def downstreamJob = context.build job: downstreamJobName, propagate: true, parameters: buildJobParams
 
                             if (downstreamJob.getResult() == 'SUCCESS') {
                                 // copy artifacts from build
