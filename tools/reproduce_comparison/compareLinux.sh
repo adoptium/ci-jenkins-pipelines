@@ -1,24 +1,35 @@
 #!/bin/sh
 [ $# -lt 1 ] && echo Usage: $0 SBOMURL && exit 1
 SBOMURL=$1
-if test -r /etc/redhat-release; then
-  yum install -y gcc gcc-c++ make autoconf unzip zip alsa-lib-devel cups-devel   libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel
-  yum install -y file fontconfig fontconfig-devel systemtap-sdt-devel # Not included above ...
-  yum install -y git bzip2 xz openssl pigz which # pigz/which not strictly needed but help in final compression
-  if grep elease.6 /etc/redhat-release; then
-    if [ ! -r /usr/local/bin/autoconf ]; then
-      curl https://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz | tar xpfz - || exit 1
-      (cd autoconf-2.69 && ./configure --prefix=/usr/local && make install)
+ANT_VERSION=1.10.5
+
+installPrereqs() {
+  if test -r /etc/redhat-release; then
+    yum install -y gcc gcc-c++ make autoconf unzip zip alsa-lib-devel cups-devel   libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel
+    yum install -y file fontconfig fontconfig-devel systemtap-sdt-devel # Not included above ...
+    yum install -y git bzip2 xz openssl pigz which # pigz/which not strictly needed but help in final compression
+    if grep elease.6 /etc/redhat-release; then
+      if [ ! -r /usr/local/bin/autoconf ]; then
+        curl https://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz | tar xpfz - || exit 1
+        (cd autoconf-2.69 && ./configure --prefix=/usr/local && make install)
+      fi
     fi
   fi
-fi
+}
+
 # ant required for --create-sbom
-if [ ! -r /usr/local/apache-ant-1.10.5/bin/ant ]; then
-  echo Downloading ant for SBOM creation:
-  curl https://archive.apache.org/dist/ant/binaries/apache-ant-1.10.5-bin.zip > /tmp/apache-ant-1.10.5-bin.zip
-  (cd /usr/local && unzip -qn /tmp/apache-ant-1.10.5-bin.zip)
-  rm /tmp/apache-ant-1.10.5-bin.zip
-fi
+function downloadAnt() {
+  if [ ! -r /usr/local/apache-ant-${ANT_VERSION}/bin/ant ]; then
+    echo Downloading ant for SBOM creation:
+    curl https://archive.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.zip > /tmp/apache-ant-${ANT_VERSION}-bin.zip
+    (cd /usr/local && unzip -qn /tmp/apache-ant-${ANT_VERSION}-bin.zip)
+    rm /tmp/apache-ant-${ANT_VERSION}-bin.zip
+  fi
+}
+
+installPrereqs
+downloadAnt
+
 echo Retrieving and parsing SBOM from "$SBOMURL"
 curl -LO $SBOMURL
 SBOM=`basename $SBOMURL`
@@ -47,7 +58,7 @@ fi
 export CC="${LOCALGCCDIR}/bin/gcc-${GCCVERSION}"
 export CXX="${LOCALGCCDIR}/bin/g++-${GCCVERSION}"
 # /usr/local/bin required to pick up the new autoconf if required
-export PATH="${LOCALGCCDIR}/bin:/usr/local/bin:/usr/bin:$PATH:/usr/local/apache-ant-1.10.5/bin"
+export PATH="${LOCALGCCDIR}/bin:/usr/local/bin:/usr/bin:$PATH:/usr/local/apache-ant-${ANT_VERSION}/bin"
 ls -ld $CC $CXX /usr/lib/jvm/jdk-${BOOTJDK_VERSION}/bin/javac || exit 1
 
 TARBALL_URL="https://api.adoptopenjdk.net/v3/binary/version/jdk-${TEMURIN_VERSION}/linux/${NATIVE_API_ARCH}/jdk/hotspot/normal/adoptopenjdk?project=jdk"
