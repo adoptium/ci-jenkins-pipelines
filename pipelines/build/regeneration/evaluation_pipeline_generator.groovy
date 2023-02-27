@@ -48,7 +48,7 @@ node('worker') {
         }
 
         timestamps {
-            def validVersion = [8, 11, 17, 20]
+            def validVersion = [8, 11, 17, 19, 20]
             def generatedPipelines = []
 
             // Load git url and branch and gitBranch. These determine where we will be pulling user configs from.

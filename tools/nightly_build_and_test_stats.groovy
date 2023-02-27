@@ -24,12 +24,12 @@ node('worker') {
     def trssUrl    = "${params.TRSS_URL}"
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
-    def featureReleases = [ 8, 11, 17, 20 ] // Consider making those parameters
+    def featureReleases = [ 8, 11, 17, 19 ] // Consider making those parameters
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
 
-    def healthStatus = [ 'jdk8': null, 'jdk11': null, 'jdk17': null, 'jdk20': null]
+    def healthStatus = [ 'jdk8': null, 'jdk11': null, 'jdk17': null, 'jdk19': null]
     def testStats = []
 
     stage('getPipelineStatus') {

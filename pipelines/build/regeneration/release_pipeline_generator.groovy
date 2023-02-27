@@ -7,7 +7,7 @@ file used as jenkinsfile to generator official release pipeline
 */
 
 // ensure releaseVersions is updated before create releaseTag
-def releaseVersions = [8,11,17,20]
+def releaseVersions = [8,11,17,19]
 
 
 // Regenerate release-openjdkX-pipeline per each jdk version listed in releaseVersions

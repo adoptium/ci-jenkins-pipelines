@@ -32,4 +32,4 @@ jobs:
 
             In order to run the advanced [pipeline tests](https://github.com/adoptium/ci-jenkins-pipelines/tree/master/pipelines/build/prTester#openjdk-build-pr-tester) (executing a set of mock pipelines), it requires an admin to post `run tests` on this PR.
             If you are not an admin, please ask for one's attention in [#infrastructure on Slack](https://adoptium.slack.com/archives/C53GHCXL4) or ping one here.
-            To run full set of tests, use "run tests"; a subset of tests on specific jdk version, use "run tests quick 11,20" 
+            To run full set of tests, use "run tests"; a subset of tests on specific jdk version, use "run tests quick 11,19" 

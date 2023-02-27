@@ -133,7 +133,7 @@ class PullRequestTestPipeline implements Serializable {
                 run tests                   run all version from  $javaVersions
                 run tests quick             run jdk17
                 run tests quick 8           run jdk8
-                run tests quick 11,17,20    run jdk11, 17 and 20
+                run tests quick 11,17,19    run jdk11, 17 and 19
             */
             String[] commentsList = context.params.ghprbCommentBody.trim().split('run tests quick')
             switch (commentsList.size()) {
@@ -207,7 +207,7 @@ Map<String, ?> defaultTestConfigurations = [
     ]
 ]
 
-List<Integer> defaultJavaVersions = [8, 11, 17, 20]
+List<Integer> defaultJavaVersions = [8, 11, 17, 19]
 
 return {
     String branch,
