@@ -2,7 +2,7 @@
 
 # Generates markdown table of build job status
 
-allPlatforms=("jdk8u" "jdk11u" "jdk17u" "jdk19u" "jdk")
+allPlatforms=("jdk8u" "jdk11u" "jdk17u" "jdk20" "jdk")
 buildFile="/tmp/build.txt"
 buildJobFile="/tmp/build_jobs.txt"
 excludedKeywords=("SmokeTests" "hotspot" "corretto" "bisheng" "dragonwell" "openj9")

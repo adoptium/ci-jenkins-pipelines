@@ -692,7 +692,7 @@ class Builder implements Serializable {
     e.g: 
     nightly:    build-scripts/jobs/jdk11u/jdk11u-linux-aarch64-temurin
     evaluation:  build-scripts/jobs/evaluation/jobs/jdk17u/jdk17u-evaluation-mac-x64-openj9
-    release:    build-scripts/jobs/release/jobs/jdk19u/jdk19u-release-aix-ppc64-temurin
+    release:    build-scripts/jobs/release/jobs/jdk20/jdk20-release-aix-ppc64-temurin
     */
     def getJobFolder() {
         def parentDir = currentBuild.fullProjectName.substring(0, currentBuild.fullProjectName.lastIndexOf('/'))
