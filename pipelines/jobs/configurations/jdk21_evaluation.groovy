@@ -4,14 +4,11 @@ targetConfigurations = [
         ],
         'aarch64AlpineLinux' : [
                 'temurin'
+        ],
+        'aarch64Windows' : [
+                'temurin'
         ]
 ]
-        // 'aarch64Linux': [
-        //         'hotspot'
-        // ],
-        // 'aarch64Windows' : [
-        //         'temurin'
-        // ],
 
 // if set to empty string then it wont get triggered
 
