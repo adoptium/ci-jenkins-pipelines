@@ -526,7 +526,6 @@ class Build {
                          parallel = 'Dynamic'
                          num_machines = '2'
                     }
-
                     context.catchError {
                         context.triggerRemoteJob abortTriggeredJob: true,
                             blockBuildUntilComplete: false,
@@ -541,6 +540,7 @@ class Build {
                                                                     context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
                                                                     context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
                                                                     context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                                    context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
                                                                     context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
                             remoteJenkinsName: 'temurin-compliance',
                             shouldNotFailBuild: true,
