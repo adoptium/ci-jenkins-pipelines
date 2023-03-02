@@ -830,60 +830,66 @@ class Builder implements Serializable {
 
                             def downstreamJob = context.build job: downstreamJobName, propagate: true, parameters: buildJobParams
 
-                            if (downstreamJob.getResult() == 'SUCCESS') {
-                                // copy artifacts from build
-                                context.println '[NODE SHIFT] MOVING INTO CONTROLLER NODE...'
-                                context.node('worker') {
-                                    context.catchError {
+                                try {
+                                    // copy artifacts from build
+                                    context.node('worker') {
+                                        context.catchError {
                                         //Remove the previous artifacts
-                                        try {
-                                            context.timeout(time: pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                                                context.sh "rm -rf target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/"
+                                            try {
+                                                context.timeout(time: pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                                                    context.sh "rm -rf target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/"
+                                                }
+                                            } catch (FlowInterruptedException e) {
+                                                throw new Exception("[ERROR] Previous artifact removal timeout (${pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
                                             }
-                                        } catch (FlowInterruptedException e) {
-                                            throw new Exception("[ERROR] Previous artifact removal timeout (${pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
-                                        }
 
-                                        try {
-                                            context.timeout(time: pipelineTimeouts.COPY_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                                                context.copyArtifacts(
-                                                        projectName: downstreamJobName,
-                                                        selector: context.specific("${downstreamJob.getNumber()}"),
-                                                        filter: 'workspace/target/*',
-                                                        fingerprintArtifacts: true,
-                                                        target: "target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/",
-                                                        flatten: true
-                                                )
-                                                context.copyArtifacts(
-                                                        projectName: downstreamJobName,
-                                                        selector: context.specific("${downstreamJob.getNumber()}"),
-                                                        filter: 'workspace/target/AQAvitTaps/*.tap',
-                                                        fingerprintArtifacts: true,
-                                                        target: "target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/AQAvitTaps/",
-                                                        flatten: true,
-                                                        optional: true
-                                                )
+                                            try {
+                                                context.timeout(time: pipelineTimeouts.COPY_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                                                    context.copyArtifacts(
+                                                            projectName: downstreamJobName,
+                                                            selector: context.specific("${downstreamJob.getNumber()}"),
+                                                            filter: 'workspace/target/*',
+                                                            fingerprintArtifacts: true,
+                                                            target: "target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/",
+                                                            flatten: true
+                                                    )
+                                                    context.copyArtifacts(
+                                                            projectName: downstreamJobName,
+                                                            selector: context.specific("${downstreamJob.getNumber()}"),
+                                                            filter: 'workspace/target/AQAvitTaps/*.tap',
+                                                            fingerprintArtifacts: true,
+                                                            target: "target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/AQAvitTaps/",
+                                                            flatten: true,
+                                                            optional: true
+                                                    )
+                                                }
+                                            } catch (FlowInterruptedException e) {
+                                                throw new Exception("[ERROR] Copy artifact timeout (${pipelineTimeouts.COPY_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
                                             }
-                                        } catch (FlowInterruptedException e) {
-                                            throw new Exception("[ERROR] Copy artifact timeout (${pipelineTimeouts.COPY_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
-                                        }
-                                        // Checksum
-                                        context.sh 'for file in $(ls target/*/*/*/*.tar.gz target/*/*/*/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
-                                        // Archive in Jenkins
-                                        try {
-                                            context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                                                context.archiveArtifacts artifacts: "target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/**/*"
+                                            // Checksum
+                                            context.sh 'for file in $(ls target/*/*/*/*.tar.gz target/*/*/*/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
+                                            // Archive in Jenkins
+                                            try {
+                                                context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                                                    context.archiveArtifacts artifacts: "target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/**/*"
+                                                }
+                                            } catch (FlowInterruptedException e) {
+                                                throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                             }
-                                        } catch (FlowInterruptedException e) {
-                                            throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
                                     }
+                                    context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
+                                } catch (propagateFailures) {
+                                    if (downstreamJob.getResult() != 'SUCCESS') {
+                                        if (downstreamJob.getResult() == 'UNSTABLE' && currentBuild.result != 'FAILURE') {
+                                            currentBuild.result = 'UNSTABLE'
+                                        } else {
+                                            context.error("Build failed due to downstream failure of ${downstreamJobName}")
+                                            currentBuild.result = 'FAILURE'
+                                        }
+                                        context.error("Downstream build ${downstreamJobName} reported result : "+downstreamJob.getResult())
+                                    }
                                 }
-                                context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
-                            } else if (propagateFailures) {
-                                context.error("Build failed due to downstream failure of ${downstreamJobName}")
-                                currentBuild.result = 'FAILURE'
-                            }
                         }
                     }
                 }
