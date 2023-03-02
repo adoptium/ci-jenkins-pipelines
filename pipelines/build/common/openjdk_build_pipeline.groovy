@@ -484,7 +484,7 @@ class Build {
         def remoteTargets = [:]
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
         def setupJCKRun = false
-        if (buildconfig.SCM_REF && buildconfig.AQA_REF && sdkUrl.contains("release")) {
+        if (buildConfig.SCM_REF && buildConfig.AQA_REF && sdkUrl.contains("release")) {
             setupJCKRun = true
         }
         // Determine from the platform the Jck jtx exclude platform
@@ -540,7 +540,7 @@ class Build {
                                                                 context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
                                                                 context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
                                                                 context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                                context.MapParameter(name: 'SETUP_JCK_RUN', value: setupJCKRun)]),
+                                                                context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
                         remoteJenkinsName: 'temurin-compliance',
                         shouldNotFailBuild: true,
                         token: 'RemoteTrigger',
