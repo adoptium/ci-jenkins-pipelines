@@ -527,25 +527,27 @@ class Build {
                          num_machines = '2'
                     }
 
-                    context.triggerRemoteJob abortTriggeredJob: true,
-                        blockBuildUntilComplete: false,
-                        job: 'AQA_Test_Pipeline',
-                        parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
-                                                                context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                context.MapParameter(name: 'PARALLEL', value: parallel),
-                                                                context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
-                                                                context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                                context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
-                        remoteJenkinsName: 'temurin-compliance',
-                        shouldNotFailBuild: true,
-                        token: 'RemoteTrigger',
-                        useCrumbCache: true,
-                        useJobInfoCache: true
+                    context.catchError {
+                        context.triggerRemoteJob abortTriggeredJob: true,
+                            blockBuildUntilComplete: false,
+                            job: 'AQA_Test_Pipeline',
+                            parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
+                                                                    context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
+                                                                    context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                                                                    context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
+                                                                    context.MapParameter(name: 'PARALLEL', value: parallel),
+                                                                    context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
+                                                                    context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
+                                                                    context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
+                                                                    context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
+                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                                    context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
+                            remoteJenkinsName: 'temurin-compliance',
+                            shouldNotFailBuild: true,
+                            token: 'RemoteTrigger',
+                            useCrumbCache: true,
+                            useJobInfoCache: true
+                    }
                 }
             } catch (Exception e) {
                 context.println "Failed to remote trigger jck tests: ${e.message}"
