@@ -157,6 +157,15 @@ class Config8 {
                         'temurin'   : '--create-sbom'
                 ]
         ],
+
+        loongarch64Linux  : [
+                os                  : 'linux',
+                arch                : 'loongarch64',
+                test                : 'default',
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
+                ]
+        ],
   ]
 
 }

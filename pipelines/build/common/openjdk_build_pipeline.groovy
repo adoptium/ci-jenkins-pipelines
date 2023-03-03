@@ -170,6 +170,7 @@ class Build {
             case 'dragonwell': variant = 'dragonwell'; break;
             case 'fast_startup': variant = 'fast_startup'; break;
             case 'bisheng': variant = 'bisheng'; break;
+            case 'loongson': variant = 'loongson'; break;
             default: variant = 'hs'
         }
         def jobName = "Test_openjdk${jobParams['JDK_VERSIONS']}_${variant}_${testType}_${jobParams['ARCH_OS_LIST']}"
@@ -224,6 +225,8 @@ class Build {
                 jdkBranch = 'master'
             } else if (buildConfig.VARIANT == 'bisheng') {
                 jdkBranch = 'master'
+            } else if (buildConfig.VARIANT == 'loongson') {
+                jdkBranch = 'master-ls'
             } else {
                 throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
             }
@@ -261,6 +264,8 @@ class Build {
             suffix = 'adoptium/jdk11u-fast-startup-incubator'
         } else if (buildConfig.VARIANT == 'bisheng') {
             suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
+        } else if (buildConfig.VARIANT == 'loongson') {
+            suffix = "loongson/jdk8u"
         } else {
             throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
         }
