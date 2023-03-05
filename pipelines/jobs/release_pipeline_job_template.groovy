@@ -61,7 +61,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
     parameters {
         // important items to verify before trigger release pipeline
         textParam('targetConfigurations', JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations)))
-        stringParam('releaseType', 'Release', "only for release purpose")
+        stringParam('releaseType', 'Release', "only for official release purpose")
         booleanParam('useAdoptBashScripts', true, "If enabled, the downstream job will pull and execute <code>make-adopt-build-farm.sh</code> from adoptium/temurin-build. If disabled, it will use whatever the job is running inside of at the time, usually it's the default repository in the configuration.")
         stringParam('scmReference', '', 'Tag name or Branch name from which openjdk source code repo to build')
         stringParam('buildReference', releaseTag, 'SHA1 or Tag name or Branch name of temurin-build repo. Defaults to master')
