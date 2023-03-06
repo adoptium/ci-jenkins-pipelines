@@ -1680,7 +1680,7 @@ class Build {
                 def enableTests = Boolean.valueOf(buildConfig.ENABLE_TESTS)
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
                 def enableSigner = Boolean.valueOf(buildConfig.ENABLE_SIGNER)
-                def isRelease = Boolean.valueOf(buildConfig.RELEASE)
+                def enableTCK = Boolean.valueOf(buildConfig.RELEASE) || Boolean.valueOf(buildConfig.WEEKLY)
                 def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
                 def cleanWorkspace = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE)
                 def cleanWorkspaceAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_AFTER)
@@ -1859,7 +1859,7 @@ class Build {
                     try {
                         runSmokeTests()
                         // Remote trigger Eclispe Temurin JCK tests
-                        if (buildConfig.VARIANT == 'temurin' && isRelease) {
+                        if (buildConfig.VARIANT == 'temurin' && enableTCK) {
                             def platform = ''
                             if (buildConfig.ARCHITECTURE.contains('x64')) {
                                 platform = 'x86-64_' + buildConfig.TARGET_OS

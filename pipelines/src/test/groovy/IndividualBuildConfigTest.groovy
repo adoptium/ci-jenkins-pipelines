@@ -3,6 +3,9 @@ import groovy.json.JsonOutput
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
+/** Test Class for IndividualBuildConfig.
+ * @author Adoptium Temurin
+*/
 class IndividualBuildConfigTest {
 
     @Test
@@ -40,6 +43,7 @@ class IndividualBuildConfigTest {
                 ADDITIONAL_FILE_NAME_TAG   : 'k',
                 JDK_BOOT_VERSION           : 'l',
                 RELEASE                    : false,
+                WEEKLY                     : false,
                 PUBLISH_NAME               : 'm',
                 ADOPT_BUILD_NUMBER         : 'n',
                 ENABLE_TESTS               : true,

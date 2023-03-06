@@ -97,6 +97,8 @@ class Builder implements Serializable {
             javaToBuild = 'jdk'
         }
 
+        Boolean isWeekly = (releaseType == "Weekly") ? true : false
+
         def additionalNodeLabels = formAdditionalBuildNodeLabels(platformConfig, variant)
 
         def additionalTestLabels = formAdditionalTestLabels(platformConfig, variant)
@@ -176,6 +178,7 @@ class Builder implements Serializable {
             ADDITIONAL_FILE_NAME_TAG: platformConfig.additionalFileNameTag as String,
             JDK_BOOT_VERSION: platformConfig.bootJDK as String,
             RELEASE: release,
+            WEEKLY: isWeekly,
             PUBLISH_NAME: publishName,
             ADOPT_BUILD_NUMBER: adoptBuildNumber,
             ENABLE_TESTS: enableTests,
