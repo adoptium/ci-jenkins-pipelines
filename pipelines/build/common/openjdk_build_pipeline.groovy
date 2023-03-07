@@ -515,6 +515,19 @@ class Build {
             targets['parallel'] = 'extended.jck'
         }
 
+        /*
+        Here we limit the win32 testing to the burstable nodes (a subset of the available windows nodes).
+        This prevents win32 tests from occupying all the Windows nodes before we can test core platform win64.
+        */
+        if ("${platform}" == 'x86-32_windows') {
+            context.println "Windows 32bit JCK tests need the extra label hw.cpu.burstable"
+            if (additionalTestLabel == '') {
+                additionalTestLabel = 'hw.cpu.burstable'
+            } else {
+                additionalTestLabel += '&&hw.cpu.burstable'
+            }
+        }
+
         targets.each { targetMode, targetTests -> 
             try {
                 context.println "Remote trigger: ${targetTests}"
