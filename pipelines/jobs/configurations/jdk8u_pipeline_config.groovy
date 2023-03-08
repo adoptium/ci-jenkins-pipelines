@@ -96,6 +96,7 @@ class Config8 {
                         temurin: ['sanity.openjdk'],
                         openj9: 'default'
                 ],
+                dockerImage         : 'rhel7_build_image',
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
