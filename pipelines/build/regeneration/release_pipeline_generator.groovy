@@ -139,17 +139,3 @@ node('worker') {
         cleanWs deleteDirs: true
     }
 }
-
-// Calling release-pipeline_jobs_generator_jdk<version> per each jdk version listed in releaseVersions
-node('worker') {
-    releaseVersions.each({ javaVersion ->
-        def jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}u"
-        def releaseBuildJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
-        if (releaseBuildJob.getResult() == 'SUCCESS') {
-            println "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
-        } else {
-            println "[FAILURE] Failed to create jdk${javaVersion} release downstream build jobs"
-            currentBuild.result = 'FAILURE'
-        }
-    })
-}
