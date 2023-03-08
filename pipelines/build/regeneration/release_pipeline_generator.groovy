@@ -124,11 +124,14 @@ node('worker') {
 
             releaseVersions.each({ javaVersion ->
                 def uFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}u_release.groovy"
+                def nonUFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
                 def jobName
                 if(fileExists(uFile)){
                         jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}u"
                 }
-                // def jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}u"
+                if(fileExists(nonUFile)){
+                        jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}"
+                }
                 def releaseBuildJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
                 if (releaseBuildJob.getResult() == 'SUCCESS') {
                     println "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
