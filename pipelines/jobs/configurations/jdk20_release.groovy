@@ -29,6 +29,6 @@ targetConfigurations = [
         'arm32Linux'  : [
                 'temurin'
         ]
-
+]
 
 return this
