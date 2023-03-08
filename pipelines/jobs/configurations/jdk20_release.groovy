@@ -21,7 +21,6 @@ targetConfigurations = [
                 'temurin'
         ],
         'aarch64Linux': [
-                'hotspot',
                 'temurin'
         ],
         'aarch64Mac': [
