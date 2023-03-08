@@ -11,13 +11,10 @@ targetConfigurations = [
         'x64Windows'  : [
                 'temurin'
         ],
-        'x32Windows'  : [
+        'ppc64Aix'    : [
                 'temurin'
         ],
         'ppc64leLinux': [
-                'temurin'
-        ],
-        'ppc64Aix'    : [
                 'temurin'
         ],
         's390xLinux'  : [

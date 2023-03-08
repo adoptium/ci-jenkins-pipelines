@@ -121,24 +121,29 @@ node('worker') {
             } else {
                 println "[SUCCESS] THE FOLLOWING release PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER:\n${generatedPipelines}"
             }
+
+            releaseVersions.each({ javaVersion ->
+                def uFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}u_release.groovy"
+                def nonUFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
+                def jobName
+                if(fileExists(uFile)){
+                        jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}u"
+                }
+                if(fileExists(nonUFile)){
+                        jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}"
+                }
+                def releaseBuildJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
+                if (releaseBuildJob.getResult() == 'SUCCESS') {
+                    println "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
+                } else {
+                    println "[FAILURE] Failed to create jdk${javaVersion} release downstream build jobs"
+                    currentBuild.result = 'FAILURE'
+                }
+            })
         }
     } finally {
         // Always clean up, even on failure (doesn't delete the created jobs)
         println '[INFO] Cleaning up...'
         cleanWs deleteDirs: true
     }
-}
-
-// Calling release-pipeline_jobs_generator_jdk<version> per each jdk version listed in releaseVersions
-node('worker') {
-    releaseVersions.each({ javaVersion ->
-        def jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}u"
-        def releaseBuildJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
-        if (releaseBuildJob.getResult() == 'SUCCESS') {
-            println "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
-        } else {
-            println "[FAILURE] Failed to create jdk${javaVersion} release downstream build jobs"
-            currentBuild.result = 'FAILURE'
-        }
-    })
 }
