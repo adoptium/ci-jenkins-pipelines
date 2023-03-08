@@ -120,7 +120,8 @@ node('worker') {
                     def nonUFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
                     if(fileExists(uFile)){
                         jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}u"
-                    } else{
+                    } 
+                    if(fileExists(nonuFile)){
                         jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}"
                     }      
                 } catch (NoSuchFileException e) {
