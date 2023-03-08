@@ -114,7 +114,7 @@ node('worker') {
                 // add sucessfully generated pipeline into list
                 generatedPipelines.add(config['JOB_NAME'])
             })
-                def jobName
+                def jobname
                 try {
                     def uFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}u_release.groovy"
                     def nonUFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
@@ -124,9 +124,7 @@ node('worker') {
                     if(fileExists(nonuFile)){
                         jobName = "build-scripts/utils/release_pipeline_jobs_generator_jdk${javaVersion}"
                     }      
-                } catch (NoSuchFileException e) {
-                    throw new Exception("[ERROR] Unable to find jdk${javaVersion}u_release.groovy nor jdk${javaVersion}_release.groovy does not exist!")
-                }
+                } 
             def releaseBuildJob = build job: jobName, propagate: false, wait: true, parameters: [['$class': 'StringParameterValue', name: 'REPOSITORY_BRANCH', value: params.releaseTag]]
             if (releaseBuildJob.getResult() == 'SUCCESS') {
                 println "[SUCCESS] jdk${javaVersion} release downstream build jobs are created"
