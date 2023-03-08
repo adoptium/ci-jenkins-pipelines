@@ -11,19 +11,17 @@ targetConfigurations = [
         'x64Windows'  : [
                 'temurin'
         ],
-        'x32Windows'  : [
+        'ppc64Aix'    : [
                 'temurin'
         ],
         'ppc64leLinux': [
-                'temurin'
-        ],
-        'ppc64Aix'    : [
                 'temurin'
         ],
         's390xLinux'  : [
                 'temurin'
         ],
         'aarch64Linux': [
+                'hotspot',
                 'temurin'
         ],
         'aarch64Mac': [
@@ -32,6 +30,5 @@ targetConfigurations = [
         'arm32Linux'  : [
                 'temurin'
         ]
-]
 
 return this
