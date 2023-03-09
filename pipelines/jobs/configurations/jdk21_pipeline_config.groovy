@@ -87,6 +87,7 @@ class Config21 {
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
+                dockerImage         : 'rhel7_build_image',
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
