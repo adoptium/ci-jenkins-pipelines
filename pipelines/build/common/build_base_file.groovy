@@ -828,13 +828,15 @@ class Builder implements Serializable {
                             // Pass down DEFAULTS_JSON
                             buildJobParams.add(['$class': 'TextParameterValue', name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)) ])
 
+                            def copyArtifactSuccess = false
                             def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: buildJobParams
 
-                            if (downstreamJob.getResult() == 'SUCCESS') {
-                                // copy artifacts from build
-                                context.println '[NODE SHIFT] MOVING INTO CONTROLLER NODE...'
-                                context.node('worker') {
-                                    context.catchError {
+                            context.println "Downstream job ${downstreamJobName} completed, result = "+downstreamJob.getResult()
+
+                            // copy artifacts from build regardless of job result
+                            context.println '[NODE SHIFT] MOVING INTO CONTROLLER NODE...'
+                            context.node('worker') {
+                                    context.catchError(message: "Error during copy and archive artifacts for build job: ${downstreamJobName}") {
                                         //Remove the previous artifacts
                                         try {
                                             context.timeout(time: pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
@@ -877,12 +879,19 @@ class Builder implements Serializable {
                                         } catch (FlowInterruptedException e) {
                                             throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
+
+                                        copyArtifactSuccess = true
                                     }
+                            }
+                            context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
+
+                            if ((downstreamJob.getResult() != 'SUCCESS' || !copyArtifactSuccess) && propagateFailures) {
+                                context.error("Propagating downstream job result: ${downstreamJobName}, Result: "+downstreamJob.getResult()+" CopyArtifactsSuccess: "+copyArtifactSuccess)
+                                if (copyArtifactSuccess && downstreamJob.getResult() == 'UNSTABLE' && (currentBuild.result == 'SUCCESS' || currentBuild.result == 'UNSTABLE' )) {
+                                    currentBuild.result = 'UNSTABLE'
+                                } else {
+                                    currentBuild.result = 'FAILURE'
                                 }
-                                context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
-                            } else if (propagateFailures) {
-                                context.error("Build failed due to downstream failure of ${downstreamJobName}")
-                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }
