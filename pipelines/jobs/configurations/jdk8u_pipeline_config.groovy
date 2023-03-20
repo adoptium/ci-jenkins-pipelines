@@ -153,7 +153,6 @@ class Config8 {
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell_aarch64.dockerfile'
                 ],
                 test                 : 'default',
-                testDynamic          : false,
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
