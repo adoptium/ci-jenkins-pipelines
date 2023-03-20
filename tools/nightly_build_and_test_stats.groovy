@@ -90,7 +90,7 @@ node('worker') {
                         if (!foundNightly) {
                             def pipeline_id = null
                             def pipelineUrl
-                            def buildJobSuccess = 0
+                            def buildJobComplete = 0
                             def buildJobFailure = 0
                             def testJobSuccess = 0
                             def testJobUnstable = 0
@@ -149,10 +149,10 @@ node('worker') {
                                     pipelineBuildJobsJson.each { buildJob ->
                                         if (buildJob.buildName.contains(buildVariant)) {
                                             buildJobNumber += 1
-                                            if (buildJob.buildResult.equals('SUCCESS')) {
-                                                buildJobSuccess += 1
-                      } else {
+                                            if (buildJob.buildResult.equals('FAILED')) {
                                                 buildJobFailure += 1
+                      } else {
+                                                buildJobComplete += 1
                                             }
                                         }
                                     }
@@ -160,7 +160,7 @@ node('worker') {
 
                                 def testResult = [name: pipelineName, url: pipelineUrl,
                           buildJobNumber:   buildJobNumber,
-                          buildJobSuccess:  buildJobSuccess,
+                          buildJobComplete:  buildJobComplete,
                           buildJobFailure:  buildJobFailure,
                           testJobSuccess:   testJobSuccess,
                           testJobUnstable:  testJobUnstable,
@@ -189,7 +189,7 @@ node('worker') {
             echo "For Variant: ${variant}"
             echo "  Pipeline : ${pipeline.name} : ${pipeline.url}"
             echo "    => Number of Build jobs = ${pipeline.buildJobNumber}"
-            echo "    => Build job SUCCESS   = ${pipeline.buildJobSuccess}"
+            echo "    => Build job COMPLETE   = ${pipeline.buildJobComplete}"
             echo "    => Build job FAILURE   = ${pipeline.buildJobFailure}"
             echo "    => Number of Test jobs = ${pipeline.testJobNumber}"
             echo "    => Test job SUCCESS    = ${pipeline.testJobSuccess}"
