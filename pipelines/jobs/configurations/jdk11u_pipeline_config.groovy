@@ -178,7 +178,6 @@ class Config11 {
                         'dragonwell': "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
                         'bisheng'   : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
                 ],
-                testDynamic        : false,
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
