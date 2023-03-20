@@ -60,7 +60,7 @@ class Config20 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
