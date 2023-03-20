@@ -1,6 +1,8 @@
 // when no target for evaluation, set it to null and disable scheduler below
-targetConfigurations = null
-//[
+targetConfigurations = [
+        'aarch64Windows': [
+                'temurin'
+        ]
         // 'x64Mac'        : [
         //         'openj9'
         // ],
@@ -28,11 +30,8 @@ targetConfigurations = null
         //         'openj9',
         //         'dragonwell',
         //         'bisheng'
-        // ],
-        // 'aarch64Windows': [
-        //         'temurin'
         // ]
-//]
+]
 
 // if set to empty string then it wont get triggered
 triggerSchedule_evaluation = ''
