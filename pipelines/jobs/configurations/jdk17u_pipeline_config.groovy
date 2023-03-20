@@ -97,6 +97,7 @@ class Config17 {
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
+                dockerImage         : 'rhel7_build_image',
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
@@ -107,7 +108,7 @@ class Config17 {
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                additionalNodeLabels: 'centos7',
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
                         'temurin'     : '--enable-dtrace',
@@ -153,8 +154,18 @@ class Config17 {
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
-        ]
+        ],
 
+        aarch64Windows: [
+                os                  : 'windows',
+                arch                : 'aarch64',
+                crossCompile        : 'x64',
+                additionalNodeLabels: 'win2016&&vs2019',
+                test                : false,
+                buildArgs       : [
+                        'temurin'   : '--create-jre-image --create-sbom --cross-compile'
+                ]
+        ]
   ]
 
 }

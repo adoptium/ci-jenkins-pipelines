@@ -2,6 +2,9 @@ import common.RepoHandler
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
+/**
+ * Javadoc for Class RepoHandlerTest
+ */
 class RepoHandlerTest {
 
     private Map testRemote = [
@@ -23,10 +26,11 @@ class RepoHandlerTest {
         Assertions.assertEquals(adoptJson.repository.build_branch, 'master')
         Assertions.assertEquals(adoptJson.repository.pipeline_url, 'https://github.com/adoptium/ci-jenkins-pipelines.git')
         Assertions.assertEquals(adoptJson.repository.pipeline_branch, 'master')
+        Assertions.assertEquals(adoptJson.repository.helper_ref, "master")
 
         // Jenkins Details
         Assertions.assertTrue(adoptJson.jenkinsDetails instanceof Map)
-        Assertions.assertEquals(adoptJson.jenkinsDetails.rootUrl, 'https://ci.adoptopenjdk.net')
+        Assertions.assertEquals(adoptJson.jenkinsDetails.rootUrl, 'https://ci.adoptium.net')
         Assertions.assertEquals(adoptJson.jenkinsDetails.rootDirectory, 'build-scripts')
 
         // Templates
@@ -77,6 +81,7 @@ class RepoHandlerTest {
         Assertions.assertEquals(userJson.repository.build_branch, '20')
         Assertions.assertEquals(userJson.repository.pipeline_url, '19')
         Assertions.assertEquals(userJson.repository.pipeline_branch, '21')
+        Assertions.assertEquals(userJson.repository.helper_ref, "24")
 
         // Jenkins Details
         Assertions.assertTrue(userJson.jenkinsDetails instanceof Map)
@@ -116,7 +121,7 @@ class RepoHandlerTest {
         Assertions.assertTrue(userJson.testDetails.enableTests instanceof Boolean)
         Assertions.assertTrue(userJson.testDetails.enableTests)
         Assertions.assertEquals(userJson.testDetails.nightlyDefault, [ 'test1', 'test2', 'test3' ])
-        Assertions.assertEquals(userJson.testDetails.weeklyDefault, [ 'test4', 'test5', 'test6' ])
+        Assertions.assertEquals(userJson.testDetails.weeklyDefault, [ 'test4', 'test5', 'test6', "test7" ])
     }
 
     @Test

@@ -3,7 +3,8 @@
         "build_url"          : "1",
         "build_branch"       : "20",
         "pipeline_url"       : "19",
-        "pipeline_branch"    : "21"
+        "pipeline_branch"    : "21",
+        "helper_ref"         : "24"
     },
     "jenkinsDetails"         : {
         "rootUrl"            : "3",
@@ -34,7 +35,7 @@
     "testDetails"            : {
         "enableTests"        : true,
         "nightlyDefault"     : [ "test1", "test2", "test3" ],
-        "weeklyDefault"      : [ "test4", "test5", "test6" ]
+        "weeklyDefault"      : [ "test4", "test5", "test6", "test7"]
     },
     "defaultsUrl"            : "23"
 }

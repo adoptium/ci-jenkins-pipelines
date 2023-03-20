@@ -86,8 +86,9 @@ class Builder implements Serializable {
     */
     IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant) {
         // Query the Adopt api to get the "tip_version"
-        def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-        context.println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
+        String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+        context.println 'Querying Adoptium API for the JDK-Head number (tip_version)...'
         def response = JobHelper.getAvailableReleases(context)
         int headVersion = (int) response[('tip_version')]
         context.println "Found Java Version Number: ${headVersion}"
@@ -492,18 +493,20 @@ class Builder implements Serializable {
 
     /*
     Retrieves the platformSpecificConfigPath from the build configurations.
-    This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
+    This determines where the location of the operating system setup files are in comparison to the repository root.
+    The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
         def splitUserUrl = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
         // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
+        def buildRef = configuration.buildRef ?: DEFAULTS_JSON['repository']['build_branch']
         // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${DEFAULTS_JSON['configDirectories']['platform']}"
         if (configuration.containsKey('platformSpecificConfigPath')) {
             // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations.linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -626,7 +629,8 @@ class Builder implements Serializable {
         try {
             context.timeout(time: pipelineTimeouts.API_REQUEST_TIMEOUT, unit: 'HOURS') {
                 // Query the Adopt api to get the "tip_version"
-                def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
                 context.println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
                 def response = JobHelper.getAvailableReleases(context)
                 return (int) response[('tip_version')]
@@ -660,19 +664,40 @@ class Builder implements Serializable {
         return "jdk${number}"
     }
 
+
+    /*
+    Returns the downstream build job's type by checking job folder's path
+    can be "evaluation" or "release" or null (in this case it is for the nightly or pr-tester)
+    */
+    def getBuildJobType() {
+        if (currentBuild.fullProjectName.contains("evaluation")){
+            return "evaluation"
+        } else if (currentBuild.fullProjectName.contains("release")) {
+            return "release"
+        }
+        return
+    }
+
     /*
     Returns the job name of the target downstream job
     */
     def getJobName(displayName) {
-        return "${javaToBuild}-${displayName}"
+        // if getBuildJobType return null, it is nightly or pr-tester
+        def buildJobType = getBuildJobType() ? getBuildJobType() + "-" : ""
+        return "${javaToBuild}-${buildJobType}${displayName}"
     }
 
     /*
-    Returns the jenkins folder of where it's assumed the downstream build jobs have been regenerated
+    Returns the jenkins folder of where we assume the downstream build jobs have been regenerated
+    e.g: 
+    nightly:    build-scripts/jobs/jdk11u/jdk11u-linux-aarch64-temurin
+    evaluation:  build-scripts/jobs/evaluation/jobs/jdk17u/jdk17u-evaluation-mac-x64-openj9
+    release:    build-scripts/jobs/release/jobs/jdk20/jdk20-release-aix-ppc64-temurin
     */
     def getJobFolder() {
         def parentDir = currentBuild.fullProjectName.substring(0, currentBuild.fullProjectName.lastIndexOf('/'))
-        return parentDir + '/jobs/' + javaToBuild
+        def buildJobType = getBuildJobType() ? "/jobs/" + getBuildJobType() : ""
+        return parentDir + buildJobType + '/jobs/' + javaToBuild
     }
 
     /*
@@ -727,40 +752,8 @@ class Builder implements Serializable {
     }
 
     /*
-    Remote Trigger JCK tests for weekly temurin builds
-    */
-    def remoteTriggerJckTests(String platforms) {
-        boolean isTemurin = true
-        targetConfigurations
-        .each { target ->
-            target.value.each { variant ->
-                    if (!variant.equals('temurin')) {
-                        isTemurin = false
-                    }
-            }
-        }
-        if (isTemurin) {
-            def jdkVersion = getJavaVersionNumber()
-            //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
-            def sdkUrl = "${env.BUILD_URL}"
-            def targets = 'sanity.jck,extended.jck,special.jck'
-            context.triggerRemoteJob abortTriggeredJob: true,
-                                blockBuildUntilComplete: false,
-                                job: 'AQA_Test_Pipeline',
-                                parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                       context.MapParameter(name: 'TARGETS', value: targets),
-                                                                       context.MapParameter(name: 'TOP_LEVEL_SDK_URL', value: "${sdkUrl}"),
-                                                                       context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                       context.MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
-                                remoteJenkinsName: 'temurin-compliance',
-                                shouldNotFailBuild: true,
-                                token: 'RemoteTrigger',
-                                useCrumbCache: true,
-                                useJobInfoCache: true
-        }
-    }
-    /*
-    Main function. This is what is executed remotely via the openjdkxx-pipeline and pr tester jobs
+    Main function. This is what is executed remotely via the [release-|evaluation-]openjdkxx-pipeline and pr-tester jobs
+    Running in the *openjdkX-pipeline
     */
     @SuppressWarnings('unused')
     def doBuild() {
@@ -802,16 +795,17 @@ class Builder implements Serializable {
             context.echo "Force auto generate AQA test jobs: ${aqaAutoGen}"
             context.echo "Keep test reportdir: ${keepTestReportDir}"
             context.echo "Keep release logs: ${keepReleaseLogs}"
-            List<String> buildPlatforms = []
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
                     IndividualBuildConfig config = configuration.value
 
-                    // jdk11u-linux-x64-hotspot
+                    // jdk20-linux-x64-temurin
                     def jobTopName = getJobName(configuration.key)
                     def jobFolder = getJobFolder()
-
-                    // i.e jdk11u/job/jdk11u-linux-x64-hotspot
+                    /*
+                        build-scripts/jobs/jdk20/jdk20-linux-x64-temurin for nightly
+                        build-scripts/evaluation/jobs/jdk20/jdk20-evaluation-linux-aarch64-hotspot for evaluation
+                    */
                     def downstreamJobName = "${jobFolder}/${jobTopName}"
                     context.echo 'build name ' + downstreamJobName
 
@@ -819,13 +813,30 @@ class Builder implements Serializable {
                         // Execute build job for configuration i.e jdk11u/job/jdk11u-linux-x64-hotspot
                         context.stage(configuration.key) {
                             // Triggering downstream job ${downstreamJobName}
-                            def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: config.toBuildParams()
 
-                            if (downstreamJob.getResult() == 'SUCCESS') {
-                                // copy artifacts from build
-                                context.println '[NODE SHIFT] MOVING INTO CONTROLLER NODE...'
-                                context.node('worker') {
-                                    context.catchError {
+                            def buildJobParams = config.toBuildParams()
+
+                            // Pass down constructed USER_REMOTE_CONFIGS if useAdoptShellScripts is false
+                            // But not for pr-tester as it generates target jobs with required remoteConfigs
+                            if (!useAdoptShellScripts && !env.JOB_NAME.contains('pr-tester')) {
+                                def user_ci_branch = ciReference ?: DEFAULTS_JSON["repository"]["pipeline_branch"]
+                                def user_ci_url    = DEFAULTS_JSON["repository"]["pipeline_url"]
+                                Map<String, ?> USER_REMOTE_CONFIGS = ["branch": user_ci_branch, "remotes": ["url": user_ci_url]]
+                                buildJobParams.add(['$class': 'TextParameterValue', name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(USER_REMOTE_CONFIGS)) ])
+                            }
+
+                            // Pass down DEFAULTS_JSON
+                            buildJobParams.add(['$class': 'TextParameterValue', name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)) ])
+
+                            def copyArtifactSuccess = false
+                            def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: buildJobParams
+
+                            context.println "Downstream job ${downstreamJobName} completed, result = "+downstreamJob.getResult()
+
+                            // copy artifacts from build regardless of job result
+                            context.println '[NODE SHIFT] MOVING INTO CONTROLLER NODE...'
+                            context.node('worker') {
+                                    context.catchError(message: "Error during copy and archive artifacts for build job: ${downstreamJobName}") {
                                         //Remove the previous artifacts
                                         try {
                                             context.timeout(time: pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
@@ -860,13 +871,6 @@ class Builder implements Serializable {
                                         }
                                         // Checksum
                                         context.sh 'for file in $(ls target/*/*/*/*.tar.gz target/*/*/*/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
-                                        def platform = ''
-                                        if (config.ARCHITECTURE.contains('x64')) {
-                                            platform = 'x86-64_' + config.TARGET_OS
-                                        } else {
-                                            platform = config.ARCHITECTURE + '_' + config.TARGET_OS
-                                        }
-                                        buildPlatforms.add(platform)
                                         // Archive in Jenkins
                                         try {
                                             context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
@@ -875,12 +879,19 @@ class Builder implements Serializable {
                                         } catch (FlowInterruptedException e) {
                                             throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
+
+                                        copyArtifactSuccess = true
                                     }
+                            }
+                            context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
+
+                            if ((downstreamJob.getResult() != 'SUCCESS' || !copyArtifactSuccess) && propagateFailures) {
+                                context.error("Propagating downstream job result: ${downstreamJobName}, Result: "+downstreamJob.getResult()+" CopyArtifactsSuccess: "+copyArtifactSuccess)
+                                if (copyArtifactSuccess && downstreamJob.getResult() == 'UNSTABLE' && (currentBuild.result == 'SUCCESS' || currentBuild.result == 'UNSTABLE' )) {
+                                    currentBuild.result = 'UNSTABLE'
+                                } else {
+                                    currentBuild.result = 'FAILURE'
                                 }
-                                context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
-                            } else if (propagateFailures) {
-                                context.error("Build failed due to downstream failure of ${downstreamJobName}")
-                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }
@@ -901,17 +912,6 @@ class Builder implements Serializable {
                 }
             } else if (publish && release) {
                 context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY'
-            } else if (release && enableTests) {
-                //remote trigger job https://ci.eclipse.org/temurin-compliance/job/AQA_Test_Pipeline/
-                //exclude not supported platforms
-                List<String> excludePlats = ['riscv64_linux', 'aarch64_windows']
-                if ( javaToBuild == 'jdk8u' ) {
-                    excludePlats.add('s390x_linux')
-                }
-                List<String> triggerPlatforms = buildPlatforms.minus(excludePlats)
-                def platformsAsString = triggerPlatforms.join(',')
-                context.echo 'Trigger the remote JCK jobs'
-                remoteTriggerJckTests(platformsAsString)
             }
         }
     }

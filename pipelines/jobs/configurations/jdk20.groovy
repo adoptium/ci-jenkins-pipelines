@@ -11,9 +11,6 @@ targetConfigurations = [
         'x64Windows'  : [
                 'temurin'
         ],
-        'x32Windows'  : [
-                'temurin'
-        ],
         'ppc64Aix'    : [
                 'temurin'
         ],
@@ -27,16 +24,12 @@ targetConfigurations = [
                 'hotspot',
                 'temurin'
         ],
-        'aarch64AlpineLinux' : [
-                'temurin'
-        ],
         'aarch64Mac': [
                 'temurin'
         ],
         'arm32Linux'  : [
                 'temurin'
         ]
-
 ]
 
 // 03:30 Wed, Fri

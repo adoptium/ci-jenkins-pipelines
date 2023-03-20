@@ -7,7 +7,7 @@ pipeline {
     agent any
     parameters {
         choice(choices: ['linux', 'mac', 'windows'], name: 'platform', description:'select release on different platform')
-        string(name: 'URL1', defaultValue: '', description: 'URL to one version of the build artifacts\ne.g.: https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk18-pipeline/lastSuccessfulBuild/artifact/target/linux/x64/temurin/OpenJDK18U-jdk_x64_linux_hotspot_2022-06-11-23-30.tar.gz')
+        string(name: 'URL1', defaultValue: '', description: 'URL to one version of the build artifacts\ne.g.: https://ci.adoptium.net/job/build-scripts/job/openjdk18-pipeline/lastSuccessfulBuild/artifact/target/linux/x64/temurin/OpenJDK18U-jdk_x64_linux_hotspot_2022-06-11-23-30.tar.gz')
         string(name: 'URL2', defaultValue: '', description: 'URL to the other version of the build artifacts\ne.g.: https://github.com/adoptium/temurin19-binaries/releases/download/jdk-2022-06-09-19-11-beta/OpenJDK-jdk_x64_linux_hotspot_2022-06-09-03-31.tar.gz')
         string(name: 'excludeFiles', defaultValue: 'classes_nocoops.jsa', description: 'File names to be excluded while doing the comparison, separated by `;`')
     }
@@ -15,25 +15,27 @@ pipeline {
     stages {
         stage('Lets Compare') {
             agent {
-                label "${params.platform}&&build" // build label enables comparisons to be done
+                label "${params.platform}&&build&&x64" // build label enables comparisons to be done, set to x64 for linux, might need adjust for windows/mac
             }
             steps {
                 script {
                     try {
                         cleanWs()
-                        echo "Fetching artifact1 from ${params.URL1}"
-                        def ret1 = sh returnStatus: true, script: "mkdir url1Dir1 && wget -q ${params.URL1} -O - | tar -xz -C url1Dir1"
-                        if (ret1 != 0) {
-                            currentBuild.result = 'UNSTABLE'
-                            error 'Stopping after download and uncompress tar file'
+                        // use Jenkins crendential to download JDK if source is from openjdkX-pipline
+                        withCredentials([usernamePassword(credentialsId: 'eclipse_temurin_bot_email_and_token', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                            echo "Fetching artifact1 from ${params.URL1}"
+                            def ret1 = sh returnStatus: true, script: "mkdir url1Dir1 && curl -s --user ${USERNAME}:${PASSWORD} ${params.URL1} | tar -xz  -C url1Dir1"
+                            if (ret1 != 0) {
+                                currentBuild.result = 'UNSTABLE'
+                                error 'Stopping after download and uncompress tar file'
+                            }
+                            echo "Fetching artifact2 from ${params.URL2}"
+                            def ret2 = sh returnStatus: true, script: "mkdir url1Dir2 && curl -s --user ${USERNAME}:${PASSWORD} ${params.URL2} | tar -xz  -C url1Dir2"
+                            if (ret2 != 0) {
+                                currentBuild.result = 'UNSTABLE'
+                                error 'Stopping after download and uncompress tar file'
+                            }
                         }
-                        echo "Fetching artifact2 from ${params.URL2}"
-                        def ret2 = sh returnStatus: true, script: "mkdir url1Dir2 && wget -q ${params.URL2} -O - | tar -xz -C url1Dir2"
-                        if (ret2 != 0) {
-                            currentBuild.result = 'UNSTABLE'
-                            error 'Stopping after download and uncompress tar file'
-                        }
-
                         // call extra platform specific function
                         if (params.platform != 'linux') {
                             "prep${platform}" ('url1Dir1', 'url1Dir2')
@@ -43,7 +45,7 @@ pipeline {
                         for(String excludeFile in excludeFileList) {
                             excludeFlags="${excludeFlags} --exclude=${excludeFile}"
                         }
-                        def retVal = sh returnStatus: true, script: 'diff -q -r url1Dir1 url1Dir2 ${excludeFlags}'
+                        def retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2 ${excludeFlags}"
                         if (retVal != 0) {
                             currentBuild.result = 'FAILURE'
                             error 'Error: two builds are not the same!'

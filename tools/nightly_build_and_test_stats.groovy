@@ -21,16 +21,15 @@ import java.time.temporal.ChronoUnit
 
 node('worker') {
     def variant = "${params.VARIANT}"
-    def jenkinsUrl = "${params.JENKINS_URL}"
     def trssUrl    = "${params.TRSS_URL}"
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
-    def featureReleases = [ 8, 11, 17, 19 ] // Consider making those parameters
+    def featureReleases = [ 8, 11, 17, 20 ] // Consider making those parameters
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
 
-    def healthStatus = [ 'jdk8': null, 'jdk11': null, 'jdk17': null, 'jdk19': null]
+    def healthStatus = [ 'jdk8': null, 'jdk11': null, 'jdk17': null, 'jdk20': null]
     def testStats = []
 
     stage('getPipelineStatus') {
@@ -248,7 +247,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + jenkinsUrl + '/view/Tooling/job/nightlyBuildAndTestStats_' + variant + '/' + BUILD_NUMBER + '/console|Detail>')
+        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
     }
 
     stage('printPublishStats') {

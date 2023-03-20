@@ -4,14 +4,20 @@ on:
   pull_request_target:
     types: [ opened ]
 
+permissions:
+  contents: read
+
 jobs:
   Comment:
+    permissions:
+      issues: write  # for peter-evans/create-or-update-comment to create or update comment
+      pull-requests: write  # for peter-evans/create-or-update-comment to create or update comment
     name: Add Comment
     runs-on: ubuntu-latest
 
     steps:
       - name: Create comment
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@67dcc547d311b736a8e6c5c236542148a47adc3d # v2.1.1
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
@@ -26,4 +32,4 @@ jobs:
 
             In order to run the advanced [pipeline tests](https://github.com/adoptium/ci-jenkins-pipelines/tree/master/pipelines/build/prTester#openjdk-build-pr-tester) (executing a set of mock pipelines), it requires an admin to post `run tests` on this PR.
             If you are not an admin, please ask for one's attention in [#infrastructure on Slack](https://adoptium.slack.com/archives/C53GHCXL4) or ping one here.
-            To run full set of tests, use "run tests"; a subset of tests on specific jdk version, use "run tests quick 11,19" 
+            To run full set of tests, use "run tests"; a subset of tests on specific jdk version, use "run tests quick 11,20" 

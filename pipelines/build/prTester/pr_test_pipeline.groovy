@@ -39,7 +39,7 @@ class PullRequestTestPipeline implements Serializable {
                 PR_BUILDER          : true,
                 TEST                : false,
                 GIT_URL             : gitRepo,
-                BRANCH              : "${branch}",
+                BRANCH              : branch,
                 BUILD_FOLDER        : BUILD_FOLDER,
                 JAVA_VERSION        : javaVersion,
                 JOB_NAME            : "openjdk${javaVersion}-pipeline",
@@ -52,7 +52,8 @@ class PullRequestTestPipeline implements Serializable {
                 CHECKOUT_CREDENTIALS: '',
                 adoptScripts        : true,
                 enableTests         : false,
-                enableTestDynamicParallel : false
+                enableTestDynamicParallel : false,
+                releaseType         : "pr-tester"
         ]
     }
 
@@ -69,7 +70,7 @@ class PullRequestTestPipeline implements Serializable {
     }
 
     /*
-    * Main function, called from the pr tester in jenkins itself
+    * Main function, called from kick_off_tester.groovy by job "openjdk-build-pr-tester"
     */
     def runTests() {
         def jobs = [:]
@@ -79,6 +80,7 @@ class PullRequestTestPipeline implements Serializable {
         context.node('worker') {
             context.println "loading ${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
             Closure regenerationScript = context.load "${context.WORKSPACE}/${DEFAULTS_JSON['scriptDirectories']['regeneration']}"
+            String actualJavaVersion = ""
 
             javaVersions.each({ javaVersion ->
                 // generate top level job
@@ -98,15 +100,16 @@ class PullRequestTestPipeline implements Serializable {
                     updateRepo = true
                 }
 
-                String actualJavaVersion = updateRepo ? "jdk${javaVersion}u" : "jdk${javaVersion}"
+                actualJavaVersion = updateRepo ? "jdk${javaVersion}u" : "jdk${javaVersion}"
                 def excludedBuilds = ''
 
-                // Generate downstream pipeline jobs
+                // Generate downstream build jobs
                 regenerationScript(
                     actualJavaVersion,
                     buildConfigurations,
                     testConfigurations,
                     DEFAULTS_JSON,
+                    ADOPT_DEFAULTS_JSON,
                     excludedBuilds,
                     900,
                     currentBuild,
@@ -117,10 +120,10 @@ class PullRequestTestPipeline implements Serializable {
                     DEFAULTS_JSON['templateDirectories']['downstream'],
                     DEFAULTS_JSON['baseFileDirectories']['downstream'],
                     DEFAULTS_JSON['scriptDirectories']['downstream'],
-                    'https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test',
+                    'https://ci.adoptium.net/job/build-scripts-pr-tester/job/build-test',
                     null,
                     null,
-                    true
+                    "pr-tester"
                 ).regenerate()
 
                 context.println "[SUCCESS] Regeneration on ${javaVersion} all done!"
@@ -130,7 +133,7 @@ class PullRequestTestPipeline implements Serializable {
                 run tests                   run all version from  $javaVersions
                 run tests quick             run jdk17
                 run tests quick 8           run jdk8
-                run tests quick 11,17,19    run jdk11, 17 and 19
+                run tests quick 11,17,20    run jdk11, 17 and 20
             */
             String[] commentsList = context.params.ghprbCommentBody.trim().split('run tests quick')
             switch (commentsList.size()) {
@@ -144,19 +147,24 @@ class PullRequestTestPipeline implements Serializable {
                     javaVersions = commentsList[1].tokenize(',[]').collect { it as int }
                     break
             }
-            // Run tester against the host pr
+            // Calling build-test/openjdkX-pipeline against PR
             javaVersions.each({ javaVersion ->
-                jobs["Test building Java ${javaVersion}"] = {
-                    context.stage("Test building Java ${javaVersion}") {
+                jobs["PR test JDK${javaVersion}"] = {
+                    context.stage("Building pr-tester Java ${javaVersion}") {
                         try {
                             context.build job: "${BUILD_FOLDER}/openjdk${javaVersion}-pipeline",
                                 propagate: true,
                                 parameters: [
                                     context.string(name: 'releaseType', value: 'Nightly Without Publish'),
-                                    context.string(name: 'activeNodeTimeout', value: '0')
+                                    context.string(name: 'activeNodeTimeout', value: '0'),
+                                    context.string(name: 'ciReference', value: "${branch}"), // use PR's SHA1 for the generated openjdkX-pipeline
+                                    context.booleanParam(name: 'enableTestDynamicParallel', value: false), // not needed unless we enable test
+                                    context.booleanParam(name: 'enableInstallers', value: false), // never need this enabled in pr-test
+                                    context.booleanParam(name: 'useAdoptBashScripts', value: false), // should not use defaultsJson but adoptDefaultsJson
+                                    context.booleanParam(name: 'keepReleaseLogs', value: false) // never need this enabled in pr-tester
                                 ]
                         } catch (err) {
-                            context.println "[ERROR] ${actualJavaVersion} PIPELINE FAILED\n$err"
+                            context.println "[ERROR] JDK ${actualJavaVersion} PIPELINE FAILED\n$err"
                             pipelineFailed = true
                         }
                     }
@@ -199,7 +207,7 @@ Map<String, ?> defaultTestConfigurations = [
     ]
 ]
 
-List<Integer> defaultJavaVersions = [8, 11, 17, 19]
+List<Integer> defaultJavaVersions = [8, 11, 17, 20]
 
 return {
     String branch,

@@ -89,7 +89,7 @@ class Config19 {
                 ],
                 test                : 'default',
                 additionalTestLabels: [
-                        temurin      : 'aix720'
+                        temurin      : 'sw.os.aix.7_2'
                 ],
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
@@ -110,7 +110,7 @@ class Config19 {
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                additionalNodeLabels: 'centos7',
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
                         'temurin'     : '--enable-dtrace',
@@ -166,8 +166,19 @@ class Config19 {
                         nightly: ['sanity.openjdk'],
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
                 ]
-        ]
+        ],
 
+        aarch64Windows: [
+                os                  : 'windows',
+                arch                : 'aarch64',
+                crossCompile        : 'x64',
+                additionalNodeLabels: 'win2016&&vs2019',
+                test                : false,
+                buildArgs       : [
+                        'temurin'   : '--create-jre-image --create-sbom --cross-compile'
+                ]
+
+        ]
   ]
 
 }

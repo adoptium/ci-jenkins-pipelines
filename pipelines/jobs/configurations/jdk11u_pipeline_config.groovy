@@ -103,6 +103,7 @@ class Config11 {
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
+                dockerImage         : 'rhel7_build_image',
                 test                : 'default',
                 configureArgs       : '--enable-dtrace=auto',
                 buildArgs           : [
@@ -123,7 +124,7 @@ class Config11 {
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                additionalNodeLabels : 'centos7',
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
                         'temurin'     : '--enable-dtrace=auto',
@@ -207,6 +208,17 @@ class Config11 {
                         nightly: ['sanity.openjdk'],
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
                 ],
+        ],
+
+        aarch64Windows: [
+                os                  : 'windows',
+                arch                : 'aarch64',
+                crossCompile        : 'x64',
+                additionalNodeLabels: 'win2016&&vs2019',
+                test                : false,
+                buildArgs       : [
+                        'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile'
+                ]
         ]
   ]
 

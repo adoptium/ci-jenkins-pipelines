@@ -96,6 +96,7 @@ class Config8 {
                         temurin: ['sanity.openjdk'],
                         openj9: 'default'
                 ],
+                dockerImage         : 'rhel7_build_image',
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -122,8 +123,8 @@ class Config8 {
         ppc64leLinux  : [
                 os  : 'linux',
                 arch: 'ppc64le',
-                additionalNodeLabels : 'centos7',
-                test                 : 'default',
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
+                test                : 'default',
                 configureArgs       : [
                         'openj9'      : '--enable-jitserver'
                 ],

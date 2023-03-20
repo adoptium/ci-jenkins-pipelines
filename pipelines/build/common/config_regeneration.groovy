@@ -30,6 +30,7 @@ class Regeneration implements Serializable {
     private final Map<String, Map<String, ?>> buildConfigurations
     private final Map<String, ?> targetConfigurations
     private final Map<String, ?> DEFAULTS_JSON
+    private final Map<String, ?> ADOPT_DEFAULTS_JSON
     private final Map<String, ?> excludedBuilds
     private Integer sleepTime
     private final currentBuild
@@ -46,7 +47,7 @@ class Regeneration implements Serializable {
     private final jenkinsBuildRoot
     private final jenkinsCreds
     private final checkoutCreds
-    private final Boolean prBuilder
+    private final jobType
 
     private String javaToBuild
     private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
@@ -61,6 +62,7 @@ class Regeneration implements Serializable {
         Map<String, Map<String, ?>> buildConfigurations,
         Map<String, ?> targetConfigurations,
         Map<String, ?> DEFAULTS_JSON,
+        Map<String, ?> ADOPT_DEFAULTS_JSON,
         Map<String, ?> excludedBuilds,
         Integer sleepTime,
         currentBuild,
@@ -74,12 +76,13 @@ class Regeneration implements Serializable {
         String jenkinsBuildRoot,
         String jenkinsCreds,
         String checkoutCreds,
-        Boolean prBuilder
+        String jobType
     ) {
         this.javaVersion = javaVersion
         this.buildConfigurations = buildConfigurations
         this.targetConfigurations = targetConfigurations
         this.DEFAULTS_JSON = DEFAULTS_JSON
+        this.ADOPT_DEFAULTS_JSON = ADOPT_DEFAULTS_JSON
         this.excludedBuilds = excludedBuilds
         this.sleepTime = sleepTime
         this.currentBuild = currentBuild
@@ -93,7 +96,7 @@ class Regeneration implements Serializable {
         this.jenkinsBuildRoot = jenkinsBuildRoot
         this.jenkinsCreds = jenkinsCreds
         this.checkoutCreds = checkoutCreds
-        this.prBuilder = prBuilder
+        this.jobType = jobType
     }
 
     /*
@@ -249,11 +252,12 @@ class Regeneration implements Serializable {
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
         // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def buildRef = configuration.buildRef ?: DEFAULTS_JSON['repository']['build_branch']
+        def platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${DEFAULTS_JSON['configDirectories']['platform']}"
 
         if (configuration.containsKey('platformSpecificConfigPath')) {
             // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations.linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -503,7 +507,6 @@ class Regeneration implements Serializable {
         repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
 
         params.put('DEFAULTS_JSON', JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)))
-        Map ADOPT_DEFAULTS_JSON = repoHandler.getAdoptDefaultsJson()
         params.put('ADOPT_DEFAULTS_JSON', JsonOutput.prettyPrint(JsonOutput.toJson(ADOPT_DEFAULTS_JSON)))
 
         params.put('BUILD_CONFIG', config.toJson())
@@ -520,8 +523,13 @@ class Regeneration implements Serializable {
         }
 
         // Make sure the dsl knows if we're building inside the pr tester
-        if (prBuilder) {
+        if (jobType == "pr-tester") {
             params.put('PR_BUILDER', true)
+        }
+
+        // Makre sure the dsl knows if we are building for release job which checkout by a tag not branch
+        if (jobType == "release") {
+            params.put('CHECKOUT_AS_TAG', true) // in dsl, we convert GIT_BRANCH to a tag then checkout
         }
 
         // Execute job dsl, using adopt's template if the user doesn't have one
@@ -550,7 +558,7 @@ class Regeneration implements Serializable {
         def jobTopName = "${javaToBuild}-${jobName}"
         def jobFolder = "${jobRootDir}/jobs/${javaToBuild}"
 
-        // i.e jdk8u/jobs/jdk8u-linux-x64-hotspot
+        // e.g build-scripts/jobs/jdk8u/jdk8u-linux-x64-hotspot
         def downstreamJobName = "${jobFolder}/${jobTopName}"
         context.println "[INFO] build name: ${downstreamJobName}"
 
@@ -568,16 +576,20 @@ class Regeneration implements Serializable {
     def queryAPI(String query) {
         // TODO: use sharedlib JobHelper.groovy queryJsonApi() instead
         try {
-            def getJenkins = new URL(query).openConnection()
+            HttpURLConnection getJenkins = new URL(query).openConnection()
 
             // Set request credentials if they exist
             if (jenkinsCreds != '') {
                 def jenkinsAuth = 'Basic ' + new String(Base64.getEncoder().encode(jenkinsCreds.getBytes()))
                 getJenkins.setRequestProperty('Authorization', jenkinsAuth)
+                getJenkins.setRequestMethod("GET")
             }
-
-            def response = new JsonSlurper().parseText(getJenkins.getInputStream().getText())
-            return response
+            // for 200 or 2XX as response code, main flow
+            if (getJenkins.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                return new JsonSlurper().parseText(getJenkins.getInputStream().getText())
+            } else { // when wrong credential(cannot access), wrong url (does not exist), wrong endpoint
+                return null
+            }
         } catch (Exception e) {
             // Failed to connect to jenkins api or a parsing error occurred
             throw new Exception("[ERROR] Failure on jenkins api connection or parsing.\n${e}")
@@ -585,7 +597,7 @@ class Regeneration implements Serializable {
     }
 
     /**
-    * Main function. Ran from build_job_generator.groovy, this will be what jenkins will run first.
+    * Main function. Ran from pipelines/build/regeneration/build_job_generator.groovy, this will be what jenkins will run first.
     */
     @SuppressWarnings('unused')
     def regenerate() {
@@ -593,23 +605,25 @@ class Regeneration implements Serializable {
             def versionNumbers = javaVersion =~ /\d+/
 
             /*
-            * Stage: Check that the pipeline isn't in in-progress or queued up. Once clear, run the regeneration job
+            * Stage: Check that nightly and evaluation nightly pipeline isn't in in-progress or queued up. 
+            * Once clear, run the regeneration job
             */
             context.stage("Check $javaVersion pipeline status") {
-                if (jobRootDir.contains('pr-tester')) {
+                if ((jobType == 'release') || jobRootDir.contains('pr-tester')) { // use jobType or pr-tester in path
                     // No need to check if we're going to overwrite anything for the PR tester since concurrency isn't enabled -> https://github.com/adoptium/temurin-build/pull/2155
-                    context.println "[SUCCESS] Don't need to check if the pr-tester is running as concurrency is disabled. Running regeneration job..."
+                    context.println "[SUCCESS] Skip check if pr-tester or release pipeline is running as concurrency is disabled. Running regeneration job..."
                 } else {
                     // Get all pipelines
                     def getPipelines = queryAPI("${jenkinsBuildRoot}/api/json?tree=jobs[name]&pretty=true&depth1")
 
                     // Parse api response to only extract the relevant pipeline
                     getPipelines.jobs.name.each { pipeline ->
-                        if (pipeline == "openjdk${versionNumbers[0]}-pipeline") {
+                        def pipelineName = (jobType != "evaluation" ? "openjdk${versionNumbers[0]}-pipeline" : "evaluation-openjdk${versionNumbers[0]}-pipeline")
+                        if (pipeline == pipelineName) {
                             Boolean inProgress = true
                             while (inProgress) {
                                 // Check if pipeline is in progress using api
-                                context.println "[INFO] Checking if ${pipeline} is running..." //i.e. openjdk8-pipeline
+                                context.println "[INFO] Checking if ${pipeline} is running..." // e.g. openjdk8-pipeline or evaluation-openjdk11-pipeline
 
                                 def pipelineInProgress = queryAPI("${jenkinsBuildRoot}/job/${pipeline}/lastBuild/api/json?pretty=true&depth1")
 
@@ -651,7 +665,9 @@ class Regeneration implements Serializable {
                 // If we're building jdk head, update the javaToBuild
                 context.println '[INFO] Querying Adoptium api to get the JDK-Head number'
 
-                def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+
                 Integer jdkHeadNum = Integer.valueOf(JobHelper.getAvailableReleases(context).tip_version)
 
                 if (Integer.valueOf(versionNumbers[0]) == jdkHeadNum) {
@@ -682,32 +698,33 @@ class Regeneration implements Serializable {
                                 keyFound = true
 
                                 def platformConfig = buildConfigurations.get(key) as Map<String, ?>
-
+                                // default nightly or pr-tester job name
                                 name = "${platformConfig.os}-${platformConfig.arch}-${variant}"
-
+                                // release or evaluation job name
+                                if (jobType != "nightly" && jobType != "pr-tester") {
+                                    name = jobType+"-" + name
+                                }
                                 if (platformConfig.containsKey('additionalFileNameTag')) {
                                     name += "-${platformConfig.additionalFileNameTag}"
                                 }
-
                                 jobConfigurations[name] = buildConfiguration(platformConfig, variant, javaToBuild)
                                 }
                         }
 
                         if (keyFound == false) {
-                            context.println "[WARNING] Config file key: ${osarch} not recognised. Valid configuration keys for ${javaToBuild} are ${buildConfigurations.keySet()}.\n[WARNING] ${osarch} WILL NOT BE REGENERATED! Setting build result to UNSTABLE..."
+                            context.println "[WARNING] Config file key: ${osarch} not recognised.\nValid configuration keys for ${javaToBuild} are ${buildConfigurations.keySet()}.\n[WARNING] ${osarch} WILL NOT BE REGENERATED! Setting build result to UNSTABLE..."
                             currentBuild.result = 'UNSTABLE'
-                            } else {
+                        } else {
                             // Skip variant job make if it's marked as excluded
                             if (jobConfigurations.get(name) == EXCLUDED_CONST) {
                                 continue
-                            }
-                                // Make job
-                                else if (jobConfigurations.get(name) != null) {
+                            } // Make job
+                            else if (jobConfigurations.get(name) != null) {
                                 makeJob(jobConfigurations, name)
                                 // Unexpected error when building or getting the configuration
-                                } else {
+                            } else {
                                 throw new Exception("[ERROR] IndividualBuildConfig is malformed or null for key: ${osarch} : ${variant}.")
-                                }
+                            }
                         }
                         } // end variant for loop
 
@@ -724,6 +741,7 @@ return {
     Map<String, Map<String, ?>> buildConfigurations,
     Map<String, ?> targetConfigurations,
     Map<String, ?> DEFAULTS_JSON,
+    Map<String, ?> ADOPT_DEFAULTS_JSON,
     String excludes,
     Integer sleepTime,
     def currentBuild,
@@ -737,7 +755,7 @@ return {
     String jenkinsBuildRoot,
     String jenkinsCreds,
     String checkoutCreds,
-    Boolean prBuilder
+    String jobType
         ->
 
     def excludedBuilds = [:]
@@ -750,6 +768,7 @@ return {
             buildConfigurations,
             targetConfigurations,
             DEFAULTS_JSON,
+            ADOPT_DEFAULTS_JSON,
             excludedBuilds,
             sleepTime,
             currentBuild,
@@ -763,6 +782,6 @@ return {
             jenkinsBuildRoot,
             jenkinsCreds,
             checkoutCreds,
-            prBuilder
+            jobType
         )
 }
