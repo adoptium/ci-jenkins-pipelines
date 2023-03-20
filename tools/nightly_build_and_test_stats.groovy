@@ -149,7 +149,7 @@ node('worker') {
                                     pipelineBuildJobsJson.each { buildJob ->
                                         if (buildJob.buildName.contains(buildVariant)) {
                                             buildJobNumber += 1
-                                            if (buildJob.buildResult.equals('FAILED')) {
+                                            if (buildJob.buildResult.equals('FAILURE')) {
                                                 buildJobFailure += 1
                       } else {
                                                 buildJobComplete += 1
