@@ -240,29 +240,38 @@ class Build {
         def suffix
         def javaNumber = getJavaVersionNumber()
 
-        if (buildConfig.VARIANT == 'corretto') {
-            suffix = "corretto/corretto-${javaNumber}"
-        } else if (buildConfig.VARIANT == 'openj9') {
-            def openj9JavaToBuild = buildConfig.JAVA_TO_BUILD
-            if (openj9JavaToBuild.endsWith('u')) {
-                // OpenJ9 extensions repo does not use the "u" suffix
-                openj9JavaToBuild = openj9JavaToBuild.substring(0, openj9JavaToBuild.length() - 1)
-            }
-            suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
-        } else if (buildConfig.VARIANT == 'temurin') {
-            if (buildConfig.ARCHITECTURE == 'arm' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
-                suffix = 'adoptium/aarch32-jdk8u'
-            } else {
-                suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
-            }
-        } else if (buildConfig.VARIANT == 'dragonwell') {
-            suffix = "alibaba/dragonwell${javaNumber}"
-        } else if (buildConfig.VARIANT == 'fast_startup') {
-            suffix = 'adoptium/jdk11u-fast-startup-incubator'
-        } else if (buildConfig.VARIANT == 'bisheng') {
-            suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
-        } else {
-            throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
+        switch(buildConfig.VARIANT) {
+            case 'corretto':
+                suffix = "corretto/corretto-${javaNumber}"
+                break
+            case 'openj9':
+                def openj9JavaToBuild = buildConfig.JAVA_TO_BUILD
+                if (openj9JavaToBuild.endsWith('u')) {
+                    // OpenJ9 extensions repo does not use the "u" suffix
+                    openj9JavaToBuild = openj9JavaToBuild.substring(0, openj9JavaToBuild.length() - 1)
+                }
+                suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
+                break
+            case 'temurin':
+                if (buildConfig.ARCHITECTURE == 'arm' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
+                    suffix = 'adoptium/aarch32-jdk8u'
+                } else if (buildConfig.TARGET_OS == 'alpine-linux' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
+                    suffix = 'adoptium/alpine-jdk8u'
+                } else {
+                    suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
+                }
+                break
+            case 'dragonwell':
+                suffix = "alibaba/dragonwell${javaNumber}"
+                break
+            case 'fast_startup':
+                suffix = 'adoptium/jdk11u-fast-startup-incubator'
+                break
+            case 'bisheng':
+                suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
+                break
+            default:
+                throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
         }
 
         jdkRepo = "https://github.com/${suffix}"
