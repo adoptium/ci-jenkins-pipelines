@@ -125,7 +125,6 @@ class Config17 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs : '--enable-dtrace',
-                testDynamic          : false,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
