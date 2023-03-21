@@ -67,7 +67,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
                 'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
                 'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build-triage',
                 // eclipse-temurin-bot needs read access for TRSS
-                'GROUP:hudson.model.Item.Read:eclipse-temurin-bot',
+                'USER:hudson.model.Item.Read:eclipse-temurin-bot',
                 // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance
                 'USER:hudson.model.Item.Read:eclipse-temurin-compliance-bot',
                 'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
