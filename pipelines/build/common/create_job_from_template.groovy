@@ -42,7 +42,7 @@ folder(buildFolder) {
     description 'Automatically generated build jobs.'
 }
 
-pipelineJob("$buildFolder/$JOB_NAME") {
+pipelineJob("$buildFolder/$JOB_NAME") { 
     description('<h1>THIS IS AN AUTOMATICALLY GENERATED JOB DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1><p>This job is defined in create_job_from_template.groovy in the ci-jenkins-pipelines repo, if you wish to change it modify that</p>')
     definition {
         cpsScm {
@@ -65,8 +65,8 @@ pipelineJob("$buildFolder/$JOB_NAME") {
         }
     }
     properties {
-        // Hide all non Temurin builds from public view on the Adoptium CI instance
-        if ((JENKINS_URL.contains('adopt')) && (VARIANT != 'temurin')) {
+        // Hide all non Temurin builds or release builds from public view on the Adoptium CI instance
+        if ((JENKINS_URL.contains('adopt')) && ((VARIANT != 'temurin') || (JENKINS_URL.contains('release')))) {
             authorizationMatrix {
                 inheritanceStrategy {
                     // Do not inherit permissions from global configuration
