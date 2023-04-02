@@ -155,6 +155,16 @@ class Config17 {
                 ]
         ],
 
+        riscv64Linux      :  [
+                os                  : 'linux',
+                arch                : 'riscv64',
+                test                : 'default',
+                configureArgs       : '--enable-dtrace',
+                buildArgs           : [
+                        'hotspot'   : '--create-jre-image --create-sbom'
+                ]
+        ],
+
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
