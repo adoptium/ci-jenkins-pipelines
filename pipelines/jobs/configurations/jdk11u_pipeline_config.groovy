@@ -213,7 +213,7 @@ class Config11 {
                 os                  : 'windows',
                 arch                : 'aarch64',
                 crossCompile        : 'x64',
-                additionalNodeLabels: 'win2016&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
                 buildArgs       : [
                         'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile'
