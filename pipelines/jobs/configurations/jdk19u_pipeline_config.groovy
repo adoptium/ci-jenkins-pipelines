@@ -171,7 +171,7 @@ class Config19 {
                 os                  : 'windows',
                 arch                : 'aarch64',
                 crossCompile        : 'x64',
-                additionalNodeLabels: 'win2016&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 test                : false,
                 buildArgs       : [
                         'temurin'   : '--create-jre-image --create-sbom --cross-compile'
