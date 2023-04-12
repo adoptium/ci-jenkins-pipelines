@@ -78,11 +78,9 @@ class Config8 {
         ppc64Aix      : [
                 os  : 'aix',
                 arch: 'ppc64',
-                additionalNodeLabels: [
-                        temurin: 'xlc13&&aix710',
-                        openj9:  'xlc13&&aix715'
-                ],
+                additionalNodeLabels: 'xlc13&&aix720',
                 test                 : 'default',
+                additionalTestLabels : 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
