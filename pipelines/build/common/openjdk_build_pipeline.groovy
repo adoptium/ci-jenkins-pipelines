@@ -319,22 +319,23 @@ class Build {
                     }
                 }
 
-                context.catchError {
-                    context.build job: jobName,
-                            propagate: true,
-                            parameters: [
-                                    context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                    context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
-                                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                    context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
-                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
-                                    context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
-                                    context.string(name: 'TIME_LIMIT', value: '1')
-                            ]
-                }
+                def testJob = context.build job: jobName,
+                    propagate: false,
+                    parameters: [
+                            context.string(name: 'SDK_RESOURCE', value: 'upstream'),
+                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                            context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
+                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                            context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
+                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
+                            context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
+                            context.string(name: 'TIME_LIMIT', value: '1')
+                    ]  
+                currentBuild.result = testJob.getResult()
+                return testJob.getResult()
+                     
             }
         } catch (Exception e) {
             context.println "Failed to execute test: ${e.message}"
@@ -463,7 +464,7 @@ class Build {
                             context.node('worker') {
                                 def result = testJob.getResult()
                                 context.echo " ${jobName} result is ${result}"
-                                if (testJob.getResult() == 'SUCCESS' || testJob.getResult() == 'UNSTABLE') {
+                                if (result == 'SUCCESS' || result == 'UNSTABLE') {
                                     context.sh 'rm -f workspace/target/AQAvitTaps/*.tap'
                                     try {
                                         context.timeout(time: 2, unit: 'HOURS') {
@@ -1885,27 +1886,31 @@ class Build {
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
-                        runSmokeTests()
-                        // Remote trigger Eclispe Temurin JCK tests
-                        if (buildConfig.VARIANT == 'temurin' && isRelease) {
-                            def platform = ''
-                            if (buildConfig.ARCHITECTURE.contains('x64')) {
-                                platform = 'x86-64_' + buildConfig.TARGET_OS
-                            } else {
-                                platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
-                            }           
-                            if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
-                                if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                    context.echo "Remote trigger Eclipse temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                    def remoteTargets = remoteTriggerJckTests(platform, filename)
-                                    context.parallel remoteTargets
+                        //Only smoke tests succeed TCK and AQA tests will be triggerred.
+                        if (runSmokeTests() == 'SUCCESS') {
+                            // Remote trigger Eclipse Temurin JCK tests
+                            if (buildConfig.VARIANT == 'temurin' && isRelease) {
+                                def platform = ''
+                                if (buildConfig.ARCHITECTURE.contains('x64')) {
+                                    platform = 'x86-64_' + buildConfig.TARGET_OS
+                                } else {
+                                    platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
+                                }           
+                                if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
+                                    if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
+                                        context.echo "Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
+                                        def remoteTargets = remoteTriggerJckTests(platform, filename)
+                                        context.parallel remoteTargets
+                                    }
                                 }
                             }
-                        }
 
-                        if (buildConfig.TEST_LIST.size() > 0) {
-                            def testStages = runAQATests()
-                            context.parallel testStages
+                            if (buildConfig.TEST_LIST.size() > 0) {
+                                def testStages = runAQATests()
+                                context.parallel testStages
+                            }
+                        } else {
+                            context.println("[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ")
                         }
                     } catch (Exception e) {
                         context.println(e.message)
