@@ -319,22 +319,23 @@ class Build {
                     }
                 }
 
-                context.catchError {
-                    context.build job: jobName,
-                            propagate: true,
-                            parameters: [
-                                    context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                    context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
-                                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                    context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
-                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
-                                    context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
-                                    context.string(name: 'TIME_LIMIT', value: '1')
-                            ]
-                }
+                def testJob = context.build job: jobName,
+                    propagate: false,
+                    parameters: [
+                            context.string(name: 'SDK_RESOURCE', value: 'upstream'),
+                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                            context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
+                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                            context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
+                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
+                            context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
+                            context.string(name: 'TIME_LIMIT', value: '1')
+                    ]  
+                currentBuild.result = testJob.getResult()
+                return testJob.getResult()
+                     
             }
         } catch (Exception e) {
             context.println "Failed to execute test: ${e.message}"
@@ -440,50 +441,45 @@ class Build {
                                 }
                             }
                         }
-                        context.catchError {
-                            def testJob = context.build job: jobName,
-                                            propagate: true,
-                                            parameters: [
-                                                context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                                context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                                context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                                                context.string(name: 'JDK_REPO', value: jdkRepo),
-                                                context.string(name: 'JDK_BRANCH', value: jdkBranch),
-                                                context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-                                                context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
-                                                context.string(name: 'PARALLEL', value: parallel),
-                                                context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
-                                                context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
-                                                context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
-                                                context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
-                                                context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                                context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)],
-                                            wait: true
-                            context.node('worker') {
-                                def result = testJob.getResult()
-                                context.echo " ${jobName} result is ${result}"
-                                if (testJob.getResult() == 'SUCCESS' || testJob.getResult() == 'UNSTABLE') {
-                                    context.sh 'rm -f workspace/target/AQAvitTaps/*.tap'
-                                    try {
-                                        context.timeout(time: 2, unit: 'HOURS') {
-                                            context.copyArtifacts(
-                                                projectName:jobName,
-                                                selector:context.specific("${testJob.getNumber()}"),
-                                                filter: "**/${jobName}*.tap",
-                                                target: 'workspace/target/AQAvitTaps/',
-                                                fingerprintArtifacts: true,
-                                                flatten: true
-                                            )
-                                        }
-                                    } catch (Exception e) {
-                                        context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
-                                    }
-                                    context.archiveArtifacts artifacts: 'workspace/target/AQAvitTaps/*.tap', fingerprint: true
-                                } else {
-                                    context.echo "Warning: ${jobName} result is ${result}, no tap file is archived"
+
+                        def testJob = context.build job: jobName,
+                                        propagate: false,
+                                        parameters: [
+                                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                            context.string(name: 'SDK_RESOURCE', value: 'upstream'),
+                                            context.string(name: 'JDK_REPO', value: jdkRepo),
+                                            context.string(name: 'JDK_BRANCH', value: jdkBranch),
+                                            context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                            context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
+                                            context.string(name: 'PARALLEL', value: parallel),
+                                            context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
+                                            context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
+                                            context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
+                                            context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
+                                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)],
+                                        wait: true
+                        currentBuild.result = testJob.getResult()
+                        context.node('worker') {
+                            //Copy Taps files from downstream test jobs if files available. 
+                            context.sh 'rm -f workspace/target/AQAvitTaps/*.tap'
+                            try {
+                                context.timeout(time: 2, unit: 'HOURS') {
+                                    context.copyArtifacts(
+                                        projectName:jobName,
+                                        selector:context.specific("${testJob.getNumber()}"),
+                                        filter: "**/${jobName}*.tap",
+                                        target: 'workspace/target/AQAvitTaps/',
+                                        fingerprintArtifacts: true,
+                                        flatten: true
+                                    )
                                 }
+                            } catch (Exception e) {
+                                context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
                             }
+                            context.archiveArtifacts allowEmptyArchive: true, artifacts: 'workspace/target/AQAvitTaps/*.tap', fingerprint: true
                         }
                     }
                 }
@@ -1885,27 +1881,31 @@ class Build {
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
-                        runSmokeTests()
-                        // Remote trigger Eclispe Temurin JCK tests
-                        if (buildConfig.VARIANT == 'temurin' && isRelease) {
-                            def platform = ''
-                            if (buildConfig.ARCHITECTURE.contains('x64')) {
-                                platform = 'x86-64_' + buildConfig.TARGET_OS
-                            } else {
-                                platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
-                            }           
-                            if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
-                                if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                    context.echo "Remote trigger Eclipse temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                    def remoteTargets = remoteTriggerJckTests(platform, filename)
-                                    context.parallel remoteTargets
+                        //Only smoke tests succeed TCK and AQA tests will be triggerred.
+                        if (runSmokeTests() == 'SUCCESS') {
+                            // Remote trigger Eclipse Temurin JCK tests
+                            if (buildConfig.VARIANT == 'temurin' && isRelease) {
+                                def platform = ''
+                                if (buildConfig.ARCHITECTURE.contains('x64')) {
+                                    platform = 'x86-64_' + buildConfig.TARGET_OS
+                                } else {
+                                    platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
+                                }           
+                                if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
+                                    if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
+                                        context.echo "Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
+                                        def remoteTargets = remoteTriggerJckTests(platform, filename)
+                                        context.parallel remoteTargets
+                                    }
                                 }
                             }
-                        }
 
-                        if (buildConfig.TEST_LIST.size() > 0) {
-                            def testStages = runAQATests()
-                            context.parallel testStages
+                            if (buildConfig.TEST_LIST.size() > 0) {
+                                def testStages = runAQATests()
+                                context.parallel testStages
+                            }
+                        } else {
+                            context.println("[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ")
                         }
                     } catch (Exception e) {
                         context.println(e.message)
