@@ -49,7 +49,7 @@ if [ ! -r /usr/lib/jvm/jdk-${BOOTJDK_VERSION}/bin/javac ]; then
  echo Retrieving boot JDK $BOOTJDK_VERSION && mkdir -p /usr/lib/jvm && curl -L "https://api.adoptopenjdk.net/v3/binary/version/jdk-${BOOTJDK_VERSION}/linux/${NATIVE_API_ARCH}/jdk/hotspot/normal/adoptopenjdk?project=jdk" | (cd /usr/lib/jvm && tar xpzf -)
 fi
 if [ ! -r ${LOCALGCCDIR}/bin/g++-${GCCVERSION} ]; then
-  echo Retrieving gcc $GCCVERSION && curl https://ci.adoptopenjdk.net/userContent/gcc/gcc$(echo $GCCVERSION | tr -d .).`uname -m`.tar.xz | (cd /usr/local && tar xJpf -) || exit 1
+  echo Retrieving gcc $GCCVERSION && curl -L https://ci.adoptopenjdk.net/userContent/gcc/gcc$(echo $GCCVERSION | tr -d .).`uname -m`.tar.xz | (cd /usr/local && tar xJpf -) || exit 1
 fi
 if [ ! -r temurin-build ]; then
   git clone https://github.com/adoptium/temurin-build || exit 1
