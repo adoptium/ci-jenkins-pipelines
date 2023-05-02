@@ -966,10 +966,14 @@ return {
     String publishName = '' // This is set to a timestamp later on if undefined
     if (overridePublishName) {
         publishName = overridePublishName
-        } else if (release) {
+    } else if (release) {
         // Default to scmReference, remove any trailing "_adopt" from the tag if present
         if (scmReference) {
             publishName = scmReference - ('_adopt')
+            //jdk8 arm jdk8u372-b07-aarch32-20230426 -> jdk8u372-b07
+            if (publishName.indexOf('-') != -1 && publishName.indexOf('-') != publishName.lastIndexOf('-')) {
+                publishName = publishName.substring(0, publishName.indexOf('-', publishName.indexOf('-') +1 ))
+            }
         }
     }
 

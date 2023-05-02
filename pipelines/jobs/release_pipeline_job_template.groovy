@@ -68,8 +68,6 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         stringParam('ciReference', releaseTag, 'SHA1 or Tag name or Branch name of ci-jenkins-pipeline repo. Defaults to master')
         stringParam('helperReference', releaseTag, 'Tag name or Branch name of jenkins-helper repo. Defaults to master')
         stringParam('aqaReference', aqaTag, 'Tag name or Branch name of aqa-tests. Defaults to master')
-        // special items need to modify per jdk8
-        stringParam('overridePublishName', '', 'Most useful for jdk8 arm32 with a different scmReference tag')
         stringParam('additionalConfigureArgs', '', "Additional arguments that will be ultimately passed to OpenJDK's <code>./configure</code>. jdk8 might have a different one!")
 
         // default value not matter for release
