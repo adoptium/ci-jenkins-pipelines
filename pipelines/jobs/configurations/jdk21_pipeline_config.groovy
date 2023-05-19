@@ -89,7 +89,6 @@ class Config21 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -101,7 +100,6 @@ class Config21 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
-                        'temurin'     : '--enable-dtrace',
                         'openj9'      : '--enable-dtrace --enable-jitserver'
                 ],
                 buildArgs           : [
