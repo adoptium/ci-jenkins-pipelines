@@ -109,7 +109,6 @@ class Config17 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
-                        'temurin'     : '--enable-dtrace',
                         'openj9'      : '--enable-dtrace --enable-jitserver'
                 ],
                 buildArgs           : [
