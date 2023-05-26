@@ -93,6 +93,12 @@ node('worker') {
                     throw new Exception("[ERROR] enable to load jdk${javaVersion}u_release.groovy nor jdk${javaVersion}_release.groovy does not exist!")
                 }
 
+                // For jdk8u remove aarch32 from the pipeline's target so it does not get built automatically,
+                // jdk8u aarch32 is dependent on upstream release in the separate port repository, and will get started manually.
+                if (javaVersion == 8 && target.targetConfigurations.containsKey('arm32Linux')) {
+                    target.targetConfigurations.remove('arm32Linux')
+                }
+
                 config.put('targetConfigurations', target.targetConfigurations)
 
                 config.put('defaultsJson', DEFAULTS_JSON)
