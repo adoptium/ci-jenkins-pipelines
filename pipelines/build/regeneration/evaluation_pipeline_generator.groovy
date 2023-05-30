@@ -189,8 +189,12 @@ node('worker') {
                                 targetEvaluation = load nonUFile2
                             }
                         } catch (NoSuchFileException e2) {
-                            throw new Exception("[ERROR] enable to load jdk${javaVersion}u_evaluation.groovy nor jdk${javaVersion}_evaluation.groovy does not exist!")
+                            println "[WARNING] No evaluation config found for JDK${javaVersion} in the User's or Adopt's repository. Skipping generation..."
+                            // break and move to next element in the loop
+                            // groovylint-disable-next-line
+                            return
                         }
+                        checkoutUserPipelines()
                     }
                     config.put('targetConfigurations', targetEvaluation.targetConfigurations)
 
