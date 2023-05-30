@@ -48,7 +48,7 @@ node('worker') {
         }
 
         timestamps {
-            def validVersion = [8, 11, 17, 20]
+            def retiredVersions = [9, 10, 12, 13, 14, 15, 16, 18, 19]
             def generatedPipelines = []
 
             // Load git url and branch and gitBranch. These determine where we will be pulling user configs from.
@@ -146,7 +146,10 @@ node('worker') {
             int headVersion = (int) response[('tip_version')]
 
             (8..headVersion + 1).each({ javaVersion ->
-                if (validVersion.contains(javaVersion)) {
+                if (retiredVersions.contains(javaVersion)) {
+                    println "[INFO] $javaVersion is a retired version that isn't currently built. Skipping generation..."
+                    return
+                } else {
                     
                     def config = [
                         TEST                : false,
