@@ -146,15 +146,12 @@ class Build {
         jobParams.put('GROUPS', 'functional')
         jobParams.put('TEST_JOB_NAME', "${env.JOB_NAME}_SmokeTests")
         jobParams.put('BUILD_LIST', 'functional/buildAndPackage')
-        def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
         def vendorTestRepos = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git')
         def vendorTestDirs = ADOPT_DEFAULTS_JSON['repository']['test_dirs']
-        if (!useAdoptShellScripts) {
-            vendorTestRepos = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git')
-            vendorTestDirs = DEFAULTS_JSON['repository']['test_dirs']
-        }
+        def vendorTestBranches = ADOPT_DEFAULTS_JSON['repository']['build_branch']
         jobParams.put('VENDOR_TEST_REPOS', vendorTestRepos)
         jobParams.put('VENDOR_TEST_DIRS', vendorTestDirs)
+        jobParams.put('VENDOR_TEST_BRANCHES', vendorTestBranches)
         return jobParams
     }
 
@@ -299,6 +296,8 @@ class Build {
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
         def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
         def vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
+        def vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
+        vendorTestRepos = vendorTestRepos - ('.git')
 
         // Use BUILD_REF override if specified
         vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
@@ -330,6 +329,7 @@ class Build {
                             context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
                             context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
+                            context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
                             context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
                             context.string(name: 'TIME_LIMIT', value: '1')
                     ]  
@@ -584,7 +584,7 @@ class Build {
 
         return remoteTargets
     }
- 
+
     /*
     We use this function at the end of a build to parse a java version string and create a VersionInfo object for deployment in the metadata objects.
     E.g. 11.0.9+10-202010192351 would be one example of a matched string.
