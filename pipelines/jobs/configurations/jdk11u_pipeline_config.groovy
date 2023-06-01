@@ -27,7 +27,7 @@ class Config11 {
                         weekly : ['extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external']
                 ],
                 configureArgs       : [
-                        'openj9'      : '--enable-jitserver --enable-dtrace=auto',
+                        'openj9'      : '--enable-dtrace=auto',
                         'temurin'     : '--enable-dtrace=auto',
                         'corretto'    : '--enable-dtrace=auto',
                         'SapMachine'  : '--enable-dtrace=auto',
@@ -126,7 +126,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : [
                         'temurin'     : '--enable-dtrace=auto',
-                        'openj9'      : '--enable-dtrace=auto --enable-jitserver'
+                        'openj9'      : '--enable-dtrace=auto'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
