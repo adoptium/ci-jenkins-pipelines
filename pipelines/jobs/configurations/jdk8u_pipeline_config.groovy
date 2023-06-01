@@ -25,7 +25,6 @@ class Config8 {
                 ],
                 test                 : 'default',
                 configureArgs       : [
-                        'openj9'      : '--enable-jitserver',
                         'dragonwell'  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
                 ],
                 buildArgs           : [
@@ -123,9 +122,6 @@ class Config8 {
                 arch: 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                configureArgs       : [
-                        'openj9'      : '--enable-jitserver'
-                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
