@@ -273,7 +273,7 @@ node('worker') {
                     } catch (Exception e) {
                         println "${e}\n[WARNING] Something went wrong when creating the weekly evaluation job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
                         checkoutAdoptPipelines()
-                        jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weeklyTemplatePath'], ignoreExisting: false, additionalParameters: config
+                        jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weekly'], ignoreExisting: false, additionalParameters: config
                         checkoutUserPipelines()
                     }
                     // add into list
