@@ -817,6 +817,7 @@ class Builder implements Serializable {
                             //def buildJobParams = config.toBuildParams()
                             // TEMPORARY test without NODE_LABEL
                             List<?> buildJobParams = []
+    context.println "no NODE_LABEL test.."
                             buildJobParams.add(['$class': 'TextParameterValue', name: 'BUILD_CONFIGURATION', value: config.toJson()])
 
                             // Pass down constructed USER_REMOTE_CONFIGS if useAdoptShellScripts is false
