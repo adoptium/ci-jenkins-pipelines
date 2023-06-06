@@ -108,9 +108,6 @@ class Config17 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                configureArgs       : [
-                        'openj9'      : '--enable-dtrace'
-                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
