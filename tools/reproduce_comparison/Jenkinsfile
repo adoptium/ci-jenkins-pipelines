@@ -13,9 +13,102 @@ pipeline {
     }
 
     stages {
-        stage('Lets Compare') {
-            agent {
-                label "${params.platform}&&build&&x64" // build label enables comparisons to be done, set to x64 for linux, might need adjust for windows/mac
+        stage('Prepare') { //Copy artifacts, reset parameters,trigger build and copyArtifacts
+            steps {
+                cleanWs()
+                checkout scm
+                copyArtifacts excludes: '**/OpenJDK*-sbom*metadata.json', 
+                                filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-sbom*.json',
+                                fingerprintArtifacts: true, 
+                                flatten: true, 
+                                projectName: "${params.COMPARED_JOB_NAME}",
+                                target: 'original/'
+                                selector: specific("${params.COMPARED_JOB_NUMBER}")
+                script {
+                    def sbomFiles = findFiles(glob: "**/*.json")
+                    def sbomParams = readJSON file: "${sbomFiles[0].name}"
+                    def buildTimeStamp = sbomParams.metadata.timestamp
+
+                    def sbomProperties = sbomParams.components[0].properties
+                    def reproducedParams = [:]
+                    sbomProperties.each { propertyItem -> 
+                        def paramFound = false
+                        propertyItem.each { key, value ->
+                            if (value in ["SCM Ref", "OpenJDK Source Commit", "Temurin Build Ref"]) {
+                                paramFound = true
+                            }
+                        }
+                        if (paramFound) {
+                            reproducedParams.put("${propertyItem.name}", "${propertyItem.value}")
+                        }
+                    }
+
+                    def scmRef = reproducedParams["SCM Ref"]
+                    def buildRef = reproducedParams["Temurin Build Ref"]
+                    buildRef = buildRef.substring(buildRef.lastIndexOf('/')+1)
+                    def scmCommit = reproducedParams["OpenJDK Source Commit"]
+                    scmCommit = scmCommit.substring(scmCommit.lastIndexOf('/')+1)
+
+                    // Convert COMPARED_JOB_PARAMS to json formatt string
+                    def jobParams = COMPARED_JOB_PARAMS.replaceAll("=", ':')
+                    jobParams = jobParams.replace("ADOPT_DEFAULTS_JSON", "ADOPT_DEFAULTS_TEMP")
+                    jobParams = jobParams.replace("DEFAULTS_JSON", "\"DEFAULTS_JSON\"")
+                    jobParams = jobParams.replace("USER_REMOTE_CONFIGS", "\"USER_REMOTE_CONFIGS\"")
+                    jobParams = jobParams.replace("ADOPT_DEFAULTS_TEMP", "\"ADOPT_DEFAULTS_JSON\"")
+                    jobParams = jobParams.replace("BUILD_CONFIGURATION", "\"BUILD_CONFIGURATION\"")
+                    
+                    def jsonJobParams = new groovy.json.JsonSlurper().parseText(jobParams)
+                    jsonJobParams.BUILD_CONFIGURATION.SCM_REF = scmRef
+                    jsonJobParams.BUILD_CONFIGURATION.BUILD_REF = buildRef
+                    jsonJobParams.BUILD_CONFIGURATION.BUILD_ARGS += " --build-reproducible-date ${buildTimeStamp}" //'${buildTimeStamp}'
+                    jsonJobParams.BUILD_CONFIGURATION.ENABLE_TESTS = "false"
+                    
+                    def buildParams = [
+                        text(name: 'BUILD_CONFIGURATION', value: "${jsonJobParams.BUILD_CONFIGURATION}"),
+                        text(name: 'USER_REMOTE_CONFIGS', value: "${jsonJobParams.USER_REMOTE_CONFIGS}"),
+                        text(name: 'DEFAULTS_JSON', value: "${jsonJobParams.DEFAULTS_JSON}"),
+                        text(name: 'ADOPT_DEFAULTS_JSON', value: "${jsonJobParams.ADOPT_DEFAULTS_JSON}")
+                    ]
+                    def reproducibleJob = build job: "${COMPARED_JOB_NAME}",
+                            propagate: false,
+                            parameters: buildParams
+                    
+                    def result = reproducibleJob.getResult()
+                    if (result == 'SUCCESS') {
+                        try {
+                            timeout(time: 2, unit: 'HOURS') {
+                                copyArtifacts(
+                                    projectName:"${COMPARED_JOB_NAME}",
+                                    selector:specific("${reproducibleJob.getNumber()}"),
+                                    filter: "**/*.tar.gz",
+                                    target: 'reproduced/',
+                                    fingerprintArtifacts: true,
+                                    flatten: true
+                                )
+                            }
+                        } catch (Exception e) {
+                            echo "Cannot run copyArtifacts from job ${COMPARED_JOB_NAME}. Exception: ${e.message}. Skipping copyArtifacts..."
+                        }
+                    } else {
+                        error "Reproducible jenkins job ${COMPARED_JOB_NAME} failed, exit comparision"
+                        return
+                    }
+
+                    def originalJDKFile = findFiles(glob: "original/*.tar.gz")
+                    def reproducedJDKFile = findFiles(glob: "reproduced/*.tar.gz")
+                    def result1 = sh returnStatus: true, script: "tar -xz ${originalJDKFile[0].name} -C original"
+                    if (result1 != 0 ) {
+                        currentBuild.result = 'UNSTABLE'
+                        error " Untar ${originalJDKFile[0].name} failed"
+                        return
+                    } 
+                    def result2 = sh returnStatus: true, script: "tar -xz ${reproducedJDKFile[0].name} -C reproduced"
+                    if (result2 != 0 ) {
+                        currentBuild.result = 'UNSTABLE'
+                        error " Untar ${reproducedJDKFile[0].name} failed"
+                        return
+                    }
+                }
             }
             steps {
                 script {
