@@ -1901,7 +1901,7 @@ class Build {
                         // Sign job timeout managed by Jenkins job config
                         sign(versionInfo)
                     } catch (FlowInterruptedException e) {
-                        throw new Exception('[ERROR] Sign job timeout (${buildTimeouts.SIGN_JOB_TIMEOUT} HOURS) has been reached OR the downstream sign job failed. Exiting...')
+                        throw new Exception("[ERROR] Sign job timeout (${buildTimeouts.SIGN_JOB_TIMEOUT} HOURS) has been reached OR the downstream sign job failed. Exiting...")
                     }
                 }
 
@@ -1934,7 +1934,7 @@ class Build {
                                 context.parallel testStages
                             }
                         } else {
-                            context.println("[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ")
+                            context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
                         }
                     } catch (Exception e) {
                         context.println(e.message)
