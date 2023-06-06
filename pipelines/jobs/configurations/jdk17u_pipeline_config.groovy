@@ -30,7 +30,7 @@ class Config17 {
                         openj9      : '!(centos6||rhel6)'
                 ],
                 configureArgs       : [
-                        'openj9'    : '--enable-dtrace --enable-jitserver',
+                        'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
@@ -109,7 +109,7 @@ class Config17 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
-                        'openj9'      : '--enable-dtrace --enable-jitserver'
+                        'openj9'      : '--enable-dtrace'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
