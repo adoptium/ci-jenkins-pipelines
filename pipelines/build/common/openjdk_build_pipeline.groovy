@@ -585,6 +585,33 @@ class Build {
         return remoteTargets
     }
 
+    def compareReproducibleBuild() {
+        // Currently only enable for jdk17, linux_x64, temurin, nightly, which shouldn't affect current build
+        // Move out of normal jdk** folder as it won't be regenerated automatically right now
+        def jobName = "${env.JOB_NAME}"
+        jobName = jobName.substring(jobName.lastIndexOf('/')+1)
+        jobName = "${jobName}_reproduce_compare"
+        if (getJavaVersionNumber() == 17 &&
+            buildConfig.ARCHITECTURE.contains('x64') &&
+            buildConfig.TARGET_OS.contains('linux') &&
+            buildConfig.VARIANT == 'temurin' && 
+            !isRelease) {
+            // For now set the build as independent, no need to wait for result as the build takes time
+            context.stage('Reproduce Compare') {
+                def buildParams = params.toString()
+                // passing buildParams multiline parameter to downstream job, double check the available method
+                context.build job: jobName,
+                                propagate: false,
+                                parameters: [
+                                    context.string(name: 'COMPARED_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                    context.string(name: 'COMPARED_JOB_NAME', value: "${env.JOB_NAME}"),
+                                    context.string(name: 'COMPARED_JOB_PARAMS', value: buildParams)
+                                ],
+                                wait: false
+            }
+        }
+    }
+
     /*
     We use this function at the end of a build to parse a java version string and create a VersionInfo object for deployment in the metadata objects.
     E.g. 11.0.9+10-202010192351 would be one example of a matched string.
@@ -1874,13 +1901,15 @@ class Build {
                         // Sign job timeout managed by Jenkins job config
                         sign(versionInfo)
                     } catch (FlowInterruptedException e) {
-                        throw new Exception("[ERROR] Sign job timeout (${buildTimeouts.SIGN_JOB_TIMEOUT} HOURS) has been reached OR the downstream sign job failed. Exiting...")
+                        throw new Exception('[ERROR] Sign job timeout (${buildTimeouts.SIGN_JOB_TIMEOUT} HOURS) has been reached OR the downstream sign job failed. Exiting...')
                     }
                 }
 
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
+                        // Compare reproducible build, using same build pipeline with enableTests = false to avoid recursive building
+                        compareReproducibleBuild()
                         //Only smoke tests succeed TCK and AQA tests will be triggerred.
                         if (runSmokeTests() == 'SUCCESS') {
                             // Remote trigger Eclipse Temurin JCK tests
