@@ -59,7 +59,7 @@ pipeline {
                     jsonJobParams.BUILD_CONFIGURATION.SCM_REF = scmRef
                     jsonJobParams.BUILD_CONFIGURATION.BUILD_REF = buildRef
                     jsonJobParams.BUILD_CONFIGURATION.BUILD_ARGS += " --build-reproducible-date ${buildTimeStamp}" //'${buildTimeStamp}'
-                    jsonJobParams.BUILD_CONFIGURATION.ENABLE_TESTS = "false"
+                    jsonJobParams.BUILD_CONFIGURATION.ENABLE_REPRODUCIBLE_COMPARE = "false"
                     
                     def buildParams = [
                         text(name: 'BUILD_CONFIGURATION', value: "${jsonJobParams.BUILD_CONFIGURATION}"),
