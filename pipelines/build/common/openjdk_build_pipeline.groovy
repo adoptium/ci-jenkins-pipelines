@@ -1726,7 +1726,7 @@ class Build {
                 context.println "Executing tests: ${buildConfig.TEST_LIST}"
                 context.println "Build num: ${env.BUILD_NUMBER}"
                 context.println "File name: ${filename}"
-
+                def enableReproducibleCompare = Boolean.valueOf(buildConfig.ENABLE_REPRODUCIBLE_COMPARE)
                 def enableTests = Boolean.valueOf(buildConfig.ENABLE_TESTS)
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
                 def enableSigner = Boolean.valueOf(buildConfig.ENABLE_SIGNER)
@@ -1905,11 +1905,13 @@ class Build {
                     }
                 }
 
+                // Compare reproducible build if needed
+                if (enableReproducibleCompare) {
+                    compareReproducibleBuild()
+                }
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
-                        // Compare reproducible build, using same build pipeline with enableTests = false to avoid recursive building
-                        compareReproducibleBuild()
                         //Only smoke tests succeed TCK and AQA tests will be triggerred.
                         if (runSmokeTests() == 'SUCCESS') {
                             // Remote trigger Eclipse Temurin JCK tests

@@ -26,6 +26,9 @@ class Config17 {
                         openj9      : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ]
                 additionalTestLabels: [
                         openj9      : '!(centos6||rhel6)'
                 ],

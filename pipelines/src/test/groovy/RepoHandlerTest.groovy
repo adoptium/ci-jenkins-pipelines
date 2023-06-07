@@ -63,6 +63,7 @@ class RepoHandlerTest {
         Assertions.assertEquals(adoptJson.defaultsUrl, 'https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json')
 
         // Test details
+        Assertions.assertTrue(adoptJson.testDetails.enableReproducibleCompare instanceof Boolean)
         Assertions.assertTrue(adoptJson.testDetails.enableTests instanceof Boolean)
         Assertions.assertTrue(adoptJson.testDetails.nightlyDefault instanceof List)
         Assertions.assertTrue(adoptJson.testDetails.weeklyDefault instanceof List)
@@ -118,6 +119,8 @@ class RepoHandlerTest {
         Assertions.assertEquals(userJson.defaultsUrl, '23')
 
         // Test details
+        Assertions.assertTrue(userJson.testDetails.enableReproducibleCompare instanceof Boolean)
+        Assertions.assertTrue(userJson.testDetails.enableReproducibleCompare)
         Assertions.assertTrue(userJson.testDetails.enableTests instanceof Boolean)
         Assertions.assertTrue(userJson.testDetails.enableTests)
         Assertions.assertEquals(userJson.testDetails.nightlyDefault, [ 'test1', 'test2', 'test3' ])

@@ -215,7 +215,7 @@ node('worker') {
                     if (useAdoptShellScripts.toBoolean()) {
                         config.put('adoptScripts', true)
                     }
-
+                    config.put('enableReproducibleCompare', DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean)
                     config.put('enableTests', DEFAULTS_JSON['testDetails']['enableTests'] as Boolean)
                     config.put('enableTestDynamicParallel', DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean)
                     config.put('defaultsJson', DEFAULTS_JSON)
