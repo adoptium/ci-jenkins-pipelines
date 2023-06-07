@@ -1817,6 +1817,14 @@ class Build {
                             } else {
                                 dockerImageDigest = dockerImageDigest.replaceAll("\\[", "").replaceAll("\\]", "")
                                 String dockerRunArg="-e \"BUILDIMAGESHA=$dockerImageDigest\""
+
+                                // Are we running podman in Docker CLI Emulation mode?
+                                def isPodman = context.sh(script: "docker --version | grep podman", returnStatus:true)
+                                if (isPodman == 0) {
+                                    // Note: --userns was introduced in podman 4.3.0
+                                    // Add uid and gid userns mapping required for podman
+                                    dockerRunArg += " --userns keep-id:uid=1000,gid=1000"
+                                }
                                 context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                     buildScripts(
                                         cleanWorkspace,
