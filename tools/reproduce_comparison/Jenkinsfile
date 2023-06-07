@@ -25,14 +25,13 @@ pipeline {
                 script {
                     def sbomFiles = findFiles(glob: "**/*.json")
                     def sbomParams = readJSON file: "${sbomFiles[0].name}"
-                    def buildTimeStamp = sbomParams.metadata.timestamp
 
                     def sbomProperties = sbomParams.components[0].properties
                     def reproducedParams = [:]
                     sbomProperties.each { propertyItem -> 
                         def paramFound = false
                         propertyItem.each { key, value ->
-                            if (value in ["SCM Ref", "OpenJDK Source Commit", "Temurin Build Ref"]) {
+                            if (value in ["SCM Ref", "OpenJDK Source Commit", "Temurin Build Ref", "Build Timestamp"]) {
                                 paramFound = true
                             }
                         }
@@ -43,6 +42,7 @@ pipeline {
 
                     def scmRef = reproducedParams["SCM Ref"]
                     def buildRef = reproducedParams["Temurin Build Ref"]
+                    def buildTimeStamp = reproducedParams["Build Timestamp"]
                     buildRef = buildRef.substring(buildRef.lastIndexOf('/')+1)
                     def scmCommit = reproducedParams["OpenJDK Source Commit"]
                     scmCommit = scmCommit.substring(scmCommit.lastIndexOf('/')+1)
