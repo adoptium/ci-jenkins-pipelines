@@ -78,7 +78,7 @@ This file contains the default constants and paths used in the build scripts for
     },
     // Test suite and inclusion details
     "testDetails"            : {
-        // Boolean denoting wether the reproducible compare is needed
+        // Boolean denoting whether the reproducible compare is needed
         "enableReproducibleCompare" : false,
         // Boolean denoting whether pipeline tests will be enabled or disabled by default
         "enableTests"            : true,
