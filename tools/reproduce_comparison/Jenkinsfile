@@ -117,11 +117,9 @@ pipeline {
                         dir('temurin-build/tools/reproduce_comparison') {
                             def rc = 0
                             if (COMPARED_JOB_NAME.contains('linux')) {
-                                sh "chmod 776 ./tooling/linux_repo_compare.sh"
                                 rc = sh returnStatus: true, script: "./tooling/linux_repo_compare.sh temurin ./original temurin ./reproduced"
                             } else if (COMPARED_JOB_NAME.contains('mac')) {
                                 // mac
-                                //sh "chmod 776 ./tooling/mac_repo_compare.sh"
                                 //sh "./tooling/mac_repo_compare.sh temurin ./original temurin ./reproduced ${self_cert_file} ${self_cert_passwd}"
                                 echo 'todo mac build comparison'
                             } else if (COMPARED_JOB_NAME.contains('windows')) {
