@@ -352,6 +352,7 @@ class Regeneration implements Serializable {
         }
         return enableReproducibleCompare
     }
+
     /*
     * Get the list of tests from jdk*_pipeline_config.groovy. Used when creating the IndividualBuildConfig. Used as a placeholder since the pipelines overwrite this.
     * @param configuration

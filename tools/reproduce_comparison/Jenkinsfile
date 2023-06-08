@@ -94,14 +94,14 @@ pipeline {
 
                     def originalJDKFile = findFiles(glob: "original/*.tar.gz")
                     def reproducedJDKFile = findFiles(glob: "reproduced/*.tar.gz")
-                    def result1 = sh returnStatus: true, script: "tar -xz ${originalJDKFile[0].name} -C original"
-                    if (result1 != 0 ) {
+                    def untarOriginalJDK = sh returnStatus: true, script: "tar -xz ${originalJDKFile[0].name} -C original"
+                    if (untarOriginalJDK != 0 ) {
                         currentBuild.result = 'UNSTABLE'
                         error " Untar ${originalJDKFile[0].name} failed"
                         return
                     } 
-                    def result2 = sh returnStatus: true, script: "tar -xz ${reproducedJDKFile[0].name} -C reproduced"
-                    if (result2 != 0 ) {
+                    def untarReproducedJDK = sh returnStatus: true, script: "tar -xz ${reproducedJDKFile[0].name} -C reproduced"
+                    if (untarReproducedJDK != 0 ) {
                         currentBuild.result = 'UNSTABLE'
                         error " Untar ${reproducedJDKFile[0].name} failed"
                         return

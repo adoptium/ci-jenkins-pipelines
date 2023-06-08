@@ -216,7 +216,7 @@ class Builder implements Serializable {
         return ''
     }
     /*
-    * Get reproduciableCompare flag from the build configurations.   
+    Get reproduciableCompare flag from the build configurations.
     */
     Boolean getReproducibleCompare(Map<String, ?> configuration, String variant) {
         Boolean enableReproducibleCompare = DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean
@@ -231,6 +231,7 @@ class Builder implements Serializable {
         }
         return enableReproducibleCompare
     }
+
     /*
     Get the list of tests to run from the build configurations.
     We run different test categories depending on if this build is a release or nightly. This function parses and applies this to the individual build config.
