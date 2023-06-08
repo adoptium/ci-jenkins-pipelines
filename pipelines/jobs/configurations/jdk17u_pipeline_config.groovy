@@ -28,7 +28,7 @@ class Config17 {
                 test                : 'default',
                 reproducibleCompare : [
                         'temurin'   : true
-                ]
+                ],
                 additionalTestLabels: [
                         openj9      : '!(centos6||rhel6)'
                 ],

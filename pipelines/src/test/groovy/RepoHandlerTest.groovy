@@ -120,7 +120,7 @@ class RepoHandlerTest {
 
         // Test details
         Assertions.assertTrue(userJson.testDetails.enableReproducibleCompare instanceof Boolean)
-        Assertions.assertTrue(userJson.testDetails.enableReproducibleCompare)
+        Assertions.assertFalse(userJson.testDetails.enableReproducibleCompare)
         Assertions.assertTrue(userJson.testDetails.enableTests instanceof Boolean)
         Assertions.assertTrue(userJson.testDetails.enableTests)
         Assertions.assertEquals(userJson.testDetails.nightlyDefault, [ 'test1', 'test2', 'test3' ])
