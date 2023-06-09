@@ -732,6 +732,11 @@ class Builder implements Serializable {
         }
 
         def timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
+        if (javaToBuild == "jdk${headVersion}") {
+          timestamp = "ea.${scmReference}".replaceAll("jdk-","").replaceAll("_adopt","").replaceAll("/\.\+/","");
+        } else {
+          timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
+        }
         def tag = "${javaToBuild}-${timestamp}"
 
         if (publishName) {
