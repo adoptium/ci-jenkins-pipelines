@@ -664,7 +664,6 @@ class Builder implements Serializable {
         return "jdk${number}"
     }
 
-
     /*
     Returns the downstream build job's type by checking job folder's path
     can be "evaluation" or "release" or null (in this case it is for the nightly or pr-tester)
@@ -689,7 +688,7 @@ class Builder implements Serializable {
 
     /*
     Returns the jenkins folder of where we assume the downstream build jobs have been regenerated
-    e.g: 
+    e.g:
     nightly:    build-scripts/jobs/jdk11u/jdk11u-linux-aarch64-temurin
     evaluation:  build-scripts/jobs/evaluation/jobs/jdk17u/jdk17u-evaluation-mac-x64-openj9
     release:    build-scripts/jobs/release/jobs/jdk20/jdk20-release-aix-ppc64-temurin
@@ -733,7 +732,7 @@ class Builder implements Serializable {
 
         def timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
         if (javaToBuild == "jdk${headVersion}") {
-          timestamp = "ea.${scmReference}".replaceAll("jdk-","").replaceAll("_adopt","").replaceAll("/\.\+/","");
+          timestamp = timestamp = "ea." + "${scmReference}".replaceFirst("jdk-","").replaceFirst("_adopt","").replaceAll("[.+]","-");
         } else {
           timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
         }
