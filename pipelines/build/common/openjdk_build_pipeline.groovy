@@ -595,10 +595,10 @@ class Build {
             buildConfig.ARCHITECTURE.contains('x64') &&
             buildConfig.TARGET_OS.contains('linux') &&
             buildConfig.VARIANT == 'temurin' && 
-            !isRelease) {
+            !Boolean.valueOf(buildConfig.RELEASE)) {
             // For now set the build as independent, no need to wait for result as the build takes time
             context.stage('Reproduce Compare') {
-                def buildParams = params.toString()
+                def buildParams = context.params.toString()
                 // passing buildParams multiline parameter to downstream job, double check the available method
                 context.build job: jobName,
                                 propagate: false,
