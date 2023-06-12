@@ -1,6 +1,7 @@
 /*
 Jenkins job does reproducible build compare.
 */
+import groovy.json.JsonOutput
 
 pipeline {
     agent any
@@ -36,12 +37,12 @@ pipeline {
                             }
                         }
                         if (paramFound) {
-                            reproducedParams.put("${propertyItem.name}", "${propertyItem.value}")
+                            reproducedParams.put(propertyItem.name, propertyItem.value)
                         }
                     }
-
+                    
                     def scmRef = reproducedParams["SCM Ref"]
-                    def buildTimeStamp = reproducedParams["Build Timestamp"]
+                    def buildTimeStamp = "'" + reproducedParams["Build Timestamp"] + "'"
                     def buildRef = reproducedParams["Temurin Build Ref"]
                     buildRef = buildRef.substring(buildRef.lastIndexOf('/')+1)
 
@@ -53,6 +54,7 @@ pipeline {
                     jobParams = jobParams.replace("ADOPT_DEFAULTS_TEMP", "\"ADOPT_DEFAULTS_JSON\"")
                     jobParams = jobParams.replace("BUILD_CONFIGURATION", "\"BUILD_CONFIGURATION\"")
                     
+                    // Set Reproducible build parameters
                     def jsonJobParams = new groovy.json.JsonSlurper().parseText(jobParams)
                     jsonJobParams.BUILD_CONFIGURATION.SCM_REF = scmRef
                     jsonJobParams.BUILD_CONFIGURATION.BUILD_REF = buildRef
@@ -60,10 +62,10 @@ pipeline {
                     jsonJobParams.BUILD_CONFIGURATION.ENABLE_REPRODUCIBLE_COMPARE = "false"
                     
                     def buildParams = [
-                        text(name: 'BUILD_CONFIGURATION', value: "${jsonJobParams.BUILD_CONFIGURATION}"),
-                        text(name: 'USER_REMOTE_CONFIGS', value: "${jsonJobParams.USER_REMOTE_CONFIGS}"),
-                        text(name: 'DEFAULTS_JSON', value: "${jsonJobParams.DEFAULTS_JSON}"),
-                        text(name: 'ADOPT_DEFAULTS_JSON', value: "${jsonJobParams.ADOPT_DEFAULTS_JSON}")
+                        text(name: 'BUILD_CONFIGURATION', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.BUILD_CONFIGURATION))),
+                        text(name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.USER_REMOTE_CONFIGS))),
+                        text(name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.DEFAULTS_JSON))),
+                        text(name: 'ADOPT_DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.DEFAULTS_JSON)))
                     ]
                     def reproducibleJob = build job: "${COMPARED_JOB_NAME}",
                             propagate: false,
