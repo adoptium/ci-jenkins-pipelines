@@ -15,7 +15,7 @@ pipeline {
             steps {
                 cleanWs()
                 checkout scm
-                copyArtifacts excludes: '**/OpenJDK*-sbom*metadata.json', 
+                copyArtifacts excludes: '**/OpenJDK*-sbom*metadata.json,**/OpenJDK*-jdk-sources*.tar.gz', 
                                 filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-sbom*.json',
                                 fingerprintArtifacts: true, 
                                 flatten: true, 
@@ -23,15 +23,15 @@ pipeline {
                                 target: 'original/'
                                 selector: specific("${params.COMPARED_JOB_NUMBER}")
                 script {
-                    def sbomFiles = findFiles(glob: "**/*.json")
-                    def sbomParams = readJSON file: "${sbomFiles[0].name}"
+                    def sbomFiles = findFiles(glob: "**/OpenJDK*-sbom*.json")
+                    def sbomParams = readJSON file: "${sbomFiles[0].path}"
 
                     def sbomProperties = sbomParams.components[0].properties
                     def reproducedParams = [:]
                     sbomProperties.each { propertyItem -> 
                         def paramFound = false
                         propertyItem.each { key, value ->
-                            if (value in ["SCM Ref", "OpenJDK Source Commit", "Temurin Build Ref", "Build Timestamp"]) {
+                            if (value in ["SCM Ref", "Temurin Build Ref", "Build Timestamp"]) {
                                 paramFound = true
                             }
                         }
@@ -41,11 +41,9 @@ pipeline {
                     }
 
                     def scmRef = reproducedParams["SCM Ref"]
-                    def buildRef = reproducedParams["Temurin Build Ref"]
                     def buildTimeStamp = reproducedParams["Build Timestamp"]
+                    def buildRef = reproducedParams["Temurin Build Ref"]
                     buildRef = buildRef.substring(buildRef.lastIndexOf('/')+1)
-                    def scmCommit = reproducedParams["OpenJDK Source Commit"]
-                    scmCommit = scmCommit.substring(scmCommit.lastIndexOf('/')+1)
 
                     // Convert COMPARED_JOB_PARAMS to json formatt string
                     def jobParams = COMPARED_JOB_PARAMS.replaceAll("=", ':')
@@ -58,7 +56,7 @@ pipeline {
                     def jsonJobParams = new groovy.json.JsonSlurper().parseText(jobParams)
                     jsonJobParams.BUILD_CONFIGURATION.SCM_REF = scmRef
                     jsonJobParams.BUILD_CONFIGURATION.BUILD_REF = buildRef
-                    jsonJobParams.BUILD_CONFIGURATION.BUILD_ARGS += " --build-reproducible-date ${buildTimeStamp}" //'${buildTimeStamp}'
+                    jsonJobParams.BUILD_CONFIGURATION.BUILD_ARGS += " --build-reproducible-date ${buildTimeStamp}"
                     jsonJobParams.BUILD_CONFIGURATION.ENABLE_REPRODUCIBLE_COMPARE = "false"
                     
                     def buildParams = [
@@ -78,7 +76,8 @@ pipeline {
                                 copyArtifacts(
                                     projectName:"${COMPARED_JOB_NAME}",
                                     selector:specific("${reproducibleJob.getNumber()}"),
-                                    filter: "**/*.tar.gz",
+                                    excludes: '**/OpenJDK*-jdk-sources*.tar.gz',
+                                    filter: '**/OpenJDK*-jdk*.tar.gz',
                                     target: 'reproduced/',
                                     fingerprintArtifacts: true,
                                     flatten: true
