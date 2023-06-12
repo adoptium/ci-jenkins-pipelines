@@ -128,6 +128,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>RELEASE</strong></dt><dd>Is this build a release</dd>
                 <dt><strong>PUBLISH_NAME</strong></dt><dd>Set name of publish</dd>
                 <dt><strong>ADOPT_BUILD_NUMBER</strong></dt><dd>Adopt build number</dd>
+                <dt><strong>ENABLE_REPRODUCIBLE_COMPARE</strong></dt><dd>Run reproducible compare build</dd>
                 <dt><strong>ENABLE_TESTS</strong></dt><dd>Run tests</dd>
                 <dt><strong>ENABLE_TESTDYNAMICPARALLEL</strong></dt><dd>Run parallel</dd>
                 <dt><strong>ENABLE_INSTALLERS</strong></dt><dd>Run installers</dd>

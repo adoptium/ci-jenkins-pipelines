@@ -585,6 +585,33 @@ class Build {
         return remoteTargets
     }
 
+    def compareReproducibleBuild() {
+        // Currently only enable for jdk17, linux_x64, temurin, nightly, which shouldn't affect current build
+        // Move out of normal jdk** folder as it won't be regenerated automatically right now
+        def jobName = "${env.JOB_NAME}"
+        jobName = jobName.substring(jobName.lastIndexOf('/')+1)
+        jobName = "${jobName}_reproduce_compare"
+        if (getJavaVersionNumber() == 17 &&
+            buildConfig.ARCHITECTURE.contains('x64') &&
+            buildConfig.TARGET_OS.contains('linux') &&
+            buildConfig.VARIANT == 'temurin' && 
+            !Boolean.valueOf(buildConfig.RELEASE)) {
+            // For now set the build as independent, no need to wait for result as the build takes time
+            context.stage('Reproduce Compare') {
+                def buildParams = context.params.toString()
+                // passing buildParams multiline parameter to downstream job, double check the available method
+                context.build job: jobName,
+                                propagate: false,
+                                parameters: [
+                                    context.string(name: 'COMPARED_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                    context.string(name: 'COMPARED_JOB_NAME', value: "${env.JOB_NAME}"),
+                                    context.string(name: 'COMPARED_JOB_PARAMS', value: buildParams)
+                                ],
+                                wait: false
+            }
+        }
+    }
+
     /*
     We use this function at the end of a build to parse a java version string and create a VersionInfo object for deployment in the metadata objects.
     E.g. 11.0.9+10-202010192351 would be one example of a matched string.
@@ -1699,7 +1726,7 @@ class Build {
                 context.println "Executing tests: ${buildConfig.TEST_LIST}"
                 context.println "Build num: ${env.BUILD_NUMBER}"
                 context.println "File name: ${filename}"
-
+                def enableReproducibleCompare = Boolean.valueOf(buildConfig.ENABLE_REPRODUCIBLE_COMPARE)
                 def enableTests = Boolean.valueOf(buildConfig.ENABLE_TESTS)
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
                 def enableSigner = Boolean.valueOf(buildConfig.ENABLE_SIGNER)
@@ -1886,6 +1913,10 @@ class Build {
                     }
                 }
 
+                // Compare reproducible build if needed
+                if (enableReproducibleCompare) {
+                    compareReproducibleBuild()
+                }
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
@@ -1913,7 +1944,7 @@ class Build {
                                 context.parallel testStages
                             }
                         } else {
-                            context.println("[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ")
+                            context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
                         }
                     } catch (Exception e) {
                         context.println(e.message)

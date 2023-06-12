@@ -150,6 +150,7 @@ if (scmVars != null || configureBuild != null || buildConfigurations != null) {
             DEFAULTS_JSON,
             activeNodeTimeout,
             dockerExcludes,
+            enableReproducibleCompare,
             enableTests,
             enableTestDynamicParallel,
             enableInstallers,

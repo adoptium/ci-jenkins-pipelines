@@ -2,6 +2,7 @@ import groovy.json.JsonOutput
 
 gitRefSpec = ''
 propagateFailures = true
+runReproducibleCompare = enableReproducibleCompare
 runTests = enableTests
 runParallel = enableTestDynamicParallel
 runInstaller = true
@@ -101,6 +102,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         stringParam('helperReference', '', 'Tag name or Branch name of jenkins-helper repo. Defaults to master')
         stringParam('aqaReference', '', 'Tag name or Branch name of aqa-tests. Defaults to master')
         booleanParam('aqaAutoGen', false, 'If set to true, force auto generate AQA test jobs. Defaults to false')
+        booleanParam('enableReproducibleCompare', runReproducibleCompare, 'If set to true the reproducible compare job might be triggerred')
         booleanParam('enableTests', runTests, 'If set to true the test pipeline will be executed')
         booleanParam('enableTestDynamicParallel', runParallel, 'If set to true test will be run parallel')
         booleanParam('enableInstallers', runInstaller, 'If set to true the installer pipeline will be executed')

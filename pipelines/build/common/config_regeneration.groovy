@@ -334,6 +334,24 @@ class Regeneration implements Serializable {
 
         return ''
     }
+    /*
+    * Get reproduciableCompare flag from jdk*_pipeline_config.groovy. Used when creating the IndividualBuildConfig.
+    * @param configuration
+    * @param variant    
+    */
+    Boolean getReproducibleCompare(Map<String, ?> configuration, String variant) {
+        Boolean enableReproducibleCompare = DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean
+        if (configuration.containsKey('reproducibleCompare')) {
+            def reproducibleCompare
+            if (isMap(configuration.reproducibleCompare)) {
+                reproducibleCompare = (configuration.enableReproducibleCompare as Map).get(variant)
+            }
+            if (reproducibleCompare != null) {
+                enableReproducibleCompare = reproducibleCompare
+            }
+        }
+        return enableReproducibleCompare
+    }
 
     /*
     * Get the list of tests from jdk*_pipeline_config.groovy. Used when creating the IndividualBuildConfig. Used as a placeholder since the pipelines overwrite this.
@@ -425,6 +443,8 @@ class Regeneration implements Serializable {
 
             def numMachines = getDynamicParams().get('numMachines')
 
+            def enableReproducibleCompare = getReproducibleCompare(platformConfig, variant)
+
             return new IndividualBuildConfig( // final build config
                 JAVA_TO_BUILD: javaToBuild,
                 ARCHITECTURE: platformConfig.arch as String,
@@ -460,6 +480,7 @@ class Regeneration implements Serializable {
                 RELEASE: false,
                 PUBLISH_NAME: '',
                 ADOPT_BUILD_NUMBER: '',
+                ENABLE_REPRODUCIBLE_COMPARE: enableReproducibleCompare,
                 ENABLE_TESTS: DEFAULTS_JSON['testDetails']['enableTests'] as Boolean,
                 ENABLE_TESTDYNAMICPARALLEL: DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean,
                 ENABLE_INSTALLERS: true,
