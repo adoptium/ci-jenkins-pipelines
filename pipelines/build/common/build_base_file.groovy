@@ -223,7 +223,9 @@ class Builder implements Serializable {
         if (configuration.containsKey('reproducibleCompare')) {
             def reproducibleCompare
             if (isMap(configuration.reproducibleCompare)) {
-                reproducibleCompare = (configuration.enableReproducibleCompare as Map).get(variant)
+                reproducibleCompare = (configuration.reproducibleCompare as Map).get(variant)
+            } else {
+                reproducibleCompare = configuration.reproducibleCompare
             }
             if (reproducibleCompare != null) {
                 enableReproducibleCompare = reproducibleCompare

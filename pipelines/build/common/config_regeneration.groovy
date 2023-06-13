@@ -337,14 +337,16 @@ class Regeneration implements Serializable {
     /*
     * Get reproduciableCompare flag from jdk*_pipeline_config.groovy. Used when creating the IndividualBuildConfig.
     * @param configuration
-    * @param variant    
+    * @param variant
     */
     Boolean getReproducibleCompare(Map<String, ?> configuration, String variant) {
         Boolean enableReproducibleCompare = DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean
         if (configuration.containsKey('reproducibleCompare')) {
             def reproducibleCompare
             if (isMap(configuration.reproducibleCompare)) {
-                reproducibleCompare = (configuration.enableReproducibleCompare as Map).get(variant)
+                reproducibleCompare = (configuration.reproducibleCompare as Map).get(variant)
+            } else {
+                reproducibleCompare = configuration.reproducibleCompare
             }
             if (reproducibleCompare != null) {
                 enableReproducibleCompare = reproducibleCompare
