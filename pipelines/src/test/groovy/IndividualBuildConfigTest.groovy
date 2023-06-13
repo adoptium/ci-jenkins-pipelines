@@ -7,14 +7,14 @@ class IndividualBuildConfigTest {
 
     @Test
     void serializationTransfersDataCorrectly() {
-        def config = new IndividualBuildConfig([
+        def configMap = [
                 ARCHITECTURE               : 'a',
                 TARGET_OS                  : 'b',
                 VARIANT                    : 'c',
                 JAVA_TO_BUILD              : 'd',
-                TEST_LIST                  : 'e',
-                DYNAMIC_LIST               : 'e',
-                NUM_MACHINES               : 'e',
+                TEST_LIST                  : ['e'],
+                DYNAMIC_LIST               : ['e'],
+                NUM_MACHINES               : ['e'],
                 SCM_REF                    : 'f',
                 BUILD_REF                  : 'w',
                 CI_REF                     : 'x',
@@ -47,10 +47,12 @@ class IndividualBuildConfigTest {
                 ENABLE_SIGNER              : true,
                 CLEAN_WORKSPACE            : false,
                 CLEAN_WORKSPACE_AFTER      : false,
-                CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER : false
-        ])
+                CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER : false,
+                ENABLE_REPRODUCIBLE_COMPARE : false,
+                ENABLE_TESTDYNAMICPARALLEL : false
+        ]
 
-        def json = config.toJson()
+        def json = JsonOutput.toJson(configMap)
         def parsedConfig = new IndividualBuildConfig(json)
 
         parsedConfig.toRawMap()
@@ -58,7 +60,7 @@ class IndividualBuildConfigTest {
                     Assertions.assertNotNull(val.value, "${val.key} is null")
                 }
 
-        Assertions.assertEquals(JsonOutput.toJson(config), JsonOutput.toJson(parsedConfig))
+        Assertions.assertEquals(configMap, parsedConfig.toRawMap())
     }
 
     @Test
