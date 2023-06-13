@@ -3,6 +3,9 @@ import groovy.json.JsonOutput
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
+/**
+ * Tests for IndividualBuildConfig
+ */
 class IndividualBuildConfigTest {
 
     @Test
