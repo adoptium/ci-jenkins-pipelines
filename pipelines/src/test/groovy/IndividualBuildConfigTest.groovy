@@ -54,15 +54,19 @@ class IndividualBuildConfigTest {
                 ENABLE_REPRODUCIBLE_COMPARE : false,
                 ENABLE_TESTDYNAMICPARALLEL : false
         ]
+        def testConfig = new IndividualBuildConfig(configMap)
 
-        def json = JsonOutput.toJson(configMap)
+        // Serialize and then re-constitute
+        def json = testConfig.toJson()
         def parsedConfig = new IndividualBuildConfig(json)
 
+        // Assert all values set
         parsedConfig.toRawMap()
                 .each { val ->
                     Assertions.assertNotNull(val.value, "${val.key} is null")
                 }
 
+        // Assert serialization round trip matches initial configMap
         Assertions.assertEquals(configMap, parsedConfig.toRawMap())
     }
 
