@@ -1,7 +1,8 @@
 import groovy.json.JsonOutput
 
 gitRefSpec = ''
-propagateFailures = false
+propagateFailures = true
+runReproducibleCompare = enableReproducibleCompare
 runTests = enableTests
 runParallel = enableTestDynamicParallel
 runInstaller = true
@@ -62,16 +63,16 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
                     // Do not inherit permissions from global configuration
                     nonInheriting()
                 }
-                permissions(['hudson.model.Item.Build:AdoptOpenJDK*build', 'hudson.model.Item.Build:AdoptOpenJDK*build-triage',
-                'hudson.model.Item.Cancel:AdoptOpenJDK*build', 'hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
-                'hudson.model.Item.Configure:AdoptOpenJDK*build', 'hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
-                'hudson.model.Item.Read:AdoptOpenJDK*build', 'hudson.model.Item.Read:AdoptOpenJDK*build-triage',
+                permissions(['GROUP:hudson.model.Item.Build:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build-triage',
+                'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
+                'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
+                'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build-triage',
                 // eclipse-temurin-bot needs read access for TRSS
-                'hudson.model.Item.Read:eclipse-temurin-bot',
+                'USER:hudson.model.Item.Read:eclipse-temurin-bot',
                 // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance
-                'hudson.model.Item.Read:eclipse-temurin-compliance-bot',
-                'hudson.model.Item.Workspace:AdoptOpenJDK*build', 'hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
-                'hudson.model.Run.Update:AdoptOpenJDK*build', 'hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
+                'USER:hudson.model.Item.Read:eclipse-temurin-compliance-bot',
+                'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
+                'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build', 'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
             }
         }
         pipelineTriggers {
@@ -101,6 +102,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         stringParam('helperReference', '', 'Tag name or Branch name of jenkins-helper repo. Defaults to master')
         stringParam('aqaReference', '', 'Tag name or Branch name of aqa-tests. Defaults to master')
         booleanParam('aqaAutoGen', false, 'If set to true, force auto generate AQA test jobs. Defaults to false')
+        booleanParam('enableReproducibleCompare', runReproducibleCompare, 'If set to true the reproducible compare job might be triggerred')
         booleanParam('enableTests', runTests, 'If set to true the test pipeline will be executed')
         booleanParam('enableTestDynamicParallel', runParallel, 'If set to true test will be run parallel')
         booleanParam('enableInstallers', runInstaller, 'If set to true the installer pipeline will be executed')
@@ -112,7 +114,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         booleanParam('cleanWorkspaceBeforeBuild', false, 'Clean out the workspace before the build')
         booleanParam('cleanWorkspaceAfterBuild', false, 'Clean out the workspace after the build')
         booleanParam('cleanWorkspaceBuildOutputAfterBuild', cleanWsBuildOutput, 'Clean out the workspace/build/src/build and workspace/target output only, after the build')
-        booleanParam('propagateFailures', propagateFailures, 'If true, a failure of <b>ANY</b> downstream build (but <b>NOT</b> test) will cause the whole build to fail')
+        booleanParam('propagateFailures', propagateFailures, 'If true, a failure of <b>ANY</b> downstream build will cause the whole build to fail')
         booleanParam('keepTestReportDir', false, 'If true, test report dir (including core files where generated) will be kept even when the testcase passes, failed testcases always keep the report dir. Does not apply to JUnit jobs which are always kept, eg.openjdk.')
         booleanParam('keepReleaseLogs', true, 'If true, "Release" type pipeline Jenkins logs will be marked as "Keep this build forever".')
         stringParam('adoptBuildNumber', '', 'Empty by default. If you ever need to re-release then bump this number. Currently this is only added to the build metadata file.')

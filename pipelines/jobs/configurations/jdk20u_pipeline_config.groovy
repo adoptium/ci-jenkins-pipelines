@@ -1,4 +1,4 @@
-class Config17 {
+class Config20 {
 
     final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
@@ -18,17 +18,11 @@ class Config17 {
         x64Linux  : [
                 os                  : 'linux',
                 arch                : 'x64',
-                dockerImage: [
-                        temurin     : 'adoptopenjdk/centos6_build_image',
-                        openj9      : 'adoptopenjdk/centos7_build_image'
-                ],
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
                 dockerFile: [
                         openj9      : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
                 test                : 'default',
-                reproducibleCompare : [
-                        'temurin'   : true
-                ],
                 additionalTestLabels: [
                         openj9      : '!(centos6||rhel6)'
                 ],
@@ -66,29 +60,24 @@ class Config17 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
 
-        x32Windows: [
-                os                  : 'windows',
-                arch                : 'x86-32',
-                additionalNodeLabels: 'win2012&&vs2019',
-                test                : 'default',
-                buildArgs           : [
-                        'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom'
-                ]
-        ],
-
         ppc64Aix    : [
                 os                  : 'aix',
                 arch                : 'ppc64',
-                additionalNodeLabels: 'xlc13&&aix720',
+                additionalNodeLabels: [
+                        temurin: 'xlc16&&aix720',
+                        openj9:  'xlc16&&aix715'
+                ],
                 test                : 'default',
-                additionalTestLabels: 'sw.os.aix.7_2',
+                additionalTestLabels: [
+                        temurin      : 'sw.os.aix.7_2'
+                ],
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -111,6 +100,10 @@ class Config17 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                configureArgs       : [
+                        'temurin'     : '--enable-dtrace',
+                        'openj9'      : '--enable-dtrace'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -125,7 +118,6 @@ class Config17 {
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
-
         ],
 
         aarch64Mac: [
@@ -136,7 +128,6 @@ class Config17 {
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
-
         ],
 
         arm32Linux    : [
@@ -158,7 +149,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
-                        'hotspot'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
 
@@ -176,5 +167,5 @@ class Config17 {
 
 }
 
-Config17 config = new Config17()
+Config20 config = new Config20()
 return config.buildConfigurations

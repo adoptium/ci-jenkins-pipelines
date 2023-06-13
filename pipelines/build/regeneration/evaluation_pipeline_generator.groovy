@@ -48,7 +48,7 @@ node('worker') {
         }
 
         timestamps {
-            def validVersion = [8, 11, 17, 20]
+            def retiredVersions = [9, 10, 12, 13, 14, 15, 16, 18, 19]
             def generatedPipelines = []
 
             // Load git url and branch and gitBranch. These determine where we will be pulling user configs from.
@@ -146,7 +146,10 @@ node('worker') {
             int headVersion = (int) response[('tip_version')]
 
             (8..headVersion + 1).each({ javaVersion ->
-                if (validVersion.contains(javaVersion)) {
+                if (retiredVersions.contains(javaVersion)) {
+                    println "[INFO] $javaVersion is a retired version that isn't currently built. Skipping generation..."
+                    return
+                } else {
                     
                     def config = [
                         TEST                : false,
@@ -186,8 +189,12 @@ node('worker') {
                                 targetEvaluation = load nonUFile2
                             }
                         } catch (NoSuchFileException e2) {
-                            throw new Exception("[ERROR] enable to load jdk${javaVersion}u_evaluation.groovy nor jdk${javaVersion}_evaluation.groovy does not exist!")
+                            println "[WARNING] No evaluation config found for JDK${javaVersion} in the User's or Adopt's repository. Skipping generation..."
+                            // break and move to next element in the loop
+                            // groovylint-disable-next-line
+                            return
                         }
+                        checkoutUserPipelines()
                     }
                     config.put('targetConfigurations', targetEvaluation.targetConfigurations)
 
@@ -208,7 +215,7 @@ node('worker') {
                     if (useAdoptShellScripts.toBoolean()) {
                         config.put('adoptScripts', true)
                     }
-
+                    config.put('enableReproducibleCompare', DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean)
                     config.put('enableTests', DEFAULTS_JSON['testDetails']['enableTests'] as Boolean)
                     config.put('enableTestDynamicParallel', DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean)
                     config.put('defaultsJson', DEFAULTS_JSON)
@@ -266,7 +273,7 @@ node('worker') {
                     } catch (Exception e) {
                         println "${e}\n[WARNING] Something went wrong when creating the weekly evaluation job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
                         checkoutAdoptPipelines()
-                        jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weeklyTemplatePath'], ignoreExisting: false, additionalParameters: config
+                        jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weekly'], ignoreExisting: false, additionalParameters: config
                         checkoutUserPipelines()
                     }
                     // add into list

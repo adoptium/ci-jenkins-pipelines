@@ -24,12 +24,12 @@ node('worker') {
     def trssUrl    = "${params.TRSS_URL}"
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
-    def featureReleases = [ 8, 11, 17, 20 ] // Consider making those parameters
+    def featureReleases = [ 8, 11, 17, 20, 21 ] // Consider making those parameters
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
 
-    def healthStatus = [ 'jdk8': null, 'jdk11': null, 'jdk17': null, 'jdk20': null]
+    def healthStatus = [ 'jdk8': null, 'jdk11': null, 'jdk17': null, 'jdk20': null, 'jdk21': null ]
     def testStats = []
 
     stage('getPipelineStatus') {
@@ -90,7 +90,7 @@ node('worker') {
                         if (!foundNightly) {
                             def pipeline_id = null
                             def pipelineUrl
-                            def buildJobSuccess = 0
+                            def buildJobComplete = 0
                             def buildJobFailure = 0
                             def testJobSuccess = 0
                             def testJobUnstable = 0
@@ -149,10 +149,10 @@ node('worker') {
                                     pipelineBuildJobsJson.each { buildJob ->
                                         if (buildJob.buildName.contains(buildVariant)) {
                                             buildJobNumber += 1
-                                            if (buildJob.buildResult.equals('SUCCESS')) {
-                                                buildJobSuccess += 1
-                      } else {
+                                            if (buildJob.buildResult.equals('FAILURE')) {
                                                 buildJobFailure += 1
+                      } else {
+                                                buildJobComplete += 1
                                             }
                                         }
                                     }
@@ -160,7 +160,7 @@ node('worker') {
 
                                 def testResult = [name: pipelineName, url: pipelineUrl,
                           buildJobNumber:   buildJobNumber,
-                          buildJobSuccess:  buildJobSuccess,
+                          buildJobComplete:  buildJobComplete,
                           buildJobFailure:  buildJobFailure,
                           testJobSuccess:   testJobSuccess,
                           testJobUnstable:  testJobUnstable,
@@ -189,7 +189,7 @@ node('worker') {
             echo "For Variant: ${variant}"
             echo "  Pipeline : ${pipeline.name} : ${pipeline.url}"
             echo "    => Number of Build jobs = ${pipeline.buildJobNumber}"
-            echo "    => Build job SUCCESS   = ${pipeline.buildJobSuccess}"
+            echo "    => Build job COMPLETE   = ${pipeline.buildJobComplete}"
             echo "    => Build job FAILURE   = ${pipeline.buildJobFailure}"
             echo "    => Number of Test jobs = ${pipeline.testJobNumber}"
             echo "    => Test job SUCCESS    = ${pipeline.testJobSuccess}"

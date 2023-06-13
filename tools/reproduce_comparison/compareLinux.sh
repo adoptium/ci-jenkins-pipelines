@@ -49,7 +49,7 @@ if [ ! -r /usr/lib/jvm/jdk-${BOOTJDK_VERSION}/bin/javac ]; then
  echo Retrieving boot JDK $BOOTJDK_VERSION && mkdir -p /usr/lib/jvm && curl -L "https://api.adoptopenjdk.net/v3/binary/version/jdk-${BOOTJDK_VERSION}/linux/${NATIVE_API_ARCH}/jdk/hotspot/normal/adoptopenjdk?project=jdk" | (cd /usr/lib/jvm && tar xpzf -)
 fi
 if [ ! -r ${LOCALGCCDIR}/bin/g++-${GCCVERSION} ]; then
-  echo Retrieving gcc $GCCVERSION && curl https://ci.adoptopenjdk.net/userContent/gcc/gcc$(echo $GCCVERSION | tr -d .).`uname -m`.tar.xz | (cd /usr/local && tar xJpf -) || exit 1
+  echo Retrieving gcc $GCCVERSION && curl -L https://ci.adoptium.net/userContent/gcc/gcc$(echo $GCCVERSION | tr -d .).`uname -m`.tar.xz | (cd /usr/local && tar xJpf -) || exit 1
 fi
 if [ ! -r temurin-build ]; then
   git clone https://github.com/adoptium/temurin-build || exit 1
@@ -61,7 +61,7 @@ export CXX="${LOCALGCCDIR}/bin/g++-${GCCVERSION}"
 export PATH="${LOCALGCCDIR}/bin:/usr/local/bin:/usr/bin:$PATH:/usr/local/apache-ant-${ANT_VERSION}/bin"
 ls -ld $CC $CXX /usr/lib/jvm/jdk-${BOOTJDK_VERSION}/bin/javac || exit 1
 
-TARBALL_URL="https://api.adoptopenjdk.net/v3/binary/version/jdk-${TEMURIN_VERSION}/linux/${NATIVE_API_ARCH}/jdk/hotspot/normal/adoptopenjdk?project=jdk"
+TARBALL_URL="https://api.adoptium.net/v3/binary/version/jdk-${TEMURIN_VERSION}/linux/${NATIVE_API_ARCH}/jdk/hotspot/normal/eclipse?project=jdk"
 if [ ! -d jdk-${TEMURIN_VERSION} ]; then
    echo Retrieving original tarball from adoptium.net && curl -L "$TARBALL_URL" | tar xpfz - && ls -lart $PWD/jdk-${TEMURIN_VERSION} || exit 1
 fi

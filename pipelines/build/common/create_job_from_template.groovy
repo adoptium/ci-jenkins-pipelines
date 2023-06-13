@@ -65,21 +65,23 @@ pipelineJob("$buildFolder/$JOB_NAME") {
         }
     }
     properties {
-        // Hide all non Temurin builds from public view on the Adoptium CI instance
-        if ((JENKINS_URL.contains('adopt')) && (VARIANT != 'temurin')) {
+        // Hide all non Temurin builds or release builds from public view on the Adoptium CI instance
+        if ((JENKINS_URL.contains('adopt') && (VARIANT != 'temurin')) || ((JENKINS_URL.contains('adopt') && JOB_NAME.contains('release')))) {
             authorizationMatrix {
                 inheritanceStrategy {
                     // Do not inherit permissions from global configuration
                     nonInheriting()
                 }
-                permissions(['hudson.model.Item.Build:AdoptOpenJDK*build', 'hudson.model.Item.Build:AdoptOpenJDK*build-triage',
-                'hudson.model.Item.Cancel:AdoptOpenJDK*build', 'hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
-                'hudson.model.Item.Configure:AdoptOpenJDK*build', 'hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
-                'hudson.model.Item.Read:AdoptOpenJDK*build', 'hudson.model.Item.Read:AdoptOpenJDK*build-triage',
+                permissions(['GROUP:hudson.model.Item.Build:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build-triage',
+                'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
+                'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
+                'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build-triage',
                 // eclipse-temurin-bot needs read access for TRSS
-                'hudson.model.Item.Read:eclipse-temurin-bot',
-                'hudson.model.Item.Workspace:AdoptOpenJDK*build', 'hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
-                'hudson.model.Run.Update:AdoptOpenJDK*build', 'hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
+                'USER:hudson.model.Item.Read:eclipse-temurin-bot',
+                // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance
+                'USER:hudson.model.Item.Read:eclipse-temurin-compliance-bot',
+                'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
+                'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build', 'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
             }
         }
         disableConcurrentBuilds()
@@ -126,6 +128,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>RELEASE</strong></dt><dd>Is this build a release</dd>
                 <dt><strong>PUBLISH_NAME</strong></dt><dd>Set name of publish</dd>
                 <dt><strong>ADOPT_BUILD_NUMBER</strong></dt><dd>Adopt build number</dd>
+                <dt><strong>ENABLE_REPRODUCIBLE_COMPARE</strong></dt><dd>Run reproducible compare build</dd>
                 <dt><strong>ENABLE_TESTS</strong></dt><dd>Run tests</dd>
                 <dt><strong>ENABLE_TESTDYNAMICPARALLEL</strong></dt><dd>Run parallel</dd>
                 <dt><strong>ENABLE_INSTALLERS</strong></dt><dd>Run installers</dd>

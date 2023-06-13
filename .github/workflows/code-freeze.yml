@@ -1,0 +1,13 @@
+name: Code Freeze Bot
+
+# Controls when the workflow will run
+on:
+  pull_request_target:
+    branches: [ "master", "v[0-9]{4}.[0-9]{2}.[0-9]{2}" ]
+  issue_comment:
+    types: [created]
+
+jobs:
+  codefreeze:
+    uses: adoptium/.github/.github/workflows/code-freeze.yml@main
+    secrets: inherit

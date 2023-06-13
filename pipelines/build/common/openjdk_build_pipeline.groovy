@@ -146,15 +146,12 @@ class Build {
         jobParams.put('GROUPS', 'functional')
         jobParams.put('TEST_JOB_NAME', "${env.JOB_NAME}_SmokeTests")
         jobParams.put('BUILD_LIST', 'functional/buildAndPackage')
-        def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
         def vendorTestRepos = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git')
         def vendorTestDirs = ADOPT_DEFAULTS_JSON['repository']['test_dirs']
-        if (!useAdoptShellScripts) {
-            vendorTestRepos = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git')
-            vendorTestDirs = DEFAULTS_JSON['repository']['test_dirs']
-        }
+        def vendorTestBranches = ADOPT_DEFAULTS_JSON['repository']['build_branch']
         jobParams.put('VENDOR_TEST_REPOS', vendorTestRepos)
         jobParams.put('VENDOR_TEST_DIRS', vendorTestDirs)
+        jobParams.put('VENDOR_TEST_BRANCHES', vendorTestBranches)
         return jobParams
     }
 
@@ -240,29 +237,48 @@ class Build {
         def suffix
         def javaNumber = getJavaVersionNumber()
 
-        if (buildConfig.VARIANT == 'corretto') {
-            suffix = "corretto/corretto-${javaNumber}"
-        } else if (buildConfig.VARIANT == 'openj9') {
-            def openj9JavaToBuild = buildConfig.JAVA_TO_BUILD
-            if (openj9JavaToBuild.endsWith('u')) {
-                // OpenJ9 extensions repo does not use the "u" suffix
-                openj9JavaToBuild = openj9JavaToBuild.substring(0, openj9JavaToBuild.length() - 1)
-            }
-            suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
-        } else if (buildConfig.VARIANT == 'temurin') {
-            if (buildConfig.ARCHITECTURE == 'arm' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
-                suffix = 'adoptium/aarch32-jdk8u'
-            } else {
-                suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
-            }
-        } else if (buildConfig.VARIANT == 'dragonwell') {
-            suffix = "alibaba/dragonwell${javaNumber}"
-        } else if (buildConfig.VARIANT == 'fast_startup') {
-            suffix = 'adoptium/jdk11u-fast-startup-incubator'
-        } else if (buildConfig.VARIANT == 'bisheng') {
-            suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
-        } else {
-            throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
+        switch(buildConfig.VARIANT) {
+            case 'corretto':
+                suffix = "corretto/corretto-${javaNumber}"
+                break
+            case 'openj9':
+                def openj9JavaToBuild = buildConfig.JAVA_TO_BUILD
+                if (openj9JavaToBuild.endsWith('u')) {
+                    // OpenJ9 extensions repo does not use the "u" suffix
+                    openj9JavaToBuild = openj9JavaToBuild.substring(0, openj9JavaToBuild.length() - 1)
+                }
+                suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
+                break
+            case 'temurin':
+                if (buildConfig.ARCHITECTURE == 'arm' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
+                    suffix = 'adoptium/aarch32-jdk8u'
+                } else if (buildConfig.TARGET_OS == 'alpine-linux' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
+                    suffix = 'adoptium/alpine-jdk8u'
+                } else {
+                    suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
+                }
+                break
+            case 'hotspot':
+                if (buildConfig.ARCHITECTURE == "riscv64"
+                     && (buildConfig.JAVA_TO_BUILD == "jdk8u"
+                        || buildConfig.JAVA_TO_BUILD == "jdk11u"
+                        || buildConfig.JAVA_TO_BUILD == "jdk17u")) {
+                    suffix = "openjdk/riscv-port-${buildConfig.JAVA_TO_BUILD}";
+                } else {
+                    suffix = "openjdk/${buildConfig.JAVA_TO_BUILD}"
+                }
+                break
+            case 'dragonwell':
+                suffix = "alibaba/dragonwell${javaNumber}"
+                break
+            case 'fast_startup':
+                suffix = 'adoptium/jdk11u-fast-startup-incubator'
+                break
+            case 'bisheng':
+                suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
+                break
+            default:
+                throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
         }
 
         jdkRepo = "https://github.com/${suffix}"
@@ -280,6 +296,8 @@ class Build {
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
         def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
         def vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
+        def vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
+        vendorTestRepos = vendorTestRepos - ('.git')
 
         // Use BUILD_REF override if specified
         vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
@@ -300,22 +318,24 @@ class Build {
                     }
                 }
 
-                context.catchError {
-                    context.build job: jobName,
-                            propagate: false,
-                            parameters: [
-                                    context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                    context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
-                                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                    context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
-                                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
-                                    context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
-                                    context.string(name: 'TIME_LIMIT', value: '1')
-                            ]
-                }
+                def testJob = context.build job: jobName,
+                    propagate: false,
+                    parameters: [
+                            context.string(name: 'SDK_RESOURCE', value: 'upstream'),
+                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                            context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
+                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                            context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
+                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
+                            context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
+                            context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
+                            context.string(name: 'TIME_LIMIT', value: '1')
+                    ]  
+                currentBuild.result = testJob.getResult()
+                return testJob.getResult()
+                     
             }
         } catch (Exception e) {
             context.println "Failed to execute test: ${e.message}"
@@ -421,50 +441,45 @@ class Build {
                                 }
                             }
                         }
-                        context.catchError {
-                            def testJob = context.build job: jobName,
-                                            propagate: false,
-                                            parameters: [
-                                                context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                                context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                                context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                                                context.string(name: 'JDK_REPO', value: jdkRepo),
-                                                context.string(name: 'JDK_BRANCH', value: jdkBranch),
-                                                context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-                                                context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
-                                                context.string(name: 'PARALLEL', value: parallel),
-                                                context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
-                                                context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
-                                                context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
-                                                context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
-                                                context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                                context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)],
-                                            wait: true
-                            context.node('worker') {
-                                def result = testJob.getResult()
-                                context.echo " ${jobName} result is ${result}"
-                                if (testJob.getResult() == 'SUCCESS' || testJob.getResult() == 'UNSTABLE') {
-                                    context.sh 'rm -f workspace/target/AQAvitTaps/*.tap'
-                                    try {
-                                        context.timeout(time: 2, unit: 'HOURS') {
-                                            context.copyArtifacts(
-                                                projectName:jobName,
-                                                selector:context.specific("${testJob.getNumber()}"),
-                                                filter: "**/${jobName}*.tap",
-                                                target: 'workspace/target/AQAvitTaps/',
-                                                fingerprintArtifacts: true,
-                                                flatten: true
-                                            )
-                                        }
-                                    } catch (Exception e) {
-                                        context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
-                                    }
-                                    context.archiveArtifacts artifacts: 'workspace/target/AQAvitTaps/*.tap', fingerprint: true
-                                } else {
-                                    context.echo "Warning: ${jobName} result is ${result}, no tap file is archived"
+
+                        def testJob = context.build job: jobName,
+                                        propagate: false,
+                                        parameters: [
+                                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                                            context.string(name: 'SDK_RESOURCE', value: 'upstream'),
+                                            context.string(name: 'JDK_REPO', value: jdkRepo),
+                                            context.string(name: 'JDK_BRANCH', value: jdkBranch),
+                                            context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                            context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
+                                            context.string(name: 'PARALLEL', value: parallel),
+                                            context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
+                                            context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
+                                            context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
+                                            context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
+                                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)],
+                                        wait: true
+                        currentBuild.result = testJob.getResult()
+                        context.node('worker') {
+                            //Copy Taps files from downstream test jobs if files available. 
+                            context.sh 'rm -f workspace/target/AQAvitTaps/*.tap'
+                            try {
+                                context.timeout(time: 2, unit: 'HOURS') {
+                                    context.copyArtifacts(
+                                        projectName:jobName,
+                                        selector:context.specific("${testJob.getNumber()}"),
+                                        filter: "**/${jobName}*.tap",
+                                        target: 'workspace/target/AQAvitTaps/',
+                                        fingerprintArtifacts: true,
+                                        flatten: true
+                                    )
                                 }
+                            } catch (Exception e) {
+                                context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
                             }
+                            context.archiveArtifacts allowEmptyArchive: true, artifacts: 'workspace/target/AQAvitTaps/*.tap', fingerprint: true
                         }
                     }
                 }
@@ -515,6 +530,19 @@ class Build {
             targets['parallel'] = 'extended.jck'
         }
 
+        /*
+        Here we limit the win32 testing to the burstable nodes (a subset of the available windows nodes).
+        This prevents win32 tests from occupying all the Windows nodes before we can test core platform win64.
+        */
+        if ("${platform}" == 'x86-32_windows') {
+            context.println "Windows 32bit JCK tests need the extra label hw.cpu.burstable"
+            if (additionalTestLabel == '') {
+                additionalTestLabel = 'hw.cpu.burstable'
+            } else {
+                additionalTestLabel += '&&hw.cpu.burstable'
+            }
+        }
+
         targets.each { targetMode, targetTests -> 
             try {
                 context.println "Remote trigger: ${targetTests}"
@@ -526,26 +554,28 @@ class Build {
                          parallel = 'Dynamic'
                          num_machines = '2'
                     }
-
-                    context.triggerRemoteJob abortTriggeredJob: true,
-                        blockBuildUntilComplete: false,
-                        job: 'AQA_Test_Pipeline',
-                        parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
-                                                                context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                context.MapParameter(name: 'PARALLEL', value: parallel),
-                                                                context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
-                                                                context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                                context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
-                        remoteJenkinsName: 'temurin-compliance',
-                        shouldNotFailBuild: true,
-                        token: 'RemoteTrigger',
-                        useCrumbCache: true,
-                        useJobInfoCache: true
+                    context.catchError {
+                        context.triggerRemoteJob abortTriggeredJob: true,
+                            blockBuildUntilComplete: false,
+                            job: 'AQA_Test_Pipeline',
+                            parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
+                                                                    context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
+                                                                    context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                                                                    context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
+                                                                    context.MapParameter(name: 'PARALLEL', value: parallel),
+                                                                    context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
+                                                                    context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
+                                                                    context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
+                                                                    context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
+                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                                    context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
+                                                                    context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
+                            remoteJenkinsName: 'temurin-compliance',
+                            shouldNotFailBuild: true,
+                            token: 'RemoteTrigger',
+                            useCrumbCache: true,
+                            useJobInfoCache: true
+                    }
                 }
             } catch (Exception e) {
                 context.println "Failed to remote trigger jck tests: ${e.message}"
@@ -554,7 +584,34 @@ class Build {
 
         return remoteTargets
     }
- 
+
+    def compareReproducibleBuild() {
+        // Currently only enable for jdk17, linux_x64, temurin, nightly, which shouldn't affect current build
+        // Move out of normal jdk** folder as it won't be regenerated automatically right now
+        def jobName = "${env.JOB_NAME}"
+        jobName = jobName.substring(jobName.lastIndexOf('/')+1)
+        jobName = "${jobName}_reproduce_compare"
+        if (getJavaVersionNumber() == 17 &&
+            buildConfig.ARCHITECTURE.contains('x64') &&
+            buildConfig.TARGET_OS.contains('linux') &&
+            buildConfig.VARIANT == 'temurin' && 
+            !Boolean.valueOf(buildConfig.RELEASE)) {
+            // For now set the build as independent, no need to wait for result as the build takes time
+            context.stage('Reproduce Compare') {
+                def buildParams = context.params.toString()
+                // passing buildParams multiline parameter to downstream job, double check the available method
+                context.build job: jobName,
+                                propagate: false,
+                                parameters: [
+                                    context.string(name: 'COMPARED_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                    context.string(name: 'COMPARED_JOB_NAME', value: "${env.JOB_NAME}"),
+                                    context.string(name: 'COMPARED_JOB_PARAMS', value: buildParams)
+                                ],
+                                wait: false
+            }
+        }
+    }
+
     /*
     We use this function at the end of a build to parse a java version string and create a VersionInfo object for deployment in the metadata objects.
     E.g. 11.0.9+10-202010192351 would be one example of a matched string.
@@ -636,8 +693,6 @@ class Build {
     private void buildMacInstaller(VersionInfo versionData) {
         def filter = '**/OpenJDK*_mac_*.tar.gz'
 
-        def nodeFilter = "${buildConfig.TARGET_OS}&&macos10.14&&xcode10"
-
         // Execute installer job
         def installerJob = context.build job: 'build-scripts/release/create_installer_mac',
                 propagate: true,
@@ -646,8 +701,7 @@ class Build {
                         context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
                         context.string(name: 'FILTER', value: "${filter}"),
                         context.string(name: 'FULL_VERSION', value: "${versionData.version}"),
-                        context.string(name: 'MAJOR_VERSION', value: "${versionData.major}"),
-                        ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
+                        context.string(name: 'MAJOR_VERSION', value: "${versionData.major}")
                 ]
 
         context.copyArtifacts(
@@ -794,8 +848,6 @@ class Build {
             default: break
         }
 
-        def nodeFilter = 'eclipse-codesign'
-
         // Execute sign installer job
         def installerJob = context.build job: 'build-scripts/release/sign_installer',
                 propagate: true,
@@ -805,8 +857,7 @@ class Build {
                         context.string(name: 'FILTER', value: "${filter}"),
                         context.string(name: 'FULL_VERSION', value: "${versionData.version}"),
                         context.string(name: 'OPERATING_SYSTEM', value: "${buildConfig.TARGET_OS}"),
-                        context.string(name: 'MAJOR_VERSION', value: "${versionData.major}"),
-                        ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
+                        context.string(name: 'MAJOR_VERSION', value: "${versionData.major}")
                 ]
 
         context.copyArtifacts(
@@ -825,8 +876,7 @@ class Build {
             def params = [
                   context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                   context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                  context.string(name: 'UPSTREAM_DIR', value: 'workspace/target'),
-                  ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: 'gpgsign']
+                  context.string(name: 'UPSTREAM_DIR', value: 'workspace/target')
            ]
 
             def signSHAsJob = context.build job: 'build-scripts/release/sign_temurin_gpg',
@@ -1676,7 +1726,7 @@ class Build {
                 context.println "Executing tests: ${buildConfig.TEST_LIST}"
                 context.println "Build num: ${env.BUILD_NUMBER}"
                 context.println "File name: ${filename}"
-
+                def enableReproducibleCompare = Boolean.valueOf(buildConfig.ENABLE_REPRODUCIBLE_COMPARE)
                 def enableTests = Boolean.valueOf(buildConfig.ENABLE_TESTS)
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
                 def enableSigner = Boolean.valueOf(buildConfig.ENABLE_SIGNER)
@@ -1733,30 +1783,31 @@ class Build {
                                     throw new Exception("[ERROR] Controller clean workspace timeout (${buildTimeouts.CONTROLLER_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
                             }
-
-                            // Pull the docker image from DockerHub
-                            try {
-                                context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: 'HOURS') {
-                                    if (buildConfig.DOCKER_CREDENTIAL) {
-                                        context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
+                            if (!("${buildConfig.DOCKER_IMAGE}".contains('rhel'))) {
+                                // Pull the docker image from DockerHub
+                                try {
+                                    context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: 'HOURS') {
+                                        if (buildConfig.DOCKER_CREDENTIAL) {
+                                            context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
+                                                if (buildConfig.DOCKER_ARGS) {
+                                                    context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
+                                                } else {
+                                                    context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                                }
+                                            }
+                                        } else {
                                             if (buildConfig.DOCKER_ARGS) {
                                                 context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
                                             } else {
                                                 context.docker.image(buildConfig.DOCKER_IMAGE).pull()
                                             }
                                         }
-                                    } else {
-                                        if (buildConfig.DOCKER_ARGS) {
-                                            context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
-                                        } else {
-                                            context.docker.image(buildConfig.DOCKER_IMAGE).pull()
-                                        }
+                                        // Store the pulled docker image digest as 'buildinfo'
+                                        dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
                                     }
-                                    // Store the pulled docker image digest as 'buildinfo'
-                                    dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
+                                } catch (FlowInterruptedException e) {
+                                    throw new Exception("[ERROR] Controller docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
-                            } catch (FlowInterruptedException e) {
-                                throw new Exception("[ERROR] Controller docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
                             }
 
                             // Use our dockerfile if DOCKER_FILE is defined
@@ -1793,6 +1844,14 @@ class Build {
                             } else {
                                 dockerImageDigest = dockerImageDigest.replaceAll("\\[", "").replaceAll("\\]", "")
                                 String dockerRunArg="-e \"BUILDIMAGESHA=$dockerImageDigest\""
+
+                                // Are we running podman in Docker CLI Emulation mode?
+                                def isPodman = context.sh(script: "docker --version | grep podman", returnStatus:true)
+                                if (isPodman == 0) {
+                                    // Note: --userns was introduced in podman 4.3.0
+                                    // Add uid and gid userns mapping required for podman
+                                    dockerRunArg += " --userns keep-id:uid=1000,gid=1000"
+                                }
                                 context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                     buildScripts(
                                         cleanWorkspace,
@@ -1854,30 +1913,38 @@ class Build {
                     }
                 }
 
+                // Compare reproducible build if needed
+                if (enableReproducibleCompare) {
+                    compareReproducibleBuild()
+                }
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
-                        runSmokeTests()
-                        // Remote trigger Eclispe Temurin JCK tests
-                        if (buildConfig.VARIANT == 'temurin' && enableTCK) {
-                            def platform = ''
-                            if (buildConfig.ARCHITECTURE.contains('x64')) {
-                                platform = 'x86-64_' + buildConfig.TARGET_OS
-                            } else {
-                                platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
-                            }           
-                            if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
-                                if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                    context.echo "Remote trigger Eclipse temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                    def remoteTargets = remoteTriggerJckTests(platform, filename)
-                                    context.parallel remoteTargets
+                        //Only smoke tests succeed TCK and AQA tests will be triggerred.
+                        if (runSmokeTests() == 'SUCCESS') {
+                            // Remote trigger Eclipse Temurin JCK tests
+                            if (buildConfig.VARIANT == 'temurin' && enableTCK) {
+                                def platform = ''
+                                if (buildConfig.ARCHITECTURE.contains('x64')) {
+                                    platform = 'x86-64_' + buildConfig.TARGET_OS
+                                } else {
+                                    platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
+                                }           
+                                if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
+                                    if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
+                                        context.echo "Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
+                                        def remoteTargets = remoteTriggerJckTests(platform, filename)
+                                        context.parallel remoteTargets
+                                    }
                                 }
                             }
-                        }
 
-                        if (buildConfig.TEST_LIST.size() > 0) {
-                            def testStages = runAQATests()
-                            context.parallel testStages
+                            if (buildConfig.TEST_LIST.size() > 0) {
+                                def testStages = runAQATests()
+                                context.parallel testStages
+                            }
+                        } else {
+                            context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
                         }
                     } catch (Exception e) {
                         context.println(e.message)

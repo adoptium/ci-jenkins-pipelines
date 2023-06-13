@@ -49,19 +49,19 @@ node('worker') {
 
     try {
         // Load git url and branch and gitBranch. These determine where we will be pulling configs from.
-        def repoUri = (params.REPOSITORY_URL) ?: DEFAULTS_JSON['repository']['pipeline_url']
+        def repoUrl = (params.REPOSITORY_URL) ?: DEFAULTS_JSON['repository']['pipeline_url']
         def repoBranch = (params.REPOSITORY_BRANCH) ?: DEFAULTS_JSON['repository']['pipeline_branch']
 
         // Load credentials to be used in checking out. This is in case we are checking out a URL that is not Adopts and they don't have their ssh key on the machine.
         def checkoutCreds = (params.CHECKOUT_CREDENTIALS) ?: ''
         def remoteConfigs = new JsonSlurper().parseText('{ "url": "" }') as Map
-        remoteConfigs.url = repoUri
+        remoteConfigs.url = repoUrl
 
         if (checkoutCreds != '') {
             // This currently does not work with user credentials due to https://issues.jenkins.io/browse/JENKINS-60349
             remoteConfigs.credentials = "${checkoutCreds}"
         } else {
-            println "[WARNING] CHECKOUT_CREDENTIALS not specified! Checkout to $repoUri may fail if you do not have your ssh key on this machine."
+            println "[WARNING] CHECKOUT_CREDENTIALS not specified! Checkout to $repoUrl may fail if you do not have your ssh key on this machine."
         }
 
         /*
@@ -186,7 +186,7 @@ node('worker') {
 
         println '[INFO] Running regeneration script with the following configuration:'
         println "VERSION: $javaVersion"
-        println "CI REPOSITORY URL: $repoUri"
+        println "CI REPOSITORY URL: $repoUrl"
         println "CI REPOSITORY BRANCH: $repoBranch"
         println "BUILD CONFIGURATIONS: ${JsonOutput.prettyPrint(JsonOutput.toJson(buildConfigurations))}"
         println "JOBS TO GENERATE: ${JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations))}"

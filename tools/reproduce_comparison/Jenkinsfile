@@ -1,56 +1,138 @@
 /*
-Jenkins job does comparison for two different build artifacts
-If they are identical, build pass; or fail
+Jenkins job does reproducible build compare.
 */
+import groovy.json.JsonOutput
 
 pipeline {
     agent any
     parameters {
-        choice(choices: ['linux', 'mac', 'windows'], name: 'platform', description:'select release on different platform')
-        string(name: 'URL1', defaultValue: '', description: 'URL to one version of the build artifacts\ne.g.: https://ci.adoptium.net/job/build-scripts/job/openjdk18-pipeline/lastSuccessfulBuild/artifact/target/linux/x64/temurin/OpenJDK18U-jdk_x64_linux_hotspot_2022-06-11-23-30.tar.gz')
-        string(name: 'URL2', defaultValue: '', description: 'URL to the other version of the build artifacts\ne.g.: https://github.com/adoptium/temurin19-binaries/releases/download/jdk-2022-06-09-19-11-beta/OpenJDK-jdk_x64_linux_hotspot_2022-06-09-03-31.tar.gz')
-        string(name: 'excludeFiles', defaultValue: 'classes_nocoops.jsa', description: 'File names to be excluded while doing the comparison, separated by `;`')
+        string(name: 'COMPARED_JOB_NUMBER', defaultValue: '', description: 'Compared nightly build job name')
+        string(name: 'COMPARED_JOB_NAME', defaultValue: '', description: 'Compared nightly build job number')
+        string(name: 'COMPARED_JOB_PARAMS', defaultValue: '', description: 'Compared nightly build job parameters')
     }
 
     stages {
-        stage('Lets Compare') {
-            agent {
-                label "${params.platform}&&build&&x64" // build label enables comparisons to be done, set to x64 for linux, might need adjust for windows/mac
-            }
+        stage('Prepare') { //Copy artifacts, reset parameters,trigger build and copyArtifacts
             steps {
+                cleanWs()
+                checkout scm
+                copyArtifacts excludes: '**/OpenJDK*-sbom*metadata.json,**/OpenJDK*-jdk-sources*.tar.gz', 
+                                filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-sbom*.json',
+                                fingerprintArtifacts: true, 
+                                flatten: true, 
+                                projectName: "${params.COMPARED_JOB_NAME}",
+                                target: 'original/'
+                                selector: specific("${params.COMPARED_JOB_NUMBER}")
+                script {
+                    def sbomFiles = findFiles(glob: "**/OpenJDK*-sbom*.json")
+                    def sbomParams = readJSON file: "${sbomFiles[0].path}"
+
+                    def sbomProperties = sbomParams.components[0].properties
+                    def reproducedParams = [:]
+                    sbomProperties.each { propertyItem -> 
+                        def paramFound = false
+                        propertyItem.each { key, value ->
+                            if (value in ["SCM Ref", "Temurin Build Ref", "Build Timestamp"]) {
+                                paramFound = true
+                            }
+                        }
+                        if (paramFound) {
+                            reproducedParams.put(propertyItem.name, propertyItem.value)
+                        }
+                    }
+                    
+                    def scmRef = reproducedParams["SCM Ref"]
+                    def buildTimeStamp = "'" + reproducedParams["Build Timestamp"] + "'"
+                    def buildRef = reproducedParams["Temurin Build Ref"]
+                    buildRef = buildRef.substring(buildRef.lastIndexOf('/')+1)
+
+                    // Convert COMPARED_JOB_PARAMS to json formatt string
+                    def jobParams = COMPARED_JOB_PARAMS.replaceAll("=", ':')
+                    jobParams = jobParams.replace("ADOPT_DEFAULTS_JSON", "ADOPT_DEFAULTS_TEMP")
+                    jobParams = jobParams.replace("DEFAULTS_JSON", "\"DEFAULTS_JSON\"")
+                    jobParams = jobParams.replace("USER_REMOTE_CONFIGS", "\"USER_REMOTE_CONFIGS\"")
+                    jobParams = jobParams.replace("ADOPT_DEFAULTS_TEMP", "\"ADOPT_DEFAULTS_JSON\"")
+                    jobParams = jobParams.replace("BUILD_CONFIGURATION", "\"BUILD_CONFIGURATION\"")
+                    
+                    // Set Reproducible build parameters
+                    def jsonJobParams = new groovy.json.JsonSlurper().parseText(jobParams)
+                    jsonJobParams.BUILD_CONFIGURATION.SCM_REF = scmRef
+                    jsonJobParams.BUILD_CONFIGURATION.BUILD_REF = buildRef
+                    jsonJobParams.BUILD_CONFIGURATION.BUILD_ARGS += " --build-reproducible-date ${buildTimeStamp}"
+                    jsonJobParams.BUILD_CONFIGURATION.ENABLE_REPRODUCIBLE_COMPARE = "false"
+                    
+                    def buildParams = [
+                        text(name: 'BUILD_CONFIGURATION', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.BUILD_CONFIGURATION))),
+                        text(name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.USER_REMOTE_CONFIGS))),
+                        text(name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.DEFAULTS_JSON))),
+                        text(name: 'ADOPT_DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.DEFAULTS_JSON)))
+                    ]
+                    def reproducibleJob = build job: "${COMPARED_JOB_NAME}",
+                            propagate: false,
+                            parameters: buildParams
+                    
+                    def result = reproducibleJob.getResult()
+                    if (result == 'SUCCESS') {
+                        try {
+                            timeout(time: 2, unit: 'HOURS') {
+                                copyArtifacts(
+                                    projectName:"${COMPARED_JOB_NAME}",
+                                    selector:specific("${reproducibleJob.getNumber()}"),
+                                    excludes: '**/OpenJDK*-jdk-sources*.tar.gz',
+                                    filter: '**/OpenJDK*-jdk*.tar.gz',
+                                    target: 'reproduced/',
+                                    fingerprintArtifacts: true,
+                                    flatten: true
+                                )
+                            }
+                        } catch (Exception e) {
+                            echo "Cannot run copyArtifacts from job ${COMPARED_JOB_NAME}. Exception: ${e.message}. Skipping copyArtifacts..."
+                        }
+                    } else {
+                        error "Reproducible jenkins job ${COMPARED_JOB_NAME} failed, exit comparision"
+                        return
+                    }
+
+                    def originalJDKFile = findFiles(glob: "original/*.tar.gz")
+                    def reproducedJDKFile = findFiles(glob: "reproduced/*.tar.gz")
+                    def untarOriginalJDK = sh returnStatus: true, script: "tar -xz ${originalJDKFile[0].name} -C original"
+                    if (untarOriginalJDK != 0 ) {
+                        currentBuild.result = 'UNSTABLE'
+                        error " Untar ${originalJDKFile[0].name} failed"
+                        return
+                    } 
+                    def untarReproducedJDK = sh returnStatus: true, script: "tar -xz ${reproducedJDKFile[0].name} -C reproduced"
+                    if (untarReproducedJDK != 0 ) {
+                        currentBuild.result = 'UNSTABLE'
+                        error " Untar ${reproducedJDKFile[0].name} failed"
+                        return
+                    }
+                }
+            }
+        }
+        stage('Compare') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "temurin-build"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/adoptium/temurin-build.git"]]])
                 script {
                     try {
-                        cleanWs()
-                        // use Jenkins crendential to download JDK if source is from openjdkX-pipline
-                        withCredentials([usernamePassword(credentialsId: 'eclipse_temurin_bot_email_and_token', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                            echo "Fetching artifact1 from ${params.URL1}"
-                            def ret1 = sh returnStatus: true, script: "mkdir url1Dir1 && curl -s --user ${USERNAME}:${PASSWORD} ${params.URL1} | tar -xz  -C url1Dir1"
-                            if (ret1 != 0) {
-                                currentBuild.result = 'UNSTABLE'
-                                error 'Stopping after download and uncompress tar file'
+                        dir('temurin-build/tools/reproduce_comparison') {
+                            def rc = 0
+                            if (COMPARED_JOB_NAME.contains('linux')) {
+                                rc = sh returnStatus: true, script: "./tooling/linux_repo_compare.sh temurin ./original temurin ./reproduced"
+                            } else if (COMPARED_JOB_NAME.contains('mac')) {
+                                // mac
+                                //sh "./tooling/mac_repo_compare.sh temurin ./original temurin ./reproduced ${self_cert_file} ${self_cert_passwd}"
+                                echo 'todo mac build comparison'
+                            } else if (COMPARED_JOB_NAME.contains('windows')) {
+                                //windows
+                                echo 'todo windows build comparison'
                             }
-                            echo "Fetching artifact2 from ${params.URL2}"
-                            def ret2 = sh returnStatus: true, script: "mkdir url1Dir2 && curl -s --user ${USERNAME}:${PASSWORD} ${params.URL2} | tar -xz  -C url1Dir2"
-                            if (ret2 != 0) {
-                                currentBuild.result = 'UNSTABLE'
-                                error 'Stopping after download and uncompress tar file'
+                            if (rc != 0) {
+                                currentBuild.result = 'FAILURE'
+                                error 'Error: two builds are not the same!'
+                            } else {
+                                echo 'Success: two builds are the same!'
                             }
-                        }
-                        // call extra platform specific function
-                        if (params.platform != 'linux') {
-                            "prep${platform}" ('url1Dir1', 'url1Dir2')
-                        }
-                        def excludeFlags=""
-                        def excludeFileList = excludeFiles.split(';')
-                        for(String excludeFile in excludeFileList) {
-                            excludeFlags="${excludeFlags} --exclude=${excludeFile}"
-                        }
-                        def retVal = sh returnStatus: true, script: "diff -q -r url1Dir1 url1Dir2 ${excludeFlags}"
-                        if (retVal != 0) {
-                            currentBuild.result = 'FAILURE'
-                            error 'Error: two builds are not the same!'
-                        } else {
-                            echo 'Success: two builds are the same!'
                         }
                     } catch (Exception err) {
                         echo err.getMessage()
@@ -63,19 +145,3 @@ pipeline {
         }
     }
 }
-
-/* TODO:
-set correct defaultpath for localCert
-see: https://github.com/adoptium/temurin-build/issues/3015#issuecomment-1175322612
-*/
-def prepmac(String jdk1, String jdk2, String localCert='defaultpath') {
-    sh "chmod 776 ${WORKSPACE}/tools/reproduce_comparison/compareMacOS.sh"
-    sh "${WORKSPACE}/tools/reproduce_comparison/compareMacOS.sh $jdk1 $jdk2 $localCert skip"
-}
-
-/*
-TODO: placeholder for windows comparison
-def prepwindows(String jdk1, String jdk2, ...) {
-   sh "./tools/reproduce_comparison/compareWindows.sh ..."
-}
-*/

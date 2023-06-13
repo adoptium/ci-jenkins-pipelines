@@ -209,7 +209,7 @@ node('worker') {
                 if (useAdoptShellScripts.toBoolean()) {
                     config.put('adoptScripts', true)
                 }
-
+                config.put('enableReproducibleCompare', DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean)
                 config.put('enableTests', DEFAULTS_JSON['testDetails']['enableTests'] as Boolean)
                 config.put('enableTestDynamicParallel', DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean)
 
@@ -268,7 +268,7 @@ node('worker') {
                 } catch (Exception e) {
                     println "${e}\n[WARNING] Something went wrong when creating the weekly job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead..."
                     checkoutAdoptPipelines()
-                    jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weeklyTemplatePath'], ignoreExisting: false, additionalParameters: config
+                    jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weekly'], ignoreExisting: false, additionalParameters: config
                     checkoutUserPipelines()
                 }
 

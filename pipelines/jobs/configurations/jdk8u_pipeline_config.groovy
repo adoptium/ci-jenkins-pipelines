@@ -25,7 +25,6 @@ class Config8 {
                 ],
                 test                 : 'default',
                 configureArgs       : [
-                        'openj9'      : '--enable-jitserver',
                         'dragonwell'  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
                 ],
                 buildArgs           : [
@@ -78,11 +77,9 @@ class Config8 {
         ppc64Aix      : [
                 os  : 'aix',
                 arch: 'ppc64',
-                additionalNodeLabels: [
-                        temurin: 'xlc13&&aix710',
-                        openj9:  'xlc13&&aix715'
-                ],
+                additionalNodeLabels: 'xlc13&&aix720',
                 test                 : 'default',
+                additionalTestLabels : 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -96,6 +93,7 @@ class Config8 {
                         temurin: ['sanity.openjdk'],
                         openj9: 'default'
                 ],
+                dockerImage         : 'rhel7_build_image',
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -124,9 +122,6 @@ class Config8 {
                 arch: 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                configureArgs       : [
-                        'openj9'      : '--enable-jitserver'
-                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -152,7 +147,6 @@ class Config8 {
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell_aarch64.dockerfile'
                 ],
                 test                 : 'default',
-                testDynamic          : false,
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]

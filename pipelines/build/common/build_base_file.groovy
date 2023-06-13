@@ -39,6 +39,7 @@ class Builder implements Serializable {
     Map<String, ?> DEFAULTS_JSON
     String activeNodeTimeout
     Map<String, List<String>> dockerExcludes
+    boolean enableReproducibleCompare
     boolean enableTests
     boolean enableTestDynamicParallel
     boolean enableInstallers
@@ -124,7 +125,7 @@ class Builder implements Serializable {
         if (additionalBuildArgs) {
             buildArgs += ' ' + additionalBuildArgs
         }
-
+        def enableReproducibleCompare = getReproducibleCompare(platformConfig, variant)
         def testList = getTestList(platformConfig, variant)
 
         def dynamicTestsParameters = getDynamicParams(platformConfig, variant)
@@ -181,6 +182,7 @@ class Builder implements Serializable {
             WEEKLY: isWeekly,
             PUBLISH_NAME: publishName,
             ADOPT_BUILD_NUMBER: adoptBuildNumber,
+            ENABLE_REPRODUCIBLE_COMPARE: enableReproducibleCompare,
             ENABLE_TESTS: enableTests,
             ENABLE_TESTDYNAMICPARALLEL: enableTestDynamicParallel,
             ENABLE_INSTALLERS: enableInstallers,
@@ -215,6 +217,24 @@ class Builder implements Serializable {
         }
 
         return ''
+    }
+    /*
+    Get reproduciableCompare flag from the build configurations.
+    */
+    Boolean getReproducibleCompare(Map<String, ?> configuration, String variant) {
+        Boolean enableReproducibleCompare = DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean
+        if (configuration.containsKey('reproducibleCompare')) {
+            def reproducibleCompare
+            if (isMap(configuration.reproducibleCompare)) {
+                reproducibleCompare = (configuration.reproducibleCompare as Map).get(variant)
+            } else {
+                reproducibleCompare = configuration.reproducibleCompare
+            }
+            if (reproducibleCompare != null) {
+                enableReproducibleCompare = reproducibleCompare
+            }
+        }
+        return enableReproducibleCompare
     }
 
     /*
@@ -784,6 +804,7 @@ class Builder implements Serializable {
 
             context.echo "Java: ${javaToBuild}"
             context.echo "OS: ${targetConfigurations}"
+            context.echo "Enable reproducible compare: ${enableReproducibleCompare}"
             context.echo "Enable tests: ${enableTests}"
             context.echo "Enable Installers: ${enableInstallers}"
             context.echo "Enable Signer: ${enableSigner}"
@@ -831,13 +852,15 @@ class Builder implements Serializable {
                             // Pass down DEFAULTS_JSON
                             buildJobParams.add(['$class': 'TextParameterValue', name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)) ])
 
+                            def copyArtifactSuccess = false
                             def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: buildJobParams
 
-                            if (downstreamJob.getResult() == 'SUCCESS') {
-                                // copy artifacts from build
-                                context.println '[NODE SHIFT] MOVING INTO CONTROLLER NODE...'
-                                context.node('worker') {
-                                    context.catchError {
+                            context.println "Downstream job ${downstreamJobName} completed, result = "+downstreamJob.getResult()
+
+                            // copy artifacts from build regardless of job result
+                            context.println '[NODE SHIFT] MOVING INTO CONTROLLER NODE...'
+                            context.node('worker') {
+                                    context.catchError(message: "Error during copy and archive artifacts for build job: ${downstreamJobName}") {
                                         //Remove the previous artifacts
                                         try {
                                             context.timeout(time: pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
@@ -880,12 +903,19 @@ class Builder implements Serializable {
                                         } catch (FlowInterruptedException e) {
                                             throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
+
+                                        copyArtifactSuccess = true
                                     }
+                            }
+                            context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
+
+                            if ((downstreamJob.getResult() != 'SUCCESS' || !copyArtifactSuccess) && propagateFailures) {
+                                context.error("Propagating downstream job result: ${downstreamJobName}, Result: "+downstreamJob.getResult()+" CopyArtifactsSuccess: "+copyArtifactSuccess)
+                                if (copyArtifactSuccess && downstreamJob.getResult() == 'UNSTABLE' && (currentBuild.result == 'SUCCESS' || currentBuild.result == 'UNSTABLE' )) {
+                                    currentBuild.result = 'UNSTABLE'
+                                } else {
+                                    currentBuild.result = 'FAILURE'
                                 }
-                                context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
-                            } else if (propagateFailures) {
-                                context.error("Build failed due to downstream failure of ${downstreamJobName}")
-                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }
@@ -919,6 +949,7 @@ return {
     Map<String, ?> DEFAULTS_JSON,
     String activeNodeTimeout,
     String dockerExcludes,
+    String enableReproducibleCompare,
     String enableTests,
     String enableTestDynamicParallel,
     String enableInstallers,
@@ -960,10 +991,14 @@ return {
     String publishName = '' // This is set to a timestamp later on if undefined
     if (overridePublishName) {
         publishName = overridePublishName
-        } else if (release) {
+    } else if (release) {
         // Default to scmReference, remove any trailing "_adopt" from the tag if present
         if (scmReference) {
             publishName = scmReference - ('_adopt')
+            //jdk8 arm jdk8u372-b07-aarch32-20230426 -> jdk8u372-b07
+            if (publishName.indexOf('-') != -1 && publishName.indexOf('-') != publishName.lastIndexOf('-')) {
+                publishName = publishName.substring(0, publishName.indexOf('-', publishName.indexOf('-') +1 ))
+            }
         }
     }
 
@@ -979,6 +1014,7 @@ return {
             DEFAULTS_JSON: DEFAULTS_JSON,
             activeNodeTimeout: activeNodeTimeout,
             dockerExcludes: buildsExcludeDocker,
+            enableReproducibleCompare: Boolean.parseBoolean(enableReproducibleCompare),
             enableTests: Boolean.parseBoolean(enableTests),
             enableTestDynamicParallel: Boolean.parseBoolean(enableTestDynamicParallel),
             enableInstallers: Boolean.parseBoolean(enableInstallers),

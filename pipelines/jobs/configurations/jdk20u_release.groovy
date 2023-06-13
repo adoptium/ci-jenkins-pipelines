@@ -1,35 +1,32 @@
 targetConfigurations = [
-        'x64Mac'        : [
+        'x64Mac'      : [
                 'temurin'
         ],
-        'x64Linux'      : [
+        'x64Linux'    : [
                 'temurin'
         ],
         'x64AlpineLinux' : [
                 'temurin'
         ],
-        'x32Windows'    : [
+        'x64Windows'  : [
                 'temurin'
         ],
-        'x64Windows'    : [
+        'ppc64Aix'    : [
                 'temurin'
         ],
-        'ppc64Aix'      : [
+        'ppc64leLinux': [
                 'temurin'
         ],
-        'ppc64leLinux'  : [
+        's390xLinux'  : [
                 'temurin'
         ],
-        'aarch64Linux'  : [
+        'aarch64Linux': [
+                'temurin'
+        ],
+        'aarch64Mac': [
                 'temurin'
         ],
         'arm32Linux'  : [
-                'temurin'
-        ],
-        'x64Solaris': [
-                'temurin'
-        ],
-        'sparcv9Solaris': [
                 'temurin'
         ]
 ]

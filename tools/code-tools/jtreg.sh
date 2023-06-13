@@ -8,6 +8,7 @@ readonly JTREG_6='jtreg-6+1'
 readonly JTREG_6_1='jtreg-6.1+1'
 readonly JTREG_7='jtreg-7+1'
 readonly JTREG_7_1='jtreg-7.1.1+1'
+readonly JTREG_7_2='jtreg-7.2+1'
 
 function checkWorkspaceVar()
 {
@@ -50,12 +51,17 @@ buildJTReg()
     elif [ "$1" == "$JTREG_7" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7"
-      export JAVA_HOME=/usr/lib/jvm/jdk-11.0.16.1+1
+      export JAVA_HOME=/usr/lib/jvm/jdk-11
       export PATH=$PATH:$JAVA_HOME/bin
     elif [ "$1" == "$JTREG_7_1" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.1.1"
-      export JAVA_HOME=/usr/lib/jvm/jdk-11.0.16.1+1
+      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export PATH=$PATH:$JAVA_HOME/bin
+    elif [ "$1" == "$JTREG_7_2" ]; then
+      export JTREG_BUILD_NUMBER="1"
+      export BUILD_VERSION="7.2"
+      export JAVA_HOME=/usr/lib/jvm/jdk-11
       export PATH=$PATH:$JAVA_HOME/bin
     fi
     git checkout $version
@@ -63,7 +69,7 @@ buildJTReg()
     unset BUILD_NUMBER
     unset BUILD_VERSION
     unset JTREG_BUILD_NUMBER
-    export JAVA_HOME=/usr/lib/jvm/jdk-11.0.16.1+1
+    export JAVA_HOME=/usr/lib/jvm/jdk-11
     export PATH=$PATH:$JAVA_HOME/bin
     git checkout master
   fi
@@ -127,5 +133,6 @@ buildJTReg "$JTREG_6_1"
 buildJTReg "$JTREG_6_1"
 buildJTReg "$JTREG_7"
 buildJTReg "$JTREG_7_1"
+buildJTReg "$JTREG_7_2"
 buildJTReg
 echo '...finished with build process.'

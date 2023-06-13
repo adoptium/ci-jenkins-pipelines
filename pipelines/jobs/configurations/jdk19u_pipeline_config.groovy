@@ -127,7 +127,6 @@ class Config19 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs : '--enable-dtrace',
-                testDynamic          : false,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -172,7 +171,7 @@ class Config19 {
                 os                  : 'windows',
                 arch                : 'aarch64',
                 crossCompile        : 'x64',
-                additionalNodeLabels: 'win2016&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 test                : false,
                 buildArgs       : [
                         'temurin'   : '--create-jre-image --create-sbom --cross-compile'
