@@ -480,6 +480,7 @@ class Regeneration implements Serializable {
                 ADDITIONAL_FILE_NAME_TAG: platformConfig.additionalFileNameTag as String,
                 JDK_BOOT_VERSION: platformConfig.bootJDK as String,
                 RELEASE: false,
+                WEEKLY: false,
                 PUBLISH_NAME: '',
                 ADOPT_BUILD_NUMBER: '',
                 ENABLE_REPRODUCIBLE_COMPARE: enableReproducibleCompare,

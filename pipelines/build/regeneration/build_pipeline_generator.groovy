@@ -254,7 +254,7 @@ node('worker') {
                 if (enablePipelineSchedule.toBoolean()) {
                     config.put('pipelineSchedule', target.triggerSchedule_weekly)
                 }
-                config.releaseType = "Release"
+                config.releaseType = "Weekly"
 
                 println "[INFO] CREATING JDK${javaVersion} WEEKLY RELEASE PIPELINE WITH NEW CONFIG VALUES:"
                 println "JOB_NAME = ${config.JOB_NAME}"

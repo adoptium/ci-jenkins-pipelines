@@ -29,7 +29,7 @@ stage('Submit Release Pipelines') {
         cleanWs notFailBuild: false
     }
 
-    // For each variant, create a weekly pipeline job with release as "releaseType"
+    // For each variant, create a weekly pipeline job with "Weekly" as "releaseType"
     scmRefs.each { variant ->
         def variantName = variant.key
         def scmRef = variant.value
@@ -47,12 +47,12 @@ stage('Submit Release Pipelines') {
                 stage("Build - ${params.buildPipeline} - ${variantName}") {
                     result = build job: "${params.buildPipeline}",
                             parameters: [
-                                string(name: 'releaseType',        value: 'Release'),
+                                string(name: 'releaseType',        value: 'Weekly'),
                                 string(name: 'scmReference',       value: scmRef),
                                 text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
                                 ['$class': 'BooleanParameterValue', name: 'keepReleaseLogs', value: false]
                             ]
-                    // For reproducible builds (releaseType==Release) to have comparison on multiple builds' artifacts.
+                    // For reproducible builds to have comparison on multiple builds' artifacts.
                     // Copy artifacts from downstream and archive again on weekly-pipeline. For details, see issue: https://github.com/adoptium/ci-jenkins-pipelines/issues/301
                     if (result.getCurrentResult() == 'SUCCESS') {
                         node('worker') {
