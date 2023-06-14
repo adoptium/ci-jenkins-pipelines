@@ -3,18 +3,21 @@ import groovy.json.JsonOutput
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
+/**
+ * Tests for IndividualBuildConfig
+ */
 class IndividualBuildConfigTest {
 
     @Test
     void serializationTransfersDataCorrectly() {
-        def config = new IndividualBuildConfig([
+        def configMap = [
                 ARCHITECTURE               : 'a',
                 TARGET_OS                  : 'b',
                 VARIANT                    : 'c',
                 JAVA_TO_BUILD              : 'd',
-                TEST_LIST                  : 'e',
-                DYNAMIC_LIST               : 'e',
-                NUM_MACHINES               : 'e',
+                TEST_LIST                  : ['e'],
+                DYNAMIC_LIST               : ['e'],
+                NUM_MACHINES               : ['e'],
                 SCM_REF                    : 'f',
                 BUILD_REF                  : 'w',
                 CI_REF                     : 'x',
@@ -47,18 +50,24 @@ class IndividualBuildConfigTest {
                 ENABLE_SIGNER              : true,
                 CLEAN_WORKSPACE            : false,
                 CLEAN_WORKSPACE_AFTER      : false,
-                CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER : false
-        ])
+                CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER : false,
+                ENABLE_REPRODUCIBLE_COMPARE : false,
+                ENABLE_TESTDYNAMICPARALLEL : false
+        ]
+        def testConfig = new IndividualBuildConfig(configMap)
 
-        def json = config.toJson()
+        // Serialize and then re-constitute
+        def json = testConfig.toJson()
         def parsedConfig = new IndividualBuildConfig(json)
 
+        // Assert all values set
         parsedConfig.toRawMap()
                 .each { val ->
                     Assertions.assertNotNull(val.value, "${val.key} is null")
                 }
 
-        Assertions.assertEquals(JsonOutput.toJson(config), JsonOutput.toJson(parsedConfig))
+        // Assert serialization round trip matches initial configMap
+        Assertions.assertEquals(configMap, parsedConfig.toRawMap())
     }
 
     @Test
