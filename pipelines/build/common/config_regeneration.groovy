@@ -339,7 +339,7 @@ class Regeneration implements Serializable {
     * @param configuration
     * @param variant
     */
-    Boolean getReproducibleCompare(Map<String, ?> configuration, String variant) {
+    Boolean isEnableReproducibleCompare(Map<String, ?> configuration, String variant) {
         Boolean enableReproducibleCompare = DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean
         if (configuration.containsKey('reproducibleCompare')) {
             def reproducibleCompare
@@ -445,7 +445,7 @@ class Regeneration implements Serializable {
 
             def numMachines = getDynamicParams().get('numMachines')
 
-            def enableReproducibleCompare = getReproducibleCompare(platformConfig, variant)
+            def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
 
             return new IndividualBuildConfig( // final build config
                 JAVA_TO_BUILD: javaToBuild,

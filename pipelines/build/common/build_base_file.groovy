@@ -125,7 +125,7 @@ class Builder implements Serializable {
         if (additionalBuildArgs) {
             buildArgs += ' ' + additionalBuildArgs
         }
-        def enableReproducibleCompare = getReproducibleCompare(platformConfig, variant)
+        def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
         def testList = getTestList(platformConfig, variant)
 
         def dynamicTestsParameters = getDynamicParams(platformConfig, variant)
@@ -221,17 +221,21 @@ class Builder implements Serializable {
     /*
     Get reproduciableCompare flag from the build configurations.
     */
-    Boolean getReproducibleCompare(Map<String, ?> configuration, String variant) {
+    Boolean isEnableReproducibleCompare(Map<String, ?> configuration, String variant) {
         Boolean enableReproducibleCompare = DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean
-        if (configuration.containsKey('reproducibleCompare')) {
-            def reproducibleCompare
-            if (isMap(configuration.reproducibleCompare)) {
-                reproducibleCompare = (configuration.reproducibleCompare as Map).get(variant)
-            } else {
-                reproducibleCompare = configuration.reproducibleCompare
-            }
-            if (reproducibleCompare != null) {
-                enableReproducibleCompare = reproducibleCompare
+        if ( env.JOB_NAME.contains('pr-tester') || env.JOB_NAME.contains('release')) {
+            enableReproducibleCompare = false
+        } else {
+            if (configuration.containsKey('reproducibleCompare')) {
+                def reproducibleCompare
+                if (isMap(configuration.reproducibleCompare)) {
+                    reproducibleCompare = (configuration.reproducibleCompare as Map).get(variant)
+                } else {
+                    reproducibleCompare = configuration.reproducibleCompare
+                }
+                if (reproducibleCompare != null) {
+                    enableReproducibleCompare = reproducibleCompare
+                }
             }
         }
         return enableReproducibleCompare
