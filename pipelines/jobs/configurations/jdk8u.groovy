@@ -31,7 +31,6 @@ targetConfigurations = [
                 'openj9'
         ],
         's390xLinux'    : [
-                'temurin',
                 'openj9'
         ],
         'aarch64Linux'  : [
