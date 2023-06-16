@@ -26,6 +26,14 @@ pipeline {
                         build('jtreg')
                     }
                 }
+                stage('sbom') {
+                    agent {
+                        label NODE_LABEL
+                    }
+                    steps {
+                        build('temurin-sbom')
+                    }
+                }
             }
         }
     }
@@ -36,7 +44,13 @@ def build(stageName) {
     docker.image('adoptopenjdk/centos7_build_image').inside {
         try {
             checkout scm
-            checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/openjdk/${stageName}"]]])
+            script {
+                if ( stageName != 'sbom' ) {
+                    checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/openjdk/${stageName}"]]])
+                } else {
+                    checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/adoptium/temurin-build.git"]]])
+                }
+            }
             sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
             archiveArtifacts artifacts: "${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md", followSymlinks: false
         } catch (Exception e) {
