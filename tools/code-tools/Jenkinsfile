@@ -54,7 +54,7 @@ def build(stageName) {
             sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
             archiveArtifacts artifacts: "**/temurin-*-sbom.jar, ${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md", followSymlinks: false
         } catch (Exception e) {
-            //slackSend channel: 'jenkins', color: 'danger', message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}", teamDomain: 'adoptium'
+            slackSend channel: 'jenkins', color: 'danger', message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}", teamDomain: 'adoptium'
             throw new Exception("[ERROR] ${stageName} FAILED\n${e}")
         }
     }
