@@ -1,0 +1,61 @@
+// Build once a day
+CRON_SETTINGS = '''H H * * *'''
+NODE_LABEL = 'dockerBuild&&linux&&x64'
+
+pipeline {
+    agent none
+    parameters {
+        string(name: 'UPSTREAM_JOB_NAME', defaultValue: '', description: 'Pipeline job with sbom filesCompared nightly build job name')
+        string(name: 'UPSTREAM_JOB_NUMBER', defaultValue: '', description: 'Pipeline job number')
+        
+    }
+    stages {
+        stage('Post-Build') {
+            parallel {
+                stage('sbomSign') {
+                    agent {
+                        label NODE_LABEL
+                    }
+                    steps {
+                        sbomSign()
+                    }
+                }
+            }
+        }
+    }
+}
+
+def sbomSign() {
+    cleanWs()
+    docker.image('adoptopenjdk/centos7_build_image').inside {
+        checkout scm
+        checkout([$class: 'GitSCM', branches: [[name: 'post']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "sbomSign"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/sophia-guo/openjdk-build.git"]]])
+        copyArtifacts excludes: '**/OpenJDK*-sbom*metadata.json',
+                                filter: '**/OpenJDK*-sbom*.json',
+                                fingerprintArtifacts: true, 
+                                flatten: true, 
+                                projectName: "${params.UPSTREAM_JOB_NAME}",
+                                target: 'sbom/',
+                                selector: specific("${params.UPSTREAM_JOB_NUMBER}")
+        script {
+            dir("sbomSign/cyclonedx-lib") {
+                sh label: 'build-sign-sbom', script: '''
+                    JAVA_HOME=/usr/lib/jvm/jdk-17 ant clean
+                    JAVA_HOME=/usr/lib/jvm/jdk-17 ant build-sign-sbom
+                    openssl genpkey -algorithm RSA -pass pass:test -outform PEM -out testPrivateFile -pkeyopt rsa_keygen_bits:2048
+                    openssl rsa -in testPrivateFile -passin pass:test -pubout -out publicPemFile
+                '''
+            }
+            def sbomFiles = findFiles(glob: "**/OpenJDK*-sbom*.json")
+            for (def sbomFile: sbomFiles) {
+                def sbomFileName = sbomFile.path
+                def classPath = "sbomSign/cyclonedx-lib/build/jar/*"
+                sh label: 'sign-sbom', script: """
+                    /usr/lib/jvm/jdk-17/bin/java -cp "${classPath}" temurin.sbom.TemurinSignSBOM --signSBOM --jsonFile ${sbomFileName} --privateKeyFile ./sbomSign/cyclonedx-lib/testPrivateFile
+                    /usr/lib/jvm/jdk-17/bin/java -cp "${classPath}" temurin.sbom.TemurinSignSBOM --verifySignature --jsonFile ${sbomFileName} --publicKeyFile ./sbomSign/cyclonedx-lib/publicPemFile
+                """
+            }
+        }
+        archiveArtifacts artifacts: "**/OpenJDK*-sbom*.json"
+    }
+}
