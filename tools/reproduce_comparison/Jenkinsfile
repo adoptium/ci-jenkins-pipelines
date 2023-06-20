@@ -21,7 +21,7 @@ pipeline {
                                 fingerprintArtifacts: true, 
                                 flatten: true, 
                                 projectName: "${params.COMPARED_JOB_NAME}",
-                                target: 'original/'
+                                target: 'original/',
                                 selector: specific("${params.COMPARED_JOB_NUMBER}")
                 script {
                     def sbomFiles = findFiles(glob: "**/OpenJDK*-sbom*.json")
@@ -60,6 +60,8 @@ pipeline {
                     jsonJobParams.BUILD_CONFIGURATION.BUILD_REF = buildRef
                     jsonJobParams.BUILD_CONFIGURATION.BUILD_ARGS += " --build-reproducible-date ${buildTimeStamp}"
                     jsonJobParams.BUILD_CONFIGURATION.ENABLE_REPRODUCIBLE_COMPARE = false
+                    jsonJobParams.BUILD_CONFIGURATION.ENABLE_TESTS = false
+                    jsonJobParams.BUILD_CONFIGURATION.ENABLE_INSTALLERS = false
                     
                     def buildParams = [
                         text(name: 'BUILD_CONFIGURATION', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.BUILD_CONFIGURATION))),
