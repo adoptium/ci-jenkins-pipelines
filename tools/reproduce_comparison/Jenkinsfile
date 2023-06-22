@@ -109,6 +109,8 @@ pipeline {
                         error " Untar ${reproducedJDKFile[0].name} failed"
                         return
                     }
+                    
+                    // Remove artifacts in untarred compared jdk dir before comparison
                     sh """
                         find . -type f -name '*.tar.gz' -delete
                         find . -type f -name '*.json' -delete
