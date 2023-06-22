@@ -760,15 +760,16 @@ class Builder implements Serializable {
 
         def timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
         def tag = "${javaToBuild}-${timestamp}"
-
         if (publishName) {
             tag = publishName
         }
 
+       
         context.stage('publish') {
             context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
                     parameters: [
                         ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
+                        ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: (isWeekly ? true : false)],
                         context.string(name: 'TAG', value: tag),
                         context.string(name: 'TIMESTAMP', value: timestamp),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
