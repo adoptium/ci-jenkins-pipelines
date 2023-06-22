@@ -97,18 +97,24 @@ pipeline {
 
                     def originalJDKFile = findFiles(glob: "original/*.tar.gz")
                     def reproducedJDKFile = findFiles(glob: "reproduced/*.tar.gz")
-                    def untarOriginalJDK = sh returnStatus: true, script: "tar xzf ${originalJDKFile[0].path} -C original"
+                    def untarOriginalJDK = sh returnStatus: true, script: "tar xzf ${originalJDKFile[0].path} --strip-components=1 -C original"
                     if (untarOriginalJDK != 0 ) {
                         currentBuild.result = 'UNSTABLE'
                         error " Untar ${originalJDKFile[0].name} failed"
                         return
                     }
-                    def untarReproducedJDK = sh returnStatus: true, script: "tar xzf ${reproducedJDKFile[0].path} -C reproduced"
+                    def untarReproducedJDK = sh returnStatus: true, script: "tar xzf ${reproducedJDKFile[0].path} --strip-components=1 -C reproduced"
                     if (untarReproducedJDK != 0 ) {
                         currentBuild.result = 'UNSTABLE'
                         error " Untar ${reproducedJDKFile[0].name} failed"
                         return
                     }
+                    
+                    // Remove artifacts in untarred compared jdk dir before comparison
+                    sh """
+                        find . -type f -name '*.tar.gz' -delete
+                        find . -type f -name '*.json' -delete
+                    """
                 }
             }
         }
