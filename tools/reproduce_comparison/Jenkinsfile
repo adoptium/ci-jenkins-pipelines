@@ -141,6 +141,7 @@ pipeline {
                             } else {
                                 echo 'Success: two builds are the same!'
                             }
+                            archiveArtifacts artifacts: "**/repro_diff.out"
                         }
                     } catch (Exception err) {
                         echo err.getMessage()
