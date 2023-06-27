@@ -591,11 +591,7 @@ class Build {
         def jobName = "${env.JOB_NAME}"
         jobName = jobName.substring(jobName.lastIndexOf('/')+1)
         jobName = "${jobName}_reproduce_compare"
-        if (getJavaVersionNumber() == 17 &&
-            buildConfig.ARCHITECTURE.contains('x64') &&
-            buildConfig.TARGET_OS.contains('linux') &&
-            buildConfig.VARIANT == 'temurin' && 
-            !Boolean.valueOf(buildConfig.RELEASE)) {
+        if (!Boolean.valueOf(buildConfig.RELEASE)) {
             // For now set the build as independent, no need to wait for result as the build takes time
             context.stage('Reproduce Compare') {
                 def buildParams = context.params.toString()
@@ -1726,6 +1722,7 @@ class Build {
                 context.println "Executing tests: ${buildConfig.TEST_LIST}"
                 context.println "Build num: ${env.BUILD_NUMBER}"
                 context.println "File name: ${filename}"
+                
                 def enableReproducibleCompare = Boolean.valueOf(buildConfig.ENABLE_REPRODUCIBLE_COMPARE)
                 def enableTests = Boolean.valueOf(buildConfig.ENABLE_TESTS)
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
@@ -1735,7 +1732,6 @@ class Build {
                 def cleanWorkspace = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE)
                 def cleanWorkspaceAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_AFTER)
                 def cleanWorkspaceBuildOutputAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER)
-
                 // Get branch/tag of temurin-build, ci-jenkins-pipeline and jenkins-helper repo from BUILD_CONFIGURATION or defaultsJson
                 def helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
 
