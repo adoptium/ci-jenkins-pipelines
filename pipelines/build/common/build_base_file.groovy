@@ -773,8 +773,12 @@ class Builder implements Serializable {
           // Translate jdk-AA+BB to jdk-AA-0-BB
           // Translate jdk-AA.B.C+DD to jdk-AA-C-DD-ea-beta
           // Note that jdk-AA-B-C-D+EE will become jdk-AA-C-D-EE-ea-beta
-          if ( firstDot==-1 ) publishName=publishName.substring(4,plusSign)+'.0.'+publishName.substring(plusSign+1)
-          else publishName=publishName.substring(4,firstDot)+publishName.substring(secondDot).replace("+","-")
+          if ( firstDot==-1 ) {
+             publishName=publishName.substring(4,plusSign)+'.0.'+publishName.substring(plusSign+1)
+       
+          } else {
+             publishName=publishName.substring(4,firstDot)+publishName.substring(secondDot).replace("+","-")
+          }
           publishName='ea_'+publishName.replaceAll("\\.","-")
         }
 
