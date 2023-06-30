@@ -137,7 +137,7 @@ pipeline {
                             }
                             if (rc != 0) {
                                 currentBuild.result = 'FAILURE'
-                                error 'Error: two builds are not the same!'
+                                echo 'Failed: two builds are not the same! Please see the archived repro_diff.out.'
                             } else {
                                 echo 'Success: two builds are the same!'
                             }
