@@ -74,8 +74,8 @@ node('worker') {
         def trssBuildNames = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getTopLevelBuildNames?type=Test")
         def buildNamesJson = new JsonSlurper().parseText(trssBuildNames)
         buildNamesJson.each { build ->
-            // Is it a build Pipeline?
-            if (build._id.buildName.contains('-pipeline')) {
+            // Is it a build Pipeline? Excluding "evaluation-" pipelines
+            if (build._id.buildName.contains('-pipeline') && !build._id.buildName.startsWith('evaluation-')) {
                 echo "Pipeline ${build._id.buildName}"
                 def pipelineName = build._id.buildName
 
