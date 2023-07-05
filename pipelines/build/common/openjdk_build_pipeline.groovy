@@ -1507,22 +1507,24 @@ class Build {
                                                         echo "Code Not Signed - Have Another Try"
                                                         sleep 1
                                                         curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
-                                                        TESTMACSIGN2=`grep -i "Apple Certification Authority" "$FILE"|wc -l`
+                                                        TESTMACSIGN2=`grep -i "Apple Certification Authority" "$f"|wc -l`
                                                         if [ $TESTMACSIGN2 -gt 0 ]
                                                         then
                                                           echo "$f Signed OK On Attempt $iteration"
+                                                          chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                          rm -rf "${dir}/unsigned_${file}"
                                                           break
                                                         else
                                                           echo "$f Failed Signing On Attempt $iteration"
                                                           iteration=$((iteration+1))
                                                         fi
-                                                        if  [ $iteration -eq $max_iterations ]
+                                                        if [ $iteration -eq $max_iterations ]
                                                         then
                                                           echo "Reached Max Attempts"
                                                           exit 1
                                                         fi
                                                       done
-                                                    fi  
+                                                    fi
                                                 done
                                             '''
                                             } catch (e) {
