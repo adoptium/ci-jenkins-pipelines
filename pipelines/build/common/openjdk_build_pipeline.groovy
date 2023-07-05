@@ -301,7 +301,7 @@ class Build {
 
         // Use BUILD_REF override if specified
         vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
-        
+
         try {
             context.println 'Running smoke test'
             context.stage('smoke test') {
@@ -332,10 +332,10 @@ class Build {
                             context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
                             context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
                             context.string(name: 'TIME_LIMIT', value: '1')
-                    ]  
+                    ]
                 currentBuild.result = testJob.getResult()
                 return testJob.getResult()
-                     
+
             }
         } catch (Exception e) {
             context.println "Failed to execute test: ${e.message}"
@@ -351,7 +351,7 @@ class Build {
         def jdkBranch = getJDKBranch()
         def jdkRepo = getJDKRepo()
         def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == 'openj9') ? buildConfig.SCM_REF : 'master'
- 
+
         List testList = buildConfig.TEST_LIST
         List dynamicList = buildConfig.DYNAMIC_LIST
         List numMachines = buildConfig.NUM_MACHINES
@@ -463,7 +463,7 @@ class Build {
                                         wait: true
                         currentBuild.result = testJob.getResult()
                         context.node('worker') {
-                            //Copy Taps files from downstream test jobs if files available. 
+                            //Copy Taps files from downstream test jobs if files available.
                             context.sh 'rm -f workspace/target/AQAvitTaps/*.tap'
                             try {
                                 context.timeout(time: 2, unit: 'HOURS') {
@@ -543,7 +543,7 @@ class Build {
             }
         }
 
-        targets.each { targetMode, targetTests -> 
+        targets.each { targetMode, targetTests ->
             try {
                 context.println "Remote trigger: ${targetTests}"
                 remoteTargets["${targetTests}"] = {
@@ -1478,7 +1478,8 @@ class Build {
                                         context.unstash 'jmods'
                                         context.withEnv(["macos_base_path=${macos_base_path}"]) {
                                             // groovylint-disable
-                                            context.sh '''
+                                            try {
+                                              context.sh '''
                                                 #!/bin/bash
                                                 set -eu
                                                 echo "Signing JMOD files"
@@ -1492,10 +1493,32 @@ class Build {
                                                     file=$(basename "$f")
                                                     mv "$f" "${dir}/unsigned_${file}"
                                                     curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
-                                                    chmod --reference="${dir}/unsigned_${file}" "$f"
-                                                    rm -rf "${dir}/unsigned_${file}"
+                                                    TESTMACSIGN=`grep -i "Apple Certification Authority" "$f"|wc -l`
+                                                    if [ $TESTMACSIGN -gt 0 ]
+                                                    then
+                                                      echo "Code Signed"
+                                                    else
+                                                      echo "Code Not Signed - Have 2nd Attempt"
+                                                      sleep 2
+                                                      curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                      TESTMACSIGN2=`grep -i "Apple Certification Authority" "$f"|wc -l`
+                                                      if [ $TESTMACSIGN2 -gt 0 ]
+                                                      then
+                                                        echo "$f Signed OK On 2nd Attempt"
+                                                        chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                        rm -rf "${dir}/unsigned_${file}"
+                                                      else
+                                                        echo "$f Failed Signing On 2nd Attempt"
+                                                        exit 1
+                                                      fi
+                                                    fi
                                                 done
                                             '''
+                                            } catch (e) {
+                                              context.println("Failed to Perform Signing")
+                                              currentBuild.result = 'FAILURE'
+                                            }
+
                                             // groovylint-enable
                                         }
                                         context.stash name: 'signed_jmods', includes: "${macos_base_path}/**/*"
@@ -1670,7 +1693,7 @@ class Build {
         }
     }
 
-    /* 
+    /*
         this function should only be used in pr-tester
     */
     def updateGithubCommitStatus(STATE, MESSAGE) {
@@ -1722,7 +1745,7 @@ class Build {
                 context.println "Executing tests: ${buildConfig.TEST_LIST}"
                 context.println "Build num: ${env.BUILD_NUMBER}"
                 context.println "File name: ${filename}"
-                
+
                 def enableReproducibleCompare = Boolean.valueOf(buildConfig.ENABLE_REPRODUCIBLE_COMPARE)
                 def enableTests = Boolean.valueOf(buildConfig.ENABLE_TESTS)
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
@@ -1925,7 +1948,7 @@ class Build {
                                     platform = 'x86-64_' + buildConfig.TARGET_OS
                                 } else {
                                     platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
-                                }           
+                                }
                                 if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
                                     if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
                                         context.echo "Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
