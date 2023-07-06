@@ -915,7 +915,7 @@ class Builder implements Serializable {
                             context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
 
                             if ((downstreamJob.getResult() != 'SUCCESS' || !copyArtifactSuccess) && propagateFailures) {
-                                context.error("Propagating downstream job result: ${downstreamJobName}, Result: "+downstreamJob.getResult()+" CopyArtifactsSuccess: "+copyArtifactSuccess)
+                                context.println("Propagating downstream job result: ${downstreamJobName}, Result: "+downstreamJob.getResult()+" CopyArtifactsSuccess: "+copyArtifactSuccess)
                                 if (copyArtifactSuccess && downstreamJob.getResult() == 'UNSTABLE' && (currentBuild.result == 'SUCCESS' || currentBuild.result == 'UNSTABLE' )) {
                                     currentBuild.result = 'UNSTABLE'
                                 } else {
