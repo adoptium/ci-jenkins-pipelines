@@ -1508,7 +1508,7 @@ class Build {
                                                         echo "Code Not Signed - Have Another Try"
                                                         sleep 1
                                                         curl --fail -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
-                                                        TESTMACSIGN2=`grep -i "Apple Certification Authority" "$f"|wc -l`
+                                                        TESTMACSIGN2=`grep -i "$MACSIGNSTRING" "$f"|wc -l`
                                                         if [ $TESTMACSIGN2 -gt 0 ]
                                                         then
                                                           echo "$f Signed OK On Attempt $iteration"
