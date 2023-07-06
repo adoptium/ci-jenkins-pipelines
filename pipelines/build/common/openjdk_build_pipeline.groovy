@@ -1484,6 +1484,7 @@ class Build {
                                                 set -eu
                                                 echo "Signing JMOD files"
                                                 TMP_DIR="${macos_base_path}/"
+                                                MACSIGNSTRING="Apple Certification Authority"
                                                 ENTITLEMENTS="$WORKSPACE/entitlements.plist"
                                                 FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
                                                 for f in $FILES
@@ -1493,7 +1494,7 @@ class Build {
                                                     file=$(basename "$f")
                                                     mv "$f" "${dir}/unsigned_${file}"
                                                     curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
-                                                    TESTMACSIGN=`grep -i "Apple Certification Authority" "$f"|wc -l`
+                                                    TESTMACSIGN=`grep -i "$MACSIGNSTRING" "$f"|wc -l`
                                                     if [ $TESTMACSIGN -gt 0 ]
                                                     then
                                                       echo "Code Signed"
@@ -1520,7 +1521,7 @@ class Build {
                                                         fi
                                                         if [ $iteration -eq $max_iterations ]
                                                         then
-                                                          echo "Reached Max Attempts"
+                                                          echo "Reached Max Attempts = $max_iterations"
                                                           exit 1
                                                         fi
                                                       done
