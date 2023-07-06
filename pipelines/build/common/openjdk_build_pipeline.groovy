@@ -1493,7 +1493,7 @@ class Build {
                                                     dir=$(dirname "$f")
                                                     file=$(basename "$f")
                                                     mv "$f" "${dir}/unsigned_${file}"
-                                                    curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                    curl --fail -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
                                                     TESTMACSIGN=`grep -i "$MACSIGNSTRING" "$f"|wc -l`
                                                     if [ $TESTMACSIGN -gt 0 ]
                                                     then
@@ -1507,7 +1507,7 @@ class Build {
                                                       do
                                                         echo "Code Not Signed - Have Another Try"
                                                         sleep 1
-                                                        curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                        curl --fail -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
                                                         TESTMACSIGN2=`grep -i "Apple Certification Authority" "$f"|wc -l`
                                                         if [ $TESTMACSIGN2 -gt 0 ]
                                                         then
