@@ -20,6 +20,8 @@ if (binding.hasVariable('PR_BUILDER')) {
     propagateFailures = true
     runTests = false
     runParallel = true
+    runSigner = false
+    runInstaller = false
     isLightweight = false
 }
 

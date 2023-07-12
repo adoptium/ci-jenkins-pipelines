@@ -1479,7 +1479,7 @@ class Build {
                                         context.withEnv(["macos_base_path=${macos_base_path}"]) {
                                             // groovylint-disable
                                             try {
-                                              context.sh '''
+                                             context.sh '''
                                                 #!/bin/bash
                                                 set -eu
                                                 echo "Signing JMOD files"
@@ -2002,10 +2002,12 @@ class Build {
                         throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
                     }
                 }
-                try {
-                    gpgSign()
-                } catch (Exception e) {
-                    context.println(e.message)
+                if (!env.JOB_NAME.contains('pr-tester')) {
+                    try {
+                        gpgSign()
+                    } catch (Exception e) {
+                        context.println(e.message)
+                    }
                 }
 
             // Generic catch all. Will usually be the last message in the log.

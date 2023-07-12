@@ -26,6 +26,14 @@ pipeline {
                         build('jtreg')
                     }
                 }
+                stage('temurin-sbom') {
+                    agent {
+                        label NODE_LABEL
+                    }
+                    steps {
+                        build('temurin-sbom')
+                    }
+                }
             }
         }
     }
@@ -36,9 +44,15 @@ def build(stageName) {
     docker.image('adoptopenjdk/centos7_build_image').inside {
         try {
             checkout scm
-            checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/openjdk/${stageName}"]]])
+            script {
+                def toolsUrl = "https://github.com/openjdk/${stageName}"
+                if ( stageName == 'temurin-sbom' ) {
+                    toolsUrl = "https://github.com/adoptium/temurin-build.git"
+                }
+                checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: toolsUrl]]])
+            }
             sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
-            archiveArtifacts artifacts: "${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md", followSymlinks: false
+            archiveArtifacts artifacts: "**/temurin-*-sbom.jar, ${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md", followSymlinks: false
         } catch (Exception e) {
             slackSend channel: 'jenkins', color: 'danger', message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}", teamDomain: 'adoptium'
             throw new Exception("[ERROR] ${stageName} FAILED\n${e}")

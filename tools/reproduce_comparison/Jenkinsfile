@@ -126,7 +126,7 @@ pipeline {
                         dir('temurin-build/tooling') {
                             def rc = 0
                             if (COMPARED_JOB_NAME.contains('linux')) {
-                                rc = sh returnStatus: true, script: "./linux_repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced"
+                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced"
                             } else if (COMPARED_JOB_NAME.contains('mac')) {
                                 // mac
                                 //sh "./tooling/mac_repro_compare.sh temurin ./original temurin ./reproduced ${self_cert_file} ${self_cert_passwd}"
