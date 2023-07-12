@@ -1489,43 +1489,51 @@ class Build {
                                                 FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
                                                 for f in $FILES
                                                 do
-                                                    echo "Signing $f using Eclipse Foundation codesign service"
-                                                    dir=$(dirname "$f")
-                                                    file=$(basename "$f")
-                                                    mv "$f" "${dir}/unsigned_${file}"
-                                                    curl --fail -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
-                                                    TESTMACSIGN=`grep -i "$MACSIGNSTRING" "$f"|wc -l`
-                                                    if [ $TESTMACSIGN -gt 0 ]
+                                                  echo "Signing $f using Eclipse Foundation codesign service"
+                                                  dir=$(dirname "$f")
+                                                  file=$(basename "$f")
+                                                  mv "$f" "${dir}/unsigned_${file}"
+                                                  curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                  echo File = $f
+                                                  TESTMACSIGN=`grep -i "$MACSIGNSTRING" "$f"|wc -l`
+                                                  echo "Sign Result = $TESTMACSIGN"
+                                                  if [[ $TESTMACSIGN -gt 0 ]]
+                                                  then
+                                                    echo "Code Signed For File $f"
+                                                    chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                    rm -rf "${dir}/unsigned_${file}"
+                                                  else
+                                                    max_iterations=20
+                                                    iteration=1
+                                                    success=false
+                                                    errcount=0
+                                                    echo "Code Not Signed For File $f"
+                                                    while [[ $iteration -le $max_iterations ]] && [ $success = false ]; do
+                                                      echo $iteration Of $max_iterations
+                                                      sleep 1
+                                                      curl --fail -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                      TESTMACSIGN2=`grep -i "$MACSIGNSTRING" "$f"|wc -l`
+                                                      echo TESTMACSIGN2 = $TESTMACSIGN2
+                                                      if [[ $TESTMACSIGN2 -gt 0 ]]
+                                                      then
+                                                        echo "$f Signed OK On Attempt $iteration"
+                                                        chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                        rm -rf "${dir}/unsigned_${file}"
+                                                        success=true
+                                                      else
+                                                        echo "$f Failed Signing On Attempt $iteration"
+                                                        success=false
+                                                        iteration=$((iteration+1))
+                                                        errcount=$((errcount+1))
+                                                      fi
+                                                    done
+                                                    if [[ $errcount -gt 0 ]]
                                                     then
-                                                      echo "Code Signed"
-                                                      chmod --reference="${dir}/unsigned_${file}" "$f"
-                                                      rm -rf "${dir}/unsigned_${file}"
-                                                    else
-                                                      max_iterations=20
-                                                      iteration=1
-                                                      while [ $iteration -le $max_iterations ]
-                                                      do
-                                                        echo "Code Not Signed - Have Another Try"
-                                                        sleep 1
-                                                        curl --fail -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
-                                                        TESTMACSIGN2=`grep -i "$MACSIGNSTRING" "$f"|wc -l`
-                                                        if [ $TESTMACSIGN2 -gt 0 ]
-                                                        then
-                                                          echo "$f Signed OK On Attempt $iteration"
-                                                          chmod --reference="${dir}/unsigned_${file}" "$f"
-                                                          rm -rf "${dir}/unsigned_${file}"
-                                                          break
-                                                        else
-                                                          echo "$f Failed Signing On Attempt $iteration"
-                                                          iteration=$((iteration+1))
-                                                        fi
-                                                        if [ $iteration -eq $max_iterations ]
-                                                        then
-                                                          echo "Reached Max Attempts = $max_iterations"
-                                                          exit 1
-                                                        fi
-                                                      done
+                                                      echo "Errors Encountered During Signing"
+                                                      echo "Error Count = $errcount"
+                                                      exit 1
                                                     fi
+                                                  fi
                                                 done
                                             '''
                                             } catch (e) {
