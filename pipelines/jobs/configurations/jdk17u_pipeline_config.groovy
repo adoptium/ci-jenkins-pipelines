@@ -68,6 +68,9 @@ class Config17 {
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012&&vs2019',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -100,6 +103,9 @@ class Config17 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -111,6 +117,9 @@ class Config17 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]

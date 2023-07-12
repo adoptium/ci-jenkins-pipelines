@@ -7,8 +7,8 @@ env.NODE_LABEL = 'dockerBuild&&linux&&x64'
 pipeline {
     agent { label NODE_LABEL }
     parameters {
-        string(name: 'COMPARED_JOB_NUMBER', defaultValue: '', description: 'Compared nightly build job name')
-        string(name: 'COMPARED_JOB_NAME', defaultValue: '', description: 'Compared nightly build job number')
+        string(name: 'COMPARED_JOB_NUMBER', defaultValue: '', description: 'Compared nightly build job number')
+        string(name: 'COMPARED_JOB_NAME', defaultValue: '', description: 'Compared nightly build job name')
         string(name: 'COMPARED_JOB_PARAMS', defaultValue: '', description: 'Compared nightly build job parameters')
     }
 
@@ -104,31 +104,31 @@ pipeline {
             }
         }
         stage('Compare') {
-            agent NODE_LABEL
+            agent { label NODE_LABEL }
             steps {
                 copyArtifacts filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip',
                     fingerprintArtifacts: true, 
                     projectName: env.JOB_NAME,
                     selector: specific("${env.BUILD_NUMBER}")
-                checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "temurin-build"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/adoptium/temurin-build.git"]]])
+                checkout([$class: 'GitSCM', branches: [[name: 'cygwin']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "temurin-build"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/sophia-guo/openjdk-build.git"]]])
             
                 script {
                     if (COMPARED_JOB_NAME.contains('windows')) {
                         def originalJDKFile = findFiles(glob: "original/*.zip")
                         def reproducedJDKFile = findFiles(glob: "reproduced/*.zip")
-                        def untarOriginalJDK = sh returnStatus: true, script: "unzip ${originalJDKFile[0].name}"
+                        def untarOriginalJDK = sh returnStatus: true, script: "cd original && temp=`mktemp -d` && unzip -d ${temp} ${originalJDKFile[0].name} && mv ${temp}/*/* ./ && rmdir ${temp}/* ${temp}"
                         if (untarOriginalJDK != 0 ) {
                             currentBuild.result = 'UNSTABLE'
                             error " Unzip ${originalJDKFile[0].name} failed"
                             return
                         }
-                        def untarReproducedJDK = sh returnStatus: true, script: "unzip ${originalJDKFile[0].name}"
+                        def untarReproducedJDK = sh returnStatus: true, script: "cd reproduced && temp=`mktemp -d` && unzip -d ${temp} ${reproducedJDKFile[0].name} && mv ${temp}/*/* ./ && rmdir ${temp}/* ${temp}"
                         if (untarReproducedJDK != 0 ) {
                             currentBuild.result = 'UNSTABLE'
                             error " Unzip ${originalJDKFile[0].name} failed"
                             return
                         }
-                        sh "find . -type f -name '*.zip' -delete"
+                        sh "find . -type f -name 'OpenJDK*-jdk*.zip' -delete"
                     } else {
                         def originalJDKFile = findFiles(glob: "original/*.tar.gz")
                         def reproducedJDKFile = findFiles(glob: "reproduced/*.tar.gz")
@@ -144,8 +144,8 @@ pipeline {
                             error " Untar ${reproducedJDKFile[0].name} failed"
                             return
                         }
-                        sh "find . -type f -name '*.tar.gz' -delete"
-                    }                                        
+                        sh "find . -type f -name 'OpenJDK*-jdk*.tar.gz' -delete"
+                    }
                     try {
                         dir('temurin-build/tooling') {
                             def rc = 0
@@ -158,7 +158,7 @@ pipeline {
                             } else if (COMPARED_JOB_NAME.contains('windows')) {
                                 //windows
                                 echo 'todo windows build comparison'
-                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced CYGWIN"
+                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin `pwd`/../../original temurin `pwd`/../../reproduced CYGWIN"
                             }
                             if (rc != 0) {
                                 currentBuild.result = 'FAILURE'
