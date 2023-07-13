@@ -40,7 +40,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
 
     parameters {
         stringParam('buildPipeline', "${BUILD_FOLDER}/${PIPELINE}", 'The build pipeline to invoke.')
-        choiceParam('releaseType', [pipelineReleaseType, 'Nightly', 'Nightly Without Publish', 'Weekly', 'Release'], 'Nightly - release a standard nightly build.<br/>Nightly Without Publish - run a nightly but do not publish.<br/>Weekly - release a standard weekly build, run with extended tests.<br/>Release - this is a release, this will need to be manually promoted.')
+        choiceParam('releaseType', [pipelineReleaseType, 'Nightly', 'Nightly Without Publish', 'Weekly', 'Release'].unique(), 'Nightly - release a standard nightly build.<br/>Nightly Without Publish - run a nightly but do not publish.<br/>Weekly - release a standard weekly build, run with extended tests.<br/>Release - this is a release, this will need to be manually promoted.')
         textParam('scmReferences', JsonOutput.prettyPrint(JsonOutput.toJson(weekly_release_scmReferences)), 'The map of scmReferences for each variant.')
         textParam('targetConfigurations', JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations)), 'The map of platforms and variants to build.')
     }
