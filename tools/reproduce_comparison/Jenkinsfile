@@ -64,9 +64,7 @@ pipeline {
                     jsonJobParams.BUILD_CONFIGURATION.ENABLE_TESTS = false
                     jsonJobParams.BUILD_CONFIGURATION.ENABLE_INSTALLERS = false
                     
-                    if (!COMPARED_JOB_NAME.contains('linux')) {
-                        NODE_LABEL=jsonJobParams.BUILD_CONFIGURATION.NODE_LABEL
-                    }
+                    NODE_LABEL=jsonJobParams.BUILD_CONFIGURATION.NODE_LABEL
                     def buildParams = [
                         text(name: 'BUILD_CONFIGURATION', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.BUILD_CONFIGURATION))),
                         text(name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.USER_REMOTE_CONFIGS))),
