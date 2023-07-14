@@ -585,7 +585,7 @@ class Build {
         return remoteTargets
     }
 
-    def compareReproducibleBuild() {
+    def compareReproducibleBuild(String nonDockerNodeName) {
         // Currently only enable for jdk17, linux_x64, temurin, nightly, which shouldn't affect current build
         // Move out of normal jdk** folder as it won't be regenerated automatically right now
         def jobName = "${env.JOB_NAME}"
@@ -601,6 +601,7 @@ class Build {
                                 parameters: [
                                     context.string(name: 'COMPARED_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                                     context.string(name: 'COMPARED_JOB_NAME', value: "${env.JOB_NAME}"),
+                                    context.string(name: 'COMPARED_AGENT', value: nonDockerNodeName),
                                     context.string(name: 'COMPARED_JOB_PARAMS', value: buildParams)
                                 ],
                                 wait: false
@@ -1734,6 +1735,7 @@ class Build {
                 def cleanWorkspaceBuildOutputAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_BUILD_OUTPUT_ONLY_AFTER)
                 // Get branch/tag of temurin-build, ci-jenkins-pipeline and jenkins-helper repo from BUILD_CONFIGURATION or defaultsJson
                 def helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+                def nonDockerNodeName = ''
 
                 context.stage('queue') {
                     /* This loads the library containing two Helper classes, and causes them to be
@@ -1867,6 +1869,7 @@ class Build {
                         context.println "[NODE SHIFT] MOVING INTO JENKINS NODE MATCHING LABELNAME ${buildConfig.NODE_LABEL}..."
                         context.node(buildConfig.NODE_LABEL) {
                             addNodeToBuildDescription()
+                            nonDockerNodeName = context.NODE_NAME
                             // This is to avoid windows path length issues.
                             context.echo("checking ${buildConfig.TARGET_OS}")
                             if (buildConfig.TARGET_OS == 'windows') {
@@ -1911,7 +1914,7 @@ class Build {
 
                 // Compare reproducible build if needed
                 if (enableReproducibleCompare) {
-                    compareReproducibleBuild()
+                    compareReproducibleBuild(nonDockerNodeName)
                 }
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
