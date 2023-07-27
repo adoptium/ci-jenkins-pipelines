@@ -110,7 +110,7 @@ pipeline {
                     fingerprintArtifacts: true, 
                     projectName: env.JOB_NAME,
                     selector: specific("${env.BUILD_NUMBER}")
-                checkout([$class: 'GitSCM', branches: [[name: 'cygwin']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "temurin-build"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/sophia-guo/openjdk-build.git"]]])
+                checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "temurin-build"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/adoptium/temurin-build.git"]]])
             
                 script {
                     if (COMPARED_JOB_NAME.contains('windows')) {
