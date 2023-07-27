@@ -9,6 +9,9 @@ class Config17 {
                         openj9      : '!sw.os.osx.10_11'
                 ],
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -145,6 +148,9 @@ class Config17 {
                 arch                : 'aarch64',
                 additionalNodeLabels: 'macos11',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
