@@ -29,7 +29,7 @@ def sbomSign() {
     cleanWs()
     docker.image('adoptopenjdk/centos7_build_image').inside {
         checkout scm
-        checkout([$class: 'GitSCM', branches: [[name: 'post']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "sbomSign"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/sophia-guo/openjdk-build.git"]]])
+        checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "sbomSign"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/adoptium/temurin-build.git"]]])
         copyArtifacts excludes: '**/OpenJDK*-sbom*metadata.json',
                                 filter: '**/OpenJDK*-sbom*.json',
                                 fingerprintArtifacts: true, 
