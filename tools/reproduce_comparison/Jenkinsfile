@@ -3,11 +3,12 @@ Jenkins job does reproducible build compare.
 */
 import groovy.json.JsonOutput
 
+env.NODE_LABEL = 'dockerBuild&&linux&&x64'
 pipeline {
-    agent { label 'dockerBuild&&linux&&x64' }
+    agent { label NODE_LABEL }
     parameters {
-        string(name: 'COMPARED_JOB_NUMBER', defaultValue: '', description: 'Compared nightly build job name')
-        string(name: 'COMPARED_JOB_NAME', defaultValue: '', description: 'Compared nightly build job number')
+        string(name: 'COMPARED_JOB_NUMBER', defaultValue: '', description: 'Compared nightly build job number')
+        string(name: 'COMPARED_JOB_NAME', defaultValue: '', description: 'Compared nightly build job name')
         string(name: 'COMPARED_JOB_PARAMS', defaultValue: '', description: 'Compared nightly build job parameters')
     }
 
@@ -17,7 +18,7 @@ pipeline {
                 cleanWs()
                 checkout scm
                 copyArtifacts excludes: '**/OpenJDK*-sbom*metadata.json,**/OpenJDK*-jdk-sources*.tar.gz', 
-                                filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-sbom*.json',
+                                filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip,**/OpenJDK*-sbom*.json',
                                 fingerprintArtifacts: true, 
                                 flatten: true, 
                                 projectName: "${params.COMPARED_JOB_NAME}",
@@ -63,6 +64,9 @@ pipeline {
                     jsonJobParams.BUILD_CONFIGURATION.ENABLE_TESTS = false
                     jsonJobParams.BUILD_CONFIGURATION.ENABLE_INSTALLERS = false
                     
+                    if (!COMPARED_JOB_NAME.contains('linux')) {
+                        NODE_LABEL=jsonJobParams.BUILD_CONFIGURATION.NODE_LABEL
+                    }
                     def buildParams = [
                         text(name: 'BUILD_CONFIGURATION', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.BUILD_CONFIGURATION))),
                         text(name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.USER_REMOTE_CONFIGS))),
@@ -81,7 +85,7 @@ pipeline {
                                     projectName:"${COMPARED_JOB_NAME}",
                                     selector:specific("${reproducibleJob.getNumber()}"),
                                     excludes: '**/OpenJDK*-jdk-sources*.tar.gz',
-                                    filter: '**/OpenJDK*-jdk*.tar.gz',
+                                    filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip',
                                     target: 'reproduced/',
                                     fingerprintArtifacts: true,
                                     flatten: true
@@ -95,45 +99,66 @@ pipeline {
                         return
                     }
 
-                    def originalJDKFile = findFiles(glob: "original/*.tar.gz")
-                    def reproducedJDKFile = findFiles(glob: "reproduced/*.tar.gz")
-                    def untarOriginalJDK = sh returnStatus: true, script: "tar xzf ${originalJDKFile[0].path} --strip-components=1 -C original"
-                    if (untarOriginalJDK != 0 ) {
-                        currentBuild.result = 'UNSTABLE'
-                        error " Untar ${originalJDKFile[0].name} failed"
-                        return
-                    }
-                    def untarReproducedJDK = sh returnStatus: true, script: "tar xzf ${reproducedJDKFile[0].path} --strip-components=1 -C reproduced"
-                    if (untarReproducedJDK != 0 ) {
-                        currentBuild.result = 'UNSTABLE'
-                        error " Untar ${reproducedJDKFile[0].name} failed"
-                        return
-                    }
-                    
-                    // Remove artifacts in untarred compared jdk dir before comparison
-                    sh """
-                        find . -type f -name '*.tar.gz' -delete
-                        find . -type f -name '*.json' -delete
-                    """
+                    archiveArtifacts artifacts: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip', fingerprint: true
                 }
             }
         }
         stage('Compare') {
+            agent { label NODE_LABEL }
             steps {
+                copyArtifacts filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip',
+                    fingerprintArtifacts: true, 
+                    projectName: env.JOB_NAME,
+                    selector: specific("${env.BUILD_NUMBER}")
                 checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "temurin-build"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/adoptium/temurin-build.git"]]])
+            
                 script {
+                    if (COMPARED_JOB_NAME.contains('windows')) {
+                        def originalJDKFile = findFiles(glob: "original/*.zip")
+                        def reproducedJDKFile = findFiles(glob: "reproduced/*.zip")
+                        def untarOriginalJDK = sh returnStatus: true, script: "cd original && temp=`mktemp -d` && unzip -d ${temp} ${originalJDKFile[0].name} && mv ${temp}/*/* ./ && rmdir ${temp}/* ${temp}"
+                        if (untarOriginalJDK != 0 ) {
+                            currentBuild.result = 'UNSTABLE'
+                            error " Unzip ${originalJDKFile[0].name} failed"
+                            return
+                        }
+                        def untarReproducedJDK = sh returnStatus: true, script: "cd reproduced && temp=`mktemp -d` && unzip -d ${temp} ${reproducedJDKFile[0].name} && mv ${temp}/*/* ./ && rmdir ${temp}/* ${temp}"
+                        if (untarReproducedJDK != 0 ) {
+                            currentBuild.result = 'UNSTABLE'
+                            error " Unzip ${originalJDKFile[0].name} failed"
+                            return
+                        }
+                        sh "find . -type f -name 'OpenJDK*-jdk*.zip' -delete"
+                    } else {
+                        def originalJDKFile = findFiles(glob: "original/*.tar.gz")
+                        def reproducedJDKFile = findFiles(glob: "reproduced/*.tar.gz")
+                        def untarOriginalJDK = sh returnStatus: true, script: "tar xzf ${originalJDKFile[0].path} --strip-components=1 -C original"
+                        if (untarOriginalJDK != 0 ) {
+                            currentBuild.result = 'UNSTABLE'
+                            error " Untar ${originalJDKFile[0].name} failed"
+                            return
+                        }
+                        def untarReproducedJDK = sh returnStatus: true, script: "tar xzf ${reproducedJDKFile[0].path} --strip-components=1 -C reproduced"
+                        if (untarReproducedJDK != 0 ) {
+                            currentBuild.result = 'UNSTABLE'
+                            error " Untar ${reproducedJDKFile[0].name} failed"
+                            return
+                        }
+                        sh "find . -type f -name 'OpenJDK*-jdk*.tar.gz' -delete"
+                    }
                     try {
                         dir('temurin-build/tooling') {
                             def rc = 0
                             if (COMPARED_JOB_NAME.contains('linux')) {
-                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced"
+                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced Linux"
                             } else if (COMPARED_JOB_NAME.contains('mac')) {
                                 // mac
-                                //sh "./tooling/mac_repro_compare.sh temurin ./original temurin ./reproduced ${self_cert_file} ${self_cert_passwd}"
+                                //rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced Darwin"
                                 echo 'todo mac build comparison'
                             } else if (COMPARED_JOB_NAME.contains('windows')) {
                                 //windows
                                 echo 'todo windows build comparison'
+                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin `pwd`/../../original temurin `pwd`/../../reproduced CYGWIN"
                             }
                             if (rc != 0) {
                                 currentBuild.result = 'FAILURE'
