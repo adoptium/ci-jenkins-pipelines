@@ -154,12 +154,8 @@ pipeline {
                             if (COMPARED_JOB_NAME.contains('linux')) {
                                 rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced Linux"
                             } else if (COMPARED_JOB_NAME.contains('mac')) {
-                                // mac
-                                //rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced Darwin"
-                                echo 'todo mac build comparison'
+                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original/Contents/Home temurin ${WORKSPACE}/reproduced/Contents/Home Darwin"
                             } else if (COMPARED_JOB_NAME.contains('windows')) {
-                                //windows
-                                echo 'todo windows build comparison'
                                 rc = sh returnStatus: true, script: "./repro_compare.sh temurin `pwd`/../../original temurin `pwd`/../../reproduced CYGWIN"
                             }
                             if (rc != 0) {
