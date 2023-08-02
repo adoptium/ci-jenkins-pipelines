@@ -923,7 +923,7 @@ class Builder implements Serializable {
                                     context.println("Attempting to set pipeline result to \""+downstreamJob.getResult()+"\".")
                                     currentBuild.result = downstreamJob.getResult()
                                 } else {
-                                    context.println("Attempting to set pipeline result to \"FAILED\".")
+                                    context.println("Attempting to set pipeline result to \"FAILURE\".")
                                     currentBuild.result = 'FAILURE'
                                 }
                                 context.println("Attempt complete. Pipeline status was \""+previousPipelineStatus+"\", and is now \""+currentBuild.result+"\".")
