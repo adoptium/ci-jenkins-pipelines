@@ -919,7 +919,7 @@ class Builder implements Serializable {
                                 context.println("Propagating downstream job result: ${downstreamJobName}, Result: "+downstreamJob.getResult()+" CopyArtifactsSuccess: "+copyArtifactSuccess)
                                 if (copyArtifactSuccess) {
                                     // currentBuild.result only allows itself to be set if the new status is worse than its current status.
-                                    // So FAILED overrides UNSTABLE, and UNSTABLE overrides PASSED.
+                                    // So FAILURE overrides UNSTABLE, and UNSTABLE overrides PASSED.
                                     context.println("Attempting to set pipeline result to \""+downstreamJob.getResult()+"\".")
                                     currentBuild.result = downstreamJob.getResult()
                                 } else {
