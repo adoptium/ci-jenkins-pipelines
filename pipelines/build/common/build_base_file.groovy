@@ -914,13 +914,19 @@ class Builder implements Serializable {
                             }
                             context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
 
-                            if ((downstreamJob.getResult() != 'SUCCESS' || !copyArtifactSuccess) && propagateFailures) {
+                            if (propagateFailures) {
+                                String previousPipelineStatus = currentBuild.result
                                 context.println("Propagating downstream job result: ${downstreamJobName}, Result: "+downstreamJob.getResult()+" CopyArtifactsSuccess: "+copyArtifactSuccess)
-                                if (copyArtifactSuccess && downstreamJob.getResult() == 'UNSTABLE' && (currentBuild.result == 'SUCCESS' || currentBuild.result == 'UNSTABLE' )) {
-                                    currentBuild.result = 'UNSTABLE'
+                                if (copyArtifactSuccess) {
+                                    // currentBuild.result only allows itself to be set if the new status is worse than its current status.
+                                    // So FAILURE overrides UNSTABLE, and UNSTABLE overrides SUCCESS.
+                                    context.println("Attempting to set pipeline result to \""+downstreamJob.getResult()+"\".")
+                                    currentBuild.result = downstreamJob.getResult()
                                 } else {
+                                    context.println("Attempting to set pipeline result to \"FAILURE\".")
                                     currentBuild.result = 'FAILURE'
                                 }
+                                context.println("Attempt complete. Pipeline status was \""+previousPipelineStatus+"\", and is now \""+currentBuild.result+"\".")
                             }
                         }
                     }
