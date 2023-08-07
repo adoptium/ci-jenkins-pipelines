@@ -18,6 +18,14 @@ pipeline {
                         build('asmtools')
                     }
                 }
+                stage('jcstress') {
+                    agent {
+                        label NODE_LABEL
+                    }
+                    steps {
+                        build('jcstress')
+                    }
+                }
                 stage('jtreg') {
                     agent {
                         label NODE_LABEL
