@@ -1,4 +1,10 @@
 #!/bin/bash
+
+###################################################################
+# Script to build jcstress to be reused by jdk testing community  #
+# currently builds tip and latest released version                #
+###################################################################
+
 # shellcheck disable=SC2035,SC2155
 set -euo pipefail
 WORKSPACE=$PWD
