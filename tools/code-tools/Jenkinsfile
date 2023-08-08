@@ -34,6 +34,14 @@ pipeline {
                         build('jtreg')
                     }
                 }
+                stage('javatest') {
+                    agent {
+                        label NODE_LABEL
+                    }
+                    steps {
+                        build('javatest')
+                    }
+                }
                 stage('temurin-sbom') {
                     agent {
                         label NODE_LABEL
