@@ -719,7 +719,7 @@ class Builder implements Serializable {
     e.g: 
     nightly:    build-scripts/jobs/jdk11u/jdk11u-linux-aarch64-temurin
     evaluation:  build-scripts/jobs/evaluation/jobs/jdk17u/jdk17u-evaluation-mac-x64-openj9
-    release:    build-scripts/jobs/release/jobs/jdk20/jdk20-release-aix-ppc64-temurin
+    release:    build-scripts/jobs/release/jobs/jdk21/jdk21-release-aix-ppc64-temurin
     */
     def getJobFolder() {
         def parentDir = currentBuild.fullProjectName.substring(0, currentBuild.fullProjectName.lastIndexOf('/'))
@@ -828,12 +828,12 @@ class Builder implements Serializable {
                 jobs[configuration.key] = {
                     IndividualBuildConfig config = configuration.value
 
-                    // jdk20-linux-x64-temurin
+                    // jdk21-linux-x64-temurin
                     def jobTopName = getJobName(configuration.key)
                     def jobFolder = getJobFolder()
                     /*
-                        build-scripts/jobs/jdk20/jdk20-linux-x64-temurin for nightly
-                        build-scripts/evaluation/jobs/jdk20/jdk20-evaluation-linux-aarch64-hotspot for evaluation
+                        build-scripts/jobs/jdk21/jdk21-linux-x64-temurin for nightly
+                        build-scripts/evaluation/jobs/jdk21/jdk21-evaluation-linux-aarch64-hotspot for evaluation
                     */
                     def downstreamJobName = "${jobFolder}/${jobTopName}"
                     context.echo 'build name ' + downstreamJobName

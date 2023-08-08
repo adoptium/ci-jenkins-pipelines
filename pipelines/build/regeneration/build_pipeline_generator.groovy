@@ -48,7 +48,7 @@ node('worker') {
         }
 
         timestamps {
-            def retiredVersions = [9, 10, 12, 13, 14, 15, 16, 18, 19]
+            def retiredVersions = [9, 10, 12, 13, 14, 15, 16, 18, 19, 20]
             def generatedPipelines = []
 
             // Load git url and branch and gitBranch. These determine where we will be pulling user configs from.
