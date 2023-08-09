@@ -375,25 +375,26 @@ Table generated with `generateBuildMatrix.sh`
 
 <!-- markdownlint-disable -->
 
-| Platform | Java 8 | Java 11 | Java 17 | Java 21 | Java HEAD |
+| Platform | Java 8 | Java 11 | Java 17 | Java 21 | Java HEAD|
 |------|----|----|----|----|----|
-| aix-ppc64-temurin | [![Build Status][i-r1c1]](j-r1c1) | [![Build Status][i-r1c2]](j-r1c2) | [![Build Status][i-r1c3]](j-r1c3) | [![Build Status][i-r1c4]](j-r1c4) | [![Build Status][i-r1c5]](j-r1c5) | 
-| alpine-linux-aarch64-temurin | [![Build Status][i-r2c1]](j-r2c1) | [![Build Status][i-r2c2]](j-r2c2) | [![Build Status][i-r2c3]](j-r2c3) | N/A | [![Build Status][i-r2c5]](j-r2c5) | 
-| alpine-linux-x64-temurin | [![Build Status][i-r3c1]](j-r3c1) | [![Build Status][i-r3c2]](j-r3c2) | [![Build Status][i-r3c3]](j-r3c3) | [![Build Status][i-r3c4]](j-r3c4) | [![Build Status][i-r3c5]](j-r3c5) | 
-| linux-aarch64-temurin | [![Build Status][i-r4c1]](j-r4c1) | [![Build Status][i-r4c2]](j-r4c2) | [![Build Status][i-r4c3]](j-r4c3) | [![Build Status][i-r4c4]](j-r4c4) | [![Build Status][i-r4c5]](j-r4c5) | 
-| linux-arm-temurin | [![Build Status][i-r5c1]](j-r5c1) | [![Build Status][i-r5c2]](j-r5c2) | [![Build Status][i-r5c3]](j-r5c3) | [![Build Status][i-r5c4]](j-r5c4) | [![Build Status][i-r5c5]](j-r5c5) | 
-| linux-ppc64le-temurin | [![Build Status][i-r6c1]](j-r6c1) | [![Build Status][i-r6c2]](j-r6c2) | [![Build Status][i-r6c3]](j-r6c3) | [![Build Status][i-r6c4]](j-r6c4) | [![Build Status][i-r6c5]](j-r6c5) | 
-| linux-riscv64-temurin | N/A | N/A | N/A | N/A | [![Build Status][i-r7c5]](j-r7c5) | 
-| linux-riscv64-temurin-cross | N/A | N/A | N/A | N/A | [![Build Status][i-r8c5]](j-r8c5) | 
-| linux-s390x-temurin | [![Build Status][i-r9c1]](j-r9c1) | [![Build Status][i-r9c2]](j-r9c2) | [![Build Status][i-r9c3]](j-r9c3) | [![Build Status][i-r9c4]](j-r9c4) | [![Build Status][i-r9c5]](j-r9c5) | 
-| linux-x64-temurin | [![Build Status][i-r10c1]](j-r10c1) | [![Build Status][i-r10c2]](j-r10c2) | [![Build Status][i-r10c3]](j-r10c3) | [![Build Status][i-r10c4]](j-r10c4) | [![Build Status][i-r10c5]](j-r10c5) | 
-| mac-aarch64-temurin | N/A | [![Build Status][i-r11c2]](j-r11c2) | [![Build Status][i-r11c3]](j-r11c3) | [![Build Status][i-r11c4]](j-r11c4) | [![Build Status][i-r11c5]](j-r11c5) | 
-| mac-x64-temurin | [![Build Status][i-r12c1]](j-r12c1) | [![Build Status][i-r12c2]](j-r12c2) | [![Build Status][i-r12c3]](j-r12c3) | [![Build Status][i-r12c4]](j-r12c4) | [![Build Status][i-r12c5]](j-r12c5) | 
-| solaris-sparcv9-temurin | [![Build Status][i-r13c1]](j-r13c1) | N/A | N/A | N/A | N/A | 
-| solaris-x64-temurin | [![Build Status][i-r14c1]](j-r14c1) | N/A | N/A | N/A | N/A | 
-| windows-aarch64-temurin | N/A | [![Build Status][i-r15c2]](j-r15c2) | [![Build Status][i-r15c3]](j-r15c3) | N/A | [![Build Status][i-r15c5]](j-r15c5) | 
-| windows-x64-temurin | [![Build Status][i-r16c1]](j-r16c1) | [![Build Status][i-r16c2]](j-r16c2) | [![Build Status][i-r16c3]](j-r16c3) | [![Build Status][i-r16c4]](j-r16c4) | [![Build Status][i-r16c5]](j-r16c5) | 
-| windows-x86-32-temurin | [![Build Status][i-r17c1]](j-r17c1) | [![Build Status][i-r17c2]](j-r17c2) | [![Build Status][i-r17c3]](j-r17c3) | N/A | N/A | 
+| aix-ppc64-temurin | [![Build Status][i-r1c1]][j-r1c1] | [![Build Status][i-r1c2]][j-r1c2] | [![Build Status][i-r1c3]][j-r1c3] | [![Build Status][i-r1c4]][j-r1c4] | [![Build Status][i-r1c5]][j-r1c5] | 
+| alpine-linux-aarch64-temurin | [![Build Status][i-r2c1]][j-r2c1] | [![Build Status][i-r2c2]][j-r2c2] | [![Build Status][i-r2c3]][j-r2c3] | N/A | [![Build Status][i-r2c5]][j-r2c5] | 
+| alpine-linux-x64-temurin | [![Build Status][i-r3c1]][j-r3c1] | [![Build Status][i-r3c2]][j-r3c2] | [![Build Status][i-r3c3]][j-r3c3] | [![Build Status][i-r3c4]][j-r3c4] | [![Build Status][i-r3c5]][j-r3c5] | 
+| linux-aarch64-temurin | [![Build Status][i-r4c1]][j-r4c1] | [![Build Status][i-r4c2]][j-r4c2] | [![Build Status][i-r4c3]][j-r4c3] | [![Build Status][i-r4c4]][j-r4c4] | [![Build Status][i-r4c5]][j-r4c5] | 
+| linux-arm-temurin | [![Build Status][i-r5c1]][j-r5c1] | [![Build Status][i-r5c2]][j-r5c2] | [![Build Status][i-r5c3]][j-r5c3] | [![Build Status][i-r5c4]][j-r5c4] | [![Build Status][i-r5c5]][j-r5c5] | 
+| linux-ppc64le-temurin | [![Build Status][i-r6c1]][j-r6c1] | [![Build Status][i-r6c2]][j-r6c2] | [![Build Status][i-r6c3]][j-r6c3] | [![Build Status][i-r6c4]][j-r6c4] | [![Build Status][i-r6c5]][j-r6c5] | 
+| linux-riscv64-temurin | N/A | N/A | N/A | N/A | [![Build Status][i-r7c5]][j-r7c5] | 
+| linux-riscv64-temurin-cross | N/A | N/A | N/A | N/A | [![Build Status][i-r8c5]][j-r8c5] | 
+| linux-s390x-temurin | [![Build Status][i-r9c1]][j-r9c1] | [![Build Status][i-r9c2]][j-r9c2] | [![Build Status][i-r9c3]][j-r9c3] | [![Build Status][i-r9c4]][j-r9c4] | [![Build Status][i-r9c5]][j-r9c5] | 
+| linux-x64-temurin | [![Build Status][i-r10c1]][j-r10c1] | [![Build Status][i-r10c2]][j-r10c2] | [![Build Status][i-r10c3]][j-r10c3] | [![Build Status][i-r10c4]][j-r10c4] | [![Build Status][i-r10c5]][j-r10c5] | 
+| mac-aarch64-temurin | N/A | [![Build Status][i-r11c2]][j-r11c2] | [![Build Status][i-r11c3]][j-r11c3] | [![Build Status][i-r11c4]][j-r11c4] | [![Build Status][i-r11c5]][j-r11c5] | 
+| mac-x64-temurin | [![Build Status][i-r12c1]][j-r12c1] | [![Build Status][i-r12c2]][j-r12c2] | [![Build Status][i-r12c3]][j-r12c3] | [![Build Status][i-r12c4]][j-r12c4] | [![Build Status][i-r12c5]][j-r12c5] | 
+| solaris-sparcv9-temurin | [![Build Status][i-r13c1]][j-r13c1] | N/A | N/A | N/A | N/A | 
+| solaris-x64-temurin | [![Build Status][i-r14c1]][j-r14c1] | N/A | N/A | N/A | N/A | 
+| windows-aarch64-temurin | N/A | [![Build Status][i-r15c2]][j-r15c2] | [![Build Status][i-r15c3]][j-r15c3] | N/A | [![Build Status][i-r15c5]][j-r15c5] | 
+| windows-x64-temurin | [![Build Status][i-r16c1]][j-r16c1] | [![Build Status][i-r16c2]][j-r16c2] | [![Build Status][i-r16c3]][j-r16c3] | [![Build Status][i-r16c4]][j-r16c4] | [![Build Status][i-r16c5]][j-r16c5] | 
+| windows-x64-temurin_reproduce_compare | N/A | N/A | N/A | N/A | N/A | 
+| windows-x86-32-temurin | [![Build Status][i-r18c1]][j-r18c1] | [![Build Status][i-r18c2]][j-r18c2] | [![Build Status][i-r18c3]][j-r18c3] | N/A | N/A | 
 
 [i-r1c1]: https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/jdk8u/jdk8u-aix-ppc64-temurin
 [j-r1c1]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk8u/job/jdk8u-aix-ppc64-temurin
@@ -515,11 +516,11 @@ Table generated with `generateBuildMatrix.sh`
 [j-r16c4]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk21/job/jdk21-windows-x64-temurin
 [i-r16c5]: https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/jdk/jdk-windows-x64-temurin
 [j-r16c5]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk/job/jdk-windows-x64-temurin
-[i-r17c1]: https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/jdk8u/jdk8u-windows-x86-32-temurin
-[j-r17c1]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk8u/job/jdk8u-windows-x86-32-temurin
-[i-r17c2]: https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/jdk11u/jdk11u-windows-x86-32-temurin
-[j-r17c2]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk11u/job/jdk11u-windows-x86-32-temurin
-[i-r17c3]: https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/jdk17u/jdk17u-windows-x86-32-temurin
-[j-r17c3]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk17u/job/jdk17u-windows-x86-32-temurin
+[i-r18c1]: https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/jdk8u/jdk8u-windows-x86-32-temurin
+[j-r18c1]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk8u/job/jdk8u-windows-x86-32-temurin
+[i-r18c2]: https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/jdk11u/jdk11u-windows-x86-32-temurin
+[j-r18c2]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk11u/job/jdk11u-windows-x86-32-temurin
+[i-r18c3]: https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/jdk17u/jdk17u-windows-x86-32-temurin
+[j-r18c3]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk17u/job/jdk17u-windows-x86-32-temurin
 
 <!-- markdownlint-enable -->
