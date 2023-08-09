@@ -52,7 +52,7 @@ do
         jenkinsJobName="${jdkVersionX}-${buildName}"
         code=$(curl -L -s -o /dev/null -w "%{http_code}" "https://ci.adoptium.net/job/build-scripts/job/jobs/job/${jdkVersionX}/job/${jenkinsJobName}")
         if [[ ${code} = 200 ]]; then
-            echo -n "[![Build Status][i-r${rowNum}c${colNum}]](j-r${rowNum}c${colNum})" >> ${buildFile}
+            echo -n "[![Build Status][i-r${rowNum}c${colNum}]][j-r${rowNum}c${colNum}]" >> ${buildFile}
             echo "[i-r${rowNum}c${colNum}]: https://ci.adoptium.net/buildStatus/icon?job=build-scripts/jobs/${jdkVersionX}/${jenkinsJobName}" >> ${buildLinksFile}
             echo "[j-r${rowNum}c${colNum}]: https://ci.adoptium.net/job/build-scripts/job/jobs/job/${jdkVersionX}/job/${jenkinsJobName}" >> ${buildLinksFile}
         else
