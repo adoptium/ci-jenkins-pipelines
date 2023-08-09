@@ -375,7 +375,7 @@ Table generated with `generateBuildMatrix.sh`
 
 <!-- markdownlint-disable -->
 
-| Platform | Java 8 | Java 11 | Java 17 | Java 21 | Java HEAD|
+| Platform | Java 8 | Java 11 | Java 17 | Java 21 | Java HEAD |
 |------|----|----|----|----|----|
 | aix-ppc64-temurin | [![Build Status][i-r1c1]][j-r1c1] | [![Build Status][i-r1c2]][j-r1c2] | [![Build Status][i-r1c3]][j-r1c3] | [![Build Status][i-r1c4]][j-r1c4] | [![Build Status][i-r1c5]][j-r1c5] | 
 | alpine-linux-aarch64-temurin | [![Build Status][i-r2c1]][j-r2c1] | [![Build Status][i-r2c2]][j-r2c2] | [![Build Status][i-r2c3]][j-r2c3] | N/A | [![Build Status][i-r2c5]][j-r2c5] | 
