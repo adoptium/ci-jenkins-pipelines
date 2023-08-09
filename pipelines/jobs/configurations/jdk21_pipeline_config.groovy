@@ -9,6 +9,9 @@ class Config21 {
                         openj9      : '!sw.os.osx.10_11'
                 ],
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -23,6 +26,9 @@ class Config21 {
                         openj9      : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 additionalTestLabels: [
                         openj9      : '!(centos6||rhel6)'
                 ],
@@ -62,6 +68,9 @@ class Config21 {
                 arch                : 'x64',
                 additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -89,6 +98,9 @@ class Config21 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -99,6 +111,9 @@ class Config21 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace'
                 ],
@@ -112,6 +127,9 @@ class Config21 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 configureArgs : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -123,6 +141,9 @@ class Config21 {
                 arch                : 'aarch64',
                 additionalNodeLabels: 'macos11',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
