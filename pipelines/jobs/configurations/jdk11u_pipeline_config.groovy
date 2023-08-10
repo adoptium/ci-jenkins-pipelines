@@ -79,7 +79,7 @@ class Config11 {
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2012&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 buildArgs : [
                         temurin : '--jvm-variant client,server --create-sbom'
                 ],

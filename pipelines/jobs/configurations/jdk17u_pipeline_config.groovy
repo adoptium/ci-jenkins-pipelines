@@ -69,7 +69,7 @@ class Config17 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
                 reproducibleCompare : [
                         'temurin'   : true
@@ -82,7 +82,7 @@ class Config17 {
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2012&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom'

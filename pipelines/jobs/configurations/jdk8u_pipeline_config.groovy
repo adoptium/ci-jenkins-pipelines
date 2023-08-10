@@ -57,7 +57,7 @@ class Config8 {
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2017',
+                additionalNodeLabels: 'win2022&&vs2017',
                 test                 : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
