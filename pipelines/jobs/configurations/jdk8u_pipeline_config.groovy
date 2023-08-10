@@ -67,7 +67,7 @@ class Config8 {
         x32Windows    : [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2012',
+                additionalNodeLabels: 'win2022',
                 buildArgs : [
                         temurin : '--jvm-variant client,server --create-sbom'
                 ],
