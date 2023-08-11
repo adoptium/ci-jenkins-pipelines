@@ -192,6 +192,8 @@ node('worker') {
                         checkoutUserPipelines()
                     }
                 }
+                println "[INFO] JDK${javaVersion}: loaded target configuration:"
+                println JsonOutput.prettyPrint(JsonOutput.toJson(target))
 
                 config.put('targetConfigurations', target.targetConfigurations)
 
@@ -203,7 +205,11 @@ node('worker') {
                 }
 
                 if (enablePipelineSchedule.toBoolean()) {
-                    config.put('pipelineSchedule', target.triggerSchedule_nightly)
+                    try {
+                        config.put('pipelineSchedule', target.triggerSchedule_nightly)
+                    } catch (Exception ex) {
+                        config.put('pipelineSchedule', '0 0 31 2 0')
+                    }
                 }
 
                 if (useAdoptShellScripts.toBoolean()) {
@@ -231,8 +237,6 @@ node('worker') {
                     checkoutUserPipelines()
                 }
 
-                target.disableJob = false
-
                 generatedPipelines.add(config['JOB_NAME'])
 
                 // Create weekly release pipeline
@@ -252,7 +256,11 @@ node('worker') {
                 def weeklyTemplatePath = (params.WEEKLY_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['weekly']
 
                 if (enablePipelineSchedule.toBoolean()) {
-                    config.put('pipelineSchedule', target.triggerSchedule_weekly)
+                    try {
+                        config.put('pipelineSchedule', target.triggerSchedule_weekly)
+                    } catch (Exception ex) {
+                        config.put('pipelineSchedule', '0 0 31 2 0')
+                    }
                 }
                 config.releaseType = "Weekly"
 
@@ -272,9 +280,14 @@ node('worker') {
                     checkoutUserPipelines()
                 }
 
-                target.disableJob = false
-
                 generatedPipelines.add(config['JOB_NAME'])
+
+                // config.load() loads into the current groovy binding, and returns "this", so we need to reset variables before next load of target
+                target.targetConfigurations = {} 
+                target.triggerSchedule_nightly = '0 0 31 2 0'
+                target.triggerSchedule_weekly = '0 0 31 2 0'
+                target.weekly_release_scmReferences = {} 
+                target.disableJob = false
             })
 
             // Fail if nothing was generated
