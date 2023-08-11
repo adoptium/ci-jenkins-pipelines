@@ -166,7 +166,8 @@ node('worker') {
                     releaseType         : 'Nightly' 
                 ]
 
-                def target
+                // Ensure target is initialized to [], otherwise groovy uses previous iteration state...!
+                def target = [] 
                 try {
                     target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
                 } catch (NoSuchFileException e) {
@@ -192,17 +193,16 @@ node('worker') {
                         checkoutUserPipelines()
                     }
                 }
+                println "[INFO] JDK${javaVersion}: loaded target configuration: ${target}"
 
                 config.put('targetConfigurations', target.targetConfigurations)
 
-                // hack as jenkins groovy does not seem to allow us to check if disableJob exists
-                try {
+                // Set disableJob if in target
+                if (target.hasProperty('target.disableJob')) {
                     config.put('disableJob', target.disableJob)
-                } catch (Exception ex) {
-                    config.put('disableJob', false)
                 }
 
-                if (enablePipelineSchedule.toBoolean()) {
+                if (enablePipelineSchedule.toBoolean() && target.hasProperty('triggerSchedule_nightly')) {
                     config.put('pipelineSchedule', target.triggerSchedule_nightly)
                 }
 
@@ -231,8 +231,6 @@ node('worker') {
                     checkoutUserPipelines()
                 }
 
-                target.disableJob = false
-
                 generatedPipelines.add(config['JOB_NAME'])
 
                 // Create weekly release pipeline
@@ -251,7 +249,7 @@ node('worker') {
                 // Load weeklyTemplatePath. This is where the weekly_release_pipeline_job_template.groovy code is located compared to the repository root. This actually sets up the weekly pipeline job using the parameters above.
                 def weeklyTemplatePath = (params.WEEKLY_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['weekly']
 
-                if (enablePipelineSchedule.toBoolean()) {
+                if (enablePipelineSchedule.toBoolean() && target.hasProperty('triggerSchedule_weekly')) {
                     config.put('pipelineSchedule', target.triggerSchedule_weekly)
                 }
                 config.releaseType = "Weekly"
@@ -271,8 +269,6 @@ node('worker') {
                     jobDsl targets: ADOPT_DEFAULTS_JSON['templateDirectories']['weekly'], ignoreExisting: false, additionalParameters: config
                     checkoutUserPipelines()
                 }
-
-                target.disableJob = false
 
                 generatedPipelines.add(config['JOB_NAME'])
             })
