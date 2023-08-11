@@ -166,9 +166,15 @@ node('worker') {
                     releaseType         : 'Nightly' 
                 ]
 
-                // Ensure target is initialized to [], otherwise groovy uses previous iteration state...!
-                def target = []
-                target.clear()
+                // Clear any pre-existing variable bindings from previous iteration load..
+                def variables = ['targetConfigurations', 'triggerSchedule_nightly', 'triggerSchedule_weekly', 'weekly_release_scmReferences', 'disableJob'] 
+                variables.each({ variable ->
+                    if (binding.hasVariable(variable)) {
+                        binding.removeVariable(variable)
+                    }
+                })
+
+                def target
                 try {
                     target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
                 } catch (NoSuchFileException e) {
@@ -199,11 +205,8 @@ node('worker') {
 
                 config.put('targetConfigurations', target.targetConfigurations)
 
-                // hack as jenkins groovy does not seem to allow us to check if disableJob exists
-                try {
+                if (target.hasVariable('disableJob')) {
                     config.put('disableJob', target.disableJob)
-                } catch (Exception ex) {
-                    config.put('disableJob', false)
                 }
 
                 if (enablePipelineSchedule.toBoolean()) {
