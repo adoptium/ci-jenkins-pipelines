@@ -197,12 +197,19 @@ node('worker') {
 
                 config.put('targetConfigurations', target.targetConfigurations)
 
-                if (target.hasProperty('disableJob')) {
+                // hack as jenkins groovy does not seem to allow us to check if disableJob exists
+                try {
                     config.put('disableJob', target.disableJob)
+                } catch (Exception ex) {
+                    config.put('disableJob', false)
                 }
 
-                if (enablePipelineSchedule.toBoolean() && target.hasProperty('triggerSchedule_nightly')) {
-                    config.put('pipelineSchedule', target.triggerSchedule_nightly)
+                if (enablePipelineSchedule.toBoolean()) {
+                    try {
+                        config.put('pipelineSchedule', target.triggerSchedule_nightly)
+                    } catch (Exception ex) {
+                        config.put('pipelineSchedule', '0 0 31 2 0')
+                    }
                 }
 
                 if (useAdoptShellScripts.toBoolean()) {
@@ -248,8 +255,12 @@ node('worker') {
                 // Load weeklyTemplatePath. This is where the weekly_release_pipeline_job_template.groovy code is located compared to the repository root. This actually sets up the weekly pipeline job using the parameters above.
                 def weeklyTemplatePath = (params.WEEKLY_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['weekly']
 
-                if (enablePipelineSchedule.toBoolean() && target.hasProperty('triggerSchedule_weekly')) {
-                    config.put('pipelineSchedule', target.triggerSchedule_weekly)
+                if (enablePipelineSchedule.toBoolean()) {
+                    try {
+                        config.put('pipelineSchedule', target.triggerSchedule_weekly)
+                    } catch (Exception ex) {
+                        config.put('pipelineSchedule', '0 0 31 2 0')
+                    }
                 }
                 config.releaseType = "Weekly"
 
