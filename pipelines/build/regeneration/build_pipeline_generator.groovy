@@ -205,7 +205,7 @@ node('worker') {
 
                 config.put('targetConfigurations', target.targetConfigurations)
 
-                if (target.hasVariable('disableJob')) {
+                if (target.hasProperty('disableJob')) {
                     config.put('disableJob', target.disableJob)
                 }
 
