@@ -166,14 +166,6 @@ node('worker') {
                     releaseType         : 'Nightly' 
                 ]
 
-                // Clear any pre-existing variable bindings from previous iteration load..
-                def variables = ['targetConfigurations', 'triggerSchedule_nightly', 'triggerSchedule_weekly', 'weekly_release_scmReferences', 'disableJob'] 
-                variables.each({ variable ->
-                    if (binding.hasVariable(variable)) {
-                        binding.removeVariable(variable)
-                    }
-                })
-
                 def target
                 try {
                     target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
@@ -286,6 +278,12 @@ node('worker') {
                 }
 
                 generatedPipelines.add(config['JOB_NAME'])
+
+                // config.load() loads into the current groovy binding, and returns "this", so we need to reset variables before next load of target
+                def variables = ['targetConfigurations', 'triggerSchedule_nightly', 'triggerSchedule_weekly', 'weekly_release_scmReferences', 'disableJob']
+                variables.each({ variable ->
+                    target[variable] = null
+                })
             })
 
             // Fail if nothing was generated
