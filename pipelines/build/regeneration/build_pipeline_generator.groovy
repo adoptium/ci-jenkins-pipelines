@@ -198,11 +198,11 @@ node('worker') {
                 config.put('targetConfigurations', target.targetConfigurations)
 
                 // Set disableJob if in target
-                if (target.hasProperty('target.disableJob')) {
+                if (target.metaClass.hasProperty(target, 'disableJob')) {
                     config.put('disableJob', target.disableJob)
                 }
 
-                if (enablePipelineSchedule.toBoolean() && target.hasProperty('triggerSchedule_nightly')) {
+                if (enablePipelineSchedule.toBoolean() && target.metaClass.hasProperty(target, 'triggerSchedule_nightly')) {
                     config.put('pipelineSchedule', target.triggerSchedule_nightly)
                 }
 
@@ -249,7 +249,7 @@ node('worker') {
                 // Load weeklyTemplatePath. This is where the weekly_release_pipeline_job_template.groovy code is located compared to the repository root. This actually sets up the weekly pipeline job using the parameters above.
                 def weeklyTemplatePath = (params.WEEKLY_TEMPLATE_PATH) ?: DEFAULTS_JSON['templateDirectories']['weekly']
 
-                if (enablePipelineSchedule.toBoolean() && target.hasProperty('triggerSchedule_weekly')) {
+                if (enablePipelineSchedule.toBoolean() && target.metaClass.hasProperty(target, 'triggerSchedule_weekly')) {
                     config.put('pipelineSchedule', target.triggerSchedule_weekly)
                 }
                 config.releaseType = "Weekly"
