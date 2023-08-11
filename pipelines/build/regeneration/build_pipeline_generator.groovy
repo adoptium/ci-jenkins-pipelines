@@ -194,7 +194,7 @@ node('worker') {
                     }
                 }
                 println "[INFO] JDK${javaVersion}: loaded target configuration:"
-                println target.toJson()
+                println JsonOutput.prettyPrint(JsonOutput.toJson(target))
 
                 config.put('targetConfigurations', target.targetConfigurations)
 
