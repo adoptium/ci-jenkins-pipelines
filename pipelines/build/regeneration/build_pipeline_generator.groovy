@@ -280,10 +280,11 @@ node('worker') {
                 generatedPipelines.add(config['JOB_NAME'])
 
                 // config.load() loads into the current groovy binding, and returns "this", so we need to reset variables before next load of target
-                def variables = ['targetConfigurations', 'triggerSchedule_nightly', 'triggerSchedule_weekly', 'weekly_release_scmReferences', 'disableJob']
-                variables.each({ variable ->
-                    target[variable] = null
-                })
+                target.targetConfigurations = []
+                target.triggerSchedule_nightly = '0 0 31 2 0'
+                target.triggerSchedule_weekly = '0 0 31 2 0'
+                target.weekly_release_scmReferences = []
+                target.disableJob = false
             })
 
             // Fail if nothing was generated
