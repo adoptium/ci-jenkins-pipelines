@@ -167,7 +167,8 @@ node('worker') {
                 ]
 
                 // Ensure target is initialized to [], otherwise groovy uses previous iteration state...!
-                def target = [] 
+                def target = []
+                target.clear()
                 try {
                     target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
                 } catch (NoSuchFileException e) {
