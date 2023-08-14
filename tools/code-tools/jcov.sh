@@ -91,6 +91,16 @@ function getJavatest() {
         sed "s/javatestjar.*/javatestjar=/g" -i build.properties
       fi
    fi
+   if [ ! -e testng.jar ] ; then
+     local testngv=6.9.10
+     wget https://repo1.maven.org/maven2/org/testng/testng/$testngv/testng-$testngv.jar
+     mv testng-$testngv.jar testng.jar
+   fi
+   if [ ! -e jcommander.jar ] ; then
+     jcommanderv=1.81
+     wget https://repo1.maven.org/maven2/com/beust/jcommander/$jcommanderv/jcommander-$jcommanderv.jar
+     mv jcommander-$jcommanderv.jar jcommander.jar
+   fi
   popd
 }
 
@@ -134,6 +144,7 @@ pushd $REPO_DIR
   getAsmDeps "9.0"
   getJavatest
   pushd build
+    ant $ASM_PROPS test | tee ../$main_file-$tip_shortened.tar.gz.txt || true
     ant $ASM_PROPS build
   popd
   pushd $BUILD_PATH/jcov*/
