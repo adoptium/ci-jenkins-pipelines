@@ -9,6 +9,7 @@ readonly JTREG_6_1='jtreg-6.1+1'
 readonly JTREG_7='jtreg-7+1'
 readonly JTREG_7_1='jtreg-7.1.1+1'
 readonly JTREG_7_2='jtreg-7.2+1'
+readonly JTREG_7_3='jtreg-7.3+1'
 
 function checkWorkspaceVar()
 {
@@ -61,6 +62,11 @@ buildJTReg()
     elif [ "$1" == "$JTREG_7_2" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.2"
+      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export PATH=$PATH:$JAVA_HOME/bin
+    elif [ "$1" == "$JTREG_7_3" ]; then
+      export JTREG_BUILD_NUMBER="1"
+      export BUILD_VERSION="7.3"
       export JAVA_HOME=/usr/lib/jvm/jdk-11
       export PATH=$PATH:$JAVA_HOME/bin
     fi
@@ -135,5 +141,6 @@ buildJTReg "$JTREG_6_1"
 buildJTReg "$JTREG_7"
 buildJTReg "$JTREG_7_1"
 buildJTReg "$JTREG_7_2"
+buildJTReg "$JTREG_7_3"
 buildJTReg
 echo '...finished with build process.'
