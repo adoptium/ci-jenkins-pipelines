@@ -588,19 +588,60 @@ class Build {
     def compareReproducibleBuild(String nonDockerNodeName) {
         // Currently only enable for jdk17, linux_x64, temurin, nightly, which shouldn't affect current build
         // Move out of normal jdk** folder as it won't be regenerated automatically right now
-        def jobName = "${env.JOB_NAME}"
-        jobName = jobName.substring(jobName.lastIndexOf('/')+1)
-        jobName = "${jobName}_reproduce_compare"
+        def buildJobName = "${env.JOB_NAME}"
+        buildJobName = buildJobName.substring(buildJobName.lastIndexOf('/')+1)
+        def comparedJobName = "${buildJobName}_reproduce_compare"
         if (!Boolean.valueOf(buildConfig.RELEASE)) {
             // For now set the build as independent, no need to wait for result as the build takes time
+            String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+            def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+            if (!JobHelper.jobIsRunnable(comparedJobName as String)) {
+                def jobParams = [:]
+                jobParams.put("COMPARED_JOB_NAME", "${env.JOB_NAME}")
+                context.node('worker') {
+                    context.println "Reproduce_compare job doesn't exist, create reproduce_compare job: ${comparedJobName}"
+                    context.jobDsl scriptText: """
+                        if (!binding.hasVariable("COMPARED_JOB_NAME")) COMPARED_JOB_NAME = ""
+                        pipelineJob("${comparedJobName}") {
+	                        description(\'<h1>THIS IS AN AUTOMATICALLY GENERATED JOB. PLEASE DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1>\')
+
+                            definition {
+                                parameters {
+                                    stringParam("COMPARED_JOB_NUMBER", "", "Compared nightly build job number.")
+                                    stringParam("COMPARED_JOB_NAME", COMPARED_JOB_NAME, "Compared nightly build job name")
+                                    stringParam("COMPARED_AGENT", "", "Compared nightly build job agent.")
+                                    stringParam("COMPARED_JOB_PARAMS", "", "Compared nightly build job parameters")
+                                }
+                                cpsScm {
+                                    scm {
+                                        git {
+                                            remote {
+                                                url("https://github.com/adoptium/ci-jenkins-pipelines.git")
+                                            }
+                                            branch("*/master")
+                                        }
+                                        scriptPath("tools/reproduce_comparison/Jenkinsfile")
+                                        lightweight(true)
+                                    }
+                                }
+                                logRotator {
+                                    numToKeep(30)
+                                    artifactNumToKeep(10)
+                                    daysToKeep(60)
+                                    artifactDaysToKeep(10)
+                                }
+                            }
+                        }
+                    """ , ignoreExisting: false, additionalParameters: jobParams
+                }
+            }
             context.stage('Reproduce Compare') {
                 def buildParams = context.params.toString()
                 // passing buildParams multiline parameter to downstream job, double check the available method
-                context.build job: jobName,
+                context.build job: comparedJobName,
                                 propagate: false,
                                 parameters: [
                                     context.string(name: 'COMPARED_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                    context.string(name: 'COMPARED_JOB_NAME', value: "${env.JOB_NAME}"),
                                     context.string(name: 'COMPARED_AGENT', value: nonDockerNodeName),
                                     context.string(name: 'COMPARED_JOB_PARAMS', value: buildParams)
                                 ],
