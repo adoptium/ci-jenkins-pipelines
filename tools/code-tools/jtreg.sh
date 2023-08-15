@@ -9,6 +9,7 @@ readonly JTREG_6_1='jtreg-6.1+1'
 readonly JTREG_7='jtreg-7+1'
 readonly JTREG_7_1='jtreg-7.1.1+1'
 readonly JTREG_7_2='jtreg-7.2+1'
+readonly JTREG_7_3='jtreg-7.3+1'
 
 function checkWorkspaceVar()
 {
@@ -30,12 +31,12 @@ function clearWorkspace()
 
   unset JAVATEST_HOME
 
-  echo 'Deletion previous build dist...'
+  echo 'Deleting previous build dist...'
   rm -rf build dist
 }
 
 buildJTReg()
-{ 
+{
   version="jtregtip"
   if [ "$#" -eq 1 ]; then
     version=$1
@@ -61,6 +62,11 @@ buildJTReg()
     elif [ "$1" == "$JTREG_7_2" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.2"
+      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export PATH=$PATH:$JAVA_HOME/bin
+    elif [ "$1" == "$JTREG_7_3" ]; then
+      export JTREG_BUILD_NUMBER="1"
+      export BUILD_VERSION="7.3"
       export JAVA_HOME=/usr/lib/jvm/jdk-11
       export PATH=$PATH:$JAVA_HOME/bin
     fi
@@ -93,7 +99,7 @@ buildJTReg()
       chmod +x make/build.sh
       make/build.sh --jdk "$JAVA_HOME"
     fi
-   
+
     cd build/images
 
     createWin32FolderWithJTRegBinaries
@@ -108,18 +114,19 @@ buildJTReg()
 
 createWin32FolderWithJTRegBinaries()
 {
-   mkdir -p jtreg/win32
-   cp -fr jtreg/bin jtreg/win32/
+  mkdir -p jtreg/win32
+  cp -fr jtreg/bin jtreg/win32/
 }
 
-createChecksum() {
-    ARCHIVE_FULL_PATH=$1
-    ARCHIVE_NAME=$(basename "${ARCHIVE_FULL_PATH}")
-    DESTINATION=$2
+createChecksum()
+{
+  ARCHIVE_FULL_PATH=$1
+  ARCHIVE_NAME=$(basename "${ARCHIVE_FULL_PATH}")
+  DESTINATION=$2
 
-    echo "Creating checksum for ${ARCHIVE_FULL_PATH} at ${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
+  echo "Creating checksum for ${ARCHIVE_FULL_PATH} at ${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
 
-    sha256sum "${ARCHIVE_FULL_PATH}" > "${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
+  sha256sum "${ARCHIVE_FULL_PATH}" > "${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
 }
 
 checkWorkspaceVar
@@ -134,5 +141,6 @@ buildJTReg "$JTREG_6_1"
 buildJTReg "$JTREG_7"
 buildJTReg "$JTREG_7_1"
 buildJTReg "$JTREG_7_2"
+buildJTReg "$JTREG_7_3"
 buildJTReg
 echo '...finished with build process.'
