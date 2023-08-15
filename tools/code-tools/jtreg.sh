@@ -30,12 +30,12 @@ function clearWorkspace()
 
   unset JAVATEST_HOME
 
-  echo 'Deletion previous build dist...'
+  echo 'Deleting previous build dist...'
   rm -rf build dist
 }
 
 buildJTReg()
-{ 
+{
   version="jtregtip"
   if [ "$#" -eq 1 ]; then
     version=$1
@@ -93,7 +93,7 @@ buildJTReg()
       chmod +x make/build.sh
       make/build.sh --jdk "$JAVA_HOME"
     fi
-   
+
     cd build/images
 
     createWin32FolderWithJTRegBinaries
@@ -108,18 +108,19 @@ buildJTReg()
 
 createWin32FolderWithJTRegBinaries()
 {
-   mkdir -p jtreg/win32
-   cp -fr jtreg/bin jtreg/win32/
+  mkdir -p jtreg/win32
+  cp -fr jtreg/bin jtreg/win32/
 }
 
-createChecksum() {
-    ARCHIVE_FULL_PATH=$1
-    ARCHIVE_NAME=$(basename "${ARCHIVE_FULL_PATH}")
-    DESTINATION=$2
+createChecksum()
+{
+  ARCHIVE_FULL_PATH=$1
+  ARCHIVE_NAME=$(basename "${ARCHIVE_FULL_PATH}")
+  DESTINATION=$2
 
-    echo "Creating checksum for ${ARCHIVE_FULL_PATH} at ${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
+  echo "Creating checksum for ${ARCHIVE_FULL_PATH} at ${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
 
-    sha256sum "${ARCHIVE_FULL_PATH}" > "${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
+  sha256sum "${ARCHIVE_FULL_PATH}" > "${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
 }
 
 checkWorkspaceVar
