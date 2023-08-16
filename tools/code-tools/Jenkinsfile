@@ -50,6 +50,14 @@ pipeline {
                         build('sigtest')
                     }
                 }
+                stage('jcov') {
+                    agent {
+                        label NODE_LABEL
+                    }
+                    steps {
+                        build('jcov')
+                    }
+                }
                 stage('temurin-sbom') {
                     agent {
                         label NODE_LABEL
