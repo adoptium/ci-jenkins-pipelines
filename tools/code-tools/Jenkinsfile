@@ -34,12 +34,12 @@ pipeline {
                         build('jtreg')
                     }
                 }
-                stage('javatest') {
+                stage('jtharness') {
                     agent {
                         label NODE_LABEL
                     }
                     steps {
-                        build('javatest')
+                        build('jtharness')
                     }
                 }
                 stage('sigtest') {
@@ -84,7 +84,7 @@ def build(stageName) {
                 checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: toolsUrl]]])
             }
             sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
-            archiveArtifacts artifacts: "**/temurin-*-sbom.jar, ${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt,${stageName}/${stageName}*.tar.gz.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md, ${stageName}/${stageName}*.zip", followSymlinks: false
+            archiveArtifacts artifacts: "**/temurin-*-sbom.jar, ${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt,${stageName}/${stageName}*.tar.gz.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md, ${stageName}/${stageName}*.zip, ${stageName}/javatest*.jar, ${stageName}/javatest.*sum*.txt", followSymlinks: false
         } catch (Exception e) {
             slackSend channel: 'jenkins', color: 'danger', message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}", teamDomain: 'adoptium'
             throw new Exception("[ERROR] ${stageName} FAILED\n${e}")
