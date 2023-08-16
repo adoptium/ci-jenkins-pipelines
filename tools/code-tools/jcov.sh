@@ -136,7 +136,7 @@ pushd $REPO_DIR
     tar -czf ../../$rc.tar.gz *.jar readme.txt
   popd
   echo "Manually renaming $rc.tar.gz  as $main_file.tar.gz to provide latest-stable-recommended file"
-  ln -sfv $rc.tar.gz  $main_file.tar.gz
+  ln -fv $rc.tar.gz  $main_file.tar.gz
   cleanRepo
 
   # tip
@@ -152,7 +152,7 @@ pushd $REPO_DIR
     tar -czf ../../$main_file-$tip_shortened.tar.gz *.jar readme.txt
   popd
   echo "Manually renaming $main_file-$tip_shortened.tar.gz as $main_file-tip..tar.gz to provide latest-unstable-recommended file"
-  ln -sfv $main_file-$tip_shortened.tar.gz $main_file-tip.tar.gz
+  ln -fv $main_file-$tip_shortened.tar.gz $main_file-tip.tar.gz
   cleanRepo
 
   echo "Resetting repo back to master"

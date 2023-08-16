@@ -84,7 +84,7 @@ pushd $REPO_DIR
   mv  ../$BUILD_PATH/$main_file-$latestReleaseNumber.zip $rc.zip
   mv  ../$BUILD_PATH/$main_file-examples-$latestReleaseNumber.zip $rc-exmaples.zip
   echo "Manually renaming $rc.zip as $main_file.zip to provide latest-stable-recommended file"
-  ln -sfv $rc.zip $main_file.zip
+  ln -fv $rc.zip $main_file.zip
   cleanRepo
 
   # tip
@@ -96,7 +96,7 @@ pushd $REPO_DIR
   mv  ../$BUILD_PATH/$main_file-$latestReleaseNumber.zip $main_file-$tip_shortened.zip
   mv  ../$BUILD_PATH/$main_file-examples-$latestReleaseNumber.zip $main_file-$tip_shortened-examples.zip
   echo "Manually renaming $main_file-$tip_shortened.zip as $main_file-tip.zip to provide latest-unstable-recommended file"
-  ln -sfv $main_file-$tip_shortened.zip $main_file-tip.zip
+  ln -fv $main_file-$tip_shortened.zip $main_file-tip.zip
   cleanRepo
 
   echo "Resetting repo back to master"

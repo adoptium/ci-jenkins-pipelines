@@ -46,7 +46,7 @@ pushd $REPO_DIR
   mvn clean install
   mv tests-all/target/$main_name.jar $rc
   echo "Manually renaming $rc as $main_file to provide latest-stable-recommended file"
-  ln -sfv $rc $main_file
+  ln -fv $rc $main_file
   mvn clean
 
   # tip
@@ -55,7 +55,7 @@ pushd $REPO_DIR
   mvn clean install
   mv tests-all/target/$main_file $main_name-$tip_shortened.jar
   echo "Manually renaming $main_name-$tip_shortened.jar as $main_name-tip.jar to provide latest-unstable-recommended file"
-  ln -sfv $main_name-$tip_shortened.jar $main_name-tip.jar
+  ln -fv $main_name-$tip_shortened.jar $main_name-tip.jar
   mvn clean
 
   echo "Resetting repo back to master"

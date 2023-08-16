@@ -73,7 +73,7 @@ function renameLegacyCoreArtifacts() {
   for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
       if echo $file | grep -q -e core ; then
       local nwFile=$(echo $file | sed "s/-core//")
-      ln -sfv $file $nwFile
+      ln -fv $file $nwFile
       fi
   done
 }
@@ -113,7 +113,7 @@ pushd $REPO_DIR
   releaseCandidate=asmtools-core-7.0.b10-ea.jar
   releaseName=asmtools.jar
   echo "Manually renaming  $releaseCandidate as $releaseName to provide latest-stable-recommended file"
-  ln -sfv $releaseCandidate $releaseName
+  ln -fv $releaseCandidate $releaseName
   echo "Resetting repo back to master"
   git checkout master
 popd
