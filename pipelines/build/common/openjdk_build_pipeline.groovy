@@ -596,19 +596,16 @@ class Build {
             String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
             def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
             if (!JobHelper.jobIsRunnable(comparedJobName as String)) {
-                def jobParams = [:]
-                jobParams.put("COMPARED_JOB_NAME", "${env.JOB_NAME}")
                 context.node('worker') {
                     context.println "Reproduce_compare job doesn't exist, create reproduce_compare job: ${comparedJobName}"
                     context.jobDsl scriptText: """
-                        if (!binding.hasVariable("COMPARED_JOB_NAME")) COMPARED_JOB_NAME = ""
                         pipelineJob("${comparedJobName}") {
 	                        description(\'<h1>THIS IS AN AUTOMATICALLY GENERATED JOB. PLEASE DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1>\')
 
                             definition {
                                 parameters {
                                     stringParam("COMPARED_JOB_NUMBER", "", "Compared nightly build job number.")
-                                    stringParam("COMPARED_JOB_NAME", COMPARED_JOB_NAME, "Compared nightly build job name")
+                                    stringParam("COMPARED_JOB_NAME", "", "Compared nightly build job name")
                                     stringParam("COMPARED_AGENT", "", "Compared nightly build job agent.")
                                     stringParam("COMPARED_JOB_PARAMS", "", "Compared nightly build job parameters")
                                 }
@@ -632,7 +629,7 @@ class Build {
                                 }
                             }
                         }
-                    """ , ignoreExisting: false, additionalParameters: jobParams
+                    """ , ignoreExisting: false
                 }
             }
             context.stage('Reproduce Compare') {
@@ -642,6 +639,7 @@ class Build {
                                 propagate: false,
                                 parameters: [
                                     context.string(name: 'COMPARED_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                                    context.string(name: 'COMPARED_JOB_NAME', value: "${env.JOB_NAME}"),
                                     context.string(name: 'COMPARED_AGENT', value: nonDockerNodeName),
                                     context.string(name: 'COMPARED_JOB_PARAMS', value: buildParams)
                                 ],
