@@ -50,7 +50,7 @@ pushd $REPO_DIR
   popd
   mv  ../$BUILD_PATH/$main_file.jar $rc.jar
   echo "Manually renaming $rc.jar as $main_file.jar to provide latest-stable-recommended file"
-  ln -sfv $rc.jar $main_file.jar
+  ln -fv $rc.jar $main_file.jar
   pushd build
     ant clean
   popd
@@ -65,7 +65,7 @@ pushd $REPO_DIR
   popd
   mv  ../$BUILD_PATH/$main_file.jar $main_file-$tip_shortened.jar
   echo "Manually renaming $main_file-$tip_shortened.jar as $main_file-tip.jar to provide latest-unstable-recommended file"
-  ln -sfv $main_file-$tip_shortened.jar $main_file-tip.jar
+  ln -fv $main_file-$tip_shortened.jar $main_file-tip.jar
   pushd build
     ant clean
   popd
