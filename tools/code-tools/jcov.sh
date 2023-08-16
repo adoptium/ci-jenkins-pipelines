@@ -70,9 +70,9 @@ function getReadme() {
   echo "$ASM_URLS"
   echo ""
   echo "Use on CP:"
-  echo $ASM_JARS=""
+  echo $ASM_JARS""
   echo ""
-  echo "In addition jtobserver.jar requires javatest.sh"
+  echo "In addition jtobserver.jar requires javatest.jar"
   echo "You can get one at adoptium: https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/" #TODO add better link?
   echo "Or build one from: https://github.com/openjdk/jtharness/"
 }
