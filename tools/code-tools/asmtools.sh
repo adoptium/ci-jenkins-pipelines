@@ -1,5 +1,12 @@
-
 #!/bin/bash
+
+###################################################################
+# Script to build asmtools to be reused by jdk testing community  #
+# currently builds tip of master and tip of at8 branch            #
+# In future, it should clone and build:                           #
+# tip of master, latest release in master, and tip of at7 branch  #
+###################################################################
+
 # shellcheck disable=SC2035,SC2155
 set -euo pipefail
 WORKSPACE=$PWD
