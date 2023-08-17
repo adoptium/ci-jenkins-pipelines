@@ -24,7 +24,13 @@ function detectJdks() {
   find ${jvm_dir} -maxdepth 1 | sort
   echo "Available jdks 17 in ${jvm_dir}:"
   find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17
+  echo "Available jdks 11 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-11-     -e jdk-11
+  echo "Available jdks 8 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8
   jdk17=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17  | head -n 1))
+  jdk11=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-11-     -e jdk-11  | head -n 1))
+  jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8   | head -n 1))
 }
 
 function resetRepo() {
@@ -129,6 +135,7 @@ pushd $REPO_DIR
   getAsmDeps "8.0.1"
   getJavatest
   pushd build
+    export JAVA_HOME="$jdk8"
     ant $ASM_PROPS build
   popd
   pushd $BUILD_PATH/jcov*/
@@ -144,6 +151,7 @@ pushd $REPO_DIR
   getAsmDeps "9.0"
   getJavatest
   pushd build
+    export JAVA_HOME="$jdk17"
     ant $ASM_PROPS test | tee ../$main_file-$tip_shortened.tar.gz.txt || true
     ant $ASM_PROPS build
   popd
