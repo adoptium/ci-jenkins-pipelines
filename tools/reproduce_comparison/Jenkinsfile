@@ -48,8 +48,8 @@ pipeline {
                     def buildRef = reproducedParams["Temurin Build Ref"]
                     buildRef = buildRef.substring(buildRef.lastIndexOf('/')+1)
 
-                    // Convert COMPARED_JOB_PARAMS to json formatt string
-                    def jobParams = COMPARED_JOB_PARAMS.replaceAll("=", ':')
+                    // Convert COMPARED_JOB_PARAMS to json format string
+                    def jobParams = COMPARED_JOB_PARAMS.replaceAll("=\\{", ":\\{")
                     jobParams = jobParams.replace("ADOPT_DEFAULTS_JSON", "ADOPT_DEFAULTS_TEMP")
                     jobParams = jobParams.replace("DEFAULTS_JSON", "\"DEFAULTS_JSON\"")
                     jobParams = jobParams.replace("USER_REMOTE_CONFIGS", "\"USER_REMOTE_CONFIGS\"")
