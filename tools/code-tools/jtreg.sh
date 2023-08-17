@@ -2,7 +2,7 @@
 
 ###################################################################
 # Script to build jtreg test suite harness                        #
-# currently builds tip, 5.1, 6, 6.1, 7, 7.1, 7.2                  #
+# currently builds tip, 5.1, 6, 6.1, 7, 7.1, 7.2, 7.3             #
 ###################################################################
 
 # shellcheck disable=SC2035,SC2116
