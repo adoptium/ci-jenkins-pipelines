@@ -135,7 +135,7 @@ pushd $REPO_DIR
   getAsmDeps "8.0.1"
   getJavatest
   pushd build
-    export JAVA_HOME="$jdk8"
+    export JAVA_HOME="$jdk08"
     ant $ASM_PROPS build
   popd
   pushd $BUILD_PATH/jcov*/
