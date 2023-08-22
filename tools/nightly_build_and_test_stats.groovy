@@ -111,12 +111,9 @@ echo "featureReleases = ${featureReleases}"
 
               // Verify the given release contains all the expected assets
               verifyReleaseContent(featureRelease, releaseName, status)
-echo "1"
-              def key = "${featureRelease}"
-              healthStatus[8] = status
-echo "2"
+              healthStatus["${featureRelease}"] = status
             }
-echo "3"            
+
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
 echo "4"
