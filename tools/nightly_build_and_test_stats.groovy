@@ -108,7 +108,7 @@ echo "featureReleases = ${featureReleases}"
               }
 
               // Verify the given release contains all the expected assets
-              verifyReleaseContent(featureReleaseStr, releaseName, status)
+              verifyReleaseContent(featureRelease, releaseName, status)
 
               healthStatus[featureReleaseStr] = status
             }
