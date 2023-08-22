@@ -20,60 +20,62 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 
+// Get the latest upstream openjdk build tag
 def getLatestOpenjdkBuildTag(String version) {
-    def mirrorRepo="${params.MIRROR_URL}".replaceAll("_NN_", "jdk"+version)
-    def latestTag=$(git ls-remote --sort=-v:refname --tags "${mirrorRepo}" | grep -v "\^{}" | tr -s "\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1)
-echo latest tag = $latestTag
+    def openjdkRepo = "https://github.com/openjdk/${version}.git")
 
-    def releaseTag
-    if (!latestTag.contains('_adopt')) {
-       echo "Latest tag ${latestTag} does not have _adopt"
-       releaseTag="UNKNOWN"
-    } else {
-       releaseTag=$(echo $latestTag | sed 's/_adopt/-ea-beta/')
-    }
+    def latestTag = "$(git ls-remote --sort=-v:refname --tags "${openjdkRepo}" | grep -v "\^{}" | tr -s "\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1)")"
+    echo "latest ${version} tag = ${latestTag}"
 
-    return releaseTag
+    return latestTag
 }
 
-// Get the duration in minutes for the given job stage
-def getJobStageDuration(Long since, String statsFile, String jobName, String findStage) {
-    def MILLIS_IN_MINUTE = 60000
-    def workflow = null
-    try {
-        workflow = sh(returnStdout: true, script: "wget -q -O - ${params.JENKINS_URL}/${jobName}/lastSuccessfulBuild/wfapi/describe")
-        } catch (Exception e) {
-        workflow = null
-    }       
-    if (workflow) {
-        def json = new JsonSlurper().parseText(workflow)
-        json.stages.each { stage ->
-            if (stage.name.equalsIgnoreCase(findStage)) {
-                def startTime = stage.startTimeMillis
-                // Did the job stage start after since?
-                if (startTime > since) {
-                    def duration = stage.durationMillis / MILLIS_IN_MINUTE
-                    duration = duration.intValue()
-                    println("  ==> Job: ${jobName} Stage: ${stage.name} durationMinutes: ${duration}")
-                    sh("echo \'${jobName}:${duration}\' >> ${statsFile}")
-                }
-            }
-        }
-    }
+// Get the latest release tag from the binaries repo
+def getLatestBinariesTag(String version) {
+    def binariesRepo = "https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", version)
+
+    def latestTag = "$(git ls-remote --sort=-v:refname --tags "${binariesRepo}" | grep "\-ea\-beta" | grep -v "\^{}" | tr -s "\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1)"
+    echo "latest ${version} tag = ${latestTag}"
+
+    return latestTag    
 }
 
+// Verify the given release contains all the expected assets
+def verifyReleaseContent(String version, String release, Map status) {
+    echo "Verifying ${version} asserts in release: ${release}"
+
+    def releaseAssets = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version)
+
+    def release = sh(returnStdout: true, script: "wget -q -O - '${binariesRepo}'")
+    def releaseJson = new JsonSlurper().parseText(release)
+   
+    def targetConfigPath = "${params.BUILD_CONFIG_URL}/${version}.groovy"
+    def rc = sh(script: "curl -LO ${targetConfigUrl}", returnStatus: true)
+echo "curl -LO ${targetConfigUrl}   rc = $rc"
+    
+    // Load the targetConfiguration
+    targetConfigurations = null
+    load targetConfigPath 
+
+    targetConfigurations.keySet().each { osarch ->
+                    context.println "    Verify : $osarch" }
+
+    status[assets: "good"]
+}
 
 node('worker') {
     def variant = "${params.VARIANT}"
     def trssUrl    = "${params.TRSS_URL}"
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
-    def featureReleases = [ "8u", "11u", "17u", "21" ] // Consider making those parameters
+    def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+")   //[ "jdk8u", "jdk11u", "jdk17u", "jdk21" ] // Consider making those parameters
+    def tipRelease      = "${params.TIP_RELEASE}"  //"jdk22" // Current jdk(head) version
+echo "featureReleases = ${featureReleases}"
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
 
-    def healthStatus = [ 'jdk8': null, 'jdk11': null, 'jdk17': null, 'jdk21': null ]
+    def healthStatus = []
     def testStats = []
 
     stage('getPipelineStatus') {
@@ -83,30 +85,41 @@ node('worker') {
         }
         if (apiVariant == 'hotspot') { // hotspot only for now
             // Determine nightly pipeline health by looking at published assets.
-            // In particular, look at one data set for published binaries (Linux x64).
+            // In particular, look at first data set for latest published binaries.
             // If no published assets happened the last 4 days, the nightly pipeline
             // is considered unhealthy.
-            // TODO: account for disabled nightly pipelines
-            featureReleases.each { featureReleaseStr ->
-              def featureRelease = featureReleaseStr.replaceAll("u", "").toInteger()
-              def key = "jdk${featureRelease}"
+            // For tag triggered versions (jdk-21+) check the binary is published
+            // The release asset list is also verified
+            featureReleases.each { featureRelease ->
+              def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
               def status
-              def releaseName
-              if (featureRelease < 21) {
-                def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureRelease}/ea?image_type=jdk&os=linux&architecture=x64&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
-                def assetsJson = new JsonSlurper().parseText(assets)
-                releaseName = assetsJson[0].release_name
+              def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
+              def assetsJson = new JsonSlurper().parseText(assets)
+              def releaseName = assetsJson[0].release_name
+              if (featureReleaseInt < 21) {
                 def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
                 def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
                 def now = ZonedDateTime.now(ZoneId.of('UTC'))
                 def days = ChronoUnit.DAYS.between(assetTs, now)
-                status = [maxStaleDays: nightlyStaleDays, actualDays: days]
+                status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
               } else {
-                releaseName = getLatestOpenjdkBuildTag(String version)
-                status = [expectedReleaseName: releaseName]
+                def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
+                status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
               }
-              healthStatus[key] = status
+
+              // Verify the given release contains all the expected assets
+              verifyReleaseContent(featureReleaseStr, releaseName, status)
+
+              healthStatus[featureReleaseStr] = status
             }
+            
+            // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
+            def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
+            def releaseName = getLatestBinariesTag(tip_release.replaceAll("u", "").replaceAll("jdk", "").toInteger())
+            status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+            healthStatus[tip_release] = status
+
+           
         }
     }
 
@@ -300,15 +313,16 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+
+echo 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
 
     stage('printPublishStats') {
         if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
             echo '-------------- Nightly pipeline health report ------------------'
             featureReleases.each { featureRelease ->
-                def key = "jdk${featureRelease}"
-                def status = healthStatus[key]
+                def status = healthStatus[featureRelease]
                 def days = status['actualDays'] as int
                 def msg = "${days} day(s) ago" // might actually be days + N hours, where N < 24
                 if (status['actualDays'] == 0) {
@@ -323,7 +337,7 @@ node('worker') {
                 }
                 echo "===> ${fullMessage}"
                 // One slack message per JDK version:
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
