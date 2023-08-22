@@ -112,7 +112,7 @@ echo "featureReleases = ${featureReleases}"
               // Verify the given release contains all the expected assets
               verifyReleaseContent(featureRelease, releaseName, status)
 
-              healthStatus[featureReleaseStr] = status
+              healthStatus[featureRelease] = status
             }
             
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
