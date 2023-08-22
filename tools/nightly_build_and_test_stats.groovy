@@ -19,12 +19,56 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
+
+def getLatestOpenjdkBuildTag(String version) {
+    def mirrorRepo="${params.MIRROR_URL}".replaceAll("_NN_", "jdk"+version)
+    def latestTag=$(git ls-remote --sort=-v:refname --tags "${mirrorRepo}" | grep -v "\^{}" | tr -s "\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1)
+echo latest tag = $latestTag
+
+    def releaseTag
+    if (!latestTag.contains('_adopt')) {
+       echo "Latest tag ${latestTag} does not have _adopt"
+       releaseTag="UNKNOWN"
+    } else {
+       releaseTag=$(echo $latestTag | sed 's/_adopt/-ea-beta/')
+    }
+
+    return releaseTag
+}
+
+// Get the duration in minutes for the given job stage
+def getJobStageDuration(Long since, String statsFile, String jobName, String findStage) {
+    def MILLIS_IN_MINUTE = 60000
+    def workflow = null
+    try {
+        workflow = sh(returnStdout: true, script: "wget -q -O - ${params.JENKINS_URL}/${jobName}/lastSuccessfulBuild/wfapi/describe")
+        } catch (Exception e) {
+        workflow = null
+    }       
+    if (workflow) {
+        def json = new JsonSlurper().parseText(workflow)
+        json.stages.each { stage ->
+            if (stage.name.equalsIgnoreCase(findStage)) {
+                def startTime = stage.startTimeMillis
+                // Did the job stage start after since?
+                if (startTime > since) {
+                    def duration = stage.durationMillis / MILLIS_IN_MINUTE
+                    duration = duration.intValue()
+                    println("  ==> Job: ${jobName} Stage: ${stage.name} durationMinutes: ${duration}")
+                    sh("echo \'${jobName}:${duration}\' >> ${statsFile}")
+                }
+            }
+        }
+    }
+}
+
+
 node('worker') {
     def variant = "${params.VARIANT}"
     def trssUrl    = "${params.TRSS_URL}"
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
-    def featureReleases = [ 8, 11, 17, 21 ] // Consider making those parameters
+    def featureReleases = [ "8u", "11u", "17u", "21" ] // Consider making those parameters
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
@@ -43,16 +87,25 @@ node('worker') {
             // If no published assets happened the last 4 days, the nightly pipeline
             // is considered unhealthy.
             // TODO: account for disabled nightly pipelines
-            featureReleases.each { featureRelease ->
+            featureReleases.each { featureReleaseStr ->
+              def featureRelease = featureReleaseStr.replaceAll("u", "").toInteger()
+              def key = "jdk${featureRelease}"
+              def status
+              def releaseName
+              if (featureRelease < 21) {
                 def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureRelease}/ea?image_type=jdk&os=linux&architecture=x64&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
                 def assetsJson = new JsonSlurper().parseText(assets)
+                releaseName = assetsJson[0].release_name
                 def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
                 def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
                 def now = ZonedDateTime.now(ZoneId.of('UTC'))
                 def days = ChronoUnit.DAYS.between(assetTs, now)
-                def status = [maxStaleDays: nightlyStaleDays, actualDays: days]
-                def key = "jdk${featureRelease}"
-                healthStatus[key] = status
+                status = [maxStaleDays: nightlyStaleDays, actualDays: days]
+              } else {
+                releaseName = getLatestOpenjdkBuildTag(String version)
+                status = [expectedReleaseName: releaseName]
+              }
+              healthStatus[key] = status
             }
         }
     }
