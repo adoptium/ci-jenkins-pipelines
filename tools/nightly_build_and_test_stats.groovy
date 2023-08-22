@@ -59,7 +59,8 @@ echo "curl -LO ${targetConfigPath}   rc = $rc"
     load configFile
 
     targetConfigurations.keySet().each { osarch ->
-                    context.println "    Verify : $osarch" }
+        echo "    Verify : $osarch"
+    }
 
     status['assets'] = "good"
 }
