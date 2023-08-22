@@ -22,7 +22,7 @@ import java.time.temporal.ChronoUnit
 
 // Get the latest upstream openjdk build tag
 def getLatestOpenjdkBuildTag(String version) {
-    def openjdkRepo = "https://github.com/openjdk/${version}.git")
+    def openjdkRepo = "https://github.com/openjdk/${version}.git"
 
     def latestTag = "$(git ls-remote --sort=-v:refname --tags "${openjdkRepo}" | grep -v "\^{}" | tr -s "\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1)")"
     echo "latest ${version} tag = ${latestTag}"
