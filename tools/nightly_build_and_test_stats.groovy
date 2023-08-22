@@ -94,7 +94,6 @@ echo "featureReleases = ${featureReleases}"
             // The release asset list is also verified
             featureReleases.each { featureRelease ->
               def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
-              def status
               def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
               def assetsJson = new JsonSlurper().parseText(assets)
               def releaseName = assetsJson[0].release_name
@@ -103,10 +102,10 @@ echo "featureReleases = ${featureReleases}"
                 def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
                 def now = ZonedDateTime.now(ZoneId.of('UTC'))
                 def days = ChronoUnit.DAYS.between(assetTs, now)
-                status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
+                def status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
               } else {
                 def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
-                status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+                def status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
               }
 
               // Verify the given release contains all the expected assets
