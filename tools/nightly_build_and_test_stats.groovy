@@ -97,15 +97,16 @@ echo "featureReleases = ${featureReleases}"
               def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
               def assetsJson = new JsonSlurper().parseText(assets)
               def releaseName = assetsJson[0].release_name
+              def status = []
               if (featureReleaseInt < 21) {
                 def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
                 def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
                 def now = ZonedDateTime.now(ZoneId.of('UTC'))
                 def days = ChronoUnit.DAYS.between(assetTs, now)
-                def status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
+                status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
               } else {
                 def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
-                def status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+                status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
               }
 
               // Verify the given release contains all the expected assets
