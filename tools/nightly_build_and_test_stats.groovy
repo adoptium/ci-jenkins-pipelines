@@ -111,15 +111,20 @@ echo "featureReleases = ${featureReleases}"
 
               // Verify the given release contains all the expected assets
               verifyReleaseContent(featureRelease, releaseName, status)
-
+echo "1"
               healthStatus[featureRelease] = status
+echo "2"
             }
-            
+echo "3"            
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
+echo "4"
             def releaseName = getLatestBinariesTag(tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger())
+echo "5"
             status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+echo "6"
             healthStatus[tipRelease] = status
+echo "7"
 
            
         }
