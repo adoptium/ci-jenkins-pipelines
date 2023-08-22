@@ -60,7 +60,7 @@ echo "curl -LO ${targetConfigUrl}   rc = $rc"
     targetConfigurations.keySet().each { osarch ->
                     context.println "    Verify : $osarch" }
 
-    status[assets: "good"]
+    status['assets'] = "good"
 }
 
 node('worker') {
