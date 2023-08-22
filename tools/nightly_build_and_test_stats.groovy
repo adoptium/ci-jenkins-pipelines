@@ -50,8 +50,8 @@ def verifyReleaseContent(String version, String release, Map status) {
     def releaseJson = new JsonSlurper().parseText(releaseRaw)
    
     def targetConfigPath = "${params.BUILD_CONFIG_URL}/${version}.groovy"
-    def rc = sh(script: "curl -LO ${targetConfigUrl}", returnStatus: true)
-echo "curl -LO ${targetConfigUrl}   rc = $rc"
+    def rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
+echo "curl -LO ${targetConfigPath}   rc = $rc"
     
     // Load the targetConfiguration
     targetConfigurations = null
