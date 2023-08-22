@@ -52,7 +52,6 @@ def verifyReleaseContent(String version, String release, Map status) {
     def configFile = "${version}.groovy"   
     def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
     def rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
-echo "curl -LO ${targetConfigPath}   rc = $rc"
     
     // Load the targetConfiguration
     targetConfigurations = null
@@ -72,7 +71,6 @@ node('worker') {
     def slackChannel = "${params.SLACK_CHANNEL}"
     def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+")   //[ "jdk8u", "jdk11u", "jdk17u", "jdk21" ] // Consider making those parameters
     def tipRelease      = "${params.TIP_RELEASE}"  //"jdk22" // Current jdk(head) version
-echo "featureReleases = ${featureReleases}"
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
@@ -116,15 +114,10 @@ echo "featureReleases = ${featureReleases}"
 
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
-echo "4"
             def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
             def releaseName = getLatestBinariesTag("${tipVersion}")
-echo "5"
             status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
-echo "6"
             healthStatus[tipVersion] = status
-echo "7"
-
            
         }
     }
@@ -328,7 +321,8 @@ echo 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlyS
         if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
             echo '-------------- Nightly pipeline health report ------------------'
             featureReleases.each { featureRelease ->
-                def status = healthStatus[featureRelease]
+                def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
+                def status = healthStatus[featureReleaseInt]
                 def days = status['actualDays'] as int
                 def msg = "${days} day(s) ago" // might actually be days + N hours, where N < 24
                 if (status['actualDays'] == 0) {
