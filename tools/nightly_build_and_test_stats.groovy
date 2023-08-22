@@ -117,9 +117,9 @@ echo "featureReleases = ${featureReleases}"
             
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
-            def releaseName = getLatestBinariesTag(tip_release.replaceAll("u", "").replaceAll("jdk", "").toInteger())
+            def releaseName = getLatestBinariesTag(tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger())
             status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
-            healthStatus[tip_release] = status
+            healthStatus[tipRelease] = status
 
            
         }
