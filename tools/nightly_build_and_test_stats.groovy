@@ -44,7 +44,7 @@ def getLatestBinariesTag(String version) {
 def verifyReleaseContent(String version, String release, Map status) {
     echo "Verifying ${version} asserts in release: ${release}"
 
-    def releaseAssets = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version)
+    def releaseAssets = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
     def releaseRaw = sh(returnStdout: true, script: "wget -q -O - '${releaseAssets}'")
     def releaseJson = new JsonSlurper().parseText(releaseRaw)
