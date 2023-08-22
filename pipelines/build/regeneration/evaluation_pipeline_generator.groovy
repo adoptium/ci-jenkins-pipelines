@@ -198,6 +198,9 @@ node('worker') {
                     }
                     config.put('targetConfigurations', targetEvaluation.targetConfigurations)
 
+                    println "[INFO] JDK${javaVersion}: loaded targetEvaluation configuration:"
+                    println JsonOutput.prettyPrint(JsonOutput.toJson(targetEvaluation))
+
                     // if has a triggerSchedule_evaluation variable set then use it or default to '0 0 31 2 0'/never run
                     if (enablePipelineSchedule.toBoolean()){
                         try {
