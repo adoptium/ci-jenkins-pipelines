@@ -112,7 +112,8 @@ echo "featureReleases = ${featureReleases}"
               // Verify the given release contains all the expected assets
               verifyReleaseContent(featureRelease, releaseName, status)
 echo "1"
-              healthStatus[featureRelease] = status
+              def key = featureRelease
+              healthStatus[key] = status
 echo "2"
             }
 echo "3"            
