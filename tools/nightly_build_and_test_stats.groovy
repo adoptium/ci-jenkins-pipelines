@@ -113,7 +113,7 @@ echo "featureReleases = ${featureReleases}"
               verifyReleaseContent(featureRelease, releaseName, status)
 echo "1"
               def key = "${featureRelease}"
-              healthStatus[key] = status
+              healthStatus["jdk8u"] = status
 echo "2"
             }
 echo "3"            
