@@ -46,7 +46,7 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def releaseAssets = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version)
 
-    def releaseRaw = sh(returnStdout: true, script: "wget -q -O - '${binariesRepo}'")
+    def releaseRaw = sh(returnStdout: true, script: "wget -q -O - '${releaseAssets}'")
     def releaseJson = new JsonSlurper().parseText(releaseRaw)
    
     def targetConfigPath = "${params.BUILD_CONFIG_URL}/${version}.groovy"
