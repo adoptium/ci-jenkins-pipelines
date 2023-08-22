@@ -48,14 +48,15 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def releaseRaw = sh(returnStdout: true, script: "wget -q -O - '${releaseAssets}'")
     def releaseJson = new JsonSlurper().parseText(releaseRaw)
-   
-    def targetConfigPath = "${params.BUILD_CONFIG_URL}/${version}.groovy"
+
+    def configFile = "${version}.groovy"   
+    def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
     def rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
 echo "curl -LO ${targetConfigPath}   rc = $rc"
     
     // Load the targetConfiguration
     targetConfigurations = null
-    load targetConfigPath 
+    load configFile
 
     targetConfigurations.keySet().each { osarch ->
                     context.println "    Verify : $osarch" }
