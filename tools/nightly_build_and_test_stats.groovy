@@ -25,7 +25,7 @@ def getLatestOpenjdkBuildTag(String version) {
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
 
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v \"\\^{}\" | tr -s \"\\t \" \" \" | cut -d\" \" -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1")
-    echo "latest jdk${version} tag = ${latestTag}"
+    echo "latest ${version} tag = ${latestTag}"
 
     return latestTag
 }
@@ -51,6 +51,7 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def configFile = "${version}.groovy"   
     def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
+    echo "    Loading pipeline config file: ${targetConfigPath}"
     def rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
     
     // Load the targetConfiguration
