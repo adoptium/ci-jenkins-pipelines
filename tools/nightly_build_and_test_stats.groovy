@@ -25,7 +25,7 @@ def getLatestOpenjdkBuildTag(String version) {
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
 
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v \"\\^{}\" | tr -s \"\\t \" \" \" | cut -d\" \" -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1")
-    echo "latest ${version} tag = ${latestTag}"
+    echo "latest jdk${version} tag = ${latestTag}"
 
     return latestTag
 }
@@ -35,7 +35,7 @@ def getLatestBinariesTag(String version) {
     def binariesRepo = "https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", version)
 
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${binariesRepo} | grep \"\\-ea\\-beta\" | grep -v \"\\^{}\" | tr -s \"\\t \" \" \" | cut -d\" \" -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1")
-    echo "latest ${version} tag = ${latestTag}"
+    echo "latest jdk${version} tag = ${latestTag}"
 
     return latestTag    
 }
@@ -117,6 +117,7 @@ node('worker') {
             def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
             def releaseName = getLatestBinariesTag("${tipVersion}")
             status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+            verifyReleaseContent(tipRelease, releaseName, status)
             healthStatus[tipVersion] = status
            
         }
