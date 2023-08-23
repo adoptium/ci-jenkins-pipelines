@@ -171,7 +171,9 @@ node('worker') {
                             def days = ChronoUnit.DAYS.between(build_time, now)
 
                             // Was job "Done"?
-                            if (job.status != null && job.status.equals('Done') && job.startBy != null) {
+                            // Report release- pipelines only if built within the last week
+                            if (job.status != null && job.status.equals('Done') && job.startBy != null &&
+                                (!build._id.buildName.startsWith('release-') || days < 7)) {
                                 if (job.startBy.startsWith('timer')) {
                                     // Nightly scheduled job
                                     pipeline_id = job._id
