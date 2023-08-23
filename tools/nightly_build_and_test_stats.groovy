@@ -129,9 +129,9 @@ node('worker') {
         def testVariant
         if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
             testVariant = '_hs_'
-    } else if (variant == 'openj9') {
+        } else if (variant == 'openj9') {
             testVariant = '_j9_'
-    } else {
+        } else {
             testVariant = "_${variant}_"
         }
 
@@ -144,15 +144,14 @@ node('worker') {
                 echo "Pipeline ${build._id.buildName}"
                 def pipelineName = build._id.buildName
 
-                // Find the last "Done" pipeline builds started by "timer", as that is the last Nightly
-                // or upstream project "build-scripts/weekly-openjdkNN-pipeline" started in the last 7 days, as those are weekend weekly release jobs
+                // Find the last "Done" pipeline builds started by "timer", "weekly-" or "releaseTrigger"
                 def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
                 def pipelineJson = new JsonSlurper().parseText(pipeline)
-                def foundNightly = false
+                def foundBuild = false
                 if (pipelineJson.size() > 0) {
-                    // Find first in list started by timer(Nightly) or all upstream weekly jobs started in last 7 days
+                    // Find first in list started by "timer", "weekly-" or "releaseTrigger"
                     pipelineJson.each { job ->
-                        if (!foundNightly) {
+                        if (!foundBuild) {
                             def pipeline_id = null
                             def pipelineUrl
                             def buildJobComplete = 0
@@ -171,17 +170,23 @@ node('worker') {
                             def now = LocalDateTime.now(ZoneId.of('UTC'))
                             def days = ChronoUnit.DAYS.between(build_time, now)
 
-                            // Was job "Done" and started less than 7 days ago?
-                            if (job.status != null && job.status.equals('Done') && job.startBy != null && days < 7) {
+                            // Was job "Done"?
+                            if (job.status != null && job.status.equals('Done') && job.startBy != null) {
                                 if (job.startBy.startsWith('timer')) {
-                                    // Nightly job
+                                    // Nightly scheduled job
                                     pipeline_id = job._id
                                     pipelineUrl = job.buildUrl
-                                    foundNightly = true
-                } else if (job.startBy.startsWith("upstream project \"build-scripts/weekly-${pipelineName}\"")) {
-                                    // Weekend weekly job
+                                    foundBuild = true
+                                } else if (job.startBy.startsWith("upstream project \"build-scripts/weekly-")) {
+                                    // Weekend weekly scheduled job
                                     pipeline_id = job._id
                                     pipelineUrl = job.buildUrl
+                                    foundBuild = true
+                                } else if (job.startBy.startsWith("upstream project \"build-scripts/utils/releaseTrigger_")) {
+                                    // Build tag triggered build
+                                    pipeline_id = job._id
+                                    pipelineUrl = job.buildUrl
+                                    foundBuild = true
                                 }
                             }
                             // Was job a "match"?
@@ -194,9 +199,9 @@ node('worker') {
                                     pipelineTestJobsJson.each { testJob ->
                                         if (testJob.buildResult.equals('SUCCESS')) {
                                             testJobSuccess += 1
-                    } else if (testJob.buildResult.equals('UNSTABLE')) {
+                                        } else if (testJob.buildResult.equals('UNSTABLE')) {
                                             testJobUnstable += 1
-                    } else {
+                                        } else {
                                             testJobFailure += 1
                                         }
                                         if (testJob.testSummary != null) {
@@ -216,7 +221,7 @@ node('worker') {
                                             buildJobNumber += 1
                                             if (buildJob.buildResult.equals('FAILURE')) {
                                                 buildJobFailure += 1
-                      } else {
+                                            } else {
                                                 buildJobComplete += 1
                                             }
                                         }
@@ -224,16 +229,16 @@ node('worker') {
                                 }
 
                                 def testResult = [name: pipelineName, url: pipelineUrl,
-                          buildJobNumber:   buildJobNumber,
-                          buildJobComplete:  buildJobComplete,
-                          buildJobFailure:  buildJobFailure,
-                          testJobSuccess:   testJobSuccess,
-                          testJobUnstable:  testJobUnstable,
-                          testJobFailure:   testJobFailure,
-                          testCasePassed:   testCasePassed,
-                          testCaseFailed:   testCaseFailed,
-                          testCaseDisabled: testCaseDisabled,
-                          testJobNumber:    testJobNumber]
+                                      buildJobNumber:   buildJobNumber,
+                                      buildJobComplete:  buildJobComplete,
+                                      buildJobFailure:  buildJobFailure,
+                                      testJobSuccess:   testJobSuccess,
+                                      testJobUnstable:  testJobUnstable,
+                                      testJobFailure:   testJobFailure,
+                                      testCasePassed:   testCasePassed,
+                                      testCaseFailed:   testCaseFailed,
+                                      testCaseDisabled: testCaseDisabled,
+                                      testJobNumber:    testJobNumber]
                                 testStats.add(testResult)
                             }
                         }
