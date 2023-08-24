@@ -31,7 +31,7 @@ targetConfigurations = [
 ]
 
 // if set to empty string then it wont get triggered
-triggerSchedule_pevaluation = 'TZ=UTC\n30 23 * * 2,4'
+triggerSchedule_evaluation = 'TZ=UTC\n30 23 * * 2,4'
 // if set to empty string then it wont get triggered
 triggerSchedule_weekly_evaluation = 'TZ=UTC\n05 12 * * 7'
 

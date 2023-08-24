@@ -198,11 +198,16 @@ node('worker') {
                     }
                     config.put('targetConfigurations', targetEvaluation.targetConfigurations)
 
+                    println "[INFO] JDK${javaVersion}: loaded targetEvaluation configuration:"
+                    println JsonOutput.prettyPrint(JsonOutput.toJson(targetEvaluation))
+
                     // if has a triggerSchedule_evaluation variable set then use it or default to '0 0 31 2 0'/never run
                     if (enablePipelineSchedule.toBoolean()){
-                        config.put('pipelineSchedule', targetEvaluation.triggerSchedule_evaluation)
-                    } else { // empty to not run
-                        config.put('pipelineSchedule', '')
+                        try {
+                            config.put('pipelineSchedule', targetEvaluation.triggerSchedule_evaluation)
+                        } catch (Exception ex) {
+                            config.put('pipelineSchedule', '0 0 31 2 0')
+                        }
                     }
 
                     // hack as jenkins groovy does not seem to allow us to check if disableJob exists
@@ -248,9 +253,11 @@ node('worker') {
                     }
                     config.PIPELINE = "evaluation-openjdk${javaVersion}-pipeline"
                     if (enablePipelineSchedule.toBoolean()) {
-                        config.put('pipelineSchedule', targetEvaluation.triggerSchedule_weekly_evaluation)
-                    } else { // empty string will never run
-                        config.put('pipelineSchedule', '')
+                        try {
+                            config.put('pipelineSchedule', targetEvaluation.triggerSchedule_weekly_evaluation)
+                        } catch (Exception ex) {
+                            config.put('pipelineSchedule', '0 0 31 2 0')
+                        }
                     }
                     config.put('targetConfigurations', targetEvaluation.targetConfigurations) // explicit set it to make things clear
                     config.weekly_release_scmReferences = targetEvaluation.weekly_evaluation_scmReferences
@@ -278,6 +285,13 @@ node('worker') {
                     }
                     // add into list
                     generatedPipelines.add(config['JOB_NAME'])
+
+                    // config.load() loads into the current groovy binding, and returns "this", so we need to reset variables before next load of targetEvaluation
+                    targetEvaluation.targetConfigurations = {} 
+                    targetEvaluation.triggerSchedule_evaluation = '0 0 31 2 0'
+                    targetEvaluation.triggerSchedule_weekly_evaluation = '0 0 31 2 0'
+                    targetEvaluation.weekly_evaluation_scmReferences = {} 
+                    targetEvaluation.disableJob = false
                 }
             })
 
