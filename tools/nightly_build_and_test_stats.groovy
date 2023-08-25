@@ -43,26 +43,65 @@ def getLatestBinariesTag(String version) {
 // Verify the given release contains all the expected assets
 def verifyReleaseContent(String version, String release, Map status) {
     echo "Verifying ${version} asserts in release: ${release}"
+    status['assets'] = "Good"
 
     def releaseAssets = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
-    def releaseRaw = sh(returnStdout: true, script: "wget -q -O - '${releaseAssets}'")
-    def releaseJson = new JsonSlurper().parseText(releaseRaw)
+    def rc = sh(script: "curl -L -o releaseAssets.json '${releaseAssets}'", returnStatus: true)
+    if (rc != 0) {
+        echo "Error loading release assets list for ${releaseAssets}"
+        status['assets'] = "Error loading ${releaseAssets}"
+    } else {
+        def configFile = "${version}.groovy"   
+        def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
+        echo "    Loading pipeline config file: ${targetConfigPath}"
+        rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
+        if (rc != 0) {
+            echo "Error loading ${targetConfigPath}"
+            status['assets'] = "Error loading ${targetConfigPath}"
+        } else {
+            // Load the targetConfiguration
+            targetConfigurations = null
+            load configFile
 
-    def configFile = "${version}.groovy"   
-    def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
-    echo "    Loading pipeline config file: ${targetConfigPath}"
-    def rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
-    
-    // Load the targetConfiguration
-    targetConfigurations = null
-    load configFile
+            def archToAsset = [x64Linux:   "x64_linux",
+                               x64Windows: "x64_windows",
+                               x64Mac:     "x64_mac",
+                               x64AlpineLinux: "x64_alpine-linux",
+                               ppc64Aix:   "ppc64_aix",
+                               ppc64leLinux: "ppc64le_linux",
+                               s390xLinux: "s390x_linux",
+                               aarch64Linux: "aarch64_linux",
+                               aarch64Mac: "aarch64_mac",
+                               arm32Linux: "arm_linux"
+                              ]
+                               
+            def missingAssets = []
+            targetConfigurations.keySet().each { osarch ->
+                echo "    Verifying : $osarch"
 
-    targetConfigurations.keySet().each { osarch ->
-        echo "    Verify : $osarch"
+                def imagetypes = ["debugimage", "jdk", "jre", "sbom", "static-libs", "testimage"]
+                if ( "$osarch".contains("Windows")) {
+                    def filetypes = ["\\.msi", "\\.msi\\.json", "\\.msi\\.sha256\\.txt", "\\.msi\\.sig", "\\.zip", "\\.zip\\.json", "\\.zip\\.sha256\\.txt", "\\.zip\\.sig"]
+                } else if ( "$osarch".contains("Mac")) {
+                    def filetypes = ["\\.pkg", "\\.pkg\\.json", "\\.pkg\\.sha256\\.txt", "\\.pkg\\.sig", "\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
+                } else {
+                    def filetypes = ["\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
+                }
+
+                imagetypes.each { image ->
+                    filetypes.each { ftype ->
+                        rc = sh(script: "grep '\"name\"' releaseAssets.json | grep \"${image}_${archToAsset[$osarch]}_.*${ftype}\\\"\" >/dev/null" returnStatus: true)
+                        if (rc != 0) {
+                            echo "Missing asset: $osarch : $image : $ftype"
+                            missingAssets.add("$osarch : $image : $ftype")
+                            status['assets'] = "Missing assets"
+                        }
+                    }
+                }
+            }
+        }
     }
-
-    status['assets'] = "good"
 }
 
 node('worker') {
