@@ -119,7 +119,7 @@ echo releaseAssets
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
                         //rc = sh(script: "set +x && grep '\"name\"' releaseAssets.json | grep \"${image}_${arch_fname}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
-                        echo "${image}_${arch_fname}_.*${ftype}\\\""
+echo '.*${image}_${arch_fname}_[^"]*${ftype}".*'
                         def findAsset = releaseAssets =~/'.*${image}_${arch_fname}_[^"]*${ftype}".*'/
                         if (!findAsset) {
 //                        if (rc != 0) {
