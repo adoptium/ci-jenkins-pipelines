@@ -80,18 +80,36 @@ def verifyReleaseContent(String version, String release, Map status) {
             targetConfigurations.keySet().each { osarch ->
                 echo "    Verifying : $osarch"
 
-                def imagetypes = ["debugimage", "jdk", "jre", "sbom", "static-libs", "testimage"]
-                def filetypes
-                if ( osarch.contains("Windows")) {
-                    filetypes = ["\\.msi", "\\.msi\\.json", "\\.msi\\.sha256\\.txt", "\\.msi\\.sig", "\\.zip", "\\.zip\\.json", "\\.zip\\.sha256\\.txt", "\\.zip\\.sig"]
-                } else if ( osarch.contains("Mac")) {
-                    filetypes = ["\\.pkg", "\\.pkg\\.json", "\\.pkg\\.sha256\\.txt", "\\.pkg\\.sig", "\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
-                } else {
-                    filetypes = ["\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
+                def imagetypes = ["debugimage", "jdk", "jre", "sbom"]
+                if (version != "jdk8u") {
+                    imagetypes.add("static-libs")
+                    imagetypes.add("testimage")
                 }
 
+                def filetypes
+                def jdkjre_filetypes
+                if (osarch.contains("Windows")) {
+                    filetypes =        ["\\.zip", "\\.zip\\.json", "\\.zip\\.sha256\\.txt", "\\.zip\\.sig"]
+                    jdkjre_filetypes = ["\\.msi", "\\.msi\\.json", "\\.msi\\.sha256\\.txt", "\\.msi\\.sig"]
+                } else if (osarch.contains("Mac")) {
+                    filetypes        = ["\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
+                    jdkjre_filetypes = ["\\.pkg", "\\.pkg\\.json", "\\.pkg\\.sha256\\.txt", "\\.pkg\\.sig"]
+                } else {
+                    filetypes = ["\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
+                    jdkjre_filetypes = []
+                }
+                def sbom_filetypes = ["\\.json", "\\.json\\.sig", "-metadata\\.json"]
+
                 imagetypes.each { image ->
-                    filetypes.each { ftype ->
+                    def ftypes
+                    if (image == "jdk" || image == "jre") {
+                        ftypes = jdkjre_filetypes
+                    } else if (image == "sbom") {
+                        ftypes = sbom_filetypes
+                    } else {
+                        ftypes = filetypes
+                    }
+                    ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
                         rc = sh(script: "grep '\"name\"' releaseAssets.json | grep \"${image}_${arch_fname}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
                         if (rc != 0) {
