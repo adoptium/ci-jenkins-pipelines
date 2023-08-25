@@ -52,7 +52,6 @@ def verifyReleaseContent(String version, String release, Map status) {
         echo "Error loading release assets list for ${releaseAssets}"
         status['assets'] = "Error loading ${releaseAssets}"
     } else {
-        echo "${releaseAssets}"
         def configFile = "${version}.groovy"   
         def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
         echo "    Loading pipeline config file: ${targetConfigPath}"
