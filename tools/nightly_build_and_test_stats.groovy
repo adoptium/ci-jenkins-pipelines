@@ -47,8 +47,8 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
-    def releaseAssets = sh(script: "curl -L '${releaseAssetsUrl}' | grep '\"name\"'", returnStdout: true)
-    if (releaseAssets == "") {
+    def rc = sh(script: "set +x && curl -L -o releaseAssets.json '${releaseAssetsUrl}' | grep '\"name\"'", returnStatus: true)
+    if (rc != 0) {
         echo "Error loading release assets list for ${releaseAssets}"
         status['assets'] = "Error loading ${releaseAssets}"
     } else {
@@ -94,10 +94,10 @@ def verifyReleaseContent(String version, String release, Map status) {
                     filetypes =        ["\\.zip", "\\.zip\\.json", "\\.zip\\.sha256\\.txt", "\\.zip\\.sig"]
                     jdkjre_filetypes = ["\\.msi", "\\.msi\\.json", "\\.msi\\.sha256\\.txt", "\\.msi\\.sig"]
                 } else if (osarch.contains("Mac")) {
-                    filetypes        = ["\.tar\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
+                    filetypes        = ["\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
                     jdkjre_filetypes = ["\\.pkg", "\\.pkg\\.json", "\\.pkg\\.sha256\\.txt", "\\.pkg\\.sig"]
                 } else {
-                    filetypes = ["\.tar\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
+                    filetypes = ["\\.tar\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
                     jdkjre_filetypes = []
                 }
                 def sbom_filetypes = ["\\.json", "\\.json\\.sig", "-metadata\\.json"]
@@ -113,10 +113,8 @@ def verifyReleaseContent(String version, String release, Map status) {
                     }
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
-                        //rc = sh(script: "set +x && grep '\"name\"' releaseAssets.json | grep \"${image}_${arch_fname}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
-                        def found = releaseAssets.matches(".*${image}_${arch_fname}_[^\"]*${ftype}\".*")
-                        echo ".*${image}_${arch_fname}_[^\"]*${ftype}\".*"
-                        if (!found) {
+                        rc = sh(script: "set +x && grep '\"name\"' releaseAssets.json | grep \"${image}_${arch_fname}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
+                        if (rc != 0) {
                             echo "Missing asset: $osarch : $image : $ftype"
                             missingAssets.add("$osarch : $image : $ftype")
                             status['assets'] = "Missing assets"
