@@ -49,8 +49,8 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def rc = sh(script: "set +x && curl -L -o releaseAssets.json '${releaseAssetsUrl}' | grep '\"name\"'", returnStatus: true)
     if (rc != 0) {
-        echo "Error loading release assets list for ${releaseAssets}"
-        status['assets'] = "Error loading ${releaseAssets}"
+        echo "Error loading release assets list for ${releaseAssetsUrl}"
+        status['assets'] = "Error loading ${releaseAssetsUrl}"
     } else {
         def configFile = "${version}.groovy"   
         def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
