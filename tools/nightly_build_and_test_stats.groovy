@@ -47,7 +47,7 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
-    def releaseAssets = sh(script: "set +x && curl -L '${releaseAssetsUrl}' | grep '\"name\"'", returnStdout: true)
+    def releaseAssets = sh(script: "curl -L '${releaseAssetsUrl}' | grep '\"name\"'", returnStdout: true)
     if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
@@ -119,7 +119,7 @@ def verifyReleaseContent(String version, String release, Map status) {
                         def findAsset = releaseAssets =~/"(?s).*${image}_${arch_fname}_[^\"]*${ftype}\".*"/
                         if (!findAsset) {
                             echo "Missing asset: $osarch : $image : $ftype"
-                            missingAssets.add("$osarch : $image : $ftype")
+                            missingAssets.add("$osarch : $image : $ftype".replaceAll("\\",""))
                             status['assets'] = "Missing assets"
                         }
                     }
