@@ -76,7 +76,7 @@ echo releaseAssets
                                aarch64Linux: "aarch64_linux",
                                aarch64Mac: "aarch64_mac",
                                arm32Linux: "arm_linux",
-                               x32Windows: "x86-32_windows"
+                               x32Windows: "x86-32_windows",
                                x64Solaris: "x64_solaris",
                                sparcv9Solaris: "sparcv9_solaris"
                               ]
