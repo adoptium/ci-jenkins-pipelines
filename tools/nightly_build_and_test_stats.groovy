@@ -45,13 +45,14 @@ def verifyReleaseContent(String version, String release, Map status) {
     echo "Verifying ${version} asserts in release: ${release}"
     status['assets'] = "Good"
 
-    def releaseAssets = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
+    def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
-    def rc = sh(script: "curl -L -o releaseAssets.json '${releaseAssets}'", returnStatus: true)
-    if (rc != 0) {
+    def releaseAssets = sh(script: "curl -L '${releaseAssets}' | grep '\"name\"'", returnStdout: true)
+    if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssets}"
         status['assets'] = "Error loading ${releaseAssets}"
     } else {
+        echo "${releaseAssets}"
         def configFile = "${version}.groovy"   
         def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
         echo "    Loading pipeline config file: ${targetConfigPath}"
@@ -112,8 +113,9 @@ def verifyReleaseContent(String version, String release, Map status) {
                     }
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
-                        rc = sh(script: "set +x && grep '\"name\"' releaseAssets.json | grep \"${image}_${arch_fname}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
-                        if (rc != 0) {
+                        //rc = sh(script: "set +x && grep '\"name\"' releaseAssets.json | grep \"${image}_${arch_fname}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
+                        def found = releaseAssets.matches(".*${image}_${arch_fname}_[^\"]*${ftype}\".*"
+                        if (!found) {
                             echo "Missing asset: $osarch : $image : $ftype"
                             missingAssets.add("$osarch : $image : $ftype")
                             status['assets'] = "Missing assets"
