@@ -48,16 +48,14 @@ def verifyReleaseContent(String version, String release, Map status) {
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
     def releaseAssets = sh(script: "set +x && curl -L '${releaseAssetsUrl}' | grep '\"name\"'", returnStdout: true)
-def rc = 0
-    if (rc != 0) {
+    if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
     } else {
-echo releaseAssets
         def configFile = "${version}.groovy"   
         def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
         echo "    Loading pipeline config file: ${targetConfigPath}"
-        rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
+        def rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
         if (rc != 0) {
             echo "Error loading ${targetConfigPath}"
             status['assets'] = "Error loading ${targetConfigPath}"
@@ -118,11 +116,8 @@ echo releaseAssets
                     }
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
-                        //rc = sh(script: "set +x && grep '\"name\"' releaseAssets.json | grep \"${image}_${arch_fname}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
-echo ".*${image}_${arch_fname}_[^\"]*${ftype}\".*"
                         def findAsset = releaseAssets =~/"(?s).*${image}_${arch_fname}_[^\"]*${ftype}\".*"/
                         if (!findAsset) {
-//                        if (rc != 0) {
                             echo "Missing asset: $osarch : $image : $ftype"
                             missingAssets.add("$osarch : $image : $ftype")
                             status['assets'] = "Missing assets"
