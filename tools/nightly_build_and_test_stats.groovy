@@ -93,12 +93,14 @@ def verifyReleaseContent(String version, String release, Map status) {
                 if (osarch.contains("Windows")) {
                     filetypes =        ["\\.zip", "\\.zip\\.json", "\\.zip\\.sha256\\.txt", "\\.zip\\.sig"]
                     jdkjre_filetypes = ["\\.msi", "\\.msi\\.json", "\\.msi\\.sha256\\.txt", "\\.msi\\.sig"]
+                    jdkjre_filetypes.add(filetypes)
                 } else if (osarch.contains("Mac")) {
                     filetypes        = ["\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
                     jdkjre_filetypes = ["\\.pkg", "\\.pkg\\.json", "\\.pkg\\.sha256\\.txt", "\\.pkg\\.sig"]
+                    jdkjre_filetypes.add(filetypes)
                 } else {
-                    filetypes = ["\\.tar\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
-                    jdkjre_filetypes = []
+                    filetypes = ["\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
+                    jdkjre_filetypes = filetypes
                 }
                 def sbom_filetypes = ["\\.json", "\\.json\\.sig", "-metadata\\.json"]
 
