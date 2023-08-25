@@ -73,7 +73,8 @@ def verifyReleaseContent(String version, String release, Map status) {
                                s390xLinux: "s390x_linux",
                                aarch64Linux: "aarch64_linux",
                                aarch64Mac: "aarch64_mac",
-                               arm32Linux: "arm_linux"
+                               arm32Linux: "arm_linux",
+                               x32Windows: "x86-32_windows"
                               ]
                                
             def missingAssets = []
