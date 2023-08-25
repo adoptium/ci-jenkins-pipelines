@@ -118,7 +118,7 @@ def verifyReleaseContent(String version, String release, Map status) {
                         def arch_fname = archToAsset[osarch]
                         def findAsset = releaseAssets =~/"(?s).*${image}_${arch_fname}_[^\"]*${ftype}\".*"/
                         if (!findAsset) {
-                            def missing="$osarch : $image : $ftype".replaceAll("\\", "")
+                            def missing="$osarch : $image : $ftype".replaceAll("\\\\", "")
                             echo "    Missing asset: ${missing}"
                             missingAssets.add(missing)
                             status['assets'] = "Missing assets"
