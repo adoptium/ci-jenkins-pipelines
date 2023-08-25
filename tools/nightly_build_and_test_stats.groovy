@@ -91,7 +91,7 @@ def verifyReleaseContent(String version, String release, Map status) {
 
                 imagetypes.each { image ->
                     filetypes.each { ftype ->
-                        rc = sh(script: "grep '\"name\"' releaseAssets.json | grep \"${image}_${archToAsset[$osarch]}_.*${ftype}\\\"\" >/dev/null" returnStatus: true)
+                        rc = sh(script: "grep '\"name\"' releaseAssets.json | grep \"${image}_${archToAsset[$osarch]}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
                         if (rc != 0) {
                             echo "Missing asset: $osarch : $image : $ftype"
                             missingAssets.add("$osarch : $image : $ftype")
