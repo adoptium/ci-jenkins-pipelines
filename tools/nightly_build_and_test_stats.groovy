@@ -47,7 +47,7 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
-    def rc = sh(script: "curl -L -o releaseAssets.json '${releaseAssetsUrl}' | grep '\"name\"'", returnStatus: true)
+    def rc = sh(script: "set +x && curl -L -o releaseAssets.json '${releaseAssetsUrl}'", returnStatus: true)
     if (rc != 0) {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
