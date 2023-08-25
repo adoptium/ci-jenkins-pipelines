@@ -47,11 +47,13 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
-    def rc = sh(script: "set +x && curl -L -o releaseAssets.json '${releaseAssetsUrl}'", returnStatus: true)
+    def releaseAssets = sh(script: "set +x && curl -L '${releaseAssetsUrl}' | grep '\"name\"'", returnStdout: true)
+def rc = 0
     if (rc != 0) {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
     } else {
+echo releaseAssets
         def configFile = "${version}.groovy"   
         def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
         echo "    Loading pipeline config file: ${targetConfigPath}"
@@ -75,6 +77,8 @@ def verifyReleaseContent(String version, String release, Map status) {
                                aarch64Mac: "aarch64_mac",
                                arm32Linux: "arm_linux",
                                x32Windows: "x86-32_windows"
+                               x64Solaris: "x64_solaris",
+                               sparcv9Solaris: "sparcv9_solaris"
                               ]
                                
             def missingAssets = []
@@ -114,8 +118,10 @@ def verifyReleaseContent(String version, String release, Map status) {
                     }
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
-                        rc = sh(script: "set +x && grep '\"name\"' releaseAssets.json | grep \"${image}_${arch_fname}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
-                        if (rc != 0) {
+                        //rc = sh(script: "set +x && grep '\"name\"' releaseAssets.json | grep \"${image}_${arch_fname}_.*${ftype}\\\"\" >/dev/null", returnStatus: true)
+                        echo "${image}_${arch_fname}_.*${ftype}\\\""
+                        if (!Pattern.compile('.*${image}_${arch_fname}_[^"]*${ftype}".*').matcher(releaseAssets).find()) {
+//                        if (rc != 0) {
                             echo "Missing asset: $osarch : $image : $ftype"
                             missingAssets.add("$osarch : $image : $ftype")
                             status['assets'] = "Missing assets"
