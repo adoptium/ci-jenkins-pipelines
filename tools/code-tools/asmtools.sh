@@ -104,16 +104,20 @@ detectJdks
 pushd $REPO_DIR
   RESULTS_DIR="$(pwd)"
   latestRelease=`git tag -l | tail -n 2 | head -n 1`
-  generateArtifact "master" "$jdk08"
-  generateArtifact "at8" "$jdk17"
+  generateArtifact "master" "$jdk17"
+  generateArtifact "at7" "$jdk08"
   # 7.0-b09 had not yet have maven integration, enable with b10 out
   # generateArtifact "$latestRelease" "$jdk08"
   renameLegacyCoreArtifacts
-  hashArtifacts
-  releaseCandidate=asmtools-core-7.0.b10-ea.jar
+  releaseCandidate7=asmtools-core-7.0.b10-ea.jar
+  releaseName7=asmtools07.jar
+  releaseCandidate=asmtools-8.0.b05-ea.jar
   releaseName=asmtools.jar
+  echo "Manually renaming  $releaseCandidate7 as $releaseName7 to provide latest-7-stable-recommended file"
+  ln -fv $releaseCandidate7 $releaseName7
   echo "Manually renaming  $releaseCandidate as $releaseName to provide latest-stable-recommended file"
   ln -fv $releaseCandidate $releaseName
+  hashArtifacts
   echo "Resetting repo back to master"
   git checkout master
 popd
