@@ -200,7 +200,8 @@ node('worker') {
             def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
             def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
             def releaseName = getLatestBinariesTag("${tipVersion}")
-            status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+            def escLatestOpenjdkBuild = latestOpenjdkBuild.replaceAll("\+", "%2B")
+            status = [releaseName: releaseName, expectedReleaseName: "${escLatestOpenjdkBuild}-ea-beta"]
             verifyReleaseContent(tipRelease, releaseName, status)
             healthStatus[tipVersion] = status
            
