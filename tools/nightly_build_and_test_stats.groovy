@@ -45,7 +45,8 @@ def verifyReleaseContent(String version, String release, Map status) {
     echo "Verifying ${version} asserts in release: ${release}"
     status['assets'] = "Good"
 
-    def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
+    def escRelease = release.replaceAll("\\+", "%2B")
+    def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${escRelease}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
     // Get list of assets, concatenate into a single string
     def rc = sh(script: "rm -f releaseAssets.json && curl -L -o releaseAssets.json '${releaseAssetsUrl}'", returnStatus: true)
@@ -200,8 +201,7 @@ node('worker') {
             def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
             def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
             def releaseName = getLatestBinariesTag("${tipVersion}")
-            def escLatestOpenjdkBuild = latestOpenjdkBuild.replaceAll("\\+", "%2B")
-            status = [releaseName: releaseName, expectedReleaseName: "jdk-22%2B12-ea-beta"]
+            status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
             verifyReleaseContent(tipRelease, releaseName, status)
             healthStatus[tipVersion] = status
            
