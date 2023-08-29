@@ -46,14 +46,14 @@ def verifyReleaseContent(String version, String release, Map status) {
     status['assets'] = "Good"
 
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
-echo "==>${releaseAssetsUrl}"
 
     // Get list of assets, concatenate into a single string
-def rrc = sh(script: "curl -L -o releaseAssets.json '${releaseAssetsUrl}'", returnStatus: true)
-echo "rc = $rrc"
-def out = sh(script: "cat releaseAssets.json", returnStdout: true)
-echo "out = ${out}"
-    def releaseAssets = sh(script: "curl -L \"${releaseAssetsUrl}\" | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
+    def rc = sh(script: "rm -f releaseAssets.json && curl -L -o releaseAssets.json '${releaseAssetsUrl}'", returnStatus: true)
+    def releaseAssets = ""
+    if (rc == 0) {
+        releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
+    }
+echo "==> ${releaseAssets}"
     if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
@@ -61,7 +61,7 @@ echo "out = ${out}"
         def configFile = "${version}.groovy"   
         def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
         echo "    Loading pipeline config file: ${targetConfigPath}"
-        def rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
+        rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
         if (rc != 0) {
             echo "Error loading ${targetConfigPath}"
             status['assets'] = "Error loading ${targetConfigPath}"
