@@ -97,11 +97,11 @@ echo "AA${releaseAssets}AA"
                 if (osarch.contains("Windows")) {
                     filetypes =        ["\\.zip", "\\.zip\\.json", "\\.zip\\.sha256\\.txt", "\\.zip\\.sig"]
                     jdkjre_filetypes = ["\\.msi", "\\.msi\\.json", "\\.msi\\.sha256\\.txt", "\\.msi\\.sig"]
-                    jdkjre_filetypes.add(filetypes)
+                    jdkjre_filetypes.addAll(filetypes)
                 } else if (osarch.contains("Mac")) {
                     filetypes        = ["\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
                     jdkjre_filetypes = ["\\.pkg", "\\.pkg\\.json", "\\.pkg\\.sha256\\.txt", "\\.pkg\\.sig"]
-                    jdkjre_filetypes.add(filetypes)
+                    jdkjre_filetypes.addAll(filetypes)
                 } else {
                     filetypes = ["\\.tar\\.gz", "\\.tar\\.gz\\.json", "\\.tar\\.gz\\.sha256\\.txt", "\\.tar\\.gz\\.sig"]
                     jdkjre_filetypes = filetypes
