@@ -136,6 +136,7 @@ def verifyReleaseContent(String version, String release, Map status) {
                             file_image="${file_image}-glibc"
                         }
                     }
+                    // Search for artifacts in the releaseAssets list
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
                         def findAsset = releaseAssets =~/.*${file_image}_${arch_fname}_[^\."]*${ftype}".*/
