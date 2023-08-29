@@ -51,8 +51,9 @@ echo "CURL: $curl"
     def escRelease = release.replaceAll("\\+", "%2B")
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${escRelease}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
+ releaseAssetsUrl = "https://api.github.com/repos/adoptium/temurin22-binaries/releases/tags/jdk-22+12-ea-beta"
     // Get list of assets, concatenate into a single string
-    def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json \\"'+releaseAssetsUrl+'\\"', returnStatus: true)
+    def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json '+releaseAssetsUrl, returnStatus: true)
     def releaseAssets = ""
     if (rc == 0) {
         releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
