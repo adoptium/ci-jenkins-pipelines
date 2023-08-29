@@ -89,6 +89,7 @@ def verifyReleaseContent(String version, String release, Map status) {
                     imagetypes.add("testimage")
                 }
 
+                // Work out the filetypes
                 def filetypes
                 def jdkjre_filetypes
                 if (osarch.contains("Windows")) {
@@ -106,7 +107,8 @@ def verifyReleaseContent(String version, String release, Map status) {
                 def sbom_filetypes = ["\\.json", "\\.json\\.sig", "-metadata\\.json"]
 
                 imagetypes.each { image ->
-                    def ftypes
+                    // Find the file type for this image
+                    def ftypes                     
                     if (image == "jdk" || image == "jre") {
                         ftypes = jdkjre_filetypes
                     } else if (image == "sbom") {
@@ -114,9 +116,19 @@ def verifyReleaseContent(String version, String release, Map status) {
                     } else {
                         ftypes = filetypes
                     }
+
+                    // If static-libs image then append -glibc or -musl accordingly 
+                    def file_image = image
+                    if (image == "static-libs" && osarch.contains("Linux")) {
+                        if (osarch.contains("Alpine")) {
+                            file_image="${file_image}-musl"
+                        } else {
+                            file_image="${file_image}-glibc"
+                        }
+                    }
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
-                        def findAsset = releaseAssets =~/"(?s).*${image}_${arch_fname}_[^\"]*${ftype}\".*"/
+                        def findAsset = releaseAssets =~/"(?s).*${file_image}_${arch_fname}_[^\"]*${ftype}\".*"/
                         if (!findAsset) {
                             def missing="$osarch : $image : $ftype".replaceAll("\\\\", "")
                             echo "    Missing asset: ${missing}"
