@@ -71,18 +71,19 @@ def verifyReleaseContent(String version, String release, Map status) {
             targetConfigurations = null
             load configFile
 
-            def archToAsset = [x64Linux:   "x64_linux",
-                               x64Windows: "x64_windows",
-                               x64Mac:     "x64_mac",
+            // Map of config architecture to artifact name
+            def archToAsset = [x64Linux:       "x64_linux",
+                               x64Windows:     "x64_windows",
+                               x64Mac:         "x64_mac",
                                x64AlpineLinux: "x64_alpine-linux",
-                               ppc64Aix:   "ppc64_aix",
-                               ppc64leLinux: "ppc64le_linux",
-                               s390xLinux: "s390x_linux",
-                               aarch64Linux: "aarch64_linux",
-                               aarch64Mac: "aarch64_mac",
-                               arm32Linux: "arm_linux",
-                               x32Windows: "x86-32_windows",
-                               x64Solaris: "x64_solaris",
+                               ppc64Aix:       "ppc64_aix",
+                               ppc64leLinux:   "ppc64le_linux",
+                               s390xLinux:     "s390x_linux",
+                               aarch64Linux:   "aarch64_linux",
+                               aarch64Mac:     "aarch64_mac",
+                               arm32Linux:     "arm_linux",
+                               x32Windows:     "x86-32_windows",
+                               x64Solaris:     "x64_solaris",
                                sparcv9Solaris: "sparcv9_solaris"
                               ]
                                
@@ -148,13 +149,16 @@ def verifyReleaseContent(String version, String release, Map status) {
                 if (!foundAsset) {
                     echo "    $osarch : All artifacts missing"
                     missingAssets.add("$osarch : **All artifacts**")
-                } else if (missingForArch.length > 0) {
+                } else if (missingForArch.size() > 0) {
                     echo "    $osarch : Missing artifacts: ${missingForArch}"
                     missingAssets.addAll(missingForArch)
+                } else {
+                    echo "    $osarch : Complete"
                 }
             }
 
-            if (missingAssets.length > 0) {
+            // Set overall assets status for this release
+            if (missingAssets.size() > 0) {
                 status['assets'] = "Missing artifacts"
                 status['missingAssets'] = missingAssets
             } else {
