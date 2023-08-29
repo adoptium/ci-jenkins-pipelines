@@ -46,10 +46,10 @@ def verifyReleaseContent(String version, String release, Map status) {
     status['assets'] = "Good"
 
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${release}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
+echo "==>${releaseAssetsUrl}"
 
-    // Get list of assets, conctenate into a single string
-    def releaseAssets = sh(script: "curl -L '${releaseAssetsUrl}' | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
-echo "AA${releaseAssets}AA"
+    // Get list of assets, concatenate into a single string
+    def releaseAssets = sh(script: "curl -L ${releaseAssetsUrl} | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
     if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
@@ -130,8 +130,6 @@ echo "AA${releaseAssets}AA"
                     }
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
-echo "/.*${file_image}_${arch_fname}_[^\\.\"]*${ftype}\".*/"
-                        //def findAsset = releaseAssets =~/"(?s).*${file_image}_${arch_fname}_[^\"]*${ftype}\".*"/
                         def findAsset = releaseAssets =~/.*${file_image}_${arch_fname}_[^\."]*${ftype}".*/
                         if (!findAsset) {
                             def missing="$osarch : $image : $ftype".replaceAll("\\\\", "")
@@ -151,8 +149,8 @@ node('worker') {
     def trssUrl    = "${params.TRSS_URL}"
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
-    def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+")   //[ "jdk8u", "jdk11u", "jdk17u", "jdk21" ] // Consider making those parameters
-    def tipRelease      = "${params.TIP_RELEASE}"  //"jdk22" // Current jdk(head) version
+    def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+") // feature versions 
+    def tipRelease      = "${params.TIP_RELEASE}"  // Current jdk(head) version, eg.jdk22
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
