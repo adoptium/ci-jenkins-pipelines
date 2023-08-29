@@ -51,7 +51,8 @@ echo "==>${releaseAssetsUrl}"
     // Get list of assets, concatenate into a single string
 def rrc = sh(script: "curl -L -o releaseAssets.json '${releaseAssetsUrl}'", returnStatus: true)
 echo "rc = $rrc"
-cat releaseAssets.json
+def out = sh(script: "cat releaseAssets.json", returnStdout: true)
+echo "out = ${out}"
     def releaseAssets = sh(script: "curl -L \"${releaseAssetsUrl}\" | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
     if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
