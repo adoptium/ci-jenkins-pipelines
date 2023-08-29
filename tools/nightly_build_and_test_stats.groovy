@@ -89,7 +89,7 @@ def verifyReleaseContent(String version, String release, Map status) {
                                
             def missingAssets = []
             targetConfigurations.keySet().each { osarch ->
-                echo "    Verifying : $osarch"
+                echo "Verifying : $osarch"
                 def foundAsset = false
                 def missingForArch = []
 
