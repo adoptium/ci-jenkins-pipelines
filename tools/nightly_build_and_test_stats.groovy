@@ -49,8 +49,8 @@ def verifyReleaseContent(String version, String release, Map status) {
 echo "==>${releaseAssetsUrl}"
 
     // Get list of assets, concatenate into a single string
-def rc = sh(script: "curl -L -o releaseAssets.json '${releaseAssetsUrl}'", returnStatus)
-echo "rc = $rc"
+def rrc = sh(script: "curl -L -o releaseAssets.json '${releaseAssetsUrl}'", returnStatus)
+echo "rc = $rrc"
 cat releaseAssets.json
     def releaseAssets = sh(script: "curl -L \"${releaseAssetsUrl}\" | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
     if (releaseAssets == "") {
