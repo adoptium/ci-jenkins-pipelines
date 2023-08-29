@@ -55,7 +55,6 @@ def verifyReleaseContent(String version, String release, Map status) {
     if (rc == 0) {
         releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
     }
-echo "==> ${releaseAssets}"
     if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
