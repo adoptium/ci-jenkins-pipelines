@@ -57,7 +57,7 @@ function getAsmDeps() {
   if [ "x$asm_version" == "x" ] ; then
     asm_version=`cat build/build.properties | grep ^asm.version | sed "s/.*\s*=\s*//g"`
     if [ "x$asm_version" == "x" ] ; then
-      echo "no asm-toosl version provided and detection (jcov3.0-b08 and up) failed"
+      echo "no asm-tools version provided and detection (jcov3.0-b08 and up) failed"
       exit 1
     fi
     local asm_manual="false"
@@ -99,7 +99,7 @@ function getReadme() {
   echo $ASM_JARS""
   echo ""
   echo "In addition jtobserver.jar requires javatest.jar"
-  echo "You can get one at adoptium: https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtharness/javatest.jar"
+  echo "You can get one at Adoptium: https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtharness/javatest.jar"
   echo "Or build one from: https://github.com/openjdk/jtharness/"
 }
 
