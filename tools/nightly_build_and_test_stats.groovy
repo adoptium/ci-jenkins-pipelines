@@ -130,9 +130,9 @@ echo "AA${releaseAssets}AA"
                     }
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
-echo "/.*{$file_image}_{$arch_fname}_[^\\.\"]*{$ftype}\".*/"
+echo "/.*${file_image}_${arch_fname}_[^\\.\"]*${ftype}\".*/"
                         //def findAsset = releaseAssets =~/"(?s).*${file_image}_${arch_fname}_[^\"]*${ftype}\".*"/
-                        def findAsset = releaseAssets =~/.*{$file_image}_{$arch_fname}_[^\."]*{$ftype}".*/
+                        def findAsset = releaseAssets =~/.*${file_image}_${arch_fname}_[^\."]*${ftype}".*/
                         if (!findAsset) {
                             def missing="$osarch : $image : $ftype".replaceAll("\\\\", "")
                             echo "    Missing asset: ${missing}"
