@@ -148,7 +148,7 @@ def verifyReleaseContent(String version, String release, Map status) {
                 }
                 if (!foundAsset) {
                     echo "    $osarch : All artifacts missing"
-                    missingAssets.addAll("$osarch : **All artifacts**")
+                    missingAssets.add("$osarch : **All artifacts**")
                 } else if (missingForArch.size > 0) {
                     echo "    $osarch : Missing artifacts: ${missingForArch}"
                     missingAssets.addAll(missingForArch)
