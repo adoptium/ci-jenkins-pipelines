@@ -89,6 +89,8 @@ def verifyReleaseContent(String version, String release, Map status) {
             def missingAssets = []
             targetConfigurations.keySet().each { osarch ->
                 echo "    Verifying : $osarch"
+                def foundAsset = false
+                def missingForArch = []
 
                 def imagetypes = ["debugimage", "jdk", "jre", "sbom"]
                 if (version != "jdk8u") {
@@ -138,11 +140,19 @@ def verifyReleaseContent(String version, String release, Map status) {
                         def findAsset = releaseAssets =~/.*${file_image}_${arch_fname}_[^\."]*${ftype}".*/
                         if (!findAsset) {
                             def missing="$osarch : $image : $ftype".replaceAll("\\\\", "")
-                            echo "    Missing asset: ${missing}"
-                            missingAssets.add(missing)
+                            missingForArch.add(missing)
                             status['assets'] = "Missing assets"
+                        } else {
+                            foundAsset = true
                         }
                     }
+                }
+                if (!foundAsset) {
+                    echo "    $osarch : All artifacts missing"
+                    missingAssets.addAll("$osarch : **All artifacts**")
+                } else {
+                    echo "    $osarch : Missing artifacts: ${missingForArch}"
+                    missingAssets.addAll(missingForArch)
                 }
             }
         }
