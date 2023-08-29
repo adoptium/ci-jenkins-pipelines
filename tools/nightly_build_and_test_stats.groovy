@@ -49,7 +49,7 @@ def verifyReleaseContent(String version, String release, Map status) {
 echo "==>${releaseAssetsUrl}"
 
     // Get list of assets, concatenate into a single string
-    def releaseAssets = sh(script: "curl -L ${releaseAssetsUrl} | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
+    def releaseAssets = sh(script: "curl -L \"${releaseAssetsUrl}\" | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
     if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
