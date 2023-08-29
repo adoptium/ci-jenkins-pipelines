@@ -43,7 +43,7 @@ def getLatestBinariesTag(String version) {
 // Verify the given release contains all the expected assets
 def verifyReleaseContent(String version, String release, Map status) {
     echo "Verifying ${version} asserts in release: ${release}"
-    status['assets'] = "Good"
+    status['assets'] = "Error"
 
     def escRelease = release.replaceAll("\\+", "%2B")
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${escRelease}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
@@ -141,7 +141,6 @@ def verifyReleaseContent(String version, String release, Map status) {
                         if (!findAsset) {
                             def missing="$osarch : $image : $ftype".replaceAll("\\\\", "")
                             missingForArch.add(missing)
-                            status['assets'] = "Missing assets"
                         } else {
                             foundAsset = true
                         }
@@ -150,10 +149,16 @@ def verifyReleaseContent(String version, String release, Map status) {
                 if (!foundAsset) {
                     echo "    $osarch : All artifacts missing"
                     missingAssets.addAll("$osarch : **All artifacts**")
-                } else {
+                } else if (missingForArch.size > 0) {
                     echo "    $osarch : Missing artifacts: ${missingForArch}"
                     missingAssets.addAll(missingForArch)
                 }
+            }
+
+            if (missingAssets.size > 0) {
+                status['assets'] = "Missing artifacts"
+            } else {
+                status['assets'] = "Complete"
             }
         }
     }
@@ -204,6 +209,7 @@ node('worker') {
 
               // Verify the given release contains all the expected assets
               verifyReleaseContent(featureRelease, releaseName, status)
+              echo "  ${featureRelease} release binaries verification: "+status['assets']
               healthStatus[featureReleaseInt] = status
             }
 
@@ -213,6 +219,7 @@ node('worker') {
             def releaseName = getLatestBinariesTag("${tipVersion}")
             status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
             verifyReleaseContent(tipRelease, releaseName, status)
+            echo "  ${tipRelease} release binaries verification: "+status['assets']
             healthStatus[tipVersion] = status
            
         }
