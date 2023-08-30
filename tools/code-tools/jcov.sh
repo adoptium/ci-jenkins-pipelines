@@ -83,7 +83,7 @@ function getAsmDeps() {
     else
       ASM_URLS="$ASM_URLS$tool_url
 " #one per line
-      ASM_PROPS="" # it will be set proeprly from build
+      ASM_PROPS="" # it will be set properly from build
       ASM_JARS="$ASM_JARS$tool_versioned:"
     fi
   done
