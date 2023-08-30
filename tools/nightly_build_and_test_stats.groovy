@@ -451,7 +451,6 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     def maxDays = status['maxStaleDays'] as int
                     def releaseName = status['releaseName']
                     
-                    def fullMessage = "JDK ${featureRelease} latest pipeline publish status: healthy. Last published: ${msg}. Build: ${releaseName}"
                     def slackColor = 'good'
                     def health = "healthy"
                     def errorMsg = ""
