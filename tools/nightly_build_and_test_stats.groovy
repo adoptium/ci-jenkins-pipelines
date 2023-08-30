@@ -476,7 +476,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     missingAssets = status['missingAssets']
                 }
 
-                def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}. Published: ${msg}.${errorMsg}"
+                def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}.${lastPublishedMsg}.${errorMsg}"
                 echo "===> ${fullMessage}"
 
                 // Print out formatted missing artifacts if any missing
