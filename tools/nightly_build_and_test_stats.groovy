@@ -47,6 +47,7 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def escRelease = release.replaceAll("\\+", "%2B")
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${escRelease}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
+    status['assetsUrl'] = releaseAssetsUrl
 
     // Get list of assets, concatenate into a single string
     def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json '+releaseAssetsUrl, returnStatus: true)
@@ -494,8 +495,9 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     errorMsg += " Artifact status: "+status['assets']
                     missingAssets = status['missingAssets']
                 }
-
-                def fullMessage = "${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}.${lastPublishedMsg}${errorMsg}"
+                 
+                def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
+                def fullMessage = "${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}"
                 echo "===> ${fullMessage}"
                 slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
 
