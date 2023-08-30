@@ -24,7 +24,7 @@ import java.time.temporal.ChronoUnit
 def getLatestOpenjdkBuildTag(String version) {
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
 
-    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v \"\\^{}\" | tr -s \"\\t \" \" \" | cut -d\" \" -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1 | tr -d\"\\n\"")
+    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1 | tr -d'\\n'")
     echo "latest ${version} tag = ${latestTag}A"
 
     return latestTag
