@@ -41,7 +41,7 @@ def getLatestBinariesTag(String version) {
 }
 
 // Verify the given release contains all the expected assets
-def verifyReleaseContent(String version, String release, Map status) {
+def verifyReleaseContent(String version, String release, String variant, Map status) {
     echo "Verifying ${version} asserts in release: ${release}"
     status['assets'] = "Error"
 
@@ -91,6 +91,10 @@ def verifyReleaseContent(String version, String release, Map status) {
                                
             def missingAssets = []
             targetConfigurations.keySet().each { osarch ->
+                def variants = targetConfigurations[osarch]
+                if (!variants.contains(variant)) {
+                    return // variant not built for this osarch
+                }
                 echo "Verifying : $osarch"
                 def foundAsset = false
                 def missingForArch = []
@@ -215,7 +219,7 @@ node('worker') {
               }
 
               // Verify the given release contains all the expected assets
-              verifyReleaseContent(featureRelease, releaseName, status)
+              verifyReleaseContent(featureRelease, releaseName, variant, status)
               echo "  ${featureRelease} release binaries verification: "+status['assets']
               healthStatus[featureReleaseInt] = status
             }
@@ -226,7 +230,7 @@ node('worker') {
               def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
               status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
-              verifyReleaseContent(tipRelease, releaseName, status)
+              verifyReleaseContent(tipRelease, releaseName, variant, status)
               echo "  ${tipRelease} release binaries verification: "+status['assets']
               healthStatus[tipVersion] = status
             }
