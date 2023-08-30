@@ -174,7 +174,7 @@ node('worker') {
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
     def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+") // feature versions 
-    def tipRelease      = "${params.TIP_RELEASE}" as String  // Current jdk(head) version, eg.jdk22
+    def tipRelease      = "${params.TIP_RELEASE}".trim() // Current jdk(head) version, eg.jdk22
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
@@ -218,14 +218,15 @@ node('worker') {
             }
 
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
-            def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
-            def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
-            def releaseName = getLatestBinariesTag("${tipVersion}")
-            status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
-            verifyReleaseContent(tipRelease, releaseName, status)
-            echo "  ${tipRelease} release binaries verification: "+status['assets']
-            healthStatus[tipVersion] = status
-           
+            if (tipRelease != "") {
+              def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
+              def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
+              def releaseName = getLatestBinariesTag("${tipVersion}")
+              status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+              verifyReleaseContent(tipRelease, releaseName, status)
+              echo "  ${tipRelease} release binaries verification: "+status['assets']
+              healthStatus[tipVersion] = status
+            }
         }
     }
 
@@ -434,8 +435,11 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
     stage('printPublishStats') {
         if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
             echo '-------------- Latest pipeline health report ------------------'
-            def allReleases = featureReleases
-            allReleases.add(tipRelease)
+            def allReleases = []
+            allReleases.addAll(featureReleases)
+            if (tipRelease != "") {
+                allReleases.add(tipRelease)
+            }
             allReleases.each { featureRelease ->
                 def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
                 def status = healthStatus[featureReleaseInt]
@@ -478,7 +482,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     missingAssets = status['missingAssets']
                 }
 
-                def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}.${lastPublishedMsg}${errorMsg}"
+                def fullMessage = "${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}.${lastPublishedMsg}${errorMsg}"
                 echo "===> ${fullMessage}"
                 slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
 
