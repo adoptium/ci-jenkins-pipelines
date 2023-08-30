@@ -243,6 +243,18 @@ node('worker') {
             testVariant = "_${variant}_"
         }
 
+        // Create list of build pipelines of interest based on the requests release versions
+        def pipelinesOfInterest = ""
+        def allReleases = []
+        allReleases.addAll(featureReleases)
+        if (tipRelease != "") {
+            allReleases.add(tipRelease)
+        }
+        allReleases.each { release ->
+           def featureReleaseStr = release.replaceAll("u", "").replaceAll("jdk", "")
+           pipelinesOfInterest += ",openjdk${featureReleaseStr}-pipeline"
+        }
+
         // Get top level builds names
         def trssBuildNames = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getTopLevelBuildNames?type=Test")
         def buildNamesJson = new JsonSlurper().parseText(trssBuildNames)
@@ -252,11 +264,13 @@ node('worker') {
                 echo "Pipeline ${build._id.buildName}"
                 def pipelineName = build._id.buildName
 
-                // Find the last "Done" pipeline builds started by "timer", "weekly-" or "releaseTrigger"
-                def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
-                def pipelineJson = new JsonSlurper().parseText(pipeline)
-                def foundBuild = false
-                if (pipelineJson.size() > 0) {
+                // Are we interested in this pipeline?
+                if (pipelinesOfInterest.contains(pipelineName)) {
+                  // Find the last "Done" pipeline builds started by "timer", "weekly-" or "releaseTrigger"
+                  def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+                  def pipelineJson = new JsonSlurper().parseText(pipeline)
+                  def foundBuild = false
+                  if (pipelineJson.size() > 0) {
                     // Find first in list started by "timer", "weekly-" or "releaseTrigger"
                     pipelineJson.each { job ->
                         if (!foundBuild) {
@@ -353,6 +367,7 @@ node('worker') {
                             }
                         }
                     }
+                  }
                 }
             }
         }
