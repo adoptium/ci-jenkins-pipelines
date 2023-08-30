@@ -448,9 +448,9 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 if (featureReleaseInt < 21) {
                     // Check for stale published build
                     def days = status['actualDays'] as int
-                    lastPublishedMsg = " Published: ${days} day(s) ago" // might actually be days + N hours, where N < 24
+                    lastPublishedMsg = " Published: ${days} day(s) ago. " // might actually be days + N hours, where N < 24
                     if (status['actualDays'] == 0) {
-                        lastPublishedMsg = " Published: less than 24 hours ago"
+                        lastPublishedMsg = " Published: less than 24 hours ago. "
                     }
                     def maxDays = status['maxStaleDays'] as int
                     if (maxDays <= days) {
@@ -476,11 +476,13 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     missingAssets = status['missingAssets']
                 }
 
-                def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}. ${lastPublishedMsg}.${errorMsg}"
+                def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}.${lastPublishedMsg}${errorMsg}"
                 echo "===> ${fullMessage}"
+                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
 
                 // Print out formatted missing artifacts if any missing
                 if (missingAssets.size() > 0) {
+                    def missingMsg
                     // Collate by arch, array is sequenced by architecture
                     def archName = ""
                     def missingFiles = ""
@@ -489,7 +491,9 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                         def missingFile = missing.split("[ :]+")
                         if (missingFile[0] != archName) {
                             if (archName != "") {
-                                echo "==>    Missing artifacts, ${archName}: ${missingFiles}"
+                                missingMsg = "    Missing artifacts, ${archName}: ${missingFiles}"
+                                echo "===> ${missingMsg}"
+                                slackSend(channel: slackChannel, color: slackColor, message: missingMsg)
                             }
                             archName = missingFile[0]
                             missingFiles = missingFile[1]+missingFile[2]
@@ -498,11 +502,11 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                         }                        
                     } 
                     if (missingFiles != "") {
-                        echo "==>    Missing artifacts, ${archName}: ${missingFiles}"
+                        missingMsg = "    Missing artifacts, ${archName}: ${missingFiles}"
+                        echo "===> ${missingMsg}"
+                        slackSend(channel: slackChannel, color: slackColor, message: missingMsg)
                     }
                 }
-                // One slack message per JDK version:
-                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
