@@ -25,7 +25,7 @@ def getLatestOpenjdkBuildTag(String version) {
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
 
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v \"\\^{}\" | tr -s \"\\t \" \" \" | cut -d\" \" -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1")
-    echo "latest ${version} tag = ${latestTag}"
+    echo "latest ${version} tag = ${latestTag}A"
 
     return latestTag
 }
@@ -148,7 +148,7 @@ def verifyReleaseContent(String version, String release, Map status) {
                 }
                 if (!foundAsset) {
                     echo "    $osarch : All artifacts missing"
-                    missingAssets.add("$osarch : All : All")
+                    missingAssets.add("$osarch : All : .All")
                 } else if (missingForArch.size() > 0) {
                     echo "    $osarch : Missing artifacts: ${missingForArch}"
                     missingAssets.addAll(missingForArch)
@@ -476,7 +476,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     missingAssets = status['missingAssets']
                 }
 
-                def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}.${lastPublishedMsg}.${errorMsg}"
+                def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}. ${lastPublishedMsg}.${errorMsg}"
                 echo "===> ${fullMessage}"
 
                 // Print out formatted missing artifacts if any missing
