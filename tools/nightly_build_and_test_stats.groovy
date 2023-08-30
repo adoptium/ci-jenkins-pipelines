@@ -148,7 +148,7 @@ def verifyReleaseContent(String version, String release, Map status) {
                 }
                 if (!foundAsset) {
                     echo "    $osarch : All artifacts missing"
-                    missingAssets.add("$osarch : **All artifacts**")
+                    missingAssets.add("$osarch : All : All")
                 } else if (missingForArch.size() > 0) {
                     echo "    $osarch : Missing artifacts: ${missingForArch}"
                     missingAssets.addAll(missingForArch)
@@ -437,61 +437,72 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
             featureReleases.each { featureRelease ->
                 def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
                 def status = healthStatus[featureReleaseInt]
+
+                def slackColor = 'good'
+                def health = "healthy"
+                def errorMsg = ""
+                def releaseName = status['releaseName']
+                def lastPublishedMsg = ""
+
+                // jdk-21+ are latest tag triggered builds
                 if (featureReleaseInt < 21) {
+                    // Check for stale published build
                     def days = status['actualDays'] as int
-                    def msg = "${days} day(s) ago" // might actually be days + N hours, where N < 24
+                    lastPublishedMsg = " Published: ${days} day(s) ago" // might actually be days + N hours, where N < 24
                     if (status['actualDays'] == 0) {
-                        msg = 'less than 24 hours ago'
+                        lastPublishedMsg = " Published: less than 24 hours ago"
                     }
                     def maxDays = status['maxStaleDays'] as int
-                    def releaseName = status['releaseName']
-                    
-                    def slackColor = 'good'
-                    def health = "healthy"
-                    def errorMsg = ""
-                    def missingAssets = []
-                    if (status['assets'] != 'Complete') {
-                        slackColor = 'danger'
-                        health = "unhealthy"
-                        errorMsg = " Artifact status: "+status['assets']
-echo "$status['missingAssets']"
-                        missingAssets = status['missingAssets']
-                    } else if (maxDays <= days) {
+                    if (maxDays <= days) {
                         slackColor = 'warning'
                         health = "unhealthy"
                         errorMsg = " Stale threshold: ${maxDays} days"
                     }
-                    def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}. Published: ${msg}.${errorMsg}"
-                    echo "===> ${fullMessage}"
-                    // Print out formatted missing artifacts if any missing
-                    if (missingAssets.size() > 0) {
-                        // Collate by arch, array is sequenced by architecture
-                        def archName = ""
-                        def missingFiles = ""
-                        missingAssets.each { missing ->
-                            def missingFile = missing.split("[ :]+")
-                            if (missingFile[0] != archName) {
-                                if (archName != "") {
-                                    echo "==>    Missing artifacts, ${archName}: ${missingFiles}"
-                                }
-                                archName = missingFile[0]
-                                missingFiles = missingFile[1]+missingFile[2]
-                            } else {
-                                missingFiles += ","+missingFile[1]+missingFile[2]
-                            }                        
-                        } 
-                        if (missingFiles != "") {
-                            echo "==>    Missing artifacts, ${archName}: ${missingFiles}"
-                        }
-                    }
-                    // One slack message per JDK version:
-                    //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
                 } else {
-                    def latestTagBuilt = true
+                    // Check latest published binaries are for the latest openjdk build tag
                     if (status['releaseName'] != status['expectedReleaseName']) {
-                        latestTagBuilt = false
+                        slackColor = 'danger'
+                        health = "unhealthy"
+                        errorMsg = " Latest upstream build "+status['expectedReleaseName'] != latest publish binaries "+status['releaseName']
                     }
                 }
+
+                // Verify if any artifacts missing?                    
+                def missingAssets = []
+                if (status['assets'] != 'Complete') {
+                    slackColor = 'danger'
+                    health = "unhealthy"
+                    errorMsg += " Artifact status: "+status['assets']
+                    missingAssets = status['missingAssets']
+                }
+
+                def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}. Published: ${msg}.${errorMsg}"
+                echo "===> ${fullMessage}"
+
+                // Print out formatted missing artifacts if any missing
+                if (missingAssets.size() > 0) {
+                    // Collate by arch, array is sequenced by architecture
+                    def archName = ""
+                    def missingFiles = ""
+                    missingAssets.each { missing ->
+                        // arch : imageType : fileType
+                        def missingFile = missing.split("[ :]+")
+                        if (missingFile[0] != archName) {
+                            if (archName != "") {
+                                echo "==>    Missing artifacts, ${archName}: ${missingFiles}"
+                            }
+                            archName = missingFile[0]
+                            missingFiles = missingFile[1]+missingFile[2]
+                        } else {
+                            missingFiles += ", "+missingFile[1]+missingFile[2]
+                        }                        
+                    } 
+                    if (missingFiles != "") {
+                        echo "==>    Missing artifacts, ${archName}: ${missingFiles}"
+                    }
+                }
+                // One slack message per JDK version:
+                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
