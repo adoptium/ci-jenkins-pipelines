@@ -396,7 +396,7 @@ node('worker') {
         // Average test success rating across all pipelines
         if (numTestPipelines > 0) {
             nightlyTestSuccessRating = nightlyTestSuccessRating / numTestPipelines
-    } else {
+        } else {
             // If no Tests were run assume 0% success
             nightlyTestSuccessRating = 0
         }
@@ -406,7 +406,7 @@ node('worker') {
         def nightlyBuildSuccessRating = 0
         if (totalBuildJobs > 0) {
             nightlyBuildSuccessRating = ((buildSuccesses) * 100) / (totalBuildJobs)
-    } else {
+        } else {
             // If no Builds were run assume 0% success
             nightlyBuildSuccessRating = 0
         }
@@ -414,7 +414,7 @@ node('worker') {
         // Overall % success rating: Average build & test % success rating
         def overallNightlySuccessRating = ((nightlyBuildSuccessRating + nightlyTestSuccessRating) / 2).intValue()
 
-        echo "======> Success Rating for variant: ${variant}"
+        echo "======> Latest pipeline build Success Rating for variant: ${variant}"
         echo "======> Total number of Build jobs    = ${totalBuildJobs}"
         echo "======> Total number of Test jobs     = ${totalTestJobs}"
         echo "======> Nightly Build Success Rating  = ${nightlyBuildSuccessRating.intValue()} %"
@@ -427,9 +427,9 @@ node('worker') {
         }
 
         // Slack message:
-        //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
-echo 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
+echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
 
     stage('printPublishStats') {
@@ -438,21 +438,38 @@ echo 'Adoptium Nightly Build Success : *' + variant + '* => *' + overallNightlyS
             featureReleases.each { featureRelease ->
                 def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
                 def status = healthStatus[featureReleaseInt]
-                def days = status['actualDays'] as int
-                def msg = "${days} day(s) ago" // might actually be days + N hours, where N < 24
-                if (status['actualDays'] == 0) {
-                    msg = 'less than 24 hours ago'
+                if (featureReleaseInt < 21) {
+                    def days = status['actualDays'] as int
+                    def msg = "${days} day(s) ago" // might actually be days + N hours, where N < 24
+                    if (status['actualDays'] == 0) {
+                        msg = 'less than 24 hours ago'
+                    }
+                    def latestTagBuilt = true
+                    if (status['releaseName'] != status['expectedReleaseName']) {
+                        latestTagBuilt = false
+                    )
+                    def maxDays = status['maxStaleDays'] as int
+                    def releaseName = status['releaseName']
+                    
+                    def fullMessage = "JDK ${featureRelease} latest pipeline publish status: healthy. Last published: ${msg}. Build: ${releaseName}"
+                    def slackColor = 'good'
+                    def health = "healthy"
+                    def errorMsg = ""
+                    if (!latestTagBuilt) {
+                        slackColor = 'danger'
+                        health = "unhealthy"
+                        errorMsg = "Expected build tag: "+status['expectedReleaseName']
+                    } else if (maxDays <= days) {
+                        slackColor = 'warning'
+                        health = "unhealthy"
+                        errorMsg = " Stale threshold: ${maxDays} days"
+                    }
+                    def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}. Published: ${msg}.${errorMsg}"
+                    echo "===> ${fullMessage}"
+                    // One slack message per JDK version:
+                    //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                } else {
                 }
-                def maxDays = status['maxStaleDays'] as int
-                def fullMessage = "JDK ${featureRelease} nightly pipeline publish status: healthy. Last published: ${msg}"
-                def slackColor = 'good'
-                if (maxDays <= days) {
-                    slackColor = 'warning'
-                    fullMessage = "JDK ${featureRelease} nightly pipeline publish status: unhealthy. Last published: ${msg}. Stale threshold: ${maxDays} days."
-                }
-                echo "===> ${fullMessage}"
-                // One slack message per JDK version:
-                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
