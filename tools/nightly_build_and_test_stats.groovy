@@ -463,7 +463,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     if (status['releaseName'] != status['expectedReleaseName']) {
                         slackColor = 'danger'
                         health = "unhealthy"
-                        errorMsg = " Latest upstream build "+status['expectedReleaseName'] != latest publish binaries "+status['releaseName']
+                        errorMsg = " Latest upstream build "+status['expectedReleaseName']+" != latest publish binaries "+status['releaseName']
                     }
                 }
 
