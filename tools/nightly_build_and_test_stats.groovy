@@ -447,7 +447,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     def latestTagBuilt = true
                     if (status['releaseName'] != status['expectedReleaseName']) {
                         latestTagBuilt = false
-                    )
+                    }
                     def maxDays = status['maxStaleDays'] as int
                     def releaseName = status['releaseName']
                     
