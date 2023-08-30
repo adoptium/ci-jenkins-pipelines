@@ -453,7 +453,6 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     if (status['assets'] != 'Complete') {
                         slackColor = 'danger'
                         health = "unhealthy"
-echo status['assets']
                         errorMsg = " Artifact status: "+status['assets']
 echo "$status['missingAssets']"
                         missingAssets = status['missingAssets']
@@ -464,8 +463,26 @@ echo "$status['missingAssets']"
                     }
                     def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}. Published: ${msg}.${errorMsg}"
                     echo "===> ${fullMessage}"
+                    // Print out formatted missing artifacts if any missing
                     if (missingAssets.size() > 0) {
-                        echo "==>     Missing artifacts: "+missingAssets
+                        // Collate by arch, array is sequenced by architecture
+                        def archName = ""
+                        def missingFiles = ""
+                        missingAssets.each { missing ->
+                            def missingFile = missing.split("[ :]+")
+                            if (missingFile[0] != archName) {
+                                if (archName != "") {
+                                    echo "==>    Missing artifacts, ${archName}: ${missingFiles}"
+                                }
+                                archName = missingFile[0]
+                                missingFiles = missingFile[1]+missingFile[2]
+                            } else {
+                                missingFiles += ","+missingFile[1]+missingFile[2]
+                            }                        
+                        } 
+                        if (missingFiles != "") {
+                            echo "==>    Missing artifacts, ${archName}: ${missingFiles}"
+                        }
                     }
                     // One slack message per JDK version:
                     //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
