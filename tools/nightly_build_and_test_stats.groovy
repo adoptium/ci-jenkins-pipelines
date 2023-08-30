@@ -24,7 +24,7 @@ import java.time.temporal.ChronoUnit
 def getLatestOpenjdkBuildTag(String version) {
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
 
-    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1 | tr -d'\\n'")
+    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest ${version} tag = ${latestTag}A"
 
     return latestTag
@@ -34,7 +34,7 @@ def getLatestOpenjdkBuildTag(String version) {
 def getLatestBinariesTag(String version) {
     def binariesRepo = "https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", version)
 
-    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${binariesRepo} | grep \"\\-ea\\-beta\" | grep -v \"\\^{}\" | tr -s \"\\t \" \" \" | cut -d\" \" -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1")
+    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${binariesRepo} | grep \"\\-ea\\-beta\" | grep -v \"\\^{}\" | tr -s \"\\t \" \" \" | cut -d\" \" -f2 | sed \"s,refs/tags/,,\" | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest jdk${version} tag = ${latestTag}"
 
     return latestTag    
