@@ -36,6 +36,8 @@ function detectJdks() {
 function resetRepo() {
   local branch=${1}
   rm -f .git/index.lock ;
+  rm -vf *.jar
+  rm -vf build/*.jar
   git reset --hard ;
   git checkout $branch
 }
@@ -48,24 +50,42 @@ function cleanRepo() {
 }
 
 function getAsmDeps() {
-  asm_version=$1
-  tools="asm asm-tree asm-util"
-  main_url="https://repository.ow2.org/nexus/content/repositories/releases/org/ow2/asm"
+  set +u
+  local asm_version=$1
+  set -u
+  local asm_manual="true"
+  if [ "x$asm_version" == "x" ] ; then
+    asm_version=`cat build/build.properties | grep ^asm.version | sed "s/.*\s*=\s*//g"`
+    if [ "x$asm_version" == "x" ] ; then
+      echo "no asm-tools version provided and detection (jcov3.0-b08 and up) failed"
+      exit 1
+    fi
+    local asm_manual="false"
+  fi
+  local tools="asm asm-tree asm-util"
+  local main_url="https://repository.ow2.org/nexus/content/repositories/releases/org/ow2/asm"
   ASM_TITLE="Built against '$tools' tools in version '$asm_version'"
   ASM_URLS=""
   ASM_JARS=""
   ASM_PROPS=""
   for tool in $tools; do
-    tool_prop="`echo $tool|sed "s/-/./g"`.jar"
-    tool_versioned="$tool-$asm_version.jar"
-    tool_url="$main_url/$tool/$asm_version/$tool_versioned"
-    if [ ! -e $tool_versioned ] ; then
-      wget $tool_url
+    local tool_prop="`echo $tool|sed "s/-/./g"`.jar"
+    local tool_versioned="$tool-$asm_version.jar"
+    local tool_url="$main_url/$tool/$asm_version/$tool_versioned"
+    if [ "$asm_manual" == "true" ] ; then
+      if [ ! -e $tool_versioned ] ; then
+        wget $tool_url
+      fi
+      ASM_URLS="$ASM_URLS$tool_url
+" #one per line
+      ASM_PROPS="$ASM_PROPS -D$tool_prop=`pwd`/$tool_versioned"
+      ASM_JARS="$ASM_JARS$tool_versioned:"
+    else
+      ASM_URLS="$ASM_URLS$tool_url
+" #one per line
+      ASM_PROPS="" # it will be set properly from build
+      ASM_JARS="$ASM_JARS$tool_versioned:"
     fi
-    ASM_URLS="$ASM_URLS$tool_url
-" #ne per line
-    ASM_PROPS="$ASM_PROPS -D$tool_prop=`pwd`/$tool_versioned"
-    ASM_JARS="$ASM_JARS$tool_versioned:"
   done
 }
 
@@ -79,7 +99,7 @@ function getReadme() {
   echo $ASM_JARS""
   echo ""
   echo "In addition jtobserver.jar requires javatest.jar"
-  echo "You can get one at adoptium: https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/" #TODO add better link?
+  echo "You can get one at Adoptium: https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtharness/javatest.jar"
   echo "Or build one from: https://github.com/openjdk/jtharness/"
 }
 
@@ -89,24 +109,9 @@ function getJavatest() {
     if [ ! -e $javatest ] ; then
       # For local usage you can build local javatest.jar by running javatest.sh
       # Then also the jtobserver.jar will be built
-      # FIXME replace by wget of latest javatest.jar downloaded from published javatest.sh artifacts
-      if [ -e  ../../jtharness/$javatest ] ; then
-        cp ../../jtharness/$javatest .
-      else
-        # unsetting the javatestjar will exclude build of 
-        sed "s/javatestjar.*/javatestjar=/g" -i build.properties
-      fi
-   fi
-   if [ ! -e testng.jar ] ; then
-     local testngv=6.9.10
-     wget https://repo1.maven.org/maven2/org/testng/testng/$testngv/testng-$testngv.jar
-     mv testng-$testngv.jar testng.jar
-   fi
-   if [ ! -e jcommander.jar ] ; then
-     jcommanderv=1.81
-     wget https://repo1.maven.org/maven2/com/beust/jcommander/$jcommanderv/jcommander-$jcommanderv.jar
-     mv jcommander-$jcommanderv.jar jcommander.jar
-   fi
+      # unsetting the javatestjar will exclude build of jtobserver
+      wget https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtharness/javatest.jar
+    fi
   popd
 }
 
@@ -148,8 +153,7 @@ pushd $REPO_DIR
 
   # tip
   resetRepo master
-  getAsmDeps "9.0"
-  getJavatest
+  getAsmDeps
   pushd build
     export JAVA_HOME="$jdk17"
     ant $ASM_PROPS test | tee ../$main_file-$tip_shortened.tar.gz.txt || true
