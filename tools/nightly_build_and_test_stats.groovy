@@ -339,8 +339,7 @@ node('worker') {
                                 def pipelineBuildJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
                                 def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
                                 buildJobNumber = 0
-                                if (pipelineBuildJobsJson.size() > 0) {
-                                    pipelineBuildJobsJson.each { buildJob ->
+                                pipelineBuildJobsJson.each { buildJob ->
                                         if (buildJob.buildName.contains(buildVariant)) {
                                             buildJobNumber += 1
                                             if (buildJob.buildResult.equals('FAILURE')) {
@@ -349,7 +348,6 @@ node('worker') {
                                                 buildJobComplete += 1
                                             }
                                         }
-                                    }
                                 }
 
                                 def testResult = [name: pipelineName, url: pipelineUrl,
