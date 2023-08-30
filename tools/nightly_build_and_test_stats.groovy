@@ -436,6 +436,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
         if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
             echo '-------------- Nightly pipeline health report ------------------'
             featureReleases.each { featureRelease ->
+echo featureRelease
                 def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
                 def status = healthStatus[featureReleaseInt]
                 if (featureReleaseInt < 21) {
