@@ -48,7 +48,6 @@ def verifyReleaseContent(String version, String release, Map status) {
     def escRelease = release.replaceAll("\\+", "%2B")
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${escRelease}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
 
- //releaseAssetsUrl = "https://api.github.com/repos/adoptium/temurin22-binaries/releases/tags/jdk-22+12-ea-beta"
     // Get list of assets, concatenate into a single string
     def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json '+releaseAssetsUrl, returnStatus: true)
     def releaseAssets = ""
@@ -436,7 +435,6 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
         if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
             echo '-------------- Nightly pipeline health report ------------------'
             featureReleases.each { featureRelease ->
-echo featureRelease
                 def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
                 def status = healthStatus[featureReleaseInt]
                 if (featureReleaseInt < 21) {
@@ -452,13 +450,12 @@ echo featureRelease
                     def health = "healthy"
                     def errorMsg = ""
                     def missingAssets = []
-echo "A"
                     if (status['assets'] != 'Complete') {
                         slackColor = 'danger'
                         health = "unhealthy"
 echo status['assets']
                         errorMsg = " Artifact status: "+status['assets']
-echo status['missingAssets']
+echo "$status['missingAssets']"
                         missingAssets = status['missingAssets']
                     } else if (maxDays <= days) {
                         slackColor = 'warning'
