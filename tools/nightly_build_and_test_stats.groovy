@@ -47,7 +47,9 @@ def verifyReleaseContent(String version, String release, Map status) {
 
     def escRelease = release.replaceAll("\\+", "%2B")
     def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${escRelease}".replaceAll("_NN_", version.replaceAll("u","").replaceAll("jdk",""))
-    status['assetsUrl'] = releaseAssetsUrl
+
+    // Transform to browser URL for use in Slack message link
+    status['assetsUrl'] = releaseAssetsUrl.replaceAll("api.github.com","github.com").replaceAll("/repos/","/").replaceAll("/tags/","/")
 
     // Get list of assets, concatenate into a single string
     def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json '+releaseAssetsUrl, returnStatus: true)
