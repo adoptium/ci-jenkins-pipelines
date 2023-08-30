@@ -174,7 +174,7 @@ node('worker') {
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
     def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+") // feature versions 
-    def tipRelease      = "${params.TIP_RELEASE}"  // Current jdk(head) version, eg.jdk22
+    def tipRelease      = "${params.TIP_RELEASE}" as String  // Current jdk(head) version, eg.jdk22
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
