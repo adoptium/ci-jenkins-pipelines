@@ -454,10 +454,12 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     def slackColor = 'good'
                     def health = "healthy"
                     def errorMsg = ""
-                    if (!latestTagBuilt) {
+                    def missingAssets = []
+                    if (status['assets'] != "Complete") {
                         slackColor = 'danger'
                         health = "unhealthy"
-                        errorMsg = "Expected build tag: "+status['expectedReleaseName']
+                        errorMsg = " Artifact status: "+status['assets']
+                        missingAssets = status['missingAssets']
                     } else if (maxDays <= days) {
                         slackColor = 'warning'
                         health = "unhealthy"
@@ -465,6 +467,9 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     }
                     def fullMessage = "JDK ${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseName}. Published: ${msg}.${errorMsg}"
                     echo "===> ${fullMessage}"
+                    if (missingAssets.size() > 0) {
+                        echo "==>     Missing artifacts: "+missingAssets
+                    }
                     // One slack message per JDK version:
                     //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
                 } else {
