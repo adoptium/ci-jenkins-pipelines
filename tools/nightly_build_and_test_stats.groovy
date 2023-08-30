@@ -416,9 +416,9 @@ node('worker') {
         echo "======> Latest pipeline build Success Rating for variant: ${variant}"
         echo "======> Total number of Build jobs    = ${totalBuildJobs}"
         echo "======> Total number of Test jobs     = ${totalTestJobs}"
-        echo "======> Nightly Build Success Rating  = ${nightlyBuildSuccessRating.intValue()} %"
-        echo "======> Nightly Test Success Rating   = ${nightlyTestSuccessRating.intValue()} %"
-        echo "======> Overall Nightly Build & Test Success Rating = ${overallNightlySuccessRating} %"
+        echo "======> Build Success Rating  = ${nightlyBuildSuccessRating.intValue()} %"
+        echo "======> Test Success Rating   = ${nightlyTestSuccessRating.intValue()} %"
+        echo "======> Overall Latest Build & Test Success Rating = ${overallNightlySuccessRating} %"
 
         def statusColor = 'good'
         if (nightlyBuildSuccessRating.intValue() < amberBuildAlertLevel || nightlyTestSuccessRating.intValue() < amberTestAlertLevel) {
@@ -433,8 +433,10 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
 
     stage('printPublishStats') {
         if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
-            echo '-------------- Nightly pipeline health report ------------------'
-            featureReleases.each { featureRelease ->
+            echo '-------------- Latest pipeline health report ------------------'
+            def allReleases = featureReleases
+            allReleases.add(tipRelease)
+            allReleases.each { featureRelease ->
                 def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
                 def status = healthStatus[featureReleaseInt]
 
