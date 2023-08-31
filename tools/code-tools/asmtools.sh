@@ -95,6 +95,21 @@ function detectJdks() {
   jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8   | head -n 1))
   jdk17=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17  | head -n 1))
 }
+
+function getProperty() {
+  local file=build/productinfo.properties
+  cat $file | grep ^$1 | sed "s/.*=\s*//g"
+}
+
+function getVersion() {
+  PRODUCT_VERSION=`getProperty PRODUCT_VERSION`
+  PRODUCT_MILESTONE=`getProperty PRODUCT_MILESTONE`
+  PRODUCT_BUILDNUMBER=`getProperty PRODUCT_BUILDNUMBER`
+  if [ "x$PRODUCT_MILESTONE" == x ] ; then
+    PRODUCT_MILESTONE="ga"
+  fi
+  echo $PRODUCT_VERSION.b$PRODUCT_BUILDNUMBER-$PRODUCT_MILESTONE
+}
 	
 REPO_DIR="asmtools"
 if [ ! -e $REPO_DIR ] ; then
@@ -105,13 +120,13 @@ pushd $REPO_DIR
   RESULTS_DIR="$(pwd)"
   latestRelease=`git tag -l | tail -n 2 | head -n 1`
   generateArtifact "master" "$jdk17"
+  masterVersion=`getVersion`
   generateArtifact "at7" "$jdk08"
-  # 7.0-b09 had not yet have maven integration, enable with b10 out
-  # generateArtifact "$latestRelease" "$jdk08"
+  at7Version=`getVersion`
   renameLegacyCoreArtifacts
-  releaseCandidate7=asmtools-core-7.0.b10-ea.jar
+  releaseCandidate7=asmtools-core-$at7Version.jar
   releaseName7=asmtools07.jar
-  releaseCandidate=asmtools-8.0.b05-ea.jar
+  releaseCandidate=asmtools-$masterVersion.jar
   releaseName=asmtools.jar
   echo "Manually renaming  $releaseCandidate7 as $releaseName7 to provide latest-7-stable-recommended file"
   ln -fv $releaseCandidate7 $releaseName7
