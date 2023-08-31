@@ -259,6 +259,8 @@ node('worker') {
         }
         allReleases.each { release ->
            def featureReleaseStr = release.replaceAll("u", "").replaceAll("jdk", "")
+
+           // Only interested in nightly/triggered openjdkNN-pipeline's
            pipelinesOfInterest += ",openjdk${featureReleaseStr}-pipeline"
         }
 
@@ -266,8 +268,8 @@ node('worker') {
         def trssBuildNames = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getTopLevelBuildNames?type=Test")
         def buildNamesJson = new JsonSlurper().parseText(trssBuildNames)
         buildNamesJson.each { build ->
-            // Is it a build Pipeline? Excluding "evaluation-" pipelines
-            if (build._id.buildName.contains('-pipeline') && !build._id.buildName.startsWith('evaluation-')) {
+            // Is it a build Pipeline?
+            if (build._id.buildName.contains('-pipeline')) {
                 echo "Pipeline ${build._id.buildName}"
                 def pipelineName = build._id.buildName
 
