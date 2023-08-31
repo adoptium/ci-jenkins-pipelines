@@ -484,14 +484,14 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     if (maxDays <= days) {
                         slackColor = 'warning'
                         health = "unhealthy"
-                        errorMsg = " Stale threshold: ${maxDays} days"
+                        errorMsg = " Stale threshold: ${maxDays} days."
                     }
                 } else {
                     // Check latest published binaries are for the latest openjdk build tag
                     if (status['releaseName'] != status['expectedReleaseName']) {
                         slackColor = 'danger'
                         health = "unhealthy"
-                        errorMsg = " Latest upstream build "+status['expectedReleaseName']+" != latest publish binaries "+status['releaseName']
+                        errorMsg = " Latest upstream build "+status['expectedReleaseName']+" != latest publish binaries "+status['releaseName']+"."
                     }
                 }
 
@@ -500,7 +500,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 if (status['assets'] != 'Complete') {
                     slackColor = 'danger'
                     health = "unhealthy"
-                    errorMsg += " Artifact status: "+status['assets']
+                    errorMsg += " Artifact status: "+status['assets']+"."
                     missingAssets = status['missingAssets']
                 }
                  
