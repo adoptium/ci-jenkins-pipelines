@@ -102,9 +102,9 @@ function getProperty() {
 }
 
 function getVersion() {
-  PRODUCT_VERSION=`getProperty PRODUCT_VERSION`
-  PRODUCT_MILESTONE=`getProperty PRODUCT_MILESTONE`
-  PRODUCT_BUILDNUMBER=`getProperty PRODUCT_BUILDNUMBER`
+  local PRODUCT_VERSION=`getProperty PRODUCT_VERSION`
+  local PRODUCT_MILESTONE=`getProperty PRODUCT_MILESTONE`
+  local PRODUCT_BUILDNUMBER=`getProperty PRODUCT_BUILDNUMBER`
   if [ "x$PRODUCT_MILESTONE" == x ] ; then
     PRODUCT_MILESTONE="ga"
   fi
