@@ -207,7 +207,7 @@ class Build {
                 jdkBranch = buildConfig.SCM_REF
             }
             // We also need to ensure that _adopt is stripped from any tags used in hotspot builds, as *_adopt tags do not exist upstream.
-            if (buildConfig.VARIANT == 'temurin') {
+            if (buildConfig.VARIANT == 'hotspot') {
                 jdkBranch = buildConfig.SCM_REF.replaceAll("_adopt", "")
             }
         } else {
