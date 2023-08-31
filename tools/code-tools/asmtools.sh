@@ -42,11 +42,11 @@ function generateArtifact() {
       pushd target
         echo "Asmtools $branchOrTag artifact:"
         ls -l
-        local mainArtifact=`ls asmtools*.jar`
+        local mainArtifact=$(ls asmtools*.jar)
         echo "Copying maven/target/$mainArtifact file to RESULTS_DIR($RESULTS_DIR)"
         cp  $mainArtifact $RESULTS_DIR
         if [ -e surefire-reports ] ; then
-          local testResults=`echo $mainArtifact | sed "s/.jar/-tests.tar.gz/"`
+          local testResults=$(echo $mainArtifact | sed "s/.jar/-tests.tar.gz/")
           echo "Compressing and archiving test results as $testResults"
           tar -czf $testResults surefire-reports
           echo "Copying maven/target/$testResults file to RESULTS_DIR($RESULTS_DIR)"
@@ -70,7 +70,7 @@ function generateArtifact() {
 
 function renameLegacyCoreArtifacts() {
   echo "copying 'core' maven names to legacy ant names"
-  for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
+  for file in $(ls asmtools*.jar asmtools*-tests.tar.gz) ; do
       if echo $file | grep -q -e core ; then
       local nwFile=$(echo $file | sed "s/-core//")
       ln -fv $file $nwFile
@@ -80,7 +80,7 @@ function renameLegacyCoreArtifacts() {
 
 function hashArtifacts() {
   echo "Creating checksums all asmtools*.jar"
-  for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
+  for file in $(ls asmtools*.jar asmtools*-tests.tar.gz) ; do
       sha256sum $file > $file.sha256sum.txt
   done
 }
@@ -95,6 +95,21 @@ function detectJdks() {
   jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8   | head -n 1))
   jdk17=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17  | head -n 1))
 }
+
+function getProperty() {
+  local file=build/productinfo.properties
+  cat $file | grep ^$1 | sed "s/.*=\s*//g"
+}
+
+function getVersion() {
+  local PRODUCT_VERSION=$(getProperty PRODUCT_VERSION)
+  local PRODUCT_MILESTONE=$(getProperty PRODUCT_MILESTONE)
+  local PRODUCT_BUILDNUMBER=$(getProperty PRODUCT_BUILDNUMBER)
+  if [ "x$PRODUCT_MILESTONE" == x ] ; then
+    PRODUCT_MILESTONE="ga"
+  fi
+  echo $PRODUCT_VERSION.b$PRODUCT_BUILDNUMBER-$PRODUCT_MILESTONE
+}
 	
 REPO_DIR="asmtools"
 if [ ! -e $REPO_DIR ] ; then
@@ -103,15 +118,15 @@ fi
 detectJdks
 pushd $REPO_DIR
   RESULTS_DIR="$(pwd)"
-  latestRelease=`git tag -l | tail -n 2 | head -n 1`
+  latestRelease=$(git tag -l | tail -n 2 | head -n 1)
   generateArtifact "master" "$jdk17"
+  masterVersion=$(getVersion)
   generateArtifact "at7" "$jdk08"
-  # 7.0-b09 had not yet have maven integration, enable with b10 out
-  # generateArtifact "$latestRelease" "$jdk08"
+  at7Version=$(getVersion)
   renameLegacyCoreArtifacts
-  releaseCandidate7=asmtools-core-7.0.b10-ea.jar
+  releaseCandidate7=asmtools-core-$at7Version.jar
   releaseName7=asmtools07.jar
-  releaseCandidate=asmtools-8.0.b05-ea.jar
+  releaseCandidate=asmtools-$masterVersion.jar
   releaseName=asmtools.jar
   echo "Manually renaming  $releaseCandidate7 as $releaseName7 to provide latest-7-stable-recommended file"
   ln -fv $releaseCandidate7 $releaseName7
