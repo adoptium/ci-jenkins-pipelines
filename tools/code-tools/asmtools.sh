@@ -42,11 +42,11 @@ function generateArtifact() {
       pushd target
         echo "Asmtools $branchOrTag artifact:"
         ls -l
-        local mainArtifact=`ls asmtools*.jar`
+        local mainArtifact=$(ls asmtools*.jar)
         echo "Copying maven/target/$mainArtifact file to RESULTS_DIR($RESULTS_DIR)"
         cp  $mainArtifact $RESULTS_DIR
         if [ -e surefire-reports ] ; then
-          local testResults=`echo $mainArtifact | sed "s/.jar/-tests.tar.gz/"`
+          local testResults=$(echo $mainArtifact | sed "s/.jar/-tests.tar.gz/")
           echo "Compressing and archiving test results as $testResults"
           tar -czf $testResults surefire-reports
           echo "Copying maven/target/$testResults file to RESULTS_DIR($RESULTS_DIR)"
@@ -70,7 +70,7 @@ function generateArtifact() {
 
 function renameLegacyCoreArtifacts() {
   echo "copying 'core' maven names to legacy ant names"
-  for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
+  for file in $(ls asmtools*.jar asmtools*-tests.tar.gz) ; do
       if echo $file | grep -q -e core ; then
       local nwFile=$(echo $file | sed "s/-core//")
       ln -fv $file $nwFile
@@ -80,7 +80,7 @@ function renameLegacyCoreArtifacts() {
 
 function hashArtifacts() {
   echo "Creating checksums all asmtools*.jar"
-  for file in `ls asmtools*.jar asmtools*-tests.tar.gz` ; do
+  for file in $(ls asmtools*.jar asmtools*-tests.tar.gz) ; do
       sha256sum $file > $file.sha256sum.txt
   done
 }
@@ -102,9 +102,9 @@ function getProperty() {
 }
 
 function getVersion() {
-  local PRODUCT_VERSION=`getProperty PRODUCT_VERSION`
-  local PRODUCT_MILESTONE=`getProperty PRODUCT_MILESTONE`
-  local PRODUCT_BUILDNUMBER=`getProperty PRODUCT_BUILDNUMBER`
+  local PRODUCT_VERSION=$(getProperty PRODUCT_VERSION)
+  local PRODUCT_MILESTONE=$(getProperty PRODUCT_MILESTONE)
+  local PRODUCT_BUILDNUMBER=$(getProperty PRODUCT_BUILDNUMBER)
   if [ "x$PRODUCT_MILESTONE" == x ] ; then
     PRODUCT_MILESTONE="ga"
   fi
@@ -118,11 +118,11 @@ fi
 detectJdks
 pushd $REPO_DIR
   RESULTS_DIR="$(pwd)"
-  latestRelease=`git tag -l | tail -n 2 | head -n 1`
+  latestRelease=$(git tag -l | tail -n 2 | head -n 1)
   generateArtifact "master" "$jdk17"
-  masterVersion=`getVersion`
+  masterVersion=$(getVersion)
   generateArtifact "at7" "$jdk08"
-  at7Version=`getVersion`
+  at7Version=$(getVersion)
   renameLegacyCoreArtifacts
   releaseCandidate7=asmtools-core-$at7Version.jar
   releaseName7=asmtools07.jar
