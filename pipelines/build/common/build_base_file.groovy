@@ -257,7 +257,7 @@ class Builder implements Serializable {
         */
         if (configuration.containsKey('test') && configuration.get('test')) {
             def testJobType = 'nightly'
-            if (releaseType.equals('Weekly') || releaseType.equals('Release')) {
+            if (releaseType.startsWith('Weekly') || releaseType.equals('Release')) {
                 testJobType = 'weekly'
             }
             if (isMap(configuration.test)) {
