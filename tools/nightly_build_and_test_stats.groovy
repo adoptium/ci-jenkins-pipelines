@@ -467,7 +467,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 def status = healthStatus[featureReleaseInt]
 
                 def slackColor = 'good'
-                def health = "healthy"
+                def health = "Healthy"
                 def errorMsg = ""
                 def releaseName = status['releaseName']
                 def lastPublishedMsg = ""
@@ -476,22 +476,22 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 if (featureReleaseInt < 21) {
                     // Check for stale published build
                     def days = status['actualDays'] as int
-                    lastPublishedMsg = " Published: ${days} day(s) ago. " // might actually be days + N hours, where N < 24
+                    lastPublishedMsg = "Published: ${days} day(s) ago." // might actually be days + N hours, where N < 24
                     if (status['actualDays'] == 0) {
-                        lastPublishedMsg = " Published: less than 24 hours ago. "
+                        lastPublishedMsg = "\nPublished: less than 24 hours ago."
                     }
                     def maxDays = status['maxStaleDays'] as int
                     if (maxDays <= days) {
                         slackColor = 'warning'
-                        health = "unhealthy"
-                        errorMsg = " Stale threshold: ${maxDays} days."
+                        health = "Unhealthy"
+                        errorMsg = "\nStale threshold: ${maxDays} days."
                     }
                 } else {
                     // Check latest published binaries are for the latest openjdk build tag
                     if (status['releaseName'] != status['expectedReleaseName']) {
                         slackColor = 'danger'
-                        health = "unhealthy"
-                        errorMsg = " Latest upstream build "+status['expectedReleaseName']+" != latest publish binaries "+status['releaseName']+"."
+                        health = "Unhealthy"
+                        errorMsg = "\nLatest upstream build "+status['expectedReleaseName']+" != latest publish binaries "+status['releaseName']+"."
                     }
                 }
 
@@ -499,19 +499,15 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 def missingAssets = []
                 if (status['assets'] != 'Complete') {
                     slackColor = 'danger'
-                    health = "unhealthy"
-                    errorMsg += " Artifact status: "+status['assets']+"."
+                    health = "Unhealthy"
+                    errorMsg += "\nArtifact status: "+status['assets']
                     missingAssets = status['missingAssets']
                 }
                  
-                def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} latest pipeline publish status: ${health}. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}"
-                echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
-
                 // Print out formatted missing artifacts if any missing
+                def missingMsg = ""
                 if (missingAssets.size() > 0) {
-                    def missingMsg
+                    missingMsg += " :"
                     // Collate by arch, array is sequenced by architecture
                     def archName = ""
                     def missingFiles = ""
@@ -520,9 +516,8 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                         def missingFile = missing.split("[ :]+")
                         if (missingFile[0] != archName) {
                             if (archName != "") {
-                                missingMsg = "    Missing artifacts, ${archName}: ${missingFiles}"
+                                missingMsg += "\n    *${archName}*: ${missingFiles}"
                                 echo "===> ${missingMsg}"
-                                slackSend(channel: slackChannel, color: slackColor, message: missingMsg)
                             }
                             archName = missingFile[0]
                             missingFiles = missingFile[1]+missingFile[2]
@@ -531,11 +526,15 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                         }                        
                     } 
                     if (missingFiles != "") {
-                        missingMsg = "    Missing artifacts, ${archName}: ${missingFiles}"
+                        missingMsg += "\n    *${archName}*: ${missingFiles}"
                         echo "===> ${missingMsg}"
-                        slackSend(channel: slackChannel, color: slackColor, message: missingMsg)
                     }
                 }
+
+                def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
+                def fullMessage = "${featureRelease} latest pipeline publish status: *${health}*. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
+                echo "===> ${fullMessage}"
+                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
