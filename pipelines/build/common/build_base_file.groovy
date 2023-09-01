@@ -146,6 +146,12 @@ class Builder implements Serializable {
             cleanWsAfter = platformCleanWorkspaceAfterBuild
         }
 
+        // We need to ensure that _adopt is stripped from any tags used in hotspot variant builds, as *_adopt tags do not exist upstream.
+        def adjustedScmReference = scmReference
+        if (variant.equals("hotspot")) {
+            adjustedScmReference = scmReference - ('_adopt')
+        }
+
         return new IndividualBuildConfig(
             JAVA_TO_BUILD: javaToBuild,
             ARCHITECTURE: platformConfig.arch as String,
@@ -154,7 +160,7 @@ class Builder implements Serializable {
             TEST_LIST: testList,
             DYNAMIC_LIST: dynamicList,
             NUM_MACHINES: numMachines,
-            SCM_REF: scmReference,
+            SCM_REF: adjustedScmReference,
             BUILD_REF: buildReference,
             CI_REF: ciReference,
             HELPER_REF: helperReference,
