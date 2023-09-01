@@ -90,6 +90,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                               ]
                                
             def missingAssets = []
+            def foundAtLeastOneAsset = false
             targetConfigurations.keySet().each { osarch ->
                 def variants = targetConfigurations[osarch]
                 if (!variants.contains(variant)) {
@@ -150,6 +151,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                             missingForArch.add("$osarch : $image : $ftype".replaceAll("\\\\", ""))
                         } else {
                             foundAsset = true
+                            foundAtLeastOneAsset = true
                         }
                     }
                 }
@@ -166,7 +168,11 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 
             // Set overall assets status for this release
             if (missingAssets.size() > 0) {
-                status['assets'] = "Missing artifacts"
+                if (foundAtLeastOneAsset) {
+                    status['assets'] = "Missing artifacts"
+                } else {
+                    status['assets'] = "Missing ALL artifacts"
+                }
                 status['missingAssets'] = missingAssets
             } else {
                 status['assets'] = "Complete"
@@ -205,23 +211,34 @@ node('worker') {
               def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
               def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
               def assetsJson = new JsonSlurper().parseText(assets)
-              def releaseName = assetsJson[0].release_name
-              def status = []
-              if (featureReleaseInt < 21) {
-                def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
-                def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
-                def now = ZonedDateTime.now(ZoneId.of('UTC'))
-                def days = ChronoUnit.DAYS.between(assetTs, now)
-                status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
-              } else {
-                def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
-                status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
-              }
 
-              // Verify the given release contains all the expected assets
-              verifyReleaseContent(featureRelease, releaseName, variant, status)
-              echo "  ${featureRelease} release binaries verification: "+status['assets']
-              healthStatus[featureReleaseInt] = status
+              def foundNonEvaluationBinaries = false
+              def i=0
+              while(!foundNonEvaluationBinaries && i < assetsJson.size()) {
+                def releaseName = assetsJson[i].release_name
+                def status = []
+                if (featureReleaseInt < 21) {
+                  def ts = assetsJson[i].timestamp // newest timestamp of a jdk asset
+                  def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
+                  def now = ZonedDateTime.now(ZoneId.of('UTC'))
+                  def days = ChronoUnit.DAYS.between(assetTs, now)
+                  status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
+                } else {
+                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
+                  status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+                }
+
+                // Verify the given release contains all the expected assets
+                verifyReleaseContent(featureRelease, releaseName, variant, status)
+                echo "  ${featureRelease} release binaries verification: "+status['assets']
+                if (status['assets'] == "Missing ALL artifacts") {
+                  echo " Published ${releaseName} binaries has no non-evaluation artifacts, it must be an 'evaluation' build, skip to next.."
+                  i += 1
+                } else {
+                  foundNonEvaluationBinaries = true
+                  healthStatus[featureReleaseInt] = status
+                }
+              }
             }
 
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
