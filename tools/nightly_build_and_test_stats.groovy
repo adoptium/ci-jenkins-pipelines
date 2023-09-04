@@ -232,7 +232,7 @@ node('worker') {
                 verifyReleaseContent(featureRelease, releaseName, variant, status)
                 echo "  ${featureRelease} release binaries verification: "+status['assets']
                 if (status['assets'] == "Missing ALL artifacts") {
-                  echo " Published ${releaseName} binaries has no non-evaluation artifacts, it must be an 'evaluation' build, skip to next.."
+                  echo "Published ${releaseName} binaries has no non-evaluation artifacts, it must be an 'evaluation' build, skip to next.."
                   i += 1
                 } else {
                   foundNonEvaluationBinaries = true
@@ -493,7 +493,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 if (featureReleaseInt < 21) {
                     // Check for stale published build
                     def days = status['actualDays'] as int
-                    lastPublishedMsg = "Published: ${days} day(s) ago." // might actually be days + N hours, where N < 24
+                    lastPublishedMsg = "\nPublished: ${days} day(s) ago." // might actually be days + N hours, where N < 24
                     if (status['actualDays'] == 0) {
                         lastPublishedMsg = "\nPublished: less than 24 hours ago."
                     }
