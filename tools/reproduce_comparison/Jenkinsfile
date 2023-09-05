@@ -108,6 +108,7 @@ pipeline {
         stage('Compare') {
             agent { label NODE_LABEL }
             steps {
+                cleanWs() // Ensure Prepare stage contents cleaned
                 copyArtifacts filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip',
                     fingerprintArtifacts: true, 
                     projectName: env.JOB_NAME,
