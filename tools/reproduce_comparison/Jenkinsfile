@@ -121,13 +121,13 @@ pipeline {
                         def reproducedJDKFile = findFiles(glob: "reproduced/*.zip")
                         def untarOriginalJDK = sh returnStatus: true, script: "cd original && temp=`mktemp -d` && unzip -d ${temp} ${originalJDKFile[0].name} && mv ${temp}/*/* ./ && rmdir ${temp}/* ${temp}"
                         if (untarOriginalJDK != 0 ) {
-                            currentBuild.result = 'UNSTABLE'
+                            currentBuild.result = 'FAILURE'
                             error " Unzip ${originalJDKFile[0].name} failed"
                             return
                         }
                         def untarReproducedJDK = sh returnStatus: true, script: "cd reproduced && temp=`mktemp -d` && unzip -d ${temp} ${reproducedJDKFile[0].name} && mv ${temp}/*/* ./ && rmdir ${temp}/* ${temp}"
                         if (untarReproducedJDK != 0 ) {
-                            currentBuild.result = 'UNSTABLE'
+                            currentBuild.result = 'FAILURE'
                             error " Unzip ${originalJDKFile[0].name} failed"
                             return
                         }
@@ -137,13 +137,13 @@ pipeline {
                         def reproducedJDKFile = findFiles(glob: "reproduced/*.tar.gz")
                         def untarOriginalJDK = sh returnStatus: true, script: "tar xzf ${originalJDKFile[0].path} --strip-components=1 -C original"
                         if (untarOriginalJDK != 0 ) {
-                            currentBuild.result = 'UNSTABLE'
+                            currentBuild.result = 'FAILURE'
                             error " Untar ${originalJDKFile[0].name} failed"
                             return
                         }
                         def untarReproducedJDK = sh returnStatus: true, script: "tar xzf ${reproducedJDKFile[0].path} --strip-components=1 -C reproduced"
                         if (untarReproducedJDK != 0 ) {
-                            currentBuild.result = 'UNSTABLE'
+                            currentBuild.result = 'FAILURE'
                             error " Untar ${reproducedJDKFile[0].name} failed"
                             return
                         }
@@ -160,8 +160,8 @@ pipeline {
                                 rc = sh returnStatus: true, script: "./repro_compare.sh temurin `pwd`/../../original temurin `pwd`/../../reproduced CYGWIN"
                             }
                             if (rc != 0) {
-                                currentBuild.result = 'FAILURE'
-                                echo 'Failed: two builds are not the same! Please see the archived repro_diff.out.'
+                                currentBuild.result = 'UNSTABLE'
+                                echo 'Differences found: two builds are not the same! Please see the archived repro_diff.out.'
                             } else {
                                 echo 'Success: two builds are the same!'
                             }
