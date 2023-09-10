@@ -1951,10 +1951,6 @@ class Build {
                     }
                 }
 
-                // Compare reproducible build if needed
-                if (enableReproducibleCompare) {
-                    compareReproducibleBuild(nonDockerNodeName)
-                }
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                     try {
@@ -2005,6 +2001,11 @@ class Build {
                     } catch (Exception e) {
                         context.println(e.message)
                     }
+                }
+
+                // Compare reproducible build if needed
+                if (enableReproducibleCompare) {
+                    compareReproducibleBuild(nonDockerNodeName)
                 }
 
             // Generic catch all. Will usually be the last message in the log.
