@@ -66,12 +66,12 @@ class Config21 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2022&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 reproducibleCompare : [
                         'temurin'   : true
                 ],
-                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22000.0/ucrt/DLLs/x64'",
+                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22621.0/ucrt/DLLs/x64'",
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -177,7 +177,7 @@ class Config21 {
                 os                  : 'windows',
                 arch                : 'aarch64',
                 crossCompile        : 'x64',
-                additionalNodeLabels: 'win2022&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 buildArgs       : [
                         'temurin'   : '--create-jre-image --create-sbom --cross-compile'
