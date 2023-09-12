@@ -74,6 +74,7 @@ class Config17 {
                 reproducibleCompare : [
                         'temurin'   : true
                 ],
+                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22000.0/ucrt/DLLs/x64'",
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -84,6 +85,7 @@ class Config17 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
+                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22000.0/ucrt/DLLs/x86'",
                 buildArgs           : [
                         'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom'
                 ]

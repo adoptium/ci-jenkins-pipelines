@@ -71,6 +71,7 @@ class Config21 {
                 reproducibleCompare : [
                         'temurin'   : true
                 ],
+                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22000.0/ucrt/DLLs/x64'",
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
