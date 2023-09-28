@@ -1483,7 +1483,7 @@ class Build {
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
                                 if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
-                                    echo "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
+                                    context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
                                         signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image'
@@ -1495,7 +1495,7 @@ class Build {
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                     def base_path = '$(ls -d workspace/build/src/build/*)'
-                                    echo "base build path for jmod signing = ${base_path}"
+                                    context.println "base build path for jmod signing = ${base_path}"
                                     context.stash name: 'jmods',
                                         includes: "${base_path}/hotspot/variant-server/**/*," +
                                             "${base_path}/support/modules_cmds/**/*," +
