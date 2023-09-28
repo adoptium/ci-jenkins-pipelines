@@ -1494,18 +1494,14 @@ class Build {
                                         context.println 'Building an exploded image for signing'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
-                                    def base_path = context.sh(script: "ls -d workspace/build/src/build/*", returnStdout:true)
-                                    context.println "base build path for jmod signing = ${base_path}A"
-                                    base_path = "workspace/build/src/build/macosx-x86_64-normal-server-release"
-try {
+                                    def base_path = context.sh(script: "ls -d workspace/build/src/build/* | tr -d '\\n'", returnStdout:true)
+                                    context.println "base build path for jmod signing = ${base_path}"
                                     context.stash name: 'jmods',
                                         includes: "${base_path}/hotspot/variant-server/**/*," +
                                             "${base_path}/support/modules_cmds/**/*," +
                                             "${base_path}/support/modules_libs/**/*," +
+                                            // JDK 16 + jpackage needs to be signed as well
                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncher"
-} catch (e) {
-                                        context.println "Failed to stash ${e}"
-                                    }
 
                                     context.node('eclipse-codesign') {
                                         context.sh "rm -rf ${base_path}/* || true"
@@ -1515,14 +1511,13 @@ try {
 
                                         // Copy pre assembled binary ready for JMODs to be codesigned
                                         context.unstash 'jmods'
-                                        context.withEnv(["base_path=${base_path}","target_os=${buildConfig.TARGET_OS}"]) {
-                                            // groovylint-disable
-                                            context.sh '''
+                                        // groovylint-disable
+                                        context.sh '''
                                                 #!/bin/bash
                                                 set -eu
-                                                echo "Signing JMOD files under build path ${base_path} for target_os ${target_os}"
+                                                echo "Signing JMOD files under build path ${base_path} for target_os ${buildConfig.TARGET_OS}"
                                                 TMP_DIR="${base_path}/"
-                                                if [ "${target_os}" == "mac" ]; then
+                                                if [ "${buildConfig.TARGET_OS}" == "mac" ]; then
                                                     ENTITLEMENTS="$WORKSPACE/entitlements.plist"
                                                     FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib' -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
                                                 else
@@ -1534,7 +1529,7 @@ try {
                                                     dir=$(dirname "$f")
                                                     file=$(basename "$f")
                                                     mv "$f" "${dir}/unsigned_${file}"
-                                                    if [ "${target_os}" == "mac" ]; then
+                                                    if [ "${buildConfig.TARGET_OS}" == "mac" ]; then
                                                         curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
                                                     else
                                                         curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign
@@ -1542,7 +1537,7 @@ try {
                                                     chmod --reference="${dir}/unsigned_${file}" "$f"
                                                     # Verify it was Signed..
                                                     echo "Verify Signature for $f"
-                                                    if [ "${target_os}" == "mac" ]; then
+                                                    if [ "${buildConfig.TARGET_OS}" == "mac" ]; then
                                                         if ! codesign -v --verify $f; then
                                                             echo "Warning: $f failed to be signed, attempting one more time..."
                                                             rm -rf "$f"
@@ -1564,7 +1559,7 @@ try {
                                                 for f in $FILES
                                                 do
                                                     echo "Verify Signature for $f"
-                                                    if [ "${target_os}" == "mac" ]; then
+                                                    if [ "${buildConfig.TARGET_OS}" == "mac" ]; then
                                                         if ! codesign -v --verify $f; then
                                                             echo "ERROR: $f has not been signed"
                                                             exit 1
@@ -1577,9 +1572,8 @@ try {
                                                         fi
                                                     fi
                                                 done
-                                            '''
-                                            // groovylint-enable
-                                        }
+                                        '''
+                                        // groovylint-enable
                                         context.stash name: 'signed_jmods', includes: "${base_path}/**/*"
                                     }
 
