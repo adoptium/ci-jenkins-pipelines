@@ -1529,14 +1529,28 @@ class Build {
                                                     echo "Signing $f using Eclipse Foundation codesign service"
                                                     dir=$(dirname "$f")
                                                     file=$(basename "$f")
-                                                    mv "$f" "${dir}/unsigned_${file}"
+                                                    #mv "$f" "${dir}/unsigned_${file}"
+                                                    #if [ "${target_os}" == "mac" ]; then
+                                                    #    curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                    #else
+                                                    #    curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign
+                                                    #fi
+                                                    #chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                    #rm -rf "${dir}/unsigned_${file}"
+                                                done
+                                                for f in $FILES
+                                                do
+                                                    echo "Verify Signature for $f"
                                                     if [ "${target_os}" == "mac" ]; then
-                                                        curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                        if ! codesign -v --verify $f; then
+                                                            echo "ERROR: $f has not been signed"
+                                                        fi
                                                     else
-                                                        curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign
+                                                        signToolPath=${signToolPath:-"/cygdrive/c/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x64/signtool.exe"}
+                                                        if ! $signToolPath verify /v $f; then                                    
+                                                            echo "ERROR: $f has not been signed"
+                                                        fi
                                                     fi
-                                                    chmod --reference="${dir}/unsigned_${file}" "$f"
-                                                    rm -rf "${dir}/unsigned_${file}"
                                                 done
                                             '''
                                             // groovylint-enable
