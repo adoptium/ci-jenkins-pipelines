@@ -1495,12 +1495,17 @@ class Build {
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                     def base_path = context.sh(script: "ls -d workspace/build/src/build/*", returnStdout:true)
-                                    context.println "base build path for jmod signing = ${base_path}"
+                                    context.println "base build path for jmod signing = ${base_path}A"
+                                    base_path = "workspace/build/src/build/macosx-x86_64-normal-server-release"
+try {
                                     context.stash name: 'jmods',
                                         includes: "${base_path}/hotspot/variant-server/**/*," +
                                             "${base_path}/support/modules_cmds/**/*," +
                                             "${base_path}/support/modules_libs/**/*," +
                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncher"
+} catch (e) {
+                                        context.println "Failed to stash ${e}"
+                                    }
 
                                     context.node('eclipse-codesign') {
                                         context.sh "rm -rf ${base_path}/* || true"
@@ -1519,7 +1524,7 @@ class Build {
                                                 TMP_DIR="${base_path}/"
                                                 if [ "${target_os}" == "mac" ]; then
                                                     ENTITLEMENTS="$WORKSPACE/entitlements.plist"
-                                                    FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
+                                                    FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib' -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
                                                 else
                                                     FILES=$(find "${TMP_DIR}" -type f -name '*.exe' -o -name '*.dll')
                                                 fi
@@ -1530,7 +1535,7 @@ class Build {
                                                     file=$(basename "$f")
                                                     mv "$f" "${dir}/unsigned_${file}"
                                                     if [ "${target_os}" == "mac" ]; then
-                                                        curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                        curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
                                                     else
                                                         curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign
                                                     fi
@@ -1541,7 +1546,7 @@ class Build {
                                                         if ! codesign -v --verify $f; then
                                                             echo "Warning: $f failed to be signed, attempting one more time..."
                                                             rm -rf "$f"
-                                                            curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                            curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
                                                             chmod --reference="${dir}/unsigned_${file}" "$f"
                                                         fi
                                                     else
