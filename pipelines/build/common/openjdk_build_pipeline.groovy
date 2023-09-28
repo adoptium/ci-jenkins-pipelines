@@ -1482,84 +1482,87 @@ class Build {
                                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
-                                if (buildConfig.TARGET_OS == 'mac' && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
-                                    def macSignBuildArgs
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
+                                    echo "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
+                                    def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                        macSignBuildArgs = env.BUILD_ARGS + ' --make-exploded-image'
+                                        signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image'
                                     } else {
-                                        macSignBuildArgs = '--make-exploded-image'
+                                        signBuildArgs = '--make-exploded-image'
                                     }
-                                    context.withEnv(['BUILD_ARGS=' + macSignBuildArgs]) {
+                                    context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
-                                    def macos_base_path_arch = 'x86_64'
-                                    if (buildConfig.ARCHITECTURE == 'aarch64') {
-                                        macos_base_path_arch = 'aarch64'
-                                    }
-                                    def macos_base_path = "workspace/build/src/build/macosx-${macos_base_path_arch}-server-release"
-                                    if (buildConfig.JAVA_TO_BUILD == 'jdk11u') {
-                                        macos_base_path = "workspace/build/src/build/macosx-${macos_base_path_arch}-normal-server-release"
-                                    }
+                                    def base_path = "$(ls -d workspace/build/src/build/*)"
+                                    echo "base build path for jmod signing = ${base_path}"
                                     context.stash name: 'jmods',
-                                        includes: "${macos_base_path}/hotspot/variant-server/**/*," +
-                                            "${macos_base_path}/support/modules_cmds/**/*," +
-                                            "${macos_base_path}/support/modules_libs/**/*," +
+                                        includes: "${base_path}/hotspot/variant-server/**/*," +
+                                            "${base_path}/support/modules_cmds/**/*," +
+                                            "${base_path}/support/modules_libs/**/*," +
                                             // JDK 16 + jpackage needs to be signed as well
-                                            "${macos_base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncher"
+                                            "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncher"
 
                                     context.node('eclipse-codesign') {
-                                        context.sh "rm -rf ${macos_base_path}/* || true"
+                                        context.sh "rm -rf ${base_path}/* || true"
 
                                         repoHandler.checkoutAdoptBuild(context)
                                         printGitRepoInfo()
 
                                         // Copy pre assembled binary ready for JMODs to be codesigned
                                         context.unstash 'jmods'
-                                        context.withEnv(["macos_base_path=${macos_base_path}"]) {
+                                        context.withEnv(["base_path=${base_path}","target_os=${buildConfig.TARGET_OS}"]) {
                                             // groovylint-disable
                                             context.sh '''
                                                 #!/bin/bash
                                                 set -eu
-                                                echo "Signing JMOD files"
-                                                TMP_DIR="${macos_base_path}/"
-                                                ENTITLEMENTS="$WORKSPACE/entitlements.plist"
-                                                FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
+                                                echo "Signing JMOD files under build path ${base_path} for target_os ${target_os}"
+                                                TMP_DIR="${base_path}/"
+                                                if [ "${target_os}" == "mac" ]; then
+                                                    ENTITLEMENTS="$WORKSPACE/entitlements.plist"
+                                                    FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib'  -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
+                                                else
+                                                    FILES=$(find "${TMP_DIR}" -type f -name '*.exe' -o -name '*.dll')
+                                                fi
                                                 for f in $FILES
                                                 do
                                                     echo "Signing $f using Eclipse Foundation codesign service"
                                                     dir=$(dirname "$f")
                                                     file=$(basename "$f")
                                                     mv "$f" "${dir}/unsigned_${file}"
-                                                    curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                    if [ "${target_os}" == "mac" ]; then
+                                                        curl -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
+                                                    else
+                                                        curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign
+                                                    fi
                                                     chmod --reference="${dir}/unsigned_${file}" "$f"
                                                     rm -rf "${dir}/unsigned_${file}"
                                                 done
                                             '''
                                             // groovylint-enable
                                         }
-                                        context.stash name: 'signed_jmods', includes: "${macos_base_path}/**/*"
+                                        context.stash name: 'signed_jmods', includes: "${base_path}/**/*"
                                     }
 
                                     // Remove jmod directories to be replaced with the stash saved above
-                                    context.sh "rm -rf ${macos_base_path}/hotspot/variant-server || true"
-                                    context.sh "rm -rf ${macos_base_path}/support/modules_cmds || true"
-                                    context.sh "rm -rf ${macos_base_path}/support/modules_libs || true"
+                                    context.sh "rm -rf ${base_path}/hotspot/variant-server || true"
+                                    context.sh "rm -rf ${base_path}/support/modules_cmds || true"
+                                    context.sh "rm -rf ${base_path}/support/modules_libs || true"
                                     // JDK 16 + jpackage needs to be signed as well
                                     if (buildConfig.JAVA_TO_BUILD != 'jdk11u') {
-                                        context.sh "rm -rf ${macos_base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncher || true"
+                                        context.sh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncher || true"
                                     }
 
                                     // Restore signed JMODs
                                     context.unstash 'signed_jmods'
 
-                                    def macAssembleBuildArgs
+                                    def assembleBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                        macAssembleBuildArgs = env.BUILD_ARGS + ' --assemble-exploded-image'
+                                        assembleBuildArgs = env.BUILD_ARGS + ' --assemble-exploded-image'
                                     } else {
-                                        macAssembleBuildArgs = '--assemble-exploded-image'
+                                        assembleBuildArgs = '--assemble-exploded-image'
                                     }
-                                    context.withEnv(['BUILD_ARGS=' + macAssembleBuildArgs]) {
+                                    context.withEnv(['BUILD_ARGS=' + assembleBuildArgs]) {
                                         context.println 'Assembling the exploded image'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
