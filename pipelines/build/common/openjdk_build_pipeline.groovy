@@ -1494,7 +1494,7 @@ class Build {
                                         context.println 'Building an exploded image for signing'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
-                                    def base_path = '$(ls -d workspace/build/src/build/*)'
+                                    def base_path = $(ls -d workspace/build/src/build/*)
                                     context.println "base build path for jmod signing = ${base_path}"
                                     context.stash name: 'jmods',
                                         includes: "${base_path}/hotspot/variant-server/**/*," +
