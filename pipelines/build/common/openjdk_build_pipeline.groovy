@@ -1511,11 +1511,14 @@ class Build {
 
                                         // Copy pre assembled binary ready for JMODs to be codesigned
                                         context.unstash 'jmods'
-                                        context.withEnv(['base_path=${base_path}','target_os=${buildConfig.TARGET_OS}']) {
+                                        def target_os = "${buildConfig.TARGET_OS}"
+                                        echo "OS = ${target_os}"
+                                        context.withEnv(['target_os='+target_os, 'base_path='+base_path]) {
                                             // groovylint-disable
                                             context.sh '''
                                                 #!/bin/bash
                                                 set -eu
+                                                echo "base_path = ${base_path}"
                                                 echo "Signing JMOD files under build path ${base_path} for target_os ${target_os}"
                                                 TMP_DIR="${base_path}/"
                                                 if [ "${target_os}" == "mac" ]; then
