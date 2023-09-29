@@ -1512,13 +1512,11 @@ class Build {
                                         // Copy pre assembled binary ready for JMODs to be codesigned
                                         context.unstash 'jmods'
                                         def target_os = "${buildConfig.TARGET_OS}"
-                                        context.println "OS = ${target_os}"
                                         context.withEnv(['base_os='+target_os, 'base_path='+base_path]) {
                                             // groovylint-disable
                                             context.sh '''
                                                 #!/bin/bash
                                                 set -eu
-                                                echo "base_path = ${base_path}"
                                                 echo "Signing JMOD files under build path ${base_path} for base_os ${base_os}"
                                                 TMP_DIR="${base_path}/"
                                                 if [ "${base_os}" == "mac" ]; then
@@ -1539,42 +1537,7 @@ class Build {
                                                         curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign
                                                     fi
                                                     chmod --reference="${dir}/unsigned_${file}" "$f"
-                                                    # Verify it was Signed..
-                                                    echo "Verify Signature for $f"
-                                                    if [ "${base_os}" == "mac" ]; then
-                                                        if ! codesign -v --verify $f; then
-                                                            echo "Warning: $f failed to be signed, attempting one more time..."
-                                                            rm -rf "$f"
-                                                            curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
-                                                            chmod --reference="${dir}/unsigned_${file}" "$f"
-                                                        fi
-                                                    else
-                                                        signToolPath=${signToolPath:-"/cygdrive/c/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x64/signtool.exe"}
-                                                        if ! $signToolPath verify /v $f; then
-                                                            echo "Warning: $f failed to be signed, attempting one more time..."
-                                                            rm -rf "$f"
-                                                            curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign
-                                                            chmod --reference="${dir}/unsigned_${file}" "$f"
-                                                        fi
-                                                    fi
                                                     rm -rf "${dir}/unsigned_${file}"
-                                                done
-                                                # Finally verify all were signed
-                                                for f in $FILES
-                                                do
-                                                    echo "Verify Signature for $f"
-                                                    if [ "${base_os}" == "mac" ]; then
-                                                        if ! codesign -v --verify $f; then
-                                                            echo "ERROR: $f has not been signed"
-                                                            exit 1
-                                                        fi
-                                                    else
-                                                        signToolPath=${signToolPath:-"/cygdrive/c/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x64/signtool.exe"}
-                                                        if ! $signToolPath verify /v $f; then                                    
-                                                            echo "ERROR: $f has not been signed"
-                                                            exit 1
-                                                        fi
-                                                    fi
                                                 done
                                             '''
                                             // groovylint-enable
