@@ -1512,7 +1512,7 @@ class Build {
                                         // Copy pre assembled binary ready for JMODs to be codesigned
                                         context.unstash 'jmods'
                                         def target_os = "${buildConfig.TARGET_OS}"
-                                        echo "OS = ${target_os}"
+                                        context.println "OS = ${target_os}"
                                         context.withEnv(['target_os='+target_os, 'base_path='+base_path]) {
                                             // groovylint-disable
                                             context.sh '''
