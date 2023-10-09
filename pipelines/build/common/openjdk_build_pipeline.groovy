@@ -1531,50 +1531,10 @@ class Build {
                                                     dir=$(dirname "$f")
                                                     file=$(basename "$f")
                                                     mv "$f" "${dir}/unsigned_${file}"
-                                                    success=false
                                                     if [ "${base_os}" == "mac" ]; then
-                                                        if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
-                                                            echo "curl command failed, sign of $f failed"
-                                                        else
-                                                            success=true
-                                                        fi
+                                                        curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign
                                                     else
-                                                        if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign; then
-                                                            echo "curl command failed, sign of $f failed"
-                                                        else
-                                                            success=true
-                                                        fi
-                                                    fi
-                                                    if [ $success == false ]; then
-                                                        # Retry up to 20 times
-                                                        max_iterations=20
-                                                        iteration=1
-                                                        echo "Code Not Signed For File $f"
-                                                        while [ $iteration -le $max_iterations ] && [ $success = false ]; do
-                                                            echo $iteration Of $max_iterations
-                                                            sleep 1
-                                                            if [ "${base_os}" == "mac" ]; then
-                                                                if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
-                                                                    success=true
-                                                                fi
-                                                            else
-                                                                if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign; then
-                                                                    success=true
-                                                                fi
-                                                            fi
-
-                                                            if [ $success = false ]; then
-                                                                echo "curl command failed, $f Failed Signing On Attempt $iteration"
-                                                                iteration=$((iteration+1))
-                                                                if [ $iteration -gt $max_iterations ]
-                                                                then
-                                                                    echo "Errors Encountered During Signing"
-                                                                    exit 1
-                                                                fi
-                                                            else
-                                                                echo "$f Signed OK On Attempt $iteration"
-                                                            fi
-                                                        done
+                                                        curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign
                                                     fi
                                                     chmod --reference="${dir}/unsigned_${file}" "$f"
                                                     rm -rf "${dir}/unsigned_${file}"
