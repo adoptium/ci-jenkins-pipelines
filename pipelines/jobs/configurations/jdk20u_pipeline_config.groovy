@@ -4,7 +4,7 @@ class Config20 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels: 'macos10.14',
+                additionalNodeLabels: 'macos',
                 additionalTestLabels: [
                         openj9      : '!sw.os.osx.10_11'
                 ],

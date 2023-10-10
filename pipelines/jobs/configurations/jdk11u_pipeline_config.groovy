@@ -4,7 +4,7 @@ class Config11 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels : 'macos10.14',
+                additionalNodeLabels : 'macos11',
                 test                : 'default',
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto --with-cmake',
