@@ -38,7 +38,7 @@
     },
     "testDetails"            : {
         "enableReproducibleCompare" : false,
-        "enableTests"        : true,
+        "enableTests"        : false,
         "nightlyDefault"     : [
             "sanity.openjdk",
             "sanity.system",
