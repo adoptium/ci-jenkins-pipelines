@@ -4,7 +4,7 @@ class Config22 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels: 'macos10.14',
+                additionalNodeLabels: 'macos11',
                 additionalTestLabels: [
                         openj9      : '!sw.os.osx.10_11'
                 ],
