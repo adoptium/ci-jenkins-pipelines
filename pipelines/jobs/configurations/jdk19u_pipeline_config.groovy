@@ -157,6 +157,9 @@ class Config19 {
         riscv64Linux      :  [
                 os                   : 'linux',
                 arch                 : 'riscv64',
+                crossCompile         : 'x64',
+                dockerImage          : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
+                dockerArgs           : '--platform linux/riscv64',
                 configureArgs        : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
