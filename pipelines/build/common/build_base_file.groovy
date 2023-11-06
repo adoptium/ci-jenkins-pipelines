@@ -786,8 +786,8 @@ class Builder implements Serializable {
         context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
                     parameters: [
                         ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
-                        ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: ((releaseType=="Weekly" && javaVersion=="jdk21") ? true : false)],
-                        context.string(name: 'TAG', value: ((javaToBuild=="jdk21" || javaToBuild=="jdk")?(scmReference.replace('_adopt','')):tag)),
+                        ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: false],
+                        context.string(name: 'TAG', value: ((scmReference && (javaToBuild=="jdk21" || javaToBuild=="jdk"))?(scmReference.replace('_adopt','')):tag)),
                         context.string(name: 'TIMESTAMP', value: ((javaToBuild=="jdk21" || javaToBuild=="jdk")?publishName:timestamp)),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
