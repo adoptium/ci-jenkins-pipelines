@@ -765,7 +765,7 @@ class Builder implements Serializable {
             tag = publishName
         }
 
-        if (javaToBuild=="jdk21" && scmReference && !release) {
+        if ((javaToBuild=="jdk21" || javaToBuild=="jdk") && scmReference && !release) {
             publishName = scmReference.replace('_adopt','')
             def firstDot=publishName.indexOf('.')
             def plusSign=publishName.indexOf('+')
@@ -787,8 +787,8 @@ class Builder implements Serializable {
                     parameters: [
                         ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
                         ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: ((releaseType=="Weekly" && javaVersion=="jdk21") ? true : false)],
-                        context.string(name: 'TAG', value: (javaToBuild=="jdk21"?(scmReference.replace('_adopt','')):tag)),
-                        context.string(name: 'TIMESTAMP', value: (javaToBuild=="jdk"?publishName:timestamp)),
+                        context.string(name: 'TAG', value: ((javaToBuild=="jdk21" || javaToBuild=="jdk")?(scmReference.replace('_adopt','')):tag)),
+                        context.string(name: 'TIMESTAMP', value: ((javaToBuild=="jdk21" || javaToBuild=="jdk")?publishName:timestamp)),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
                         context.string(name: 'VERSION', value: javaVersion)
