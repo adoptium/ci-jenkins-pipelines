@@ -765,7 +765,10 @@ class Builder implements Serializable {
             tag = publishName
         }
 
-        if ((javaToBuild=="jdk21" || javaToBuild=="jdk") && scmReference && !release) {
+        // Definition of filenames when building an EA tag. This is passed
+        // to the release tool in place of the "TIMESTAMP" Criteria for this:
+        // JDK21 or 22 when a scmRef (tag) is specified and it's not a release build
+        if ((javaVersion=="jdk21" || javaVersion=="jdk22") && scmReference && !release) {
             publishName = scmReference.replace('_adopt','')
             def firstDot=publishName.indexOf('.')
             def plusSign=publishName.indexOf('+')
@@ -787,8 +790,8 @@ class Builder implements Serializable {
                     parameters: [
                         ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
                         ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: false],
-                        context.string(name: 'TAG', value: ((scmReference && (javaToBuild=="jdk21" || javaToBuild=="jdk"))?(scmReference.replace('_adopt','')):tag)),
-                        context.string(name: 'TIMESTAMP', value: ((javaToBuild=="jdk21" || javaToBuild=="jdk")?publishName:timestamp)),
+                        context.string(name: 'TAG', value: ((scmReference && (javaVersion=="jdk21" || javaVersion=="jdk22"))?(scmReference.replace('_adopt','')):tag)),
+                        context.string(name: 'TIMESTAMP', value: ((javaVersion=="jdk21" || javaVersion=="jdk22")?publishName:timestamp)),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
                         context.string(name: 'VERSION', value: javaVersion)
