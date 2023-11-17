@@ -1724,6 +1724,11 @@ class Build {
         String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
         def NodeHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").NodeHelper
 
+        // If label contains mac skip waiting for node to become active as we use Orka
+        if (label.contains('mac')) {
+            return
+        }
+
         // A node with the requested label is ready to go
         if (NodeHelper.nodeIsOnline(label)) {
             return
