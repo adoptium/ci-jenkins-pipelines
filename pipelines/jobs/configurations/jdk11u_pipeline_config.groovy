@@ -4,7 +4,6 @@ class Config11 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels : 'macos11',
                 test                : 'default',
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto --with-cmake',
@@ -137,7 +136,6 @@ class Config11 {
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
-                additionalNodeLabels: 'macos11',
                 test                : 'default',
                 configureArgs       : '--disable-ccache',
                 buildArgs           : [

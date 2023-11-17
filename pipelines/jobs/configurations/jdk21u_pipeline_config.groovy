@@ -4,7 +4,7 @@ class Config21 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels: 'macos11',
+                additionalNodeLabels: 'xcode12.4',
                 additionalTestLabels: [
                         openj9      : '!sw.os.osx.10_11'
                 ],
@@ -140,7 +140,7 @@ class Config21 {
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
-                additionalNodeLabels: 'macos11',
+                additionalNodeLabels: 'xcode12.4',
                 test                : 'default',
                 reproducibleCompare : [
                         'temurin'   : true
