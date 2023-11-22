@@ -110,6 +110,7 @@ if (verify) {
 println "jdk_bin=${jdk_bin}"
 sh("ls -l jdk_cp/Contents/Home/bin")
                 withEnv(['PATH+JAVA=${jdk_bin}']) {
+sh("echo $PATH")
                     def folders = ["jdk", "jre"]
                     folders.each { folder ->
                         // Expand JMODs
