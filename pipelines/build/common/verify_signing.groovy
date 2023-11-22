@@ -114,9 +114,9 @@ if (verify) {
                     println "Expanding JMODS under ${folder}"
                     def jmods = findFiles(glob: "${folder}/**/*.jmod")
                     jmods.each { jmod ->
-                        def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
+                        def expand_dir = "expanded_" + sh(script:"basename ${jmod} | tr -d '\r'", returnStdout:true)
                         sh("mkdir ${expand_dir}")
-                        sh("echo ${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
+                        sh("${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
                     }
 
                     // Expand "modules" compress image containing jmods
