@@ -29,11 +29,11 @@ Parameters:
 Boolean verify = false
 String  verifyNode
 switch(params.TARGET_OS) {
-    'mac':
+    case 'mac':
         verifyNode = params.MAC_VERIFY_LABEL
         verify = true
         break
-    'windows':
+    case 'windows':
         verifyNode = params.WINDOWS_VERIFY_LABEL
         verify = true
         break
