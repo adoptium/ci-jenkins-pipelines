@@ -61,7 +61,7 @@ if (verify) {
                     jreFilter = "workspace/target/*-jre*.zip"
                 }
 
-                println "[INFO] Retrieving ${jdkFilter} artifacts from ${params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
+                println "[INFO] Retrieving ${jdkFilter} artifacts from ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
                 copyArtifacts(
                     projectName: "${params.UPSTREAM_JOB_NAME}",
                     selector: specific("${params.UPSTREAM_JOB_NUMBER}"),
@@ -69,7 +69,7 @@ if (verify) {
                     fingerprintArtifacts: true,
                     flatten: true
                 )
-                println "[INFO] Retrieving ${jreFilter} artifacts from ${params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
+                println "[INFO] Retrieving ${jreFilter} artifacts from ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
                 copyArtifacts(
                     projectName: "${params.UPSTREAM_JOB_NAME}",
                     selector: specific("${params.UPSTREAM_JOB_NUMBER}"),
@@ -80,7 +80,7 @@ if (verify) {
 
                 // For Mac we need to also verify pkg files are "Notarized" if installers have been created
                 if (params.TARGET_OS == "mac") {
-                    println "[INFO] Retrieving workspace/target/*.pkg artifacts from ${params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
+                    println "[INFO] Retrieving workspace/target/*.pkg artifacts from ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
                     copyArtifacts(
                         projectName: "${params.UPSTREAM_JOB_NAME}",
                         selector: specific("${params.UPSTREAM_JOB_NUMBER}"),
@@ -93,8 +93,8 @@ if (verify) {
 
                 // Unpack archives
                 if (params.TARGET_OS == "mac") {
-                    sh("mkdir jdk && tar -C jdk *-jdk*.tar.gz")
-                    sh("mkdir jre && tar -C jre *-jre*.tar.gz")
+                    sh("mkdir jdk && tar -C jdk -xf *-jdk*.tar.gz")
+                    sh("mkdir jre && tar -C jre -xf *-jre*.tar.gz")
                 } else { // Windows
                     sh("mkdir jdk && unzip *-jdk*.tar.gz -d jdk")
                     sh("mkdir jre && unzip *-jre*.tar.gz -d jre")
