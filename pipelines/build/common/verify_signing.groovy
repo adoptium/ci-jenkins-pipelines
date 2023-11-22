@@ -107,29 +107,25 @@ if (verify) {
                 if (params.TARGET_OS == "mac") {
                     jdk_bin = "${WORKSPACE}/jdk_cp/Contents/Home/bin"
                 }
-println "jdk_bin=${jdk_bin}"
-sh("ls -l jdk_cp/Contents/Home/bin")
-                withEnv(['PATH+JAVA=${jdk_bin}']) {
-sh("echo $PATH")
-                    def folders = ["jdk", "jre"]
-                    folders.each { folder ->
-                        // Expand JMODs
-                        println "Expanding JMODS under ${folder}"
-                        def jmods = findFiles(glob: "${folder}/**/*.jmod")
-                        jmods.each { jmod ->
-                            def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
-                            sh("mkdir ${expand_dir}")
-                            sh("jmod extract --dir ${expand_dir} ${jmod}")
-                        }
 
-                        // Expand "modules" compress image containing jmods
-                        println "Expanding 'modules' compressed image file under ${folder}"
-                        def modules = findFiles(glob: "${folder}/**/modules")
-                        modules.each { module ->
-                            def expand_dir = "expanded_" + sh(script:"basename ${module}", returnStdout:true)
-                            sh("mkdir ${expand_dir}")
-                            sh("jimage extract --dir ${expand_dir} ${module}")
-                        }
+                def folders = ["jdk", "jre"]
+                folders.each { folder ->
+                    // Expand JMODs
+                    println "Expanding JMODS under ${folder}"
+                    def jmods = findFiles(glob: "${folder}/**/*.jmod")
+                    jmods.each { jmod ->
+                        def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
+                        sh("mkdir ${expand_dir}")
+                        sh("${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
+                    }
+
+                    // Expand "modules" compress image containing jmods
+                    println "Expanding 'modules' compressed image file under ${folder}"
+                    def modules = findFiles(glob: "${folder}/**/modules")
+                    modules.each { module ->
+                        def expand_dir = "expanded_" + sh(script:"basename ${module}", returnStdout:true)
+                        sh("mkdir ${expand_dir}")
+                        sh("${jdk_bin}/jimage extract --dir ${expand_dir} ${module}")
                     }
                 }
 
