@@ -116,7 +116,8 @@ if (verify) {
                         def jmods = findFiles(glob: "${folder}/**/*.jmod")
                         jmods.each { jmod ->
                             def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
-                            sh("mkdir ${expand_dir} && jmod extract --dir ${expand_dir} ${jmod}")
+                            sh("mkdir ${expand_dir}")
+                            sh("jmod extract --dir ${expand_dir} ${jmod}")
                         }
 
                         // Expand "modules" compress image containing jmods
@@ -124,7 +125,8 @@ if (verify) {
                         def modules = findFiles(glob: "${folder}/**/modules")
                         modules.each { module ->
                             def expand_dir = "expanded_" + sh(script:"basename ${module}", returnStdout:true)
-                            sh("mkdir ${expand_dir} && jimage extract --dir ${expand_dir} ${module}")
+                            sh("mkdir ${expand_dir}")
+                            sh("jimage extract --dir ${expand_dir} ${module}")
                         }
                     }
                 }
