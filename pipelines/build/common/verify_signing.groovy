@@ -78,7 +78,7 @@ if (verify) {
                     flatten: true
                 ) 
 
-                // For Mac we need to also verify pkg files are "Notarized"
+                // For Mac we need to also verify pkg files are "Notarized" if installers have been created
                 if (params.TARGET_OS == "mac") {
                     println "[INFO] Retrieving workspace/target/*.pkg artifacts from ${params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
                     copyArtifacts(
@@ -86,7 +86,8 @@ if (verify) {
                         selector: specific("${params.UPSTREAM_JOB_NUMBER}"),
                         filter: "workspace/target/*.pkg",
                         fingerprintArtifacts: true,
-                        flatten: true
+                        flatten: true,
+                        optional: true
                     )
                 }
 
