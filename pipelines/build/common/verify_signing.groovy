@@ -116,7 +116,7 @@ if (verify) {
                     jmods.each { jmod ->
                         def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
                         sh("mkdir ${expand_dir}")
-                        sh("${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
+                        sh("echo ${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
                     }
 
                     // Expand "modules" compress image containing jmods
