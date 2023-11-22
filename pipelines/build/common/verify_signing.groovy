@@ -114,7 +114,7 @@ if (verify) {
                     println "Expanding JMODS under ${folder}"
                     def jmods = findFiles(glob: "${folder}/**/*.jmod")
                     jmods.each { jmod ->
-                        def expand_dir = "expanded_" + sh(script:"basename ${jmod} | tr -d '\r'", returnStdout:true)
+                        def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
                         expand_dir = expand_dir.trim()
                         sh("mkdir ${expand_dir}")
                         sh("${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
@@ -125,6 +125,7 @@ if (verify) {
                     def modules = findFiles(glob: "${folder}/**/modules")
                     modules.each { module ->
                         def expand_dir = "expanded_" + sh(script:"basename ${module}", returnStdout:true)
+                        expand_dir = expand_dir.trim()
                         sh("mkdir ${expand_dir}")
                         sh("${jdk_bin}/jimage extract --dir ${expand_dir} ${module}")
                     }
@@ -135,6 +136,7 @@ if (verify) {
                     // also add "jpackageapplauncher" specific case which is not marked as "executable"
                     // as it is within the jdk.jpackage resources used by jpackage util to generate user app launchers
                     def bins = sh(script:"find . -perm +111 -type f -not -name '.*' -o -name '*.dylib' || find . -perm /111 -type f -not -name '.*' -o -name '*.dylib'", returnStdout:true)
+                    bins.addAll(findFiles(glob: "./**/jpackageapplauncher"))
                     bins.each { bin ->
                        def rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
                        if (rc != 0) {
