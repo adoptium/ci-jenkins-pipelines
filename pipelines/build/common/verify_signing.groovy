@@ -45,8 +45,8 @@ if (verify) {
     println "Verifying signing for platform ${params.TARGET_OS}, ${job params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
 
     // Switch to appropriate node
-    node(verifyNode) {
-        stage("verify_signing") {
+    stage("verify_signing") {
+        node(verifyNode) {
             timestamps {
                 // Clean workspace to ensure no old artifacts
                 cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
