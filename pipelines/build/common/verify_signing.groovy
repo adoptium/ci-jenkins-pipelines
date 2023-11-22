@@ -115,6 +115,7 @@ if (verify) {
                     def jmods = findFiles(glob: "${folder}/**/*.jmod")
                     jmods.each { jmod ->
                         def expand_dir = "expanded_" + sh(script:"basename ${jmod} | tr -d '\r'", returnStdout:true)
+                        expand_dir = expand_dir.trim()
                         sh("mkdir ${expand_dir}")
                         sh("${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
                     }
