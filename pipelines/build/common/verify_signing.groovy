@@ -49,7 +49,7 @@ if (verify) {
         stage("verify_signing") {
             timestamps {
                 // Clean workspace to ensure no old artifacts
-                context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
+                cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
                 def jdkFilter
                 def jreFilter
@@ -92,15 +92,15 @@ if (verify) {
 
                 // Unpack archives
                 if (params.TARGET_OS == "mac") {
-                    context.sh("mkdir jdk && tar -C jdk *-jdk*.tar.gz")
-                    context.sh("mkdir jre && tar -C jre *-jre*.tar.gz")
+                    sh("mkdir jdk && tar -C jdk *-jdk*.tar.gz")
+                    sh("mkdir jre && tar -C jre *-jre*.tar.gz")
                 } else { // Windows
-                    context.sh("mkdir jdk && unzip *-jdk*.tar.gz -d jdk")
-                    context.sh("mkdir jre && unzip *-jre*.tar.gz -d jre")
+                    sh("mkdir jdk && unzip *-jdk*.tar.gz -d jdk")
+                    sh("mkdir jre && unzip *-jre*.tar.gz -d jre")
                 }
 
                 // Copy JDK so it can be used for unpacking
-                context.sh("cp -r jdk jdk_cp")
+                sh("cp -r jdk jdk_cp")
 
                 def jdk_bin = "${WORKSPACE}/jdk_cp/bin"
                 if (params.TARGET_OS == "mac") {
@@ -111,19 +111,19 @@ if (verify) {
                     def folders = ["jdk", "jre"]
                     folders.each { folder ->
                         // Expand JMODs
-                        context.println "Expanding JMODS under ${folder}"
+                        println "Expanding JMODS under ${folder}"
                         def jmods = findFiles(glob: "${folder}/**/*.jmod")
                         jmods.each { jmod ->
-                            def expand_dir = "expanded_" + context.sh(script:"basename ${jmod}", returnStdout:true)
-                            context.sh("mkdir ${expand_dir} && jmod extract --dir ${expand_dir} ${jmod}")
+                            def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
+                            sh("mkdir ${expand_dir} && jmod extract --dir ${expand_dir} ${jmod}")
                         }
 
                         // Expand "modules" compress image containing jmods
-                        context.println "Expanding 'modules' compressed image file under ${folder}"
+                        println "Expanding 'modules' compressed image file under ${folder}"
                         def modules = findFiles(glob: "${folder}/**/modules")
                         modules.each { module ->
-                            def expand_dir = "expanded_" + context.sh(script:"basename ${module}", returnStdout:true)
-                            context.sh("mkdir ${expand_dir} && jimage extract --dir ${expand_dir} ${module}")
+                            def expand_dir = "expanded_" + sh(script:"basename ${module}", returnStdout:true)
+                            sh("mkdir ${expand_dir} && jimage extract --dir ${expand_dir} ${module}")
                         }
                     }
                 }
@@ -132,9 +132,9 @@ if (verify) {
                     // On Mac find all dylib's and binaries marked as "executable",
                     // also add "jpackageapplauncher" specific case which is not marked as "executable"
                     // as it is within the jdk.jpackage resources used by jpackage util to generate user app launchers
-                    def bins = context.sh(script:"find . -perm +111 -type f -not -name '.*' -o -name '*.dylib' || find . -perm /111 -type f -not -name '.*' -o -name '*.dylib'", returnStdout:true)
+                    def bins = sh(script:"find . -perm +111 -type f -not -name '.*' -o -name '*.dylib' || find . -perm /111 -type f -not -name '.*' -o -name '*.dylib'", returnStdout:true)
                     bins.each { bin ->
-                       def rc = context.sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
+                       def rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
                        if (rc != 0) {
                            println "Error: dylib not signed: ${bin}"
                            currentBuild.result = 'FAILURE'
@@ -146,7 +146,7 @@ if (verify) {
                     // Find all pkg's that need to be Notarized
                     def pkgs = findFiles(glob: "*.pkg")
                     pkgs.each { pkg ->
-                       def rc = context.sh(script:"spctl -a -vvv -t install ${pkg}", returnStatus:true)
+                       def rc = sh(script:"spctl -a -vvv -t install ${pkg}", returnStatus:true)
                        if (rc != 0) {
                            println "Error: pkg not Notarized: ${pkg}"
                            currentBuild.result = 'FAILURE'
@@ -159,7 +159,7 @@ if (verify) {
                     def bins = findFiles(glob: "**/*.exe")
                     bins.addAll(findFiles(glob: "**/*.dll"))
                     bins.each { bin ->
-                       def rc = context.sh(script:"signtool verify /v ${bin}", returnStatus:true)
+                       def rc = sh(script:"signtool verify /v ${bin}", returnStatus:true)
                        if (rc != 0) {
                            println "Error: binary not signed: ${bin}"
                            currentBuild.result = 'FAILURE'
