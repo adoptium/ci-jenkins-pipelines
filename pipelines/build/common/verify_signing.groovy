@@ -101,7 +101,7 @@ if (verify) {
                 }
 
                 // Copy JDK so it can be used for unpacking
-                sh("cp -r jdk/*/* jdk_cp")
+                sh("mkdir jdk_cp && cp -r jdk/*/* jdk_cp")
 
                 def jdk_bin = "${WORKSPACE}/jdk_cp/bin"
                 if (params.TARGET_OS == "mac") {
