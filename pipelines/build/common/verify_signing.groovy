@@ -26,8 +26,8 @@ Parameters:
 */
 
 
-Boolean verify = false
-String  verifyNode
+def verify = false
+def verifyNode
 switch(params.TARGET_OS) {
     case 'mac':
         verifyNode = params.MAC_VERIFY_LABEL
