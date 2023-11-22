@@ -107,7 +107,8 @@ if (verify) {
                 if (params.TARGET_OS == "mac") {
                     jdk_bin = "${WORKSPACE}/jdk_cp/Contents/Home/bin"
                 }
-
+println "jdk_bin=${jdk_bin}"
+sh("ls -l jdk_cp/Contents/Home/bin")
                 withEnv(['PATH+JAVA=${jdk_bin}']) {
                     def folders = ["jdk", "jre"]
                     folders.each { folder ->
