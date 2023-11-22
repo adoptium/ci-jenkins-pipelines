@@ -135,8 +135,7 @@ if (verify) {
                     // On Mac find all dylib's and binaries marked as "executable",
                     // also add "jpackageapplauncher" specific case which is not marked as "executable"
                     // as it is within the jdk.jpackage resources used by jpackage util to generate user app launchers
-                    def bins = sh(script:"find . -perm +111 -type f -not -name '.*' -o -name '*.dylib' || find . -perm /111 -type f -not -name '.*' -o -name '*.dylib'", returnStdout:true).split("\\r?\\n|\\r")
-                    bins.addAll(findFiles(glob: "./**/jpackageapplauncher"))
+                    def bins = sh(script:"find . -perm +111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' || find . -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher'", returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
                        def rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
                        if (rc != 0) {
