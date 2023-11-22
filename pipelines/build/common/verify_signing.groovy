@@ -46,7 +46,8 @@ if (verify) {
 
     // Switch to appropriate node
     node(verifyNode) {
-        timestamps {
+        stage("verify_signing") {
+            timestamps {
                 // Clean workspace to ensure no old artifacts
                 context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
@@ -167,6 +168,7 @@ if (verify) {
                        } 
                     }
                 }
+            }
         }
     }
 }
