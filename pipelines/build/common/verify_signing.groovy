@@ -75,6 +75,7 @@ if (verify) {
                     filter: "${jreFilter}",
                     fingerprintArtifacts: true,
                     flatten: true
+                ) 
 
                 // For Mac we need to also verify pkg files are "Notarized"
                 if (params.TARGET_OS == "mac") {
@@ -85,6 +86,7 @@ if (verify) {
                         filter: "workspace/target/*.pkg",
                         fingerprintArtifacts: true,
                         flatten: true
+                    )
                 }
 
                 // Unpack archives
