@@ -42,7 +42,7 @@ switch(params.TARGET_OS) {
 }
 
 if (verify) {
-    println "Verifying signing for platform ${params.TARGET_OS}, ${job params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
+    println "Verifying signing for platform ${params.TARGET_OS}, ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
 
     // Switch to appropriate node
     stage("verify_signing") {
@@ -61,17 +61,17 @@ if (verify) {
                     jreFilter = "workspace/target/*-jre*.zip"
                 }
 
-                println "[INFO] Retrieving ${jdkFilter} artifacts from ${job params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
+                println "[INFO] Retrieving ${jdkFilter} artifacts from ${params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
                 copyArtifacts(
-                    projectName: "${job params.UPSTREAM_JOB_NAME}",
+                    projectName: "${params.UPSTREAM_JOB_NAME}",
                     selector: specific("${params.UPSTREAM_JOB_NUMBER}"),
                     filter: "${jdkFilter}",
                     fingerprintArtifacts: true,
                     flatten: true
                 )
-                println "[INFO] Retrieving ${jreFilter} artifacts from ${job params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
+                println "[INFO] Retrieving ${jreFilter} artifacts from ${params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
                 copyArtifacts(
-                    projectName: "${job params.UPSTREAM_JOB_NAME}",
+                    projectName: "${params.UPSTREAM_JOB_NAME}",
                     selector: specific("${params.UPSTREAM_JOB_NUMBER}"),
                     filter: "${jreFilter}",
                     fingerprintArtifacts: true,
@@ -80,9 +80,9 @@ if (verify) {
 
                 // For Mac we need to also verify pkg files are "Notarized"
                 if (params.TARGET_OS == "mac") {
-                    println "[INFO] Retrieving workspace/target/*.pkg artifacts from ${job params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
+                    println "[INFO] Retrieving workspace/target/*.pkg artifacts from ${params.UPSTREAM_JOB_NAME}/${params.UPSTREAM_JOB_NUMBER}"
                     copyArtifacts(
-                        projectName: "${job params.UPSTREAM_JOB_NAME}",
+                        projectName: "${params.UPSTREAM_JOB_NAME}",
                         selector: specific("${params.UPSTREAM_JOB_NUMBER}"),
                         filter: "workspace/target/*.pkg",
                         fingerprintArtifacts: true,
