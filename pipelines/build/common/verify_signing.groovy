@@ -47,7 +47,7 @@ if (verify) {
     // Switch to appropriate node
     stage("verify_signing") {
         node(verifyNode) {
-            timestamps {
+            try {
                 // Clean workspace to ensure no old artifacts
                 cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
@@ -101,7 +101,7 @@ if (verify) {
                 }
 
                 // Copy JDK so it can be used for unpacking
-                sh("cp -r jdk jdk_cp")
+                sh("cp -r jdk/*/* jdk_cp")
 
                 def jdk_bin = "${WORKSPACE}/jdk_cp/bin"
                 if (params.TARGET_OS == "mac") {
@@ -171,6 +171,10 @@ if (verify) {
                        } 
                     }
                 }
+
+            } finally {
+                // Clean workspace afterwards
+                cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
             }
         }
     }
