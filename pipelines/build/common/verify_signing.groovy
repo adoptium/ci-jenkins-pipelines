@@ -121,10 +121,12 @@ if (verify) {
                     def jmods = sh(script:"find ${dir} -type f -name '*.jmod'", \
                                    returnStdout:true).split("\\r?\\n|\\r")
                     jmods.each { jmod ->
-                        def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
-                        expand_dir = "${dir}/${expand_dir}".trim()
-                        sh("mkdir ${expand_dir}")
-                        sh("${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
+                        if (jmod.trim() != "") {
+                            def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
+                            expand_dir = "${dir}/${expand_dir}".trim()
+                            sh("mkdir ${expand_dir}")
+                            sh("${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
+                        }
                     }
 
                     // Expand "modules" compress image containing jmods
@@ -132,10 +134,12 @@ if (verify) {
                     def modules = sh(script:"find ${dir} -type f -name 'modules'", \
                                      returnStdout:true).split("\\r?\\n|\\r")
                     modules.each { module ->
-                        def expand_dir = "expanded_" + sh(script:"basename ${module}", returnStdout:true)
-                        expand_dir = "${dir}/${expand_dir}".trim()
-                        sh("mkdir ${expand_dir}")
-                        sh("${jdk_bin}/jimage extract --dir ${expand_dir} ${module}")
+                        if (module.trim() != "") {
+                            def expand_dir = "expanded_" + sh(script:"basename ${module}", returnStdout:true)
+                            expand_dir = "${dir}/${expand_dir}".trim()
+                            sh("mkdir ${expand_dir}")
+                            sh("${jdk_bin}/jimage extract --dir ${expand_dir} ${module}")
+                        }
                     }
                 }
 
@@ -148,26 +152,30 @@ if (verify) {
                                           find ${unpack_dir} -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher'",  \
                                   returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
-                       def rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
-                       if (rc != 0) {
-                           println "Error: dylib not signed: ${bin}"
-                           currentBuild.result = 'FAILURE'
-                       } else {
-                           println "Signed correctly: ${bin}"
-                       }
+                        if (bin.trim() != "") {
+                            def rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
+                            if (rc != 0) {
+                                println "Error: dylib not signed: ${bin}"
+                                currentBuild.result = 'FAILURE'
+                            } else {
+                                println "Signed correctly: ${bin}"
+                            }
+                        }
                     }
                 } else { // Windows
                     // Find all exe/dll's that must be Signed
                     def bins = sh(script:"find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'", \
                                   returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
-                       def rc = sh(script:"signtool verify /v ${bin}", returnStatus:true)
-                       if (rc != 0) {
-                           println "Error: binary not signed: ${bin}"
-                           currentBuild.result = 'FAILURE'
-                       } else { 
-                           println "Signed correctly: ${bin}"
-                       } 
+                        if (bin.trim() != "") {
+                            def rc = sh(script:"signtool verify /v ${bin}", returnStatus:true)
+                            if (rc != 0) {
+                                println "Error: binary not signed: ${bin}"
+                                currentBuild.result = 'FAILURE'
+                            } else { 
+                                println "Signed correctly: ${bin}"
+                            }
+                        }
                     }
                 }
 
@@ -177,13 +185,15 @@ if (verify) {
                     def pkgs = sh(script:"find . -type f -name '*.pkg'", \
                                   returnStdout:true).split("\\r?\\n|\\r") 
                     pkgs.each { pkg ->
-                       def rc = sh(script:"spctl -a -vvv -t install ${pkg}", returnStatus:true)
-                       if (rc != 0) {
-                           println "Error: pkg not Notarized: ${pkg}"
-                           currentBuild.result = 'FAILURE'
-                       } else {
-                           println "Notarized correctly: ${pkg}"
-                       }
+                        if (pkg.trim() != "") {
+                            def rc = sh(script:"spctl -a -vvv -t install ${pkg}", returnStatus:true)
+                            if (rc != 0) {
+                                println "Error: pkg not Notarized: ${pkg}"
+                                currentBuild.result = 'FAILURE'
+                            } else {
+                                println "Notarized correctly: ${pkg}"
+                            }
+                        }
                     }
                 }
             } finally {
