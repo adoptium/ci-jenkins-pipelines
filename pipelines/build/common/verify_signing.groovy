@@ -141,8 +141,8 @@ if (verify) {
                     // On Mac find all dylib's and binaries marked as "executable",
                     // also add "jpackageapplauncher" specific case which is not marked as "executable"
                     // as it is within the jdk.jpackage resources used by jpackage util to generate user app launchers
-                    def bins = sh(script:"find ${unpack_dir} -perm +111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' ||
-                                          find ${unpack_dir} -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher'",
+                    def bins = sh(script:"find ${unpack_dir} -perm +111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' || \
+                                          find ${unpack_dir} -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher'",  \
                                   returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
                        def rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
@@ -155,7 +155,7 @@ if (verify) {
                     }
                 } else { // Windows
                     // Find all exe/dll's that must be Signed
-                    def bins = sh(script:"find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'"
+                    def bins = sh(script:"find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'" \
                                   returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
                        def rc = sh(script:"signtool verify /v ${bin}", returnStatus:true)
