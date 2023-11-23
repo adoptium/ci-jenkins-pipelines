@@ -55,7 +55,7 @@ String find_signtool() {
 //
 // Main code
 //
-if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows")
+if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
     println "No signing verification for platform: ${params.TARGET_OS}"
 } else {
     println "Verifying signing for platform ${params.TARGET_OS}, ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
