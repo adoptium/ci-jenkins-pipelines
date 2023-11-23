@@ -186,7 +186,7 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
                                   returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
                         if (bin.trim() != "") {
-                            def rc = sh(script:"${signtool} verify /v ${bin}", returnStatus:true)
+                            def rc = sh(script:"${signtool} verify /pa /v ${bin}", returnStatus:true)
                             if (rc != 0) {
                                 println "Error: binary not signed: ${bin}"
                                 currentBuild.result = 'FAILURE'
