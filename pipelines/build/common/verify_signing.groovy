@@ -20,33 +20,49 @@ Parameters:
   - UPSTREAM_JOB_NAME    : Upstream job name containing artifacts
   - UPSTREAM_JOB_NUMBER  : Upstream job number containing artifacts
   - TARGET_OS            : "mac" or "windows"
-  - MAC_VERIFY_LABEL     : Jenkins label for where to run "mac"
-  - WINDOWS_VERIFY_LABEL : Jenkins label for where to run "windows"
+  - TARGET_ARCH          : "aarch64 or "x64" or "x86-32"
+  - NODE_LABEL           : Jenkins label for where to run
 
 */
 
+// For Windows find the Windows Kit "signtool.exe", which should reside
+// under the default c:\Program Files (x86)\Windows Kit directory
+String find_signtool() {
+    def arch
+    switch (params.TARGET_ARCH) {
+        case "aarch64": arch = "arm64"; break
+        case "x64":     arch = "x64"; break
+        case "x86-32":  arch = "x86-32"; break
+        default:
+            println "ERROR: Unknown architecture: ${params.TARGET_ARCH}"
+            exit 1
+    }
 
-def verify = false
-def verifyNode
-switch(params.TARGET_OS) {
-    case 'mac':
-        verifyNode = params.MAC_VERIFY_LABEL
-        verify = true
-        break
-    case 'windows':
-        verifyNode = params.WINDOWS_VERIFY_LABEL
-        verify = true
-        break
-    default:
-        println "No signing verification for: ${params.TARGET_OS}"
+    def windowsKitPath = "/cygdrive/c/progra~2/wi3cf2~1/*/bin/*/${arch}"
+
+    def files = sh(script:"find ${windowsKitPath} -type f -name 'signtool.exe'", \
+                   returnStdout:true).split("\\r?\\n|\\r")
+
+    // Return the first one we find
+    if (files.size == 0 || files[0].trim() == "") {
+        println "ERROR: Unable to find signtool.exe in ${windowsKitPath}"
+        exit 2
+    } else {
+        return files[0].trim()
+    }
 }
 
-if (verify) {
+//
+// Main code
+//
+if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows")
+    println "No signing verification for platform: ${params.TARGET_OS}"
+} else {
     println "Verifying signing for platform ${params.TARGET_OS}, ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
 
     // Switch to appropriate node
     stage("verify_signing") {
-        node(verifyNode) {
+        node(params.NODE_LABEL) {
             try {
                 // Clean workspace to ensure no old artifacts
                 cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
@@ -163,12 +179,14 @@ if (verify) {
                         }
                     }
                 } else { // Windows
+                    def signtool = find_signtool()
+
                     // Find all exe/dll's that must be Signed
                     def bins = sh(script:"find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'", \
                                   returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
                         if (bin.trim() != "") {
-                            def rc = sh(script:"signtool verify /v ${bin}", returnStatus:true)
+                            def rc = sh(script:"${signtool} verify /v ${bin}", returnStatus:true)
                             if (rc != 0) {
                                 println "Error: binary not signed: ${bin}"
                                 currentBuild.result = 'FAILURE'
