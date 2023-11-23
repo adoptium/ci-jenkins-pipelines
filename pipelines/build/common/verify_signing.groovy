@@ -118,7 +118,8 @@ if (verify) {
                     def dir = "${unpack_dir}/${archive}"
                     // Expand JMODs
                     println "Expanding JMODS under ${dir}"
-                    def jmods = findFiles(glob: "${dir}/**/*.jmod")
+                    def jmods = sh(script:"find ${dir} -type f -name '*.jmod'", \
+                                   returnStdout:true).split("\\r?\\n|\\r")
                     jmods.each { jmod ->
                         def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
                         expand_dir = "${dir}/${expand_dir}".trim()
@@ -128,7 +129,8 @@ if (verify) {
 
                     // Expand "modules" compress image containing jmods
                     println "Expanding 'modules' compressed image file under ${dir}"
-                    def modules = findFiles(glob: "${dir}/**/modules")
+                    def modules = sh(script:"find ${dir} -type f -name 'modules'", \
+                                     returnStdout:true).split("\\r?\\n|\\r")
                     modules.each { module ->
                         def expand_dir = "expanded_" + sh(script:"basename ${module}", returnStdout:true)
                         expand_dir = "${dir}/${expand_dir}".trim()
@@ -172,7 +174,8 @@ if (verify) {
                 // For Mac also verify installer (if built) is Notarized
                 if (params.TARGET_OS == "mac") {
                     // Find all pkg's that need to be Notarized
-                    def pkgs = findFiles(glob: "*.pkg")
+                    def pkgs = sh(script:"find . -type f -name '*.pkg'", \
+                                  returnStdout:true).split("\\r?\\n|\\r") 
                     pkgs.each { pkg ->
                        def rc = sh(script:"spctl -a -vvv -t install ${pkg}", returnStatus:true)
                        if (rc != 0) {
