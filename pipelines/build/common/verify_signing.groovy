@@ -51,6 +51,7 @@ if (verify) {
                 // Clean workspace to ensure no old artifacts
                 cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
+                // Find upstream job archives to be verified for Signatures
                 def jdkFilter
                 def jreFilter
                 if (params.TARGET_OS == "mac") {
@@ -100,7 +101,7 @@ if (verify) {
                     if (params.TARGET_OS == "mac") {
                         sh("mkdir -p ${dir} && tar -C ${dir} -xf *-${archive}*.tar.gz")
                     } else { // Windows
-                        sh("mkdir -p ${dir} && unzip *-${archive}*.tar.gz -d ${dir}")
+                        sh("mkdir -p ${dir} && unzip *-${archive}*.zip -d ${dir}")
                     }
                 }
 
