@@ -155,7 +155,7 @@ if (verify) {
                     }
                 } else { // Windows
                     // Find all exe/dll's that must be Signed
-                    def bins = sh(script:"find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'" \
+                    def bins = sh(script:"find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'", \
                                   returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
                        def rc = sh(script:"signtool verify /v ${bin}", returnStatus:true)
