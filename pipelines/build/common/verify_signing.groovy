@@ -108,9 +108,9 @@ if (verify) {
                 // Copy JDK so it can be used for unpacking using jmod/jimage
                 sh("mkdir jdk_cp && cp -r ${unpack_dir}/jdk/*/* jdk_cp")
 
-                def jdk_bin = "${WORKSPACE}/jdk_cp/bin"
+                def jdk_bin = "jdk_cp/bin"
                 if (params.TARGET_OS == "mac") {
-                    jdk_bin = "${WORKSPACE}/jdk_cp/Contents/Home/bin"
+                    jdk_bin = "jdk_cp/Contents/Home/bin"
                 }
 
                 // Expand the JMODs and modules image to test binaries within
