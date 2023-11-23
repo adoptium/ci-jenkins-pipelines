@@ -44,7 +44,7 @@ String find_signtool() {
                    returnStdout:true).split("\\r?\\n|\\r")
 
     // Return the first one we find
-    if (files.size == 0 || files[0].trim() == "") {
+    if (files.size() == 0 || files[0].trim() == "") {
         println "ERROR: Unable to find signtool.exe in ${windowsKitPath}"
         exit 2
     } else {
