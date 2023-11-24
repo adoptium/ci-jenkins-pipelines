@@ -38,9 +38,9 @@ String find_signtool() {
             exit 1
     }
 
-    def windowsKitPath = "/cygdrive/c/progra~2/wi3cf2~1/*/bin/*/${arch}"
+    def windowsKitPath = "/cygdrive/c/progra~2/wi3cf2~1"
 
-    def files = sh(script:"find ${windowsKitPath} -type f -name 'signtool.exe'", \
+    def files = sh(script:"find ${windowsKitPath} -type f -path */${arch}/signtool.exe", \
                    returnStdout:true).split("\\r?\\n|\\r")
 
     // Return the first one we find
@@ -70,12 +70,15 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
                 // Find upstream job archives to be verified for Signatures
                 def jdkFilter
                 def jreFilter
+                def installerFilter
                 if (params.TARGET_OS == "mac") {
                     jdkFilter = "workspace/target/*-jdk*.tar.gz"
                     jreFilter = "workspace/target/*-jre*.tar.gz"
+                    installerFilter = "workspace/target/*.pkg"
                 } else { // Windows
                     jdkFilter = "workspace/target/*-jdk*.zip"
                     jreFilter = "workspace/target/*-jre*.zip"
+                    installerFilter = "workspace/target/*.msi"
                 }
 
                 println "[INFO] Retrieving ${jdkFilter} artifacts from ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
@@ -95,18 +98,15 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
                     flatten: true
                 ) 
 
-                // For Mac we need to also verify pkg files are "Notarized" if installers have been created
-                if (params.TARGET_OS == "mac") {
-                    println "[INFO] Retrieving workspace/target/*.pkg artifacts from ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
-                    copyArtifacts(
-                        projectName: "${params.UPSTREAM_JOB_NAME}",
-                        selector: specific("${params.UPSTREAM_JOB_NUMBER}"),
-                        filter: "workspace/target/*.pkg",
-                        fingerprintArtifacts: true,
-                        flatten: true,
-                        optional: true
-                    )
-                }
+                println "[INFO] Retrieving ${installerFilter} artifacts from ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
+                copyArtifacts(
+                    projectName: "${params.UPSTREAM_JOB_NAME}",
+                    selector: specific("${params.UPSTREAM_JOB_NUMBER}"),
+                    filter: "${installerFilter}",
+                    fingerprintArtifacts: true,
+                    flatten: true,
+                    optional: true
+                )
 
                 // Unpack archives
                 def unpack_dir = "unpacked"
@@ -159,13 +159,13 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
                     }
                 }
 
-                // Verify all executables for Signatures
+                // Verify all executables and installers for Signatures
                 if (params.TARGET_OS == "mac") {
-                    // On Mac find all dylib's and binaries marked as "executable",
+                    // On Mac find all dylib's and binaries marked as "executable" and .pkg's,
                     // also add "jpackageapplauncher" specific case which is not marked as "executable"
                     // as it is within the jdk.jpackage resources used by jpackage util to generate user app launchers
-                    def bins = sh(script:"find ${unpack_dir} -perm +111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' || \
-                                          find ${unpack_dir} -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher'",  \
+                    def bins = sh(script:"find . -perm +111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' -o -name '*.pkg' || \
+                                          find . -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' -o -name '*.pkg'",  \
                                   returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
                         if (bin.trim() != "") {
@@ -181,8 +181,8 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
                 } else { // Windows
                     def signtool = find_signtool()
 
-                    // Find all exe/dll's that must be Signed
-                    def bins = sh(script:"find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'", \
+                    // Find all exe/dll's and msi's that must be Signed
+                    def bins = sh(script:"find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll' -o -name '*.msi'", \
                                   returnStdout:true).split("\\r?\\n|\\r")
                     bins.each { bin ->
                         if (bin.trim() != "") {
