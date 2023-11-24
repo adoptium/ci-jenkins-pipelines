@@ -908,31 +908,36 @@ class Build {
     // For Windows and Mac verify that all necessary executables are Signed and Notarized(mac)
     private void verifySigning() {
         if (buildConfig.TARGET_OS == "windows" || buildConfig.TARGET_OS == "mac") {
-            context.println "RUNNING sign_verification for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
+            try {
+                context.println "RUNNING sign_verification for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
 
-            // Determine suitable node to run on
-            def verifyNode
-            if (buildConfig.TARGET_OS == "windows") {
-                verifyNode = "ci.role.test&&sw.os.windows"
-            } else {
-                verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)"
-            }
-            if (buildConfig.ARCHITECTURE == "aarch64") {
-                verifyNode = verifyNode + "&&hw.arch.aarch64"
-            } else {
-                verifyNode = verifyNode + "&&hw.arch.x86"
-            }
+                // Determine suitable node to run on
+                def verifyNode
+                if (buildConfig.TARGET_OS == "windows") {
+                    verifyNode = "ci.role.test&&sw.os.windows"
+                } else {
+                    verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)"
+                }
+                if (buildConfig.ARCHITECTURE == "aarch64") {
+                    verifyNode = verifyNode + "&&hw.arch.aarch64"
+                } else {
+                    verifyNode = verifyNode + "&&hw.arch.x86"
+                }
 
-            // Execute sign verification job
-            def signVerifyJob = context.build job: 'build-scripts/release/sign_verification',
-                propagate: true,
-                parameters: [
-                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                        context.string(name: 'TARGET_OS', value: "${buildConfig.TARGET_OS}"),
-                        context.string(name: 'TARGET_ARCH', value: "${buildConfig.ARCHITECTURE}"),
-                        context.string(name: 'NODE_LABEL', value: "${verifyNode}")
-                ]
+                // Execute sign verification job
+                def signVerifyJob = context.build job: 'build-scripts/release/sign_verification',
+                    propagate: true,
+                    parameters: [
+                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                            context.string(name: 'TARGET_OS', value: "${buildConfig.TARGET_OS}"),
+                            context.string(name: 'TARGET_ARCH', value: "${buildConfig.ARCHITECTURE}"),
+                            context.string(name: 'NODE_LABEL', value: "${verifyNode}")
+                    ]
+            } catch (e) { 
+                context.println("Failed to sign_verification for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ${e}")
+                currentBuild.result = 'FAILURE'
+            } 
         }
     }
 
