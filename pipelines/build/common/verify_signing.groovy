@@ -48,7 +48,9 @@ String find_signtool() {
         println "ERROR: Unable to find signtool.exe in ${windowsKitPath}"
         exit 2
     } else {
-        return files[0].trim()
+        def signtool = files[0].trim()
+        println "Found signtool: ${signtool}"
+        return signtool 
     }
 }
 
