@@ -108,19 +108,22 @@ void unpackArchives(String unpack_dir, String[] archives) {
 def verifyExecutables(String unpack_dir) {
     if (params.TARGET_OS == "mac") {
         // On Mac find all dylib's and binaries marked as "executable",
-        // also add "jpackageapplauncher" specific case which is not marked as "executable"
-        // as it is within the jdk.jpackage resources used by jpackage util to generate user app launchers
-        def bins = sh(script:"find ${unpack_dir} -perm +111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' || \
-                              find ${unpack_dir} -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher'",  \
+        //def bins = sh(script:"find ${unpack_dir} -perm +111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' || \
+        //#                      find ${unpack_dir} -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher'",  \
+        //#              returnStdout:true).split("\\r?\\n|\\r")
+        def bins = sh(script:"find ${unpack_dir}",  \
                       returnStdout:true).split("\\r?\\n|\\r")
         bins.each { bin ->
             if (bin.trim() != "") {
-                def rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
-                if (rc != 0) {
-                    println "Error: executable not Signed: ${bin}"
-                    currentBuild.result = 'FAILURE'
-                } else {
-                    println "Signed correctly: ${bin}"
+                // Is file a Mac 64 bit executable or dylib ?
+                if file ${bin} | grep "Mach-O 64-bit executable\|Mach-O 64-bit dynamically linked shared library" >/dev/null; then
+                    def rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
+                    if (rc != 0) {
+                        println "Error: executable not Signed: ${bin}"
+                        currentBuild.result = 'FAILURE'
+                    } else {
+                        println "Signed correctly: ${bin}"
+                    }
                 }
             }
         }
