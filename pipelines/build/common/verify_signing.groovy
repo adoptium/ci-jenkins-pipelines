@@ -196,7 +196,7 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
     println "Verifying signing for platform ${params.TARGET_OS}, ${params.UPSTREAM_JOB_NAME} #${params.UPSTREAM_JOB_NUMBER}"
 
     // Switch to appropriate node
-    stage("verify_signing") {
+    stage("verify signatures") {
         node(params.NODE_LABEL) {
             try {
                 // Clean workspace to ensure no old artifacts
