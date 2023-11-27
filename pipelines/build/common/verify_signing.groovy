@@ -116,7 +116,7 @@ def verifyExecutables(String unpack_dir) {
         bins.each { bin ->
             if (bin.trim() != "") {
                 // Is file a Mac 64 bit executable or dylib ?
-                def rc = sh(script:"file ${bin} | grep \"Mach-O 64-bit executable\|Mach-O 64-bit dynamically linked shared library\" >/dev/null", returnStatus:true)
+                def rc = sh(script:"file ${bin} | grep \"Mach-O 64-bit executable\\|Mach-O 64-bit dynamically linked shared library\" >/dev/null", returnStatus:true)
                 if (rc == 0) {
                     rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
                     if (rc != 0) {
