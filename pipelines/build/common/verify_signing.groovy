@@ -111,7 +111,7 @@ def verifyExecutables(String unpack_dir) {
         //def bins = sh(script:"find ${unpack_dir} -perm +111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' || \
         //#                      find ${unpack_dir} -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher'",  \
         //#              returnStdout:true).split("\\r?\\n|\\r")
-        def bins = sh(script:"find ${unpack_dir} -type f -not -name \".*\" -o -name \"*.dylib\"",  \
+        def bins = sh(script:"find ${unpack_dir} -type f -not -name '*.*' -o -type f -name '*.dylib'",  \
                       returnStdout:true).split("\\r?\\n|\\r")
         bins.each { bin ->
             if (bin.trim() != "") {
