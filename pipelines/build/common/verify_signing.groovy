@@ -53,7 +53,7 @@ String find_signtool() {
 }
 
 // Unpack the archives so the signartures can be checked
-private void unpackArchives(String unpack_dir, String[] archives) {
+void unpackArchives(String unpack_dir, String[] archives) {
     archives.each { archive ->
         def dir = "${unpack_dir}/${archive}"
         if (params.TARGET_OS == "mac") {
@@ -244,8 +244,8 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
                 )
 
                 // Unpack archives
-                def unpack_dir = "unpacked"
-                def archives = ["jdk", "jre"]
+                String unpack_dir = "unpacked"
+                String[] archives = ["jdk", "jre"]
                 unpackArchives(unpack_dir, archives)
 
                 // Verify all executables for Signatures
