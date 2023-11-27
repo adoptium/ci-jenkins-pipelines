@@ -53,7 +53,7 @@ String find_signtool() {
 }
 
 // Unpack the archives so the signartures can be checked
-def unpackArchives(String unpack_dir, String[] archives) {
+private void unpackArchives(String unpack_dir, String[] archives) {
     archives.each { archive ->
         def dir = "${unpack_dir}/${archive}"
         if (params.TARGET_OS == "mac") {
