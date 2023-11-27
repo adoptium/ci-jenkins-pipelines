@@ -53,7 +53,7 @@ String find_signtool() {
 }
 
 // Unpack the archives so the signartures can be checked
-void unpackArchives(String unpack_dir, String[] archives) {
+def unpackArchives(String unpack_dir, String[] archives) {
     archives.each { archive ->
         def dir = "${unpack_dir}/${archive}"
         if (params.TARGET_OS == "mac") {
@@ -103,7 +103,7 @@ void unpackArchives(String unpack_dir, String[] archives) {
 }
 
 // Verify executables for Signatures
-void verifyExecutables(String unpack_dir) {
+def verifyExecutables(String unpack_dir) {
     if (params.TARGET_OS == "mac") {
         // On Mac find all dylib's and binaries marked as "executable",
         // also add "jpackageapplauncher" specific case which is not marked as "executable"
@@ -143,7 +143,7 @@ void verifyExecutables(String unpack_dir) {
 }
 
 // Verify installers for Signatures and Notarization(mac only)
-void verifyInstallers() {
+def verifyInstallers() {
     if (params.TARGET_OS == "mac") {
         // Find all pkg's that need to be Signed and Notarized
         def pkgs = sh(script:"find . -type f -name '*.pkg'", \
