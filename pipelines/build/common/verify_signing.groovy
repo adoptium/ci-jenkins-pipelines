@@ -105,7 +105,9 @@ void unpackArchives(String unpack_dir, String[] archives) {
 }
 
 // Verify executables for Signatures
-def verifyExecutables(String unpack_dir) {
+List<String> verifyExecutables(String unpack_dir) {
+    List<String> unsigned = []
+
     if (params.TARGET_OS == "mac") {
         // On Mac find all dylib's and "executable" binaries
         def bins = sh(script:"find ${unpack_dir} -type f -not -name '*.*' -o -type f -name '*.dylib'",  \
@@ -119,6 +121,7 @@ def verifyExecutables(String unpack_dir) {
                     if (rc != 0) {
                         println "Error: executable not Signed: ${bin}"
                         currentBuild.result = 'FAILURE'
+                        unsigned.add(bin)
                     } else {
                         // Verify it is not "adhoc" signed
                         rc = sh(script:"codesign --display --verbose ${bin} 2>&1 | grep Signature=adhoc", returnStatus:true)
@@ -127,6 +130,7 @@ def verifyExecutables(String unpack_dir) {
                         } else {
                             println "Error: executable is 'adhoc' Signed: ${bin}"
                             currentBuild.result = 'FAILURE'
+                            unsigned.add(bin)
                         }
                     }
                 }
@@ -144,16 +148,21 @@ def verifyExecutables(String unpack_dir) {
                 if (rc != 0) {
                     println "Error: executable not Signed: ${bin}"
                     currentBuild.result = 'FAILURE'
+                    unsigned.add(bin)
                 } else {
                     println "Signed correctly: ${bin}"
                 }
             }
         }
     }
+
+    return unsigned
 }
 
 // Verify installers for Signatures and Notarization(mac only)
-def verifyInstallers() {
+List<String> verifyInstallers() {
+    List<String> unsigned = []
+
     if (params.TARGET_OS == "mac") {
         // Find all pkg's that need to be Signed and Notarized
         def pkgs = sh(script:"find . -type f -name '*.pkg'", \
@@ -164,6 +173,7 @@ def verifyInstallers() {
                 if (rc != 0) {
                     println "Error: pkg not Signed: ${pkg}"
                     currentBuild.result = 'FAILURE'
+                    unsigned.add(pkg)
                 } else {
                     println "Signed correctly: ${pkg}"
                 }
@@ -172,6 +182,7 @@ def verifyInstallers() {
                 if (rc != 0) {
                     println "Error: pkg not Notarized: ${pkg}"
                     currentBuild.result = 'FAILURE'
+                    unsigned.add(pkg)
                 } else {
                     println "Notarized correctly: ${pkg}"
                 }
@@ -189,12 +200,15 @@ def verifyInstallers() {
                 if (rc != 0) {
                     println "Error: installer not Signed: ${msi}"
                     currentBuild.result = 'FAILURE'
+                    unsigned.add(pkg)
                 } else {
                     println "Signed correctly: ${msi}"
                 }
             }
         }
     }
+
+    return unsigned
 }
 
 //
@@ -259,10 +273,20 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
                 unpackArchives(unpack_dir, archives)
 
                 // Verify all executables for Signatures
-                verifyExecutables(unpack_dir)
+                def unsigned = verifyExecutables(unpack_dir)
 
                 // Verify installers (if built) are Signed and Notarized(mac only)
-                verifyInstallers()
+                unsigned.addAll(verifyInstallers())
+
+                def num = unsigned.size()
+                if (num > 0) {
+                    println "[ERROR] The following ${num} files are unsigned, 'adhoc' signed or not Notarized(Mac only):"
+                    unsigned.each { file ->
+                        println "    ${file}"
+                    }
+                } else {
+                    println "[INFO] Success, all executables are signed"
+                }
             } finally {
                 // Clean workspace afterwards
                 cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
