@@ -107,10 +107,7 @@ void unpackArchives(String unpack_dir, String[] archives) {
 // Verify executables for Signatures
 def verifyExecutables(String unpack_dir) {
     if (params.TARGET_OS == "mac") {
-        // On Mac find all dylib's and binaries marked as "executable",
-        //def bins = sh(script:"find ${unpack_dir} -perm +111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher' || \
-        //#                      find ${unpack_dir} -perm /111 -type f -not -name '.*' -o -name '*.dylib' -o -name 'jpackageapplauncher'",  \
-        //#              returnStdout:true).split("\\r?\\n|\\r")
+        // On Mac find all dylib's and "executable" binaries
         def bins = sh(script:"find ${unpack_dir} -type f -not -name '*.*' -o -type f -name '*.dylib'",  \
                       returnStdout:true).split("\\r?\\n|\\r")
         bins.each { bin ->
@@ -123,7 +120,14 @@ def verifyExecutables(String unpack_dir) {
                         println "Error: executable not Signed: ${bin}"
                         currentBuild.result = 'FAILURE'
                     } else {
-                        println "Signed correctly: ${bin}"
+                        // Verify it is not "adhoc" signed
+                        rc = sh(script:"codesign --display --verbose ${bin} 2>&1 | grep Signature=adhoc", returnStatus:true)
+                        if (rc != 0) {
+                            println "Signed correctly: ${bin}"
+                        } else {
+                            println "Error: executable is 'adhoc' Signed: ${bin}"
+                            currentBuild.result = 'FAILURE'
+                        }
                     }
                 }
             }
