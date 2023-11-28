@@ -32,7 +32,7 @@ String find_signtool() {
     switch (params.TARGET_ARCH) {
         case "aarch64": arch = "arm64"; break
         case "x64":     arch = "x64"; break
-        case "x86-32":  arch = "x86-32"; break
+        case "x86-32":  arch = "x86"; break
         default:
             println "ERROR: Unknown architecture: ${params.TARGET_ARCH}"
             exit 1
