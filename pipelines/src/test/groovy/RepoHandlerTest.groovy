@@ -67,6 +67,7 @@ class RepoHandlerTest {
         Assertions.assertTrue(adoptJson.testDetails.enableTests instanceof Boolean)
         Assertions.assertTrue(adoptJson.testDetails.nightlyDefault instanceof List)
         Assertions.assertTrue(adoptJson.testDetails.weeklyDefault instanceof List)
+        Assertions.assertTrue(adoptJson.testDetails.releaseDefault instanceof List)
     }
 
     @Test
@@ -125,6 +126,7 @@ class RepoHandlerTest {
         Assertions.assertTrue(userJson.testDetails.enableTests)
         Assertions.assertEquals(userJson.testDetails.nightlyDefault, [ 'test1', 'test2', 'test3' ])
         Assertions.assertEquals(userJson.testDetails.weeklyDefault, [ 'test4', 'test5', 'test6', "test7" ])
+        Assertions.assertEquals(userJson.testDetails.releaseDefault, [ 'test8', 'test9' ])
     }
 
     @Test
