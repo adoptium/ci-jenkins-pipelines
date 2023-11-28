@@ -38,7 +38,7 @@ String find_signtool() {
             exit 1
     }
 
-    def windowsKitPath = "/cygdrive/c/progra~2/wi3cf2~1"
+    def windowsKitPath = "/cygdrive/c/'Program Files (x86)'/'Windows Kits'"
 
     def files = sh(script:"find ${windowsKitPath} -type f -path */${arch}/signtool.exe", \
                    returnStdout:true).split("\\r?\\n|\\r")
@@ -48,7 +48,7 @@ String find_signtool() {
         println "ERROR: Unable to find signtool.exe in ${windowsKitPath}"
         exit 2
     } else {
-        def signtool = files[0].trim()
+        def signtool = files[0].trim().replaceAll("(","\\(").replaceAll(" ","\\ ")
         println "Found signtool: ${signtool}"
         return signtool 
     }
