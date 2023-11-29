@@ -110,9 +110,7 @@ void unpackArchives(String unpack_dir, String[] archives) {
 }
 
 // Verify executables for Signatures
-List<String> verifyExecutables(String unpack_dir) {
-    List<String> unsigned = []
-
+void verifyExecutables(String unpack_dir) {
     if (params.TARGET_OS == "mac") {
         // On Mac find all dylib's and "executable" binaries
         // Ignore "legal" text folder to reduce the number of non-extension files it finds...
@@ -123,6 +121,8 @@ List<String> verifyExecutables(String unpack_dir) {
                 #!/bin/bash
                 set -eu
                 unsigned=""
+                cc_signed=0
+                cc_unsigned=0
                 FILES=$(find "${unpack_dir}" -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib')
                 for f in $FILES
                 do
@@ -131,25 +131,30 @@ List<String> verifyExecutables(String unpack_dir) {
                         if ! codesign --verify --verbose ${f}; then
                             echo "Error: executable not Signed: ${f}"
                             unsigned="$unsigned $f"
+                            cc_unsigned=$((cc_unsigned+1))
                         else
                             # Verify it is not "adhoc" signed
                             if ! codesign --display --verbose ${f} 2>&1 | grep Signature=adhoc; then
                                 echo "Signed correctly: ${f}"
+                                cc_signed=$((cc_signed+1))
                             else
                                 echo "Error: executable is 'adhoc' Signed: ${f}"
                                 unsigned="$unsigned $f"
+                                cc_unsigned=$((cc_unsigned+1))
                             fi
                         fi
                     fi
                 done
 
                 if [ "x${unsigned}" != "x" ]; then
-                    echo "FAILURE: The following executables are not signed correctly:"
+                    echo "FAILURE: The following ${cc_unsigned} executables are not signed correctly:"
                     for f in $unsigned
                     do
                         echo "    ${f}"
                     done
                     exit 1
+                else
+                    echo "SUCCESS: ${cc_signed} executables are correctly signed"
                 fi
             '''
         }
@@ -157,75 +162,127 @@ List<String> verifyExecutables(String unpack_dir) {
         def signtool = find_signtool()
 
         // Find all exe/dll's that must be Signed
-        def bins = sh(script:"find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'", \
-                      returnStdout:true).split("\\r?\\n|\\r")
-        bins.each { bin ->
-            if (bin.trim() != "") {
-                def rc = sh(script:"${signtool} verify /pa /v ${bin}", returnStatus:true)
-                if (rc != 0) {
-                    println "Error: executable not Signed: ${bin}"
-                    currentBuild.result = 'FAILURE'
-                    unsigned.add(bin)
-                } else {
-                    println "Signed correctly: ${bin}"
-                }
-            }
+
+        withEnv(['unpack_dir='+unpack_dir]) {
+            // groovylint-disable
+            sh '''
+                #!/bin/bash
+                set -eu
+                unsigned=""
+                cc_signed=0
+                cc_unsigned=0
+                FILES=$(find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll')
+                for f in $FILES
+                do
+                    if ! ${signtool} verify /pa /v ${f}; then
+                        echo "Error: executable not Signed: ${f}"
+                        unsigned="$unsigned $f"
+                        cc_unsigned=$((cc_unsigned+1))
+                    else
+                        echo "Signed correctly: ${f}"
+                        cc_signed=$((cc_signed+1))
+                    fi
+                done
+
+                if [ "x${unsigned}" != "x" ]; then
+                    echo "FAILURE: The following ${cc_unsigned} executables are not signed correctly:"
+                    for f in $unsigned
+                    do
+                        echo "    ${f}"
+                    done
+                    exit 1
+                else
+                    echo "SUCCESS: ${cc_signed} executables are correctly signed"
+                fi
+            '''
         }
     }
-
-    return unsigned
 }
 
 // Verify installers for Signatures and Notarization(mac only)
-List<String> verifyInstallers() {
-    List<String> unsigned = []
-
+void verifyInstallers() {
     if (params.TARGET_OS == "mac") {
         // Find all pkg's that need to be Signed and Notarized
-        def pkgs = sh(script:"find . -type f -name '*.pkg'", \
-                      returnStdout:true).split("\\r?\\n|\\r")
-        pkgs.each { pkg ->
-            if (pkg.trim() != "") {
-                def rc = sh(script:"pkgutil --check-signature ${pkg}", returnStatus:true)
-                if (rc != 0) {
-                    println "Error: pkg not Signed: ${pkg}"
-                    currentBuild.result = 'FAILURE'
-                    unsigned.add(pkg)
-                } else {
-                    println "Signed correctly: ${pkg}"
-                }
 
-                rc = sh(script:"spctl -a -vvv -t install ${pkg}", returnStatus:true)
-                if (rc != 0) {
-                    println "Error: pkg not Notarized: ${pkg}"
-                    currentBuild.result = 'FAILURE'
-                    unsigned.add(pkg)
-                } else {
-                    println "Notarized correctly: ${pkg}"
-                }
-            }
+        withEnv(['unpack_dir='+unpack_dir]) {
+            // groovylint-disable
+            sh '''
+                #!/bin/bash
+                set -eu
+                unsigned=""
+                cc_signed=0
+                cc_unsigned=0
+                FILES=$(find . -type f -name '*.pkg')
+                for f in $FILES
+                do
+                    if ! pkgutil --check-signature ${f}; then
+                        echo "Error: pkg not Signed: ${f}"
+                        unsigned="$unsigned $f"
+                        cc_unsigned=$((cc_unsigned+1))
+                    else
+                        echo "Signed correctly: ${f}"
+
+                        if ! spctl -a -vvv -t install ${f}"; then
+                            echo "Error: pkg not Notarized: ${f}"
+                            unsigned="$unsigned $f"
+                            cc_unsigned=$((cc_unsigned+1))
+                        else
+                            echo "Notarized correctly: ${f}"
+                            cc_signed=$((cc_signed+1))
+                        fi
+                    fi
+                done 
+
+                if [ "x${unsigned}" != "x" ]; then
+                    echo "FAILURE: The following ${cc_unsigned} installers are not signed and notarized correctly:"
+                    for f in $unsigned
+                    do
+                        echo "    ${f}"
+                    done
+                    exit 1
+                else
+                    echo "SUCCESS: ${cc_signed} installers are correctly signed and notarized"
+                fi
+            ''' 
         }
     } else { // Windows
         // Find all msi's that need to be Signed
         def signtool = find_signtool()
 
-        def msis = sh(script:"find . -type f -name '*.msi'", \
-                      returnStdout:true).split("\\r?\\n|\\r")
-        msis.each { msi ->
-            if (msi.trim() != "") {
-                def rc = sh(script:"${signtool} verify /pa /v ${msi}", returnStatus:true)
-                if (rc != 0) {
-                    println "Error: installer not Signed: ${msi}"
-                    currentBuild.result = 'FAILURE'
-                    unsigned.add(pkg)
-                } else {
-                    println "Signed correctly: ${msi}"
-                }
-            }
+        withEnv(['unpack_dir='+unpack_dir]) {
+            // groovylint-disable
+            sh '''
+                #!/bin/bash
+                set -eu
+                unsigned=""
+                cc_signed=0
+                cc_unsigned=0
+                FILES=$(find . -type f -name '*.msi')
+                for f in $FILES
+                do
+                    if ! ${signtool} verify /pa /v ${f}; then
+                        echo "Error: installer not Signed: ${f}"
+                        unsigned="$unsigned $f"
+                        cc_unsigned=$((cc_unsigned+1))
+                    else
+                        echo "Signed correctly: ${f}"
+                        cc_signed=$((cc_signed+1))
+                    fi
+                done
+
+                if [ "x${unsigned}" != "x" ]; then
+                    echo "FAILURE: The following ${cc_unsigned} installers are not signed correctly:"
+                    for f in $unsigned
+                    do
+                        echo "    ${f}"
+                    done
+                    exit 1
+                else
+                    echo "SUCCESS: ${cc_signed} installers are correctly signed"
+                fi
+            '''
         }
     }
-
-    return unsigned
 }
 
 //
@@ -290,20 +347,12 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
                 unpackArchives(unpack_dir, archives)
 
                 // Verify all executables for Signatures
-                def unsigned = verifyExecutables(unpack_dir)
+                verifyExecutables(unpack_dir)
 
                 // Verify installers (if built) are Signed and Notarized(mac only)
-                unsigned.addAll(verifyInstallers())
+                verifyInstallers()
 
-                def num = unsigned.size()
-                if (num > 0) {
-                    println "[ERROR] The following ${num} files are unsigned, 'adhoc' signed or not Notarized(Mac only):"
-                    unsigned.each { file ->
-                        println "    ${file}"
-                    }
-                } else {
-                    println "[INFO] Success, all executables are signed"
-                }
+                println "[INFO] Success, all executables are signed"
             } finally {
                 // Clean workspace afterwards
                 cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
