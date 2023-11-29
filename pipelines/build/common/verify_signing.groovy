@@ -116,31 +116,42 @@ List<String> verifyExecutables(String unpack_dir) {
     if (params.TARGET_OS == "mac") {
         // On Mac find all dylib's and "executable" binaries
         // Ignore "legal" text folder to reduce the number of non-extension files it finds...
-        def bins = sh(script:"find ${unpack_dir} -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib'",  \
-                      returnStdout:true).split("\\r?\\n|\\r")
-        bins.each { bin ->
-            if (bin.trim() != "") {
-                // Is file a Mac 64 bit executable or dylib ?
-                def rc = sh(script:"file ${bin} | grep \"Mach-O 64-bit executable\\|Mach-O 64-bit dynamically linked shared library\" >/dev/null", returnStatus:true)
-                if (rc == 0) {
-                    rc = sh(script:"codesign --verify --verbose ${bin}", returnStatus:true)
-                    if (rc != 0) {
-                        println "Error: executable not Signed: ${bin}"
-                        currentBuild.result = 'FAILURE'
-                        unsigned.add(bin)
-                    } else {
-                        // Verify it is not "adhoc" signed
-                        rc = sh(script:"codesign --display --verbose ${bin} 2>&1 | grep Signature=adhoc", returnStatus:true)
-                        if (rc != 0) {
-                            println "Signed correctly: ${bin}"
-                        } else {
-                            println "Error: executable is 'adhoc' Signed: ${bin}"
-                            currentBuild.result = 'FAILURE'
-                            unsigned.add(bin)
-                        }
-                    }
-                }
-            }
+
+        withEnv(['unpack_dir='+unpack_dir]) {
+            // groovylint-disable
+            sh '''
+                #!/bin/bash
+                set -eu
+                unsigned=""
+                FILES=$(find "${unpack_dir}" -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib')
+                for f in $FILES
+                do
+                    # Is file a Mac 64 bit executable or dylib ?
+                    if file ${f} | grep "Mach-O 64-bit executable\|Mach-O 64-bit dynamically linked shared library" >/dev/null; then
+                        if ! codesign --verify --verbose ${f}; then
+                            echo "Error: executable not Signed: ${bin}"
+                            unsigned="$unsigned $f"
+                        else
+                            # Verify it is not "adhoc" signed
+                            if ! codesign --display --verbose ${f} 2>&1 | grep Signature=adhoc; then
+                                echo "Signed correctly: ${bin}"
+                            else
+                                echo "Error: executable is 'adhoc' Signed: ${f}"
+                                unsigned="$unsigned $f"
+                            fi
+                        fi
+                    fi
+                done
+
+                if [ "x${unsigned}" != "x" ]; then
+                    echo "FAILURE: The following executables are not signed correctly:"
+                    for f in $unsigned
+                    do
+                        echo "    ${f}"
+                    done
+                    exit 1
+                fi
+            '''
         }
     } else { // Windows
         def signtool = find_signtool()
