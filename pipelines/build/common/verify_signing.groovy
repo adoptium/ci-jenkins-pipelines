@@ -49,8 +49,6 @@ String find_signtool() {
         exit 2
     } else {
         def signtool = files[0].trim()
-//.replaceAll("\\(","\\\\(").replaceAll("\\)","\\\\)")
-//.replaceAll("\\ ","\\\\ ")
         println "Found signtool: ${signtool}"
         return signtool 
     }
@@ -168,7 +166,6 @@ void verifyExecutables(String unpack_dir) {
         }
     } else { // Windows
         def signtool = find_signtool()
-signtool = "/cygdrive/c/Program Files (x86)/Windows Kits/10/bin/10.0.15063.0/x64/signtool.exe"
 
         // Find all exe/dll's that must be Signed
 
@@ -272,7 +269,7 @@ void verifyInstallers() {
                   FILES=$(find . -type f -name '*.msi')
                   for f in $FILES
                   do
-                    if ! ${signtool} verify /pa /v ${f}; then
+                    if ! "${signtool}" verify /pa /v ${f}; then
                         echo "Error: installer not Signed: ${f}"
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
