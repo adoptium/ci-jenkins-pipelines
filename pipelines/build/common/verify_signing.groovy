@@ -85,7 +85,6 @@ void unpackArchives(String unpack_dir, String[] archives) {
             sh '''
                 #!/bin/bash
                 set -eu
-                pwd
                 FILES=$(find "${dir}" -type f -name '*.jmod')
                 for f in $FILES
                 do
@@ -93,17 +92,17 @@ void unpackArchives(String unpack_dir, String[] archives) {
                     expand_dir="${dir}/expanded_${expand_dir}"
                     mkdir "${expand_dir}"
                     echo "Expanding JMOD ${f}"
-                    "${jdk_bin}/jmod extract --dir ${expand_dir} ${f}"
+                    ${jdk_bin}/jmod extract --dir ${expand_dir} ${f}
                 done
 
                 FILES=$(find "${dir}" -type f -name 'modules')
                 for f in $FILES
                 do  
                     expand_dir=$(basename ${f})
-                    expand_dir="${dir}/${expand_dir}"
+                    expand_dir="${dir}/expanded_${expand_dir}"
                     mkdir "${expand_dir}"
                     echo "Expanding compressed image file ${f}"
-                    "${jdk_bin}/jimage extract --dir ${expand_dir} ${f}"
+                    ${jdk_bin}/jimage extract --dir ${expand_dir} ${f}
                 done
             '''
         }
