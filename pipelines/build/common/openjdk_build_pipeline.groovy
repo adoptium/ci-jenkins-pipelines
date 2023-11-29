@@ -925,7 +925,7 @@ class Build {
                 }
 
                 // Execute sign verification job
-                def signVerifyJob = context.build job: 'build-scripts/release/sign_verification',
+                context.build job: 'build-scripts/release/sign_verification',
                     propagate: true,
                     parameters: [
                             context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
