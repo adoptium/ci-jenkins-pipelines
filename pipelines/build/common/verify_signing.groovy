@@ -132,7 +132,7 @@ void verifyExecutables(String unpack_dir) {
                   do
                     # Is file a Mac 64 bit executable or dylib ?
                     if file ${f} | grep "Mach-O 64-bit executable\\|Mach-O 64-bit dynamically linked shared library" >/dev/null; then
-                        if ! codesign --verify --verbose ${f}; then
+                        if ! codesign --verify ${f}; then
                             echo "Error: executable not Signed: ${f}"
                             unsigned="$unsigned $f"
                             cc_unsigned=$((cc_unsigned+1))
@@ -180,7 +180,7 @@ void verifyExecutables(String unpack_dir) {
                 FILES=$(find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll')
                 for f in $FILES
                   do
-                    if ! "${signtool}" verify /pa /v ${f}; then
+                    if ! "${signtool}" verify /pa ${f}; then
                         echo "Error: executable not Signed: ${f}"
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
@@ -229,7 +229,7 @@ void verifyInstallers() {
                 else
                     echo "Signed correctly: ${f}"
 
-                    if ! spctl -a -vvv -t install ${f}; then
+                    if ! spctl -a -t install ${f}; then
                         echo "Error: pkg not Notarized: ${f}"
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
@@ -268,7 +268,7 @@ void verifyInstallers() {
                 FILES=$(find . -type f -name '*.msi')
                 for f in $FILES
                   do
-                    if ! "${signtool}" verify /pa /v ${f}; then
+                    if ! "${signtool}" verify /pa ${f}; then
                         echo "Error: installer not Signed: ${f}"
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
