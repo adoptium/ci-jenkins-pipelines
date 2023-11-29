@@ -163,7 +163,7 @@ void verifyExecutables(String unpack_dir) {
 
         // Find all exe/dll's that must be Signed
 
-        withEnv(['unpack_dir='+unpack_dir]) {
+        withEnv(['unpack_dir='+unpack_dir, 'signtool='+signtool]) {
             // groovylint-disable
             sh '''
                 #!/bin/bash
@@ -247,37 +247,39 @@ void verifyInstallers() {
         // Find all msi's that need to be Signed
         def signtool = find_signtool()
 
-        // groovylint-disable
-        sh '''
-            #!/bin/bash
-            set -eu
-            unsigned=""
-            cc_signed=0
-            cc_unsigned=0
-            FILES=$(find . -type f -name '*.msi')
-            for f in $FILES
-            do
-                if ! ${signtool} verify /pa /v ${f}; then
-                    echo "Error: installer not Signed: ${f}"
-                    unsigned="$unsigned $f"
-                    cc_unsigned=$((cc_unsigned+1))
-                else
-                    echo "Signed correctly: ${f}"
-                    cc_signed=$((cc_signed+1))
-                fi
-            done
-
-            if [ "x${unsigned}" != "x" ]; then
-                echo "FAILURE: The following ${cc_unsigned} installers are not signed correctly:"
-                for f in $unsigned
+        withEnv(['signtool='+signtool]) {
+            // groovylint-disable
+            sh '''
+                #!/bin/bash
+                set -eu
+                unsigned=""
+                cc_signed=0
+                cc_unsigned=0
+                FILES=$(find . -type f -name '*.msi')
+                for f in $FILES
                 do
-                    echo "    ${f}"
+                    if ! ${signtool} verify /pa /v ${f}; then
+                        echo "Error: installer not Signed: ${f}"
+                        unsigned="$unsigned $f"
+                        cc_unsigned=$((cc_unsigned+1))
+                    else
+                        echo "Signed correctly: ${f}"
+                        cc_signed=$((cc_signed+1))
+                    fi
                 done
-                exit 1
-            else
-                echo "SUCCESS: ${cc_signed} installers are correctly signed"
-            fi
-        '''
+
+                if [ "x${unsigned}" != "x" ]; then
+                    echo "FAILURE: The following ${cc_unsigned} installers are not signed correctly:"
+                    for f in $unsigned
+                    do
+                        echo "    ${f}"
+                    done
+                    exit 1
+                else
+                    echo "SUCCESS: ${cc_signed} installers are correctly signed"
+                fi
+            '''
+        }
     }
 }
 
