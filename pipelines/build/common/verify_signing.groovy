@@ -219,7 +219,7 @@ void verifyInstallers() {
             unsigned=""
             cc_signed=0
             cc_unsigned=0
-            if [[ -n `find . -type f -name '*.pkg'` ]]; then
+ #           if [[ -n `find . -type f -name '*.pkg'` ]]; then
               FILES=$(find . -type f -name '*.pkg')
               for f in $FILES
               do
@@ -230,7 +230,7 @@ void verifyInstallers() {
                 else
                     echo "Signed correctly: ${f}"
 
-                    if ! spctl -a -vvv -t install ${f}"; then
+                    if ! spctl -a -vvv -t install ${f}; then
                         echo "Error: pkg not Notarized: ${f}"
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
@@ -240,7 +240,7 @@ void verifyInstallers() {
                     fi
                 fi
               done
-            fi
+  #          fi
 
             if [ "x${unsigned}" != "x" ]; then
                 echo "FAILURE: The following ${cc_unsigned} installers are not signed and notarized correctly:"
