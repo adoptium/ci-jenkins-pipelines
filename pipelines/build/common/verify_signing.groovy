@@ -38,7 +38,8 @@ String find_signtool() {
             exit 1
     }
 
-    def windowsKitPath = "/cygdrive/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits"
+//    def windowsKitPath = "/cygdrive/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits"
+    def windowsKitPath = "/cygdrive/c/progra~2/wi3cf2~1"
 
     def files = sh(script:"cd ${windowsKitPath} && find . -type f -path */${arch}/signtool.exe", \
                    returnStdout:true).split("\\r?\\n|\\r")
@@ -183,7 +184,7 @@ void verifyExecutables(String unpack_dir) {
                   FILES=$(find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll')
                   for f in $FILES
                   do
-                    if ! "${signtool}" verify /pa /v ${f}; then
+                    if ! ${signtool} verify /pa /v ${f}; then
                         echo "Error: executable not Signed: ${f}"
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
@@ -271,7 +272,7 @@ void verifyInstallers() {
                   FILES=$(find . -type f -name '*.msi')
                   for f in $FILES
                   do
-                    if ! "${signtool}" verify /pa /v ${f}; then
+                    if ! ${signtool} verify /pa /v ${f}; then
                         echo "Error: installer not Signed: ${f}"
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
