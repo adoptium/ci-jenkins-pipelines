@@ -204,84 +204,80 @@ void verifyInstallers() {
     if (params.TARGET_OS == "mac") {
         // Find all pkg's that need to be Signed and Notarized
 
-        withEnv(['unpack_dir='+unpack_dir]) {
-            // groovylint-disable
-            sh '''
-                #!/bin/bash
-                set -eu
-                unsigned=""
-                cc_signed=0
-                cc_unsigned=0
-                FILES=$(find . -type f -name '*.pkg')
-                for f in $FILES
-                do
-                    if ! pkgutil --check-signature ${f}; then
-                        echo "Error: pkg not Signed: ${f}"
+        // groovylint-disable
+        sh '''
+            #!/bin/bash
+            set -eu
+            unsigned=""
+            cc_signed=0
+            cc_unsigned=0
+            FILES=$(find . -type f -name '*.pkg')
+            for f in $FILES
+            do
+                if ! pkgutil --check-signature ${f}; then
+                    echo "Error: pkg not Signed: ${f}"
+                    unsigned="$unsigned $f"
+                    cc_unsigned=$((cc_unsigned+1))
+                else
+                    echo "Signed correctly: ${f}"
+
+                    if ! spctl -a -vvv -t install ${f}"; then
+                        echo "Error: pkg not Notarized: ${f}"
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
                     else
-                        echo "Signed correctly: ${f}"
-
-                        if ! spctl -a -vvv -t install ${f}"; then
-                            echo "Error: pkg not Notarized: ${f}"
-                            unsigned="$unsigned $f"
-                            cc_unsigned=$((cc_unsigned+1))
-                        else
-                            echo "Notarized correctly: ${f}"
-                            cc_signed=$((cc_signed+1))
-                        fi
+                        echo "Notarized correctly: ${f}"
+                        cc_signed=$((cc_signed+1))
                     fi
-                done 
-
-                if [ "x${unsigned}" != "x" ]; then
-                    echo "FAILURE: The following ${cc_unsigned} installers are not signed and notarized correctly:"
-                    for f in $unsigned
-                    do
-                        echo "    ${f}"
-                    done
-                    exit 1
-                else
-                    echo "SUCCESS: ${cc_signed} installers are correctly signed and notarized"
                 fi
-            ''' 
-        }
+            done 
+
+            if [ "x${unsigned}" != "x" ]; then
+                echo "FAILURE: The following ${cc_unsigned} installers are not signed and notarized correctly:"
+                for f in $unsigned
+                do
+                    echo "    ${f}"
+                done
+                exit 1
+            else
+                echo "SUCCESS: ${cc_signed} installers are correctly signed and notarized"
+            fi
+        ''' 
     } else { // Windows
         // Find all msi's that need to be Signed
         def signtool = find_signtool()
 
-        withEnv(['unpack_dir='+unpack_dir]) {
-            // groovylint-disable
-            sh '''
-                #!/bin/bash
-                set -eu
-                unsigned=""
-                cc_signed=0
-                cc_unsigned=0
-                FILES=$(find . -type f -name '*.msi')
-                for f in $FILES
-                do
-                    if ! ${signtool} verify /pa /v ${f}; then
-                        echo "Error: installer not Signed: ${f}"
-                        unsigned="$unsigned $f"
-                        cc_unsigned=$((cc_unsigned+1))
-                    else
-                        echo "Signed correctly: ${f}"
-                        cc_signed=$((cc_signed+1))
-                    fi
-                done
-
-                if [ "x${unsigned}" != "x" ]; then
-                    echo "FAILURE: The following ${cc_unsigned} installers are not signed correctly:"
-                    for f in $unsigned
-                    do
-                        echo "    ${f}"
-                    done
-                    exit 1
+        // groovylint-disable
+        sh '''
+            #!/bin/bash
+            set -eu
+            unsigned=""
+            cc_signed=0
+            cc_unsigned=0
+            FILES=$(find . -type f -name '*.msi')
+            for f in $FILES
+            do
+                if ! ${signtool} verify /pa /v ${f}; then
+                    echo "Error: installer not Signed: ${f}"
+                    unsigned="$unsigned $f"
+                    cc_unsigned=$((cc_unsigned+1))
                 else
-                    echo "SUCCESS: ${cc_signed} installers are correctly signed"
+                    echo "Signed correctly: ${f}"
+                    cc_signed=$((cc_signed+1))
                 fi
-            '''
-        }
+            done
+
+            if [ "x${unsigned}" != "x" ]; then
+                echo "FAILURE: The following ${cc_unsigned} installers are not signed correctly:"
+                for f in $unsigned
+                do
+                    echo "    ${f}"
+                done
+                exit 1
+            else
+                echo "SUCCESS: ${cc_signed} installers are correctly signed"
+            fi
+        '''
     }
 }
 
