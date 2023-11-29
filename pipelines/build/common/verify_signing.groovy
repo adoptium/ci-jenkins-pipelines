@@ -169,6 +169,7 @@ void verifyExecutables(String unpack_dir) {
         }
     } else { // Windows
         def signtool = find_signtool()
+signtool = "'/cygdrive/c/Program Files (x86)/Windows Kits/./10/bin/10.0.15063.0/x64/signtool.exe'"
 
         // Find all exe/dll's that must be Signed
 
