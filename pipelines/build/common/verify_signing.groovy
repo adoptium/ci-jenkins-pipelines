@@ -54,7 +54,7 @@ String find_signtool() {
     }
 }
 
-// Unpack the archives so the signartures can be checked
+// Unpack the archives so the signatures can be checked
 void unpackArchives(String unpack_dir, String[] archives) {
     archives.each { archive ->
         def dir = "${unpack_dir}/${archive}"
@@ -76,30 +76,35 @@ void unpackArchives(String unpack_dir, String[] archives) {
     // Expand the JMODs and modules image to test binaries within
     archives.each { archive ->
         def dir = "${unpack_dir}/${archive}"
-        // Expand JMODs
-        println "Expanding JMODS under ${dir}"
-        def jmods = sh(script:"find ${dir} -type f -name '*.jmod'", \
-                       returnStdout:true).split("\\r?\\n|\\r")
-        jmods.each { jmod ->
-            if (jmod.trim() != "") {
-                def expand_dir = "expanded_" + sh(script:"basename ${jmod}", returnStdout:true)
-                expand_dir = "${dir}/${expand_dir}".trim()
-                sh("mkdir ${expand_dir}")
-                sh("${jdk_bin}/jmod extract --dir ${expand_dir} ${jmod}")
-            }
-        }
 
-        // Expand "modules" compress image containing jmods
-        println "Expanding 'modules' compressed image file under ${dir}"
-        def modules = sh(script:"find ${dir} -type f -name 'modules'", \
-                         returnStdout:true).split("\\r?\\n|\\r")
-        modules.each { module ->
-            if (module.trim() != "") {
-                def expand_dir = "expanded_" + sh(script:"basename ${module}", returnStdout:true)
-                expand_dir = "${dir}/${expand_dir}".trim()
-                sh("mkdir ${expand_dir}")
-                sh("${jdk_bin}/jimage extract --dir ${expand_dir} ${module}")
-            }
+        // Expand JMODs
+        println "Expanding JMODS and 'modules' under ${dir}"
+
+        context.withEnv(['dir='+dir, 'jdk_bin='+jdk_bin]) {
+            // groovylint-disable
+            context.sh '''
+                #!/bin/bash
+                set -eu
+                FILES=$(find "${dir}" -type f -name '*.jmod')
+                for f in $FILES
+                do
+                    expand_dir=$(basename ${f})
+                    expand_dir="${dir}/${expand_dir}"
+                    mkdir "${expand_dir}"
+                    echo "Expanding JMOD ${f}"
+                    "${jdk_bin}/jmod extract --dir ${expand_dir} ${f}"
+                done
+
+                FILES=$(find "${dir}" -type f -name 'modules')
+                for f in $FILES
+                do  
+                    expand_dir=$(basename ${f})
+                    expand_dir="${dir}/${expand_dir}"
+                    mkdir "${expand_dir}"
+                    echo "Expanding compressed image file ${f}"
+                    "${jdk_bin}/jimage extract --dir ${expand_dir} ${f}"
+                done
+            '''
         }
     }
 }
