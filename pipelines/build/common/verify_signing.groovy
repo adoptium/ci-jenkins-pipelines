@@ -85,9 +85,8 @@ void unpackArchives(String unpack_dir, String[] archives) {
             sh '''
                 #!/bin/bash
                 set -eu
-                if [[ -n `find "${dir}" -type f -name '*.jmod'` ]]; then
-                  FILES=$(find "${dir}" -type f -name '*.jmod')
-                  for f in $FILES
+                FILES=$(find "${dir}" -type f -name '*.jmod')
+                for f in $FILES
                   do
                     expand_dir=$(basename ${f})
                     expand_dir="${dir}/expanded_${expand_dir}"
@@ -95,11 +94,9 @@ void unpackArchives(String unpack_dir, String[] archives) {
                     echo "Expanding JMOD ${f}"
                     ${jdk_bin}/jmod extract --dir ${expand_dir} ${f}
                   done
-                fi
 
-                if [[ -n `find "${dir}" -type f -name 'modules'` ]]; then
-                  FILES=$(find "${dir}" -type f -name 'modules')
-                  for f in $FILES
+                FILES=$(find "${dir}" -type f -name 'modules')
+                for f in $FILES
                   do  
                     expand_dir=$(basename ${f})
                     expand_dir="${dir}/expanded_${expand_dir}"
@@ -107,7 +104,6 @@ void unpackArchives(String unpack_dir, String[] archives) {
                     echo "Expanding compressed image file ${f}"
                     ${jdk_bin}/jimage extract --dir ${expand_dir} ${f}
                   done
-                fi
             '''
         }
     }
@@ -127,9 +123,8 @@ void verifyExecutables(String unpack_dir) {
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
-                if [[ -n `find "${unpack_dir}" -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib'` ]]; then
-                  FILES=$(find "${unpack_dir}" -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib')
-                  for f in $FILES
+                FILES=$(find "${unpack_dir}" -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib')
+                for f in $FILES
                   do
                     # Is file a Mac 64 bit executable or dylib ?
                     if file ${f} | grep "Mach-O 64-bit executable\\|Mach-O 64-bit dynamically linked shared library" >/dev/null; then
@@ -150,7 +145,6 @@ void verifyExecutables(String unpack_dir) {
                         fi
                     fi
                   done
-                fi
 
                 if [ "x${unsigned}" != "x" ]; then
                     echo "FAILURE: The following ${cc_unsigned} executables are not signed correctly:"
@@ -177,9 +171,8 @@ void verifyExecutables(String unpack_dir) {
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
-                if [[ -n `find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'` ]]; then
-                  FILES=$(find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll')
-                  for f in $FILES
+                FILES=$(find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll')
+                for f in $FILES
                   do
                     if ! "${signtool}" verify /pa /v ${f}; then
                         echo "Error: executable not Signed: ${f}"
@@ -190,7 +183,6 @@ void verifyExecutables(String unpack_dir) {
                         cc_signed=$((cc_signed+1))
                     fi
                   done
-                fi
 
                 if [ "x${unsigned}" != "x" ]; then
                     echo "FAILURE: The following ${cc_unsigned} executables are not signed correctly:"
@@ -219,9 +211,8 @@ void verifyInstallers() {
             unsigned=""
             cc_signed=0
             cc_unsigned=0
- #           if [[ -n `find . -type f -name '*.pkg'` ]]; then
-              FILES=$(find . -type f -name '*.pkg')
-              for f in $FILES
+            FILES=$(find . -type f -name '*.pkg')
+            for f in $FILES
               do
                 if ! pkgutil --check-signature ${f}; then
                     echo "Error: pkg not Signed: ${f}"
@@ -240,7 +231,6 @@ void verifyInstallers() {
                     fi
                 fi
               done
-  #          fi
 
             if [ "x${unsigned}" != "x" ]; then
                 echo "FAILURE: The following ${cc_unsigned} installers are not signed and notarized correctly:"
@@ -265,9 +255,8 @@ void verifyInstallers() {
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
-                if [[ -n `find . -type f -name '*.msi'` ]]; then
-                  FILES=$(find . -type f -name '*.msi')
-                  for f in $FILES
+                FILES=$(find . -type f -name '*.msi')
+                for f in $FILES
                   do
                     if ! "${signtool}" verify /pa /v ${f}; then
                         echo "Error: installer not Signed: ${f}"
@@ -278,7 +267,6 @@ void verifyInstallers() {
                         cc_signed=$((cc_signed+1))
                     fi
                   done
-                fi
 
                 if [ "x${unsigned}" != "x" ]; then
                     echo "FAILURE: The following ${cc_unsigned} installers are not signed correctly:"
