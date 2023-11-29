@@ -211,7 +211,7 @@ void verifyInstallers() {
             unsigned=""
             cc_signed=0
             cc_unsigned=0
-            FILES=$(find . -type f -name '*.pkg')
+            FILES="$(find . -type f -name '*.pkg')"
             for f in $FILES
             do
                 if ! pkgutil --check-signature ${f}; then
