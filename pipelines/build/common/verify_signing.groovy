@@ -110,7 +110,8 @@ List<String> verifyExecutables(String unpack_dir) {
 
     if (params.TARGET_OS == "mac") {
         // On Mac find all dylib's and "executable" binaries
-        def bins = sh(script:"find ${unpack_dir} -type f -not -name '*.*' -o -type f -name '*.dylib'",  \
+        // Ignore "legal" text folder to reduce the number of non-extension files it finds...
+        def bins = sh(script:"find ${unpack_dir} -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib'",  \
                       returnStdout:true).split("\\r?\\n|\\r")
         bins.each { bin ->
             if (bin.trim() != "") {
