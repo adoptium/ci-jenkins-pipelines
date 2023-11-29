@@ -127,7 +127,7 @@ List<String> verifyExecutables(String unpack_dir) {
                 for f in $FILES
                 do
                     # Is file a Mac 64 bit executable or dylib ?
-                    if file ${f} | grep "Mach-O 64-bit executable\|Mach-O 64-bit dynamically linked shared library" >/dev/null; then
+                    if file ${f} | grep "Mach-O 64-bit executable\\|Mach-O 64-bit dynamically linked shared library" >/dev/null; then
                         if ! codesign --verify --verbose ${f}; then
                             echo "Error: executable not Signed: ${bin}"
                             unsigned="$unsigned $f"
