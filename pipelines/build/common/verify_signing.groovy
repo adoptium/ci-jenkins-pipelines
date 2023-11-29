@@ -85,8 +85,8 @@ void unpackArchives(String unpack_dir, String[] archives) {
             sh '''
                 #!/bin/bash
                 set -eu
-                FILES=$(find "${dir}" -type f -name '*.jmod')
-                if [[ -n $FILES ]]; then
+                if [[ -n `find "${dir}" -type f -name '*.jmod'` ]]; then
+                  FILES=$(find "${dir}" -type f -name '*.jmod')
                   for f in $FILES
                   do
                     expand_dir=$(basename ${f})
@@ -97,8 +97,8 @@ void unpackArchives(String unpack_dir, String[] archives) {
                   done
                 fi
 
-                FILES=$(find "${dir}" -type f -name 'modules')
-                if [[ -n $FILES ]]; then
+                if [[ -n `find "${dir}" -type f -name 'modules'` ]]; then
+                  FILES=$(find "${dir}" -type f -name 'modules')
                   for f in $FILES
                   do  
                     expand_dir=$(basename ${f})
@@ -127,8 +127,8 @@ void verifyExecutables(String unpack_dir) {
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
-                FILES=$(find "${unpack_dir}" -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib')
-                if [[ -n $FILES ]]; then
+                if [[ -n `find "${unpack_dir}" -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib'` ]]; then
+                  FILES=$(find "${unpack_dir}" -type f -not -name '*.*' -not -path '*/legal/*' -o -type f -name '*.dylib')
                   for f in $FILES
                   do
                     # Is file a Mac 64 bit executable or dylib ?
@@ -177,8 +177,8 @@ void verifyExecutables(String unpack_dir) {
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
-                FILES=$(find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll')
-                if [[ -n $FILES ]]; then
+                if [[ -n `find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll'` ]]; then
+                  FILES=$(find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll')
                   for f in $FILES
                   do
                     if ! ${signtool} verify /pa /v ${f}; then
@@ -219,8 +219,8 @@ void verifyInstallers() {
             unsigned=""
             cc_signed=0
             cc_unsigned=0
-            FILES=$(find . -type f -name '*.pkg')
-            if [[ -n $FILES ]]; then
+            if [[ -n `find . -type f -name '*.pkg'` ]]; then
+              FILES=$(find . -type f -name '*.pkg')
               for f in $FILES
               do
                 if ! pkgutil --check-signature ${f}; then
@@ -265,8 +265,8 @@ void verifyInstallers() {
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
-                FILES=$(find . -type f -name '*.msi')
-                if [[ -n $FILES ]]; then
+                if [[ -n `find . -type f -name '*.msi'` ]]; then
+                  FILES=$(find . -type f -name '*.msi')
                   for f in $FILES
                   do
                     if ! ${signtool} verify /pa /v ${f}; then
