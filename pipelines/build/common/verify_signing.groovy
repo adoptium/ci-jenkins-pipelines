@@ -85,6 +85,8 @@ void unpackArchives(String unpack_dir, String[] archives) {
             sh '''
                 #!/bin/bash
                 set -eu
+                set +x
+
                 FILES=$(find "${dir}" -type f -name '*.jmod')
                 for f in $FILES
                   do
@@ -120,6 +122,8 @@ void verifyExecutables(String unpack_dir) {
             sh '''
                 #!/bin/bash
                 set -eu
+                set +x
+
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
@@ -168,6 +172,8 @@ void verifyExecutables(String unpack_dir) {
             sh '''
                 #!/bin/bash
                 set -eu
+                set +x
+
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
@@ -208,6 +214,8 @@ void verifyInstallers() {
         sh '''
             #!/bin/bash
             set -eu
+            set +x
+
             unsigned=""
             cc_signed=0
             cc_unsigned=0
@@ -252,6 +260,8 @@ void verifyInstallers() {
             sh '''
                 #!/bin/bash
                 set -eu
+                set +x
+
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
