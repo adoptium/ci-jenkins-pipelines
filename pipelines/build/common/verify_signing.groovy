@@ -40,7 +40,7 @@ String find_signtool() {
 
     def windowsKitPath = "/cygdrive/c/'Program Files (x86)'/'Windows Kits'"
 
-    def files = sh(script:"find ${windowsKitPath} -type f -path */${arch}/signtool.exe", \
+    def files = sh(script:"cd ${windowsKitPath} && find . -type f -path */${arch}/signtool.exe", \
                    returnStdout:true).split("\\r?\\n|\\r")
 
     // Return the first one we find
@@ -48,7 +48,8 @@ String find_signtool() {
         println "ERROR: Unable to find signtool.exe in ${windowsKitPath}"
         exit 2
     } else {
-        def signtool = files[0].trim().replaceAll("\\(","\\\\(").replaceAll("\\)","\\\\)")
+        def signtool = "${windowsKitPath}/files[0].trim()"
+//.replaceAll("\\(","\\\\(").replaceAll("\\)","\\\\)")
 //.replaceAll("\\ ","\\\\ ")
         println "Found signtool: ${signtool}"
         return signtool 
