@@ -80,9 +80,9 @@ void unpackArchives(String unpack_dir, String[] archives) {
         // Expand JMODs
         println "Expanding JMODS and 'modules' under ${dir}"
 
-        context.withEnv(['dir='+dir, 'jdk_bin='+jdk_bin]) {
+        withEnv(['dir='+dir, 'jdk_bin='+jdk_bin]) {
             // groovylint-disable
-            context.sh '''
+            sh '''
                 #!/bin/bash
                 set -eu
                 FILES=$(find "${dir}" -type f -name '*.jmod')
