@@ -185,7 +185,7 @@ signtool = "'/cygdrive/c/Program Files (x86)/Windows Kits/./10/bin/10.0.15063.0/
                   FILES=$(find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll')
                   for f in $FILES
                   do
-                    if ! ${signtool} verify /pa /v ${f}; then
+                    if ! "${signtool}" verify /pa /v ${f}; then
                         echo "Error: executable not Signed: ${f}"
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
