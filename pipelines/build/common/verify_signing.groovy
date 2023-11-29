@@ -129,12 +129,12 @@ List<String> verifyExecutables(String unpack_dir) {
                     # Is file a Mac 64 bit executable or dylib ?
                     if file ${f} | grep "Mach-O 64-bit executable\\|Mach-O 64-bit dynamically linked shared library" >/dev/null; then
                         if ! codesign --verify --verbose ${f}; then
-                            echo "Error: executable not Signed: ${bin}"
+                            echo "Error: executable not Signed: ${f}"
                             unsigned="$unsigned $f"
                         else
                             # Verify it is not "adhoc" signed
                             if ! codesign --display --verbose ${f} 2>&1 | grep Signature=adhoc; then
-                                echo "Signed correctly: ${bin}"
+                                echo "Signed correctly: ${f}"
                             else
                                 echo "Error: executable is 'adhoc' Signed: ${f}"
                                 unsigned="$unsigned $f"
