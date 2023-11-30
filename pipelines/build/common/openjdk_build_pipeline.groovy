@@ -2088,12 +2088,14 @@ class Build {
                     }
                 }
 
-                // Verify Windows and Mac Signing for Temurin
-                if (buildConfig.VARIANT == 'temurin') {
-                    try {
-                        verifySigning()
-                    } catch (Exception e) {
-                        context.println(e.message)
+                if (!env.JOB_NAME.contains('pr-tester')) { // pr-tester does not sign the binaries
+                    // Verify Windows and Mac Signing for Temurin
+                    if (buildConfig.VARIANT == 'temurin') {
+                        try {
+                            verifySigning()
+                        } catch (Exception e) {
+                            context.println(e.message)
+                        }
                     }
                 }
 
