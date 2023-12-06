@@ -157,7 +157,7 @@ class PullRequestTestPipeline implements Serializable {
                                 propagate: true,
                                 parameters: [
                                     context.string(name: 'releaseType', value: 'Nightly Without Publish'),
-                                    context.string(name: 'activeNodeTimeout', value: '0'),
+                                    context.string(name: 'activeNodeTimeout', value: '1'),
                                     context.string(name: 'ciReference', value: "${branch}"), // use PR's SHA1 for the generated openjdkX-pipeline
                                     context.booleanParam(name: 'enableTestDynamicParallel', value: false), // not needed unless we enable test
                                     context.booleanParam(name: 'enableInstallers', value: false), // never need this enabled in pr-test
