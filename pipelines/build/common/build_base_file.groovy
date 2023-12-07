@@ -254,52 +254,63 @@ class Builder implements Serializable {
     List<String> getTestList(Map<String, ?> configuration, String variant) {
         final List<String> nightly = DEFAULTS_JSON['testDetails']['nightlyDefault']
         final List<String> weekly = DEFAULTS_JSON['testDetails']['weeklyDefault']
+        final List<String> release = DEFAULTS_JSON['testDetails']['releaseDefault']
         List<String> testList = []
         /*
         * No test key or key value is test: false  --- test disabled
-        * Key value is test: 'default' --- nightly build trigger 'nightly' test set, weekly build trigger or release build trigger 'nightly' + 'weekly' test sets
-        * Key value is test: [customized map] specified nightly and weekly test lists
+        * Key value is test: 'default' --- nightly build trigger 'nightly' test set, weekly build trigger 'weekly' or release build trigger 'release' test sets
+        * Key value is test: [customized map] specified nightly, weekly, release test lists
         * Key value is test: [customized map] specified for different variant
         */
         if (configuration.containsKey('test') && configuration.get('test')) {
             def testJobType = 'nightly'
-            if (releaseType.startsWith('Weekly') || releaseType.equals('Release')) {
+            if (releaseType.startsWith('Weekly')) {
                 testJobType = 'weekly'
+            } else if (releaseType.equals('Release')){
+                testJobType = 'release'
             }
             if (isMap(configuration.test)) {
                 if (configuration.test.containsKey(variant)) {
-                    //Test is enable for the variant
+                    //Test is enabled for the variant
                     if (configuration.test.get(variant)) {
                         def testObj = configuration.test.get(variant)
                         if (isMap(testObj)) {
                             if (testJobType == 'nightly') {
                                 testList = (configuration.test.get(variant) as Map).get('nightly') as List<String>
+                            } else if (testJobType == 'weekly') {
+                                testList = (configuration.test.get(variant) as Map).get('weekly') as List<String>
                             } else {
-                                testList = ((configuration.test.get(variant) as Map).get('nightly') as List<String>) + ((configuration.test as Map).get('weekly') as List<String>)
+                                testList = (configuration.test.get(variant) as Map).get('release') as List<String>
                             }
                         } else if (testObj instanceof List) {
                             testList = (configuration.test as Map).get(variant) as List<String>
                         } else {
                             if (testJobType == 'nightly') {
                                 testList = nightly
+                            } else if (testJobType == 'weekly') {
+                                testList = weekly
                             } else {
-                                testList = nightly + weekly
+                                testList = release
                             }
                         }
                     }
                 } else {
                     if (testJobType == 'nightly') {
                         testList = (configuration.test as Map).get('nightly') as List<String>
+                    } else if (testJobType == 'weekly') {
+                        testList = (configuration.test as Map).get('weekly') as List<String>
                     } else {
-                        testList = ((configuration.test as Map).get('nightly') as List<String>) + ((configuration.test as Map).get('weekly') as List<String>)
+                        testList = (configuration.test as Map).get('release') as List<String>
                     }
                 }
             } else {
                 // Default to the test sets declared if one isn't set in the build configuration
                 if (testJobType == 'nightly') {
                     testList = nightly
+                } else if (testJobType == 'weekly') {
+                    testList = weekly
                 } else {
-                    testList = nightly + weekly
+                    testList = release
                 }
             }
         }
