@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Assign Labels
     steps:
-    - uses: actions/labeler@main
+    - uses: actions/labeler@v4
       if: ${{ github.event.pull_request }}
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
