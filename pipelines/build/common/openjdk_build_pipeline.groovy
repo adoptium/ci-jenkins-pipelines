@@ -261,8 +261,7 @@ class Build {
             case 'hotspot':
                 if (buildConfig.ARCHITECTURE == "riscv64"
                      && (buildConfig.JAVA_TO_BUILD == "jdk8u"
-                        || buildConfig.JAVA_TO_BUILD == "jdk11u"
-                        || buildConfig.JAVA_TO_BUILD == "jdk17u")) {
+                        || buildConfig.JAVA_TO_BUILD == "jdk11u")) {
                     suffix = "openjdk/riscv-port-${buildConfig.JAVA_TO_BUILD}";
                 } else {
                     suffix = "openjdk/${buildConfig.JAVA_TO_BUILD}"
