@@ -5,30 +5,40 @@
 # e.g to add the test label to any changes in the /tests directory:
 
 # test:
+# - changed-files:
 #   - tests/*
 
 ghActions:
-    - .github/workflows/**/*
+- changed-files:
+  - .github/workflows/**/*
 documentation:
-    - docs/**/*
-    - docs/*
-    - '**/*.md'
+- changed-files:
+  - docs/**/*
+  - docs/*
+  - '**/*.md'
 jenkins-pipeline:
-    - pipelines/**/*
-    - pipelines/*
+- changed-files:
+  - pipelines/**/*
+  - pipelines/*
 generation:
-    - pipelines/build/regeneration/*
-    - pipelines/build/common/config_regeneration.groovy
+- changed-files:
+  - pipelines/build/regeneration/*
+  - pipelines/build/common/config_regeneration.groovy
 docker:
-    - pipelines/build/dockerFiles/*
+- changed-files:
+  - pipelines/build/dockerFiles/*
 testing:
-    - pipelines/build/prTester/*
-    - pipelines/src/test/*
+- changed-files:
+  - pipelines/build/prTester/*
+  - pipelines/src/test/*
 code-tools:
-    - tools/*
+- changed-files:
+  - tools/*
 gradle:
-    - pipelines/gradle/*
-    - pipelines/build.gradle
-    - pipelines/gradlew
+- changed-files:
+  - pipelines/gradle/*
+  - pipelines/build.gradle
+  - pipelines/gradlew
 cross-compile:
-    - pipelines/build/common/cross_compiled_version_out.groovy
+- changed-files:
+  - pipelines/build/common/cross_compiled_version_out.groovy
