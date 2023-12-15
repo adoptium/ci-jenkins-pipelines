@@ -36,7 +36,8 @@
         "enableReproducibleCompare" : false,
         "enableTests"        : true,
         "nightlyDefault"     : [ "test1", "test2", "test3" ],
-        "weeklyDefault"      : [ "test4", "test5", "test6", "test7"]
+        "weeklyDefault"      : [ "test4", "test5", "test6", "test7"],
+        "releaseDefault"     : [ "test8", "test9"]
     },
     "defaultsUrl"            : "23"
 }

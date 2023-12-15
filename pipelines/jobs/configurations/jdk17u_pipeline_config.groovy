@@ -4,7 +4,7 @@ class Config17 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels: 'macos11',
+                additionalNodeLabels: 'xcode15.0.1',
                 additionalTestLabels: [
                         openj9      : '!sw.os.osx.10_11'
                 ],
@@ -148,7 +148,7 @@ class Config17 {
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
-                additionalNodeLabels: 'macos11',
+                additionalNodeLabels: 'xcode15.0.1',
                 test                : 'default',
                 reproducibleCompare : [
                         'temurin'   : true

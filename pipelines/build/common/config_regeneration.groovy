@@ -50,7 +50,7 @@ class Regeneration implements Serializable {
     private final jobType
 
     private String javaToBuild
-    private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external']
+    private final List<String> defaultTestList = ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
 
     private final String EXCLUDED_CONST = 'EXCLUDED'
 

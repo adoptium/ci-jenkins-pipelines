@@ -84,7 +84,7 @@ This file contains the default constants and paths used in the build scripts for
         "enableTests"            : true,
         /*
         Test targets triggered in 'nightly' build pipelines running 6 days per week
-        nightly + weekly to be run during a 'release' pipeline
+        'weekly' to be run on the weekend and 'release' from a release pipeline
         */
         "nightlyDefault"     : [
             "sanity.openjdk",
@@ -96,15 +96,36 @@ This file contains the default constants and paths used in the build scripts for
         ],
         /*
         Test targets triggered in 'weekly' build pipelines running once per week
-        nightly + weekly + jck to be run during a 'release' pipeline
-        nightly + weekly to be run during 'evaluation weekly' pipeline
+        weekly + jck to be run during a 'weekly' pipeline
+        weekly to be run during 'evaluation weekly' pipeline
         */
         "weeklyDefault"     : [
+            "sanity.openjdk",
+            "sanity.system",
+            "extended.system",
+            "sanity.perf",
+            "sanity.functional",
+            "extended.functional"
             "extended.openjdk",
             "extended.perf",
             "special.functional",
             "dev.openjdk",
-            "dev.system"
+            "dev.functional"
+        ],
+        /*
+        Test targets triggered in 'release' build pipelines
+        release + jck to be run during a 'release' pipeline
+        */
+        "releaseDefault"     : [
+            "sanity.openjdk",
+            "sanity.system",
+            "extended.system",
+            "sanity.perf",
+            "sanity.functional",
+            "extended.functional"
+            "extended.openjdk",
+            "extended.perf",
+            "special.functional"
         ]
     },
     // Raw content URL of this (defaults.json) file. This is so the openjdk_build_pipeline.groovy script can set user default configs when checking out to the shell script repo

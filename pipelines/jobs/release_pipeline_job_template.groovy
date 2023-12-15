@@ -74,7 +74,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
 
         // default value not matter for release
         stringParam('jdkVersion', "${JAVA_VERSION}")
-        stringParam('activeNodeTimeout', '0', 'Number of minutes we will wait for a label-matching node to become active.')
+        stringParam('activeNodeTimeout', '1', 'Number of minutes we will wait for a label-matching node to become active.')
         stringParam('dockerExcludes', '', 'Map of targetConfigurations to exclude from docker building. If a targetConfiguration (i.e. { "x64LinuxXL": [ "openj9" ], "aarch64Linux": [ "hotspot", "openj9" ] }) has been entered into this field, jenkins will build the jdk without using docker. This param overrides the dockerImage and dockerFile downstream job parameters.')
         stringParam('baseFilePath', '', "Relative path to where the build_base_file.groovy file is located. This runs the downstream job setup and configuration retrieval services.<br>Default: <code>${defaultsJson['baseFileDirectories']['upstream']}</code>")
         stringParam('buildConfigFilePath', '', "Relative path to where the jdkxx_pipeline_config.groovy file is located. It contains the build configurations for each platform, architecture and variant.<br>Default: <code>${defaultsJson['configDirectories']['build']}/jdkxx_pipeline_config.groovy</code>")
@@ -86,7 +86,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         booleanParam('enableSigner', runSigner, 'If set to true the signer pipeline will be executed')
         stringParam('additionalBuildArgs', '', 'Additional arguments to be passed to <code>makejdk-any-platform.sh</code>')
         stringParam('overrideFileNameVersion', '', "When forming the filename, ignore the part of the filename derived from the publishName or timestamp and override it.<br/>For instance if you set this to 'FOO' the final file name will be of the form: <code>OpenJDK8U-jre_ppc64le_linux_openj9_FOO.tar.gz</code>")
-        booleanParam('cleanWorkspaceBeforeBuild', false, 'Clean out the workspace before the build')
+        booleanParam('cleanWorkspaceBeforeBuild', true, 'Clean out the workspace before the build')
         booleanParam('cleanWorkspaceAfterBuild', false, 'Clean out the workspace after the build')
         booleanParam('cleanWorkspaceBuildOutputAfterBuild', cleanWsBuildOutput, 'Clean out the workspace/build/src/build and workspace/target output only, after the build')
         booleanParam('propagateFailures', propagateFailures, 'If true, a failure of <b>ANY</b> downstream build will cause the whole build to fail')

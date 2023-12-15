@@ -4,8 +4,8 @@ class Config11 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels : 'macos11',
                 test                : 'default',
+                additionalNodeLabels: 'xcode15.0.1',
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto --with-cmake',
                         'temurin'     : '--enable-dtrace=auto'
@@ -137,8 +137,8 @@ class Config11 {
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
-                additionalNodeLabels: 'macos11',
                 test                : 'default',
+                additionalNodeLabels: 'xcode15.0.1',
                 configureArgs       : '--disable-ccache',
                 buildArgs           : [
                         'temurin'   : '--create-sbom'

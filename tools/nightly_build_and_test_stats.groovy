@@ -82,6 +82,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                                ppc64leLinux:   "ppc64le_linux",
                                s390xLinux:     "s390x_linux",
                                aarch64Linux:   "aarch64_linux",
+                               aarch64AlpineLinux: "aarch64_alpine-linux",
                                aarch64Mac:     "aarch64_mac",
                                arm32Linux:     "arm_linux",
                                x32Windows:     "x86-32_windows",

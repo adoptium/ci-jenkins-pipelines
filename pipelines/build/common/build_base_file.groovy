@@ -254,52 +254,63 @@ class Builder implements Serializable {
     List<String> getTestList(Map<String, ?> configuration, String variant) {
         final List<String> nightly = DEFAULTS_JSON['testDetails']['nightlyDefault']
         final List<String> weekly = DEFAULTS_JSON['testDetails']['weeklyDefault']
+        final List<String> release = DEFAULTS_JSON['testDetails']['releaseDefault']
         List<String> testList = []
         /*
         * No test key or key value is test: false  --- test disabled
-        * Key value is test: 'default' --- nightly build trigger 'nightly' test set, weekly build trigger or release build trigger 'nightly' + 'weekly' test sets
-        * Key value is test: [customized map] specified nightly and weekly test lists
+        * Key value is test: 'default' --- nightly build trigger 'nightly' test set, weekly build trigger 'weekly' or release build trigger 'release' test sets
+        * Key value is test: [customized map] specified nightly, weekly, release test lists
         * Key value is test: [customized map] specified for different variant
         */
         if (configuration.containsKey('test') && configuration.get('test')) {
             def testJobType = 'nightly'
-            if (releaseType.startsWith('Weekly') || releaseType.equals('Release')) {
+            if (releaseType.startsWith('Weekly')) {
                 testJobType = 'weekly'
+            } else if (releaseType.equals('Release')){
+                testJobType = 'release'
             }
             if (isMap(configuration.test)) {
                 if (configuration.test.containsKey(variant)) {
-                    //Test is enable for the variant
+                    //Test is enabled for the variant
                     if (configuration.test.get(variant)) {
                         def testObj = configuration.test.get(variant)
                         if (isMap(testObj)) {
                             if (testJobType == 'nightly') {
                                 testList = (configuration.test.get(variant) as Map).get('nightly') as List<String>
+                            } else if (testJobType == 'weekly') {
+                                testList = (configuration.test.get(variant) as Map).get('weekly') as List<String>
                             } else {
-                                testList = ((configuration.test.get(variant) as Map).get('nightly') as List<String>) + ((configuration.test as Map).get('weekly') as List<String>)
+                                testList = (configuration.test.get(variant) as Map).get('release') as List<String>
                             }
                         } else if (testObj instanceof List) {
                             testList = (configuration.test as Map).get(variant) as List<String>
                         } else {
                             if (testJobType == 'nightly') {
                                 testList = nightly
+                            } else if (testJobType == 'weekly') {
+                                testList = weekly
                             } else {
-                                testList = nightly + weekly
+                                testList = release
                             }
                         }
                     }
                 } else {
                     if (testJobType == 'nightly') {
                         testList = (configuration.test as Map).get('nightly') as List<String>
+                    } else if (testJobType == 'weekly') {
+                        testList = (configuration.test as Map).get('weekly') as List<String>
                     } else {
-                        testList = ((configuration.test as Map).get('nightly') as List<String>) + ((configuration.test as Map).get('weekly') as List<String>)
+                        testList = (configuration.test as Map).get('release') as List<String>
                     }
                 }
             } else {
                 // Default to the test sets declared if one isn't set in the build configuration
                 if (testJobType == 'nightly') {
                     testList = nightly
+                } else if (testJobType == 'weekly') {
+                    testList = weekly
                 } else {
-                    testList = nightly + weekly
+                    testList = release
                 }
             }
         }
@@ -771,16 +782,36 @@ class Builder implements Serializable {
             tag = publishName
         }
 
+        // Definition of filenames when building an EA tag. This is passed
+        // to the release tool in place of the "TIMESTAMP" Criteria for this:
+        // JDK21 or 22 when a scmRef (tag) is specified and it's not a release build
+        if ((javaVersion=="jdk21" || javaVersion=="jdk22") && scmReference && !release) {
+            publishName = scmReference.replace('_adopt','')
+            def firstDot=publishName.indexOf('.')
+            def plusSign=publishName.indexOf('+')
+            def secondDot=publishName.indexOf('.', firstDot+1)
+            // Translate jdk-AA+BB to jdk-AA-0-BB
+            // Translate jdk-AA.B.C+DD to jdk-AA-C-DD-ea-beta
+            // Note that jdk-AA-B-C-D+EE will become jdk-AA-C-D-EE-ea-beta
+            if ( firstDot==-1 ) {
+                publishName=publishName.substring(4,plusSign)+'.0.'+publishName.substring(plusSign+1)
+            } else {
+                publishName=publishName.substring(4,firstDot)+publishName.substring(secondDot).replace("+","-")
+            }
+            publishName='ea_'+publishName.replaceAll("\\.","-")
+        }
+
         context.stage('publish') {
-            context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
+        context.println "publishing with publishName: ${publishName}"
+        context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
                     parameters: [
                         ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
-                        ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: ((releaseType=="Weekly" && javaVersion=="jdk21") ? true : false)],
-                        context.string(name: 'TAG', value: tag),
-                        context.string(name: 'TIMESTAMP', value: timestamp),
+                        ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: false],
+                        context.string(name: 'TAG', value: ((scmReference && (javaVersion=="jdk21" || javaVersion=="jdk22"))?(scmReference.replace('_adopt','')):tag)),
+                        context.string(name: 'TIMESTAMP', value: ((scmReference && (javaVersion=="jdk21" || javaVersion=="jdk22"))?publishName:timestamp)),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
-                        context.string(name: 'VERSION', value: javaVersion )
+                        context.string(name: 'VERSION', value: javaVersion)
                     ]
         }
     }
