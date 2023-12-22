@@ -146,7 +146,7 @@ class Config23 {
                 os                  : 'linux',
                 arch                : 'riscv64',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace',
+                configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
