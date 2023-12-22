@@ -149,7 +149,7 @@ class Config22 {
                 // dockerImage         : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                 // dockerArgs          : '--platform linux/riscv64',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace',
+                configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
