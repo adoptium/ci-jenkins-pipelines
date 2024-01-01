@@ -3,8 +3,8 @@
 name: "Labeller & Project Manager"
 on:
   # Temporarily change to pull_request to test version update (see https://github.com/actions/labeler?tab=readme-ov-file#notes-regarding-pull_request_target-event)
-  # pull_request_target:
-  pull_request:
+  pull_request_target:
+  #pull_request:
   issues:
   issue_comment:
 
