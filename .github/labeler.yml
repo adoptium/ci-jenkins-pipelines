@@ -8,27 +8,29 @@
 #   - tests/*
 
 ghActions:
-    - .github/workflows/**/*
+    - changed-files:
+        - any-glob-to-any-file: ['.github/workflows/**/*']
 documentation:
-    - docs/**/*
-    - docs/*
-    - '**/*.md'
+    - changed-files:
+        - any-glob-to-any-file: ['docs/**/*', 'docs/*', '**/*.md']
 jenkins-pipeline:
-    - pipelines/**/*
-    - pipelines/*
+    - changed-files:
+        - any-glob-to-any-file: ['pipelines/**/*', 'pipelines/*']
 generation:
-    - pipelines/build/regeneration/*
-    - pipelines/build/common/config_regeneration.groovy
+    - changed-files:
+        - any-glob-to-any-file: ['pipelines/build/regeneration/*', 'pipelines/build/common/config_regeneration.groovy']
 docker:
-    - pipelines/build/dockerFiles/*
+    - changed-files:
+        - any-glob-to-any-file: ['pipelines/build/dockerFiles/*']
 testing:
-    - pipelines/build/prTester/*
-    - pipelines/src/test/*
+    - changed-files:
+        - any-glob-to-any-file: ['pipelines/build/prTester/*', 'pipelines/src/test/*']
 code-tools:
-    - tools/*
+    - changed-files:
+        - any-glob-to-any-file: ['tools/*']
 gradle:
-    - pipelines/gradle/*
-    - pipelines/build.gradle
-    - pipelines/gradlew
+    - changed-files:
+        - any-glob-to-any-file: ['pipelines/gradle/*', 'pipelines/build.gradle', 'pipelines/gradlew']
 cross-compile:
-    - pipelines/build/common/cross_compiled_version_out.groovy
+    - changed-files:
+        - any-glob-to-any-file: ['pipelines/build/common/cross_compiled_version_out.groovy']
