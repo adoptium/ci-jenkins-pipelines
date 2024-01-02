@@ -80,7 +80,6 @@ labels:
     matcher:
       title: "sparc"
       body: "sparc"
-
   - label: "hotspot"
     matcher:
       title: "hotspot"
@@ -117,7 +116,6 @@ labels:
     matcher:
       title: "cross"
       body: "risc"
-
   - label: "hacktoberfest"
     matcher:
       body: "hacktober"
