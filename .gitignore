@@ -7,3 +7,4 @@ pipelines/gradle-cache
 pipelines/target
 **/.DS_Store
 jenkins-helper/
+**/*/.java-version
