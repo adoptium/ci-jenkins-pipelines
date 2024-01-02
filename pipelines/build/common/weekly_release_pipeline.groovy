@@ -29,7 +29,7 @@ stage('Submit Release Pipelines') {
         cleanWs notFailBuild: false
     }
 
-    // For each variant, create a weekly pipeline job with "Weekly" as "releaseType"
+    // For each variant, launch a pipeline job with "releaseType" based on the build parameter.
     scmRefs.each { variant ->
         def variantName = variant.key
         def scmRef = variant.value
@@ -47,7 +47,7 @@ stage('Submit Release Pipelines') {
                 stage("Build - ${params.buildPipeline} - ${variantName}") {
                     result = build job: "${params.buildPipeline}",
                             parameters: [
-                                string(name: 'releaseType',        value: 'Weekly'),
+                                string(name: 'releaseType',        value: "${params.releaseType}"),
                                 string(name: 'scmReference',       value: scmRef),
                                 text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
                                 ['$class': 'BooleanParameterValue', name: 'keepReleaseLogs', value: false]
