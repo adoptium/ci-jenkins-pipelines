@@ -32,6 +32,9 @@ node('worker') {
         if (params.jdkVersion == '8' && params.targetConfigurations.contains('arm32Linux')) {
             propertyFile = 'testenv_arm32.properties'
         }
+        if ( ! ( "${params.aqareference}" ==~ /^[A-Za-z0-9\/\.-_]$/ ) ) {
+          throw new Exception("[ERROR] Dubious characters in aqa reference - aborting");
+        }
         sh("curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/${params.aqaReference}/testenv/${propertyFile}")
 
         def buildTag = params.scmReference
