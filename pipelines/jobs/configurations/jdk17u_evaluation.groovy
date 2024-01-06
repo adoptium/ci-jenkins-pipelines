@@ -4,6 +4,9 @@ targetConfigurations = [
         ],
         'aarch64Windows': [
                 'temurin'
+        ],
+        'riscv64Linux': [
+                'temurin'
         ]
         // 'x64Mac'      : [
         //         'openj9'
@@ -31,8 +34,10 @@ targetConfigurations = [
 ]
 
 // if set to empty string then it wont get triggered
+
+// 23:30 Tue, Thu
 triggerSchedule_evaluation = 'TZ=UTC\n30 23 * * 2,4'
-// if set to empty string then it wont get triggered
+// 12:05 Sun
 triggerSchedule_weekly_evaluation = 'TZ=UTC\n05 12 * * 7'
 
 // scmReferences to use for weekly evaluation build
