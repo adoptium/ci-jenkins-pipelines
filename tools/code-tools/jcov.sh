@@ -83,7 +83,7 @@ function getAsmDeps() {
           echo "Checksums For $tool_versioned Match - OK"
         else
           echo "Error - Checksums For $tool_versioned DO NOT Match"
-          exit 99
+          exit 1
         fi
       fi
       ASM_URLS="$ASM_URLS$tool_url
