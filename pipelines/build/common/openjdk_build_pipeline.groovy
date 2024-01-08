@@ -1883,7 +1883,12 @@ class Build {
                             label = 'codebuild'
                         }
 
+
                         context.println "[NODE SHIFT] MOVING INTO DOCKER NODE MATCHING LABELNAME ${label}..."
+                        if ( ! ( "${buildConfig.DOCKER_IMAGE}" ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ||
+                             ! ( "${buildConfig.DOCKER_ARGS}"  ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ) {
+                             throw new Exception("[ERROR] Dubious characters in DOCKER* parameters ${buildConfig.DOCKER_IMAGE}/${buildConfig.DOCKER_ARGS} - aborting");
+                        }
                         context.node(label) {
                             addNodeToBuildDescription()
                             // Cannot clean workspace from inside docker container
@@ -1911,6 +1916,7 @@ class Build {
                                         if (buildConfig.DOCKER_CREDENTIAL) {
                                             context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
                                                 if (buildConfig.DOCKER_ARGS) {
+                                                    
                                                     context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
                                                 } else {
                                                     context.docker.image(buildConfig.DOCKER_IMAGE).pull()
