@@ -72,9 +72,19 @@ function getAsmDeps() {
     local tool_prop="`echo $tool|sed "s/-/./g"`.jar"
     local tool_versioned="$tool-$asm_version.jar"
     local tool_url="$main_url/$tool/$asm_version/$tool_versioned"
+    local tool_checksum_url="$tool_url.md5"
     if [ "$asm_manual" == "true" ] ; then
       if [ ! -e $tool_versioned ] ; then
+        wget $tool_checksum_url
         wget $tool_url
+        check_md5sum=`md5sum $tool_versioned | cut -d" " -f1`
+        check_file=`cat $tool_versioned.md5`
+        if [ $check_md5sum == $check_file ] ; then
+          echo "Checksums For $tool_versioned Match - OK"
+        else
+          echo "Error - Checksums For $tool_versioned DO NOT Match"
+          exit 1
+        fi
       fi
       ASM_URLS="$ASM_URLS$tool_url
 " #one per line
@@ -165,8 +175,8 @@ pushd $REPO_DIR
   popd
   echo "Manually renaming $main_file-$tip_shortened.tar.gz as $main_file-tip..tar.gz to provide latest-unstable-recommended file"
   ln -fv $main_file-$tip_shortened.tar.gz $main_file-tip.tar.gz
+  
   cleanRepo
-
   echo "Resetting repo back to master"
   resetRepo master
   hashArtifacts
