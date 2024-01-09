@@ -371,6 +371,10 @@ class Build {
                     context.println "Running test: ${testType}"
                     context.stage("${testType}") {
                         def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
+                        def rerunIterations = '3'
+                        if ("${testType}".contains('dev') || "${testType}".contains('external')) {
+                            rerunIterations = '0'
+                        }
                         if (("${testType}".contains('openjdk')) || ("${testType}".contains('jck'))) {
                             // Keep test reportdir always for JUnit targets
                             keep_test_reportdir = true
@@ -459,6 +463,7 @@ class Build {
                                             context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
                                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
                                             context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)],
+                                            context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}"),
                                         wait: true
                         currentBuild.result = testJob.getResult()
                         context.node('worker') {
