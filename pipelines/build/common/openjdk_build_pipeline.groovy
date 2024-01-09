@@ -1890,9 +1890,9 @@ class Build {
 
 
                         context.println "[NODE SHIFT] MOVING INTO DOCKER NODE MATCHING LABELNAME ${label}..."
-                        if ( ! ( "${buildConfig.DOCKER_IMAGE}" ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ||
-                             ! ( "${buildConfig.DOCKER_ARGS}"  ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ) {
-                             throw new Exception("[ERROR] Dubious characters in DOCKER* parameters ${buildConfig.DOCKER_IMAGE}/${buildConfig.DOCKER_ARGS} - aborting");
+                        if ( ! ( "${buildConfig.DOCKER_IMAGE}" ==~ /^[A-Za-z0-9\/\.\-_:]*$/ ) ||
+                             ! ( "${buildConfig.DOCKER_ARGS}"  ==~ /^[A-Za-z0-9\/\.\-_\ ]*$/ ) ) {
+                             throw new Exception("[ERROR] Dubious characters in DOCKER* image or parameters: ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS} - aborting");
                         }
                         context.node(label) {
                             addNodeToBuildDescription()
