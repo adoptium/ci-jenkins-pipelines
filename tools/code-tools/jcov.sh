@@ -164,20 +164,20 @@ pushd $REPO_DIR
   # tip
   resetRepo master
   getAsmDeps
-  # pushd build
-  #   export JAVA_HOME="$jdk17"
-  #   ant $ASM_PROPS test | tee ../$main_file-$tip_shortened.tar.gz.txt || true
-  #   ant $ASM_PROPS build
-  # popd
-  # pushd $BUILD_PATH/jcov*/
-  #   getReadme > readme.txt
-  #   tar -czf ../../$main_file-$tip_shortened.tar.gz *.jar readme.txt
-  # popd
-  # echo "Manually renaming $main_file-$tip_shortened.tar.gz as $main_file-tip..tar.gz to provide latest-unstable-recommended file"
-  # ln -fv $main_file-$tip_shortened.tar.gz $main_file-tip.tar.gz
-  # cleanRepo
-  #
-  # echo "Resetting repo back to master"
-  # resetRepo master
-  # hashArtifacts
+  pushd build
+    export JAVA_HOME="$jdk17"
+    ant $ASM_PROPS test | tee ../$main_file-$tip_shortened.tar.gz.txt || true
+    ant $ASM_PROPS build
+  popd
+  pushd $BUILD_PATH/jcov*/
+    getReadme > readme.txt
+    tar -czf ../../$main_file-$tip_shortened.tar.gz *.jar readme.txt
+  popd
+  echo "Manually renaming $main_file-$tip_shortened.tar.gz as $main_file-tip..tar.gz to provide latest-unstable-recommended file"
+  ln -fv $main_file-$tip_shortened.tar.gz $main_file-tip.tar.gz
+  
+  cleanRepo
+  echo "Resetting repo back to master"
+  resetRepo master
+  hashArtifacts
 popd
