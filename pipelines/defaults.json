@@ -53,13 +53,11 @@
             "extended.system",
             "sanity.perf",
             "sanity.functional",
-            "sanity.external",
             "extended.functional",
             "extended.openjdk",
             "extended.perf",
             "special.functional",
             "special.openjdk",
-            "dev.openjdk",
             "dev.functional"
         ],
         "releaseDefault"     : [
