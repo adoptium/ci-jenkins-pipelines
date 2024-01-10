@@ -462,8 +462,9 @@ class Build {
                                             context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
                                             context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
                                             context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE)],
-                                            context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}"),
+                                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE),
+                                            context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
+                                        ],
                                         wait: true
                         currentBuild.result = testJob.getResult()
                         context.node('worker') {
