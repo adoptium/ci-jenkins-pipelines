@@ -29,6 +29,12 @@ stage('Submit Release Pipelines') {
         cleanWs notFailBuild: false
     }
 
+    // ensure test jobs are regenerated weekly
+    def aqaAutoGen = false
+    if  ( params.releaseType  == 'weekly' ) {
+        aqaAutoGen = true
+    }   
+
     // For each variant, launch a pipeline job with "releaseType" based on the build parameter.
     scmRefs.each { variant ->
         def variantName = variant.key
@@ -49,6 +55,7 @@ stage('Submit Release Pipelines') {
                             parameters: [
                                 string(name: 'releaseType',        value: "${params.releaseType}"),
                                 string(name: 'scmReference',       value: scmRef),
+                                booleanParam(name: 'aqaAutoGen', value: aqaAutoGen),
                                 text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
                                 ['$class': 'BooleanParameterValue', name: 'keepReleaseLogs', value: false]
                             ]
