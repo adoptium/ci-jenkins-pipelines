@@ -29,9 +29,6 @@ targetConfigurations = [
         ],
         'aarch64Mac': [
                 'temurin'
-        ],
-        'arm32Linux'  : [
-                'temurin'
         ]
 ]
 
