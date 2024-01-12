@@ -906,9 +906,9 @@ class Builder implements Serializable {
                                         //Remove the previous artifacts
                                         try {
                                             context.timeout(time: pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                                                if ( ! ( "${config.TARGET_OS}"    ==~ /^[A-Za-z0-9\/\.-_]$/ ) ||
-                                                     ! ( "${config.ARCHITECTURE}" ==~ /^[A-Za-z0-9\/\.-_]$/ ) ||
-                                                     ! ( "${config.VARIANT}"      ==~ /^[A-Za-z0-9\/\.-_]$/ ) ) {
+                                                if ( ! ( "${config.TARGET_OS}"    ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ||
+                                                     ! ( "${config.ARCHITECTURE}" ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ||
+                                                     ! ( "${config.VARIANT}"      ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ) {
                                                     throw new Exception("[ERROR] Dubious character in TARGET_OS, ARCHITECTURE or VARIANT - aborting");
                                                 }
                                                 context.sh "rm -rf target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/"
