@@ -32,7 +32,7 @@ node('worker') {
         if (params.jdkVersion == '8' && params.targetConfigurations.contains('arm32Linux')) {
             propertyFile = 'testenv_arm32.properties'
         }
-        if ( ! ( "${params.aqareference}" ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ) {
+        if ( ! ( "${params.aqareference}" ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ) {
           throw new Exception("[ERROR] Dubious characters in aqa reference - aborting");
         }
         sh("curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/${params.aqaReference}/testenv/${propertyFile}")
@@ -41,7 +41,7 @@ node('worker') {
         if (params.scmReference.contains('_adopt')) {
             buildTag = params.scmReference.substring(0, params.scmReference.length() - 6) // remove _adopt suffix
         }
-        
+
         def list = readFile("${propertyFile}").readLines()
         def jdkBranch = ""
         def jdkOpenj9Branch = ""
@@ -49,7 +49,6 @@ node('worker') {
             if (item.contains("JDK${params.jdkVersion}_BRANCH")) {
                 def branchInfo = item.split('=')
                 jdkBranch = branchInfo[1]
-                
             } else if (item.contains("JDK${params.jdkVersion}_OPENJ9_BRANCH")) {
                 def branchInfo = item.split('=')
                 jdkOpenj9Branch = branchInfo[1]
