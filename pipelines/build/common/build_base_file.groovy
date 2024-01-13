@@ -733,7 +733,7 @@ class Builder implements Serializable {
 
     /*
     Returns the jenkins folder of where we assume the downstream build jobs have been regenerated
-    e.g: 
+    e.g:
     nightly:    build-scripts/jobs/jdk11u/jdk11u-linux-aarch64-temurin
     evaluation:  build-scripts/jobs/evaluation/jobs/jdk17u/jdk17u-evaluation-mac-x64-openj9
     release:    build-scripts/jobs/release/jobs/jdk21/jdk21-release-aix-ppc64-temurin
@@ -906,9 +906,9 @@ class Builder implements Serializable {
                                         //Remove the previous artifacts
                                         try {
                                             context.timeout(time: pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                                                if ( ! ( "${config.TARGET_OS}"    ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ||
-                                                     ! ( "${config.ARCHITECTURE}" ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ||
-                                                     ! ( "${config.VARIANT}"      ==~ /^[A-Za-z0-9\/\.-_]*$/ ) ) {
+                                                if ( ! ( "${config.TARGET_OS}"    ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ||
+                                                     ! ( "${config.ARCHITECTURE}" ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ||
+                                                     ! ( "${config.VARIANT}"      ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ) {
                                                     throw new Exception("[ERROR] Dubious character in TARGET_OS, ARCHITECTURE or VARIANT - aborting");
                                                 }
                                                 context.sh "rm -rf target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/"
