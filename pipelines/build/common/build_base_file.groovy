@@ -252,9 +252,6 @@ class Builder implements Serializable {
     We run different test categories depending on if this build is a release or nightly. This function parses and applies this to the individual build config.
     */
     List<String> getTestList(Map<String, ?> configuration, String variant) {
-        final List<String> nightly = DEFAULTS_JSON['testDetails']['nightlyDefault']
-        final List<String> weekly = DEFAULTS_JSON['testDetails']['weeklyDefault']
-        final List<String> release = DEFAULTS_JSON['testDetails']['releaseDefault']
         List<String> testList = []
         /*
         * No test key or key value is test: false  --- test disabled
