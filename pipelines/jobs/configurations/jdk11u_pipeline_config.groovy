@@ -22,10 +22,7 @@ class Config11 {
                 dockerFile: [
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional'],
-                        weekly : ['extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external']
-                ],
+                test                : 'default',
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto',
                         'temurin'     : '--enable-dtrace=auto',
