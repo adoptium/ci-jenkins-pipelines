@@ -29,6 +29,12 @@ targetConfigurations = [
         ],
         'aarch64Mac': [
                 'temurin'
+        ],
+        'arm32Linux'  : [
+                'hotspot'
+        ],
+        'x32Windows'  : [
+                'hotspot'
         ]
 ]
 
