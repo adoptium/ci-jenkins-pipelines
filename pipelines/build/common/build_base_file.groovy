@@ -252,9 +252,6 @@ class Builder implements Serializable {
     We run different test categories depending on if this build is a release or nightly. This function parses and applies this to the individual build config.
     */
     List<String> getTestList(Map<String, ?> configuration, String variant) {
-        final List<String> nightly = DEFAULTS_JSON['testDetails']['nightlyDefault']
-        final List<String> weekly = DEFAULTS_JSON['testDetails']['weeklyDefault']
-        final List<String> release = DEFAULTS_JSON['testDetails']['releaseDefault']
         List<String> testList = []
         /*
         * No test key or key value is test: false  --- test disabled
@@ -275,43 +272,27 @@ class Builder implements Serializable {
                     if (configuration.test.get(variant)) {
                         def testObj = configuration.test.get(variant)
                         if (isMap(testObj)) {
-                            if (testJobType == 'nightly') {
-                                testList = (configuration.test.get(variant) as Map).get('nightly') as List<String>
-                            } else if (testJobType == 'weekly') {
-                                testList = (configuration.test.get(variant) as Map).get('weekly') as List<String>
+                            if (testObj.containsKey(testJobType)) {
+                                testList = (configuration.test as Map).get(testJobType) as List<String>
                             } else {
-                                testList = (configuration.test.get(variant) as Map).get('release') as List<String>
+                                testList = getDefaultTestList(testJobType)
                             }
                         } else if (testObj instanceof List) {
                             testList = (configuration.test as Map).get(variant) as List<String>
                         } else {
-                            if (testJobType == 'nightly') {
-                                testList = nightly
-                            } else if (testJobType == 'weekly') {
-                                testList = weekly
-                            } else {
-                                testList = release
-                            }
+                            testList = getDefaultTestList(testJobType)
                         }
                     }
                 } else {
-                    if (testJobType == 'nightly') {
-                        testList = (configuration.test as Map).get('nightly') as List<String>
-                    } else if (testJobType == 'weekly') {
-                        testList = (configuration.test as Map).get('weekly') as List<String>
+                    if (configuration.test.containsKey(testJobType)) {
+                        testList = (configuration.test as Map).get(testJobType) as List<String>
                     } else {
-                        testList = (configuration.test as Map).get('release') as List<String>
+                        testList = getDefaultTestList(testJobType)
                     }
                 }
             } else {
                 // Default to the test sets declared if one isn't set in the build configuration
-                if (testJobType == 'nightly') {
-                    testList = nightly
-                } else if (testJobType == 'weekly') {
-                    testList = weekly
-                } else {
-                    testList = release
-                }
+                testList = getDefaultTestList(testJobType)
             }
         }
 
@@ -319,6 +300,26 @@ class Builder implements Serializable {
 
         return testList
     }
+
+    /*
+    Get default test list
+    */
+    List<String> getDefaultTestList(String testJobType) {
+        final List<String> nightly = DEFAULTS_JSON['testDetails']['nightlyDefault']
+        final List<String> weekly = DEFAULTS_JSON['testDetails']['weeklyDefault']
+        final List<String> release = DEFAULTS_JSON['testDetails']['releaseDefault']
+        List<String> testList = []
+
+        if (testJobType == 'nightly') {
+            testList = nightly
+        } else if (testJobType == 'weekly') {
+            testList = weekly
+        } else {
+            testList = release
+        }
+        return testList
+    }
+    
     /*
     Get the list of tests to dynamically run parallel builds from the build configurations.
     This function parses and applies this to the individual build config.
