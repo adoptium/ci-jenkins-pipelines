@@ -74,7 +74,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
 
         // default value not matter for release
         stringParam('jdkVersion', "${JAVA_VERSION}")
-        stringParam('activeNodeTimeout', '1', 'Number of minutes we will wait for a label-matching node to become active.')
+        stringParam('activeNodeTimeout', '5', 'Number of minutes we will wait for a label-matching node to become active.')
         stringParam('dockerExcludes', '', 'Map of targetConfigurations to exclude from docker building. If a targetConfiguration (i.e. { "x64LinuxXL": [ "openj9" ], "aarch64Linux": [ "hotspot", "openj9" ] }) has been entered into this field, jenkins will build the jdk without using docker. This param overrides the dockerImage and dockerFile downstream job parameters.')
         stringParam('baseFilePath', '', "Relative path to where the build_base_file.groovy file is located. This runs the downstream job setup and configuration retrieval services.<br>Default: <code>${defaultsJson['baseFileDirectories']['upstream']}</code>")
         stringParam('buildConfigFilePath', '', "Relative path to where the jdkxx_pipeline_config.groovy file is located. It contains the build configurations for each platform, architecture and variant.<br>Default: <code>${defaultsJson['configDirectories']['build']}/jdkxx_pipeline_config.groovy</code>")
