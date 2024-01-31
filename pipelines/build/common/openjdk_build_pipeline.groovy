@@ -355,6 +355,9 @@ class Build {
         def jdkBranch = getJDKBranch()
         def jdkRepo = getJDKRepo()
         def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == 'openj9') ? buildConfig.SCM_REF : 'master'
+
+        def vendorTestRepos = ''
+        def vendorTestBranches = ''
         List testList = buildConfig.TEST_LIST
         List dynamicList = buildConfig.DYNAMIC_LIST
         List numMachines = buildConfig.NUM_MACHINES
@@ -389,7 +392,7 @@ class Build {
                             DYNAMIC_COMPILE = true
                         }
                         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-                        if (testType  == 'dev.openjdk') {
+                        if (testType  == 'dev.openjdk' || testType  == 'dev.system') {
                             context.println "${testType} need extra label sw.tool.docker"
                             if (additionalTestLabel == '') {
                                 additionalTestLabel = 'sw.tool.docker'
@@ -397,6 +400,16 @@ class Build {
                                 additionalTestLabel += '&&sw.tool.docker'
                             }
                         }
+
+                        if (testType  == 'dev.system') {
+                            def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
+                            vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
+                            vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
+                            vendorTestRepos = vendorTestRepos - ('.git')
+                            // Use BUILD_REF override if specified
+                            vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
+                        }
+
                         def jobParams = getAQATestJobParams(testType)
                         def parallel = 'None'
                         def numMachinesPerTest = ''
@@ -451,21 +464,23 @@ class Build {
 
                     def testJobParams = [
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-	                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-	                    context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-	                    context.string(name: 'JDK_REPO', value: jdkRepo),
-	                    context.string(name: 'JDK_BRANCH', value: jdkBranch),
-	                    context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-	                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-	                    context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
-	                    context.string(name: 'PARALLEL', value: parallel),
-	                    context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
-	                    context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
-	                    context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
-	                    context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
-	                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-	                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE),
-	                    context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
+                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                        context.string(name: 'SDK_RESOURCE', value: 'upstream'),
+                        context.string(name: 'JDK_REPO', value: jdkRepo),
+                        context.string(name: 'JDK_BRANCH', value: jdkBranch),
+                        context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                        context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                        context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
+                        context.string(name: 'PARALLEL', value: parallel),
+                        context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
+                        context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
+                        context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
+                        context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
+                        context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+                        context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE),
+                        context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
+                        context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
+                        context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
                         ]
 
                         // If TIME_LIMIT is set, override target job default TIME_LIMIT value.
@@ -621,7 +636,7 @@ class Build {
                     context.println "Reproduce_compare job doesn't exist, create reproduce_compare job: ${comparedJobName}"
                     context.jobDsl scriptText: """
                         pipelineJob("${comparedJobName}") {
-	                        description(\'<h1>THIS IS AN AUTOMATICALLY GENERATED JOB. PLEASE DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1>\')
+                            description(\'<h1>THIS IS AN AUTOMATICALLY GENERATED JOB. PLEASE DO NOT MODIFY, IT WILL BE OVERWRITTEN.</h1>\')
 
                             definition {
                                 parameters {
