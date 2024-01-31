@@ -5,7 +5,7 @@ import groovy.json.JsonOutput
 
 env.NODE_LABEL = 'dockerBuild&&linux&&x64'
 pipeline {
-    agent { label NODE_LABEL }
+    agent none
     parameters {
         string(name: 'COMPARED_JOB_NUMBER', defaultValue: '', description: 'Compared nightly build job number')
         string(name: 'COMPARED_JOB_NAME', defaultValue: '', description: 'Compared nightly build job name')
@@ -15,6 +15,10 @@ pipeline {
 
     stages {
         stage('Prepare') { //Copy artifacts, reset parameters,trigger build and copyArtifacts
+            agent { label NODE_LABEL }
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
             steps {
                 cleanWs()
                 checkout scm
@@ -107,6 +111,10 @@ pipeline {
         }
         stage('Compare') {
             agent { label NODE_LABEL }
+            options {
+                // Timeout counter starts BEFORE agent is allocated
+                timeout(time: 30, unit: 'MINUTES')
+            }
             steps {
                 cleanWs() // Ensure Prepare stage contents cleaned
                 copyArtifacts filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip',
