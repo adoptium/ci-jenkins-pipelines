@@ -31,7 +31,7 @@ stage('Submit Release Pipelines') {
 
     // ensure test jobs are regenerated weekly
     def aqaAutoGen = false
-    if  ( params.releaseType  == 'weekly' ) {
+    if  ( params.releaseType  == 'Weekly' ) {
         aqaAutoGen = true
     }   
 
