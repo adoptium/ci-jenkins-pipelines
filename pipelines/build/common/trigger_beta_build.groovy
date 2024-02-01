@@ -29,7 +29,7 @@ node('worker') {
 
     def latestTag=sh(script: 'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1', returnStdout:true)
     echo "latest tag = ${latestTag}"
-    if (!latestTag.contains("_adopt") {
+    if (!latestTag.contains("_adopt")) {
        echo Latest tag does not have _adopt - aborting
        throw new Exception("Failed to find the latest _adopt build tag")
     }
