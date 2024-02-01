@@ -27,7 +27,7 @@ node('worker') {
 
     def triggerBuild = false
 
-    def latestTag=sh(script: 'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1', returnStdout:true)
+    def latestTag=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1', returnStdout:true)
     echo "latest tag = ${latestTag}"
     if (!latestTag.contains("_adopt")) {
        echo Latest tag does not have _adopt - aborting
@@ -40,7 +40,7 @@ node('worker') {
     if (!params.FORCE) {
         // Check binaries repo for existance of the given release?
         desiredRepoTagURL="${binariesRepo}/releases/tag/${buildTag}"
-        httpCode=sh(script:"curl -s -o /dev/null -w "%{http_code}" "$desiredRepoTagURL"", returnStatus:true)
+        httpCode=sh(script:'curl -s -o /dev/null -w "%{http_code}" "'+desiredRepoTagURL+'"', returnStatus:true)
         if (httpCode == 200) {
             echo Release "$buildTag" already published - nothing to do
         } else if (httpCode == 404) {
