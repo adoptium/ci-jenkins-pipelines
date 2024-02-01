@@ -68,7 +68,7 @@ node('worker') {
                                 string(name: 'releaseType',             value: "Weekly Without Publish"),
                                 string(name: 'scmReference',            value: "$latestTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
-                                string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs"),
+                                string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                             ]
             echo "Triggered pipeline build result = "+ job.getResult()
             currentBuild.result = job.getResult()
