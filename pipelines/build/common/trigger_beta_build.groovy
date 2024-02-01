@@ -40,10 +40,10 @@ node('worker') {
     if (!params.FORCE) {
         // Check binaries repo for existance of the given release?
         def desiredRepoTagURL="${binariesRepo}/releases/tag/${buildTag}"
-        def httpCode=sh(script:'curl -s -o /dev/null -w "%{http_code}" "'+desiredRepoTagURL+'"', returnStdout:true)
-        if (httpCode == 200) {
+        def httpCode=sh(script:'curl -s -o /dev/null -w \"%{http_code}\" \"'+desiredRepoTagURL+'\"', returnStdout:true)
+        if (httpCode == "200") {
             echo "Release $buildTag already published - nothing to do"
-        } else if (httpCode == 404) {
+        } else if (httpCode == "404") {
             echo "New unpublished build tag ${buildTag} - triggering build"
             triggerBuild = true
         } else {
