@@ -3,7 +3,7 @@ Jenkins job does reproducible build compare.
 */
 import groovy.json.JsonOutput
 
-env.NODE_LABEL = 'dockerBuild&&linux&&x64'
+def NODE_LABEL = 'worker'
 pipeline {
     agent none
     parameters {
