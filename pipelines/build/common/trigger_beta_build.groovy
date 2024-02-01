@@ -42,12 +42,12 @@ node('worker') {
         desiredRepoTagURL="${binariesRepo}/releases/tag/${buildTag}"
         httpCode=sh(script:'curl -s -o /dev/null -w "%{http_code}" "'+desiredRepoTagURL+'"', returnStatus:true)
         if (httpCode == 200) {
-            echo Release "$buildTag" already published - nothing to do
+            echo "Release $buildTag already published - nothing to do"
         } else if (httpCode == 404) {
-            echo New unpublished build tag "${buildTag}" - triggering build
+            echo "New unpublished build tag ${buildTag} - triggering build"
             triggerBuild = true
         } else {
-            error =  "Unexpected HTTP code "${HTTPCODE}" when looking got $desiredRepoTagURL"
+            error =  "Unexpected HTTP code ${HTTPCODE} when looking got $desiredRepoTagURL"
             echo "${error}"
             throw new Exception("${error}")
         }
