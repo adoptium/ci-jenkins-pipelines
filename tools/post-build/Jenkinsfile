@@ -1,0 +1,62 @@
+NODE_LABEL = 'dockerBuild&&linux&&x64&&gpgsign'
+
+pipeline {
+    agent none
+    parameters {
+        string(name: 'UPSTREAM_JOB_NAME', defaultValue: '', description: 'Pipeline job with sbom files')
+        string(name: 'UPSTREAM_JOB_NUMBER', defaultValue: '', description: 'Pipeline job number')
+        
+    }
+    stages {
+        stage('Post-Build') {
+            parallel {
+                stage('sbomSign') {
+                    agent {
+                        label NODE_LABEL
+                    }
+                    steps {
+                        sbomSign()
+                    }
+                }
+            }
+        }
+    }
+}
+
+def sbomSign() {
+    cleanWs()
+    docker.image('adoptopenjdk/centos7_build_image').inside {
+        checkout scm
+        checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "sbomSign"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/adoptium/temurin-build.git"]]])
+        copyArtifacts excludes: '**/OpenJDK*-sbom*metadata.json',
+                                filter: '**/OpenJDK*-sbom*.json',
+                                fingerprintArtifacts: true, 
+                                flatten: true, 
+                                projectName: "${params.UPSTREAM_JOB_NAME}",
+                                target: 'sbom/',
+                                selector: specific("${params.UPSTREAM_JOB_NUMBER}")
+        withCredentials([file(credentialsId: 'adoptium-artifactory-gpg-key', variable: 'PRIVATE_GPG_KEY')]) {
+            withEnv(['PRIVATE_GPG_KEY='+${PRIVATE_GPG_KEY}]) {
+                script {
+                    dir("sbomSign/cyclonedx-lib") {
+                        sh label: 'build-sign-sbom', script: '''
+                            JAVA_HOME=/usr/lib/jvm/jdk-17 ant clean
+                            JAVA_HOME=/usr/lib/jvm/jdk-17 ant build-sign-sbom
+                        '''
+                    }
+                    def sbomFiles = findFiles(glob: "**/OpenJDK*-sbom*.json")
+                    for (def sbomFile: sbomFiles) {
+                        def sbomFileName = sbomFile.path
+                        def classPath = "sbomSign/cyclonedx-lib/build/jar/*"
+                        sh label: 'sign-sbom', script: """
+                            /usr/lib/jvm/jdk-17/bin/java -cp "${classPath}" temurin.sbom.TemurinSignSBOM --signSBOM --jsonFile ${sbomFileName} --privateKeyFile ./sbomSign/cyclonedx-lib/testPrivateFile
+                            /usr/lib/jvm/jdk-17/bin/java -cp "${classPath}" temurin.sbom.TemurinSignSBOM --verifySignature --jsonFile ${sbomFileName} --publicKeyFile ./sbomSign/cyclonedx-lib/publicPemFile
+                        """
+                    }
+                }
+            }// some block
+        }
+
+        archiveArtifacts artifacts: "**/OpenJDK*-sbom*.json"
+    }
+}

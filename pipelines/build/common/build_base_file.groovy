@@ -765,6 +765,40 @@ class Builder implements Serializable {
 
         return true
     }
+    /*
+    Call job to do post task. For now enable sbom sign
+    */
+    def postStage() {
+        context.stage('post-build') {
+            //Job name need to discuss
+            context.println "Post build - parallel post tasks, e.g. sbom sign"
+            def postBuildJob = context.build job: 'Sophia_pipeline',
+                    parameters: [
+                        context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
+                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}")
+                    ]
+            context.node('worker') {
+                // Remove any previous workspace artifacts
+                context.sh 'rm -rf *.json || true'
+                context.copyArtifacts(
+                    projectName: 'Sophia_pipeline',
+                    selector: context.specific("${postBuildJob.getNumber()}"),
+                    filter: '*.json',
+                    fingerprintArtifacts: true,
+                    target: 'sbom/',
+                    flatten: true)
+
+                // Archive signed sbom in Jenkins
+                try {
+                    context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                        context.archiveArtifacts artifacts: "sbom/*.json"
+                    }
+                } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for Sophia_pipeline has been reached. Exiting...")
+                }
+            }       
+        }
+    }
 
     /*
     Call job to push artifacts to github. Usually it's only executed on a nightly build
@@ -976,7 +1010,12 @@ class Builder implements Serializable {
                 }
             }
             context.parallel jobs
-
+            
+            try {
+                postStage()
+            } catch (Exception e) {
+                context.println(e.message)
+            }
             // publish to github if needed
             // Don't publish release automatically
             if (publish && !release) {
