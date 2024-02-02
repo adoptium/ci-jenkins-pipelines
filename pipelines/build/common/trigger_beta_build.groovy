@@ -63,7 +63,7 @@ node('worker') {
         // Trigger pipline build of the new build tag and publish with the "ea" tag
         def buildPipeline = "build-scripts/openjdk${version}-pipeline"
         stage("Trigger build pipeline - ${buildPipeline}") {
-            def job = build job: "${params.buildPipeline}",
+            def job = build job: "${buildPipeline}",
                             parameters: [
                                 string(name: 'releaseType',             value: "Weekly Without Publish"),
                                 string(name: 'scmReference',            value: "$latestTag"),
