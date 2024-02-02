@@ -15,8 +15,10 @@ limitations under the License.
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
-  if the given build has not already been published.
-  The "Force" option can be used to re-build and re-publish and existing build.
+  if the given build has not already been published, and the given version has
+  not GA'd (existance of -ga tag).
+
+  The "Force" option can be used to re-build and re-publish the existing latest build.
 */
 
 node('worker') {
@@ -27,29 +29,49 @@ node('worker') {
 
     def triggerBuild = false
 
-    def latestTag=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
-    echo "latest tag = ${latestTag}"
-    if (!latestTag.contains("_adopt")) {
-       echo Latest tag does not have _adopt - aborting
-       throw new Exception("Failed to find the latest _adopt build tag")
+    // Find latest _adopt tag for this version?
+    def latestAdoptTag=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
+    if (latestAdoptTag.indexOf("_adopt") < 0) {
+        def error="Error finding latest _adopt tag for ${mirrorRepo}"
+        echo "${error}"
+        throw new Exception("${error}")
     }
+    echo "Latest Adoptium tag from ${mirrorRepo} = ${latestAdoptTag}"
 
-    def buildTag=latestTag.replaceAll("_adopt","-ea-beta")
-    def publishTag=latestTag.replaceAll("_adopt","-ea")
+    def buildTag=latestAdoptTag.replaceAll("_adopt","-ea-beta")
+    def publishTag=latestAdoptTag.replaceAll("_adopt","-ea")
 
     if (!params.FORCE) {
-        // Check binaries repo for existance of the given release?
-        def desiredRepoTagURL="${binariesRepo}/releases/tag/${buildTag}"
-        def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
-        if (httpCode == "200") {
-            echo "Release $buildTag already published - nothing to do"
-        } else if (httpCode == "404") {
-            echo "New unpublished build tag ${buildTag} - triggering build"
-            triggerBuild = true
+        // Determine this versions potential GA tag, so as to not build and publish a GA'd version
+        def gaTag
+        dev versionStr
+        if (version > 8) {
+            versionStr=latestAdoptTag.substring(0, latestAdoptTag.indexOf("+"))
         } else {
-            def error =  "Unexpected HTTP code ${httpCode} when looking got $desiredRepoTagURL"
-            echo "${error}"
-            throw new Exception("${error}")
+            versionStr=latestAdoptTag.substring(0, latestAdoptTag.indexOf("-"))
+        }
+        gaTag=versionStr+"-ga"
+        echo "Expected GA tag to check for = ${gaTag}"
+    
+        def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "${gaTag}"', returnStatus:true)
+        if (gaTagCheck == 0) {
+            echo "Version "+versionStr+" has already GA'd - nothing to do"
+        } else {
+            echo "This version has not GA'd yet, checking if ${buildTag} is already published?"
+
+            // Check binaries repo for existance of the given release?
+            def desiredRepoTagURL="${binariesRepo}/releases/tag/${buildTag}"
+            def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
+            if (httpCode == "200") {
+                echo "Build tag $buildTag is already published - nothing to do"
+            } else if (httpCode == "404") {
+                echo "New unpublished build tag ${buildTag} - triggering build"
+                triggerBuild = true
+            } else {
+                def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
+                echo "${error}"
+                throw new Exception("${error}")
+            }
         }
     } else {
         echo "FORCE is true, triggering build.."
@@ -63,10 +85,12 @@ node('worker') {
         // Trigger pipline build of the new build tag and publish with the "ea" tag
         def buildPipeline = "build-scripts/openjdk${version}-pipeline"
         stage("Trigger build pipeline - ${buildPipeline}") {
+            echo "Triggering ${buildPipeline} for $latestAdoptTag"
+
             def job = build job: "${buildPipeline}",
                             parameters: [
                                 string(name: 'releaseType',             value: "Weekly Without Publish"),
-                                string(name: 'scmReference',            value: "$latestTag"),
+                                string(name: 'scmReference',            value: "$latestAdoptTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                             ]
