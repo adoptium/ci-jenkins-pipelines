@@ -44,7 +44,7 @@ node('worker') {
     if (!params.FORCE) {
         // Determine this versions potential GA tag, so as to not build and publish a GA'd version
         def gaTag
-        dev versionStr
+        def versionStr
         if (version > 8) {
             versionStr=latestAdoptTag.substring(0, latestAdoptTag.indexOf("+"))
         } else {
