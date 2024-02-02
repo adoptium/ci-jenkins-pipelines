@@ -53,7 +53,7 @@ node('worker') {
         gaTag=versionStr+"-ga"
         echo "Expected GA tag to check for = ${gaTag}"
     
-        def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "${gaTag}"', returnStatus:true)
+        def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "'+gaTag+'"', returnStatus:true)
         if (gaTagCheck == 0) {
             echo "Version "+versionStr+" has already GA'd - nothing to do"
         } else {
