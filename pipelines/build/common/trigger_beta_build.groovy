@@ -80,7 +80,7 @@ node('worker') {
 
     if (triggerBuild) {
         // Set version suffix, jdk8 has different mechanism to jdk11+
-        def additionalConfigureArgs =  (version > 8) ? "--with-version-opt=ea" : "--with-user-release-suffix=ea"
+        def additionalConfigureArgs =  (version > 8) ? "--with-version-opt=ea" : "--with-milestone=beta"
 
         // Trigger pipline build of the new build tag and publish with the "ea" tag
         def buildPipeline = "build-scripts/openjdk${version}-pipeline"
