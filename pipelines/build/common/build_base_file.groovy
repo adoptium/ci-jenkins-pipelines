@@ -783,33 +783,14 @@ class Builder implements Serializable {
             tag = publishName
         }
 
-        // Definition of filenames when building an EA tag. This is passed
-        // to the release tool in place of the "TIMESTAMP" Criteria for this:
-        // JDK21 or 22 when a scmRef (tag) is specified and it's not a release build
-        if ((javaVersion=="jdk21" || javaVersion=="jdk22") && scmReference && !release) {
-            publishName = scmReference.replace('_adopt','')
-            def firstDot=publishName.indexOf('.')
-            def plusSign=publishName.indexOf('+')
-            def secondDot=publishName.indexOf('.', firstDot+1)
-            // Translate jdk-AA+BB to jdk-AA-0-BB
-            // Translate jdk-AA.B.C+DD to jdk-AA-C-DD-ea-beta
-            // Note that jdk-AA-B-C-D+EE will become jdk-AA-C-D-EE-ea-beta
-            if ( firstDot==-1 ) {
-                publishName=publishName.substring(4,plusSign)+'.0.'+publishName.substring(plusSign+1)
-            } else {
-                publishName=publishName.substring(4,firstDot)+publishName.substring(secondDot).replace("+","-")
-            }
-            publishName='ea_'+publishName.replaceAll("\\.","-")
-        }
-
         context.stage('publish') {
         context.println "publishing with publishName: ${publishName}"
         context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
                     parameters: [
                         ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
                         ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: false],
-                        context.string(name: 'TAG', value: ((scmReference && (javaVersion=="jdk21" || javaVersion=="jdk22"))?(scmReference.replace('_adopt','')):tag)),
-                        context.string(name: 'TIMESTAMP', value: ((scmReference && (javaVersion=="jdk21" || javaVersion=="jdk22"))?publishName:timestamp)),
+                        context.string(name: 'TAG', value: tag),
+                        context.string(name: 'TIMESTAMP', value: timestamp)),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
                         context.string(name: 'VERSION', value: javaVersion)
