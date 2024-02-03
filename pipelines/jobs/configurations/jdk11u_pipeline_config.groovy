@@ -190,7 +190,7 @@ class Config11 {
                         'hotspot'    : '--platform linux/riscv64'
                 ],
                 crossCompile         : [
-                        'hotspot'    : 'dockerhost-rise-ubuntu2204-aarch64-1'
+                        'hotspot'    : 'dockerhost-rise-ubuntu2204-aarch64-1',
                         'openj9'     : 'x64',
                         'bisheng'    : 'x64'
                 ],
