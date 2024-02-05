@@ -86,7 +86,7 @@ node('worker') {
         def jobs = [:]
         def branches = ["build-scripts/openjdk${version}-pipeline", "build-scripts/evaluation-openjdk${version}-pipeline"]
 
-        for branch in branches {
+        for(branch in branches) {
             jobs[branch] = {
                 def buildPipeline = "${branch}"
                 stage("Trigger build pipeline - ${buildPipeline}") {
