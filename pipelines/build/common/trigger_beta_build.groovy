@@ -84,36 +84,23 @@ node('worker') {
 
         // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
         def jobs = [:]
+        def branches = ["build-scripts/openjdk${version}-pipeline", "build-scripts/evaluation-openjdk${version}-pipeline]
 
-        jobs["main"] = {
-            def buildPipeline = "build-scripts/openjdk${version}-pipeline"
-            stage("Trigger build pipeline - ${buildPipeline}") {
-                echo "Triggering ${buildPipeline} for $latestAdoptTag"
+        for branch in branches {
+            jobs[branch] = {
+                def buildPipeline = "${branch}"
+                stage("Trigger build pipeline - ${buildPipeline}") {
+                    echo "Triggering ${buildPipeline} for $latestAdoptTag"
 
-                def job = build job: "${buildPipeline}", propagate: true,
-                        parameters: [
+                    def job = build job: "${buildPipeline}", propagate: true,
+                            parameters: [
                                 string(name: 'releaseType',             value: "Weekly"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
-                        ]
-                echo "Triggered pipeline build result = "+ job.getResult()
-            }
-        }
-
-        jobs["evaluation"] = {
-            def buildPipeline = "build-scripts/evaluation-openjdk${version}-pipeline"
-            stage("Trigger evaluation build pipeline - ${buildPipeline}") {
-                echo "Triggering ${buildPipeline} for $latestAdoptTag"
-
-                def job = build job: "${buildPipeline}", propagate: true,
-                        parameters: [
-                                string(name: 'releaseType',             value: "Weekly"),
-                                string(name: 'scmReference',            value: "$latestAdoptTag"),
-                                string(name: 'overridePublishName',     value: "$publishTag"),
-                                string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
-                        ]
-                echo "Triggered pipeline build result = "+ job.getResult()
+                            ]
+                    echo "Triggered pipeline build result = "+ job.getResult()
+                }
             }
         }
 
