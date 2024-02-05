@@ -82,21 +82,54 @@ node('worker') {
         // Set version suffix, jdk8 has different mechanism to jdk11+
         def additionalConfigureArgs =  (version > 8) ? "--with-version-opt=ea" : "--with-milestone=beta"
 
-        // Trigger pipline build of the new build tag and publish with the "ea" tag
-        def buildPipeline = "build-scripts/openjdk${version}-pipeline"
-        stage("Trigger build pipeline - ${buildPipeline}") {
-            echo "Triggering ${buildPipeline} for $latestAdoptTag"
+        // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
+        def jobs = []
 
-            def job = build job: "${buildPipeline}",
+        jobs["main"] = {
+            def buildPipeline = "build-scripts/openjdk${version}-pipeline"
+            try {
+                stage("Trigger build pipeline - ${buildPipeline}") {
+                    echo "Triggering ${buildPipeline} for $latestAdoptTag"
+
+                    def job = build job: "${buildPipeline}",
                             parameters: [
                                 string(name: 'releaseType',             value: "Weekly Without Publish"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                             ]
-            echo "Triggered pipeline build result = "+ job.getResult()
-            currentBuild.result = job.getResult()
+                    echo "Triggered pipeline build result = "+ job.getResult()
+                    currentBuild.result = job.getResult()
+                }
+            } catch(err) {
+                echo "Exception triggering build pipeline - ${buildPipeline} : ${err}"
+                currentBuild.result = 'FAILURE'
+            }
         }
+
+        jobs["evaluation"] = {
+            def buildPipeline = "build-scripts/evaluation-openjdk${version}-pipeline"
+            try {
+                stage("Trigger evaluation build pipeline - ${buildPipeline}") {
+                    echo "Triggering ${buildPipeline} for $latestAdoptTag"
+
+                    def job = build job: "${buildPipeline}",
+                            parameters: [
+                                string(name: 'releaseType',             value: "Weekly Without Publish"),
+                                string(name: 'scmReference',            value: "$latestAdoptTag"),
+                                string(name: 'overridePublishName',     value: "$publishTag"),
+                                string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
+                            ]
+                    echo "Triggered pipeline build result = "+ job.getResult()
+                    currentBuild.result = job.getResult()
+                }
+            } catch(err) {
+                echo "Exception triggering build pipeline - ${buildPipeline} : ${err}"
+                currentBuild.result = 'FAILURE'
+            }
+        }
+
+        parallel jobs
     }
 }
 
