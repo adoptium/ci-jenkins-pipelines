@@ -87,7 +87,7 @@ node('worker') {
         def pipelines = ["build-scripts/openjdk${version}-pipeline", "build-scripts/evaluation-openjdk${version}-pipeline"]
 
         for(pipeline in pipelines) {
-            jobs[pipeline] = {
+            jobs["${pipeline}"] = {
                 stage("Trigger build pipeline - ${pipeline}") {
                     echo "Triggering ${pipeline} for $latestAdoptTag"
 
