@@ -91,7 +91,7 @@ node('worker') {
                 stage("Trigger build pipeline - ${buildPipeline}") {
                     echo "Triggering ${buildPipeline} for $latestAdoptTag"
 
-                    def job = build job: "${buildPipeline}",
+                    def job = build job: "${buildPipeline}", propagate: true,
                             parameters: [
                                 string(name: 'releaseType',             value: "Weekly Without Publish"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
@@ -99,11 +99,9 @@ node('worker') {
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                             ]
                     echo "Triggered pipeline build result = "+ job.getResult()
-                    currentBuild.result = job.getResult()
                 }
             } catch(err) {
                 echo "Exception triggering build pipeline - ${buildPipeline} : ${err}"
-                currentBuild.result = 'FAILURE'
             }
         }
 
@@ -113,7 +111,7 @@ node('worker') {
                 stage("Trigger evaluation build pipeline - ${buildPipeline}") {
                     echo "Triggering ${buildPipeline} for $latestAdoptTag"
 
-                    def job = build job: "${buildPipeline}",
+                    def job = build job: "${buildPipeline}", propagate: true,
                             parameters: [
                                 string(name: 'releaseType',             value: "Weekly Without Publish"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
@@ -121,11 +119,9 @@ node('worker') {
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                             ]
                     echo "Triggered pipeline build result = "+ job.getResult()
-                    currentBuild.result = job.getResult()
                 }
             } catch(err) {
                 echo "Exception triggering build pipeline - ${buildPipeline} : ${err}"
-                currentBuild.result = 'FAILURE'
             }
         }
 
