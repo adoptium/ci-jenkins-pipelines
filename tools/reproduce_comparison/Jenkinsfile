@@ -3,7 +3,8 @@ Jenkins job does reproducible build compare.
 */
 import groovy.json.JsonOutput
 
-def NODE_LABEL = 'worker'
+env.NODE_LABEL = 'worker'
+
 pipeline {
     agent none
     parameters {
