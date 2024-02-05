@@ -84,7 +84,7 @@ node('worker') {
 
         // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
         def jobs = [:]
-        def branches = ["build-scripts/openjdk${version}-pipeline", "build-scripts/evaluation-openjdk${version}-pipeline]
+        def branches = ["build-scripts/openjdk${version}-pipeline", "build-scripts/evaluation-openjdk${version}-pipeline"]
 
         for branch in branches {
             jobs[branch] = {
