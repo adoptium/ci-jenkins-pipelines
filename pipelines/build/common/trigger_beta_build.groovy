@@ -92,7 +92,7 @@ node('worker') {
 
                 def job = build job: "${buildPipeline}", propagate: true,
                         parameters: [
-                                string(name: 'releaseType',             value: "Weekly Without Publish"),
+                                string(name: 'releaseType',             value: "Weekly"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
@@ -108,7 +108,7 @@ node('worker') {
 
                 def job = build job: "${buildPipeline}", propagate: true,
                         parameters: [
-                                string(name: 'releaseType',             value: "Weekly Without Publish"),
+                                string(name: 'releaseType',             value: "Weekly"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
