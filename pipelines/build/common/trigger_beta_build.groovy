@@ -83,7 +83,7 @@ node('worker') {
         def additionalConfigureArgs =  (version > 8) ? "--with-version-opt=ea" : "--with-milestone=beta"
 
         // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
-        def jobs = []
+        def jobs = [:]
 
         jobs["main"] = {
             def buildPipeline = "build-scripts/openjdk${version}-pipeline"
