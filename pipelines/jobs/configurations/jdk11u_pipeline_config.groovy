@@ -180,27 +180,40 @@ class Config11 {
 
         riscv64Linux      :  [
                 os                   : 'linux',
+                arch                 : 'riscv64',
                 dockerImage          : [
+                        'hotspot'    : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                         'openj9'     : 'adoptopenjdk/centos6_build_image',
                         'bisheng'    : 'adoptopenjdk/centos6_build_image'
                 ],
-                arch                 : 'riscv64',
+                dockerArgs           : [
+                        'hotspot'    : '--platform linux/riscv64'
+                ],
                 crossCompile         : [
+                        'hotspot'    : 'dockerhost-rise-ubuntu2204-aarch64-1',
                         'openj9'     : 'x64',
                         'bisheng'    : 'x64'
                 ],
                 buildArgs            : [
+                        'hotspot'    : '--create-sbom',
                         'openj9'     : '--cross-compile',
-                        'bisheng'    : '--cross-compile --branch risc-v',
-                        'temurin'    : '--create-sbom'
+                        'bisheng'    : '--cross-compile --branch risc-v'
                 ],
                 configureArgs        : [
+                        'hotspot'    : '--enable-headless-only=yes --enable-dtrace',
                         'openj9'     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
                         'bisheng'    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
                 ],
                 test                : [
-                        nightly: ['sanity.openjdk'],
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                        'hotspot'   : 'default',
+                        'openj9'    : [
+                                nightly: ['sanity.openjdk'],
+                                weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                        ],
+                        'bisheng'   : [
+                                nightly: ['sanity.openjdk'],
+                                weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                        ]
                 ],
         ],
 

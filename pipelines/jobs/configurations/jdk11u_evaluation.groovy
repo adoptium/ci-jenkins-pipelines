@@ -2,6 +2,9 @@
 targetConfigurations = [
         'aarch64Windows': [
                 'temurin'
+        ],
+        'riscv64Linux': [
+                'hotspot'
         ]
         // 'x64Mac'        : [
         //         'openj9'
@@ -41,6 +44,7 @@ targetConfigurations = [
 
 // scmReferences to use for weekly evaluation build
 weekly_evaluation_scmReferences = [
+        'hotspot'        : '',
         'temurin'        : '',
         'openj9'         : '',
         'corretto'       : '',
