@@ -86,19 +86,21 @@ node('worker') {
         def jobs = [:]
         def pipelines = ["build-scripts/openjdk${version}-pipeline", "build-scripts/evaluation-openjdk${version}-pipeline"]
 
-        for(p in pipelines) {
-            jobs["${p}"] = {
-                stage("Trigger build pipeline - ${p}") {
-                    echo "Triggering ${p} for $latestAdoptTag"
+        pipelines.each { pipeline ->
+            jobs[pipeline] = {
+                catchError {
+                    stage("Trigger build pipeline - ${pipeline}") {
+                        echo "Triggering ${pipeline} for $latestAdoptTag"
 
-                    def job = build job: "${p}", propagate: true,
+                        def job = build job: "${pipeline}", propagate: true,
                             parameters: [
                                 string(name: 'releaseType',             value: "Weekly"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                             ]
-                    echo "Triggered ${p} build result = "+ job.getResult()
+                        echo "Triggered ${pipeline} build result = "+ job.getResult()
+                    }
                 }
             }
         }

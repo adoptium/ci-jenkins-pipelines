@@ -790,7 +790,7 @@ class Builder implements Serializable {
                         ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
                         ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: false],
                         context.string(name: 'TAG', value: tag),
-                        context.string(name: 'TIMESTAMP', value: timestamp)),
+                        context.string(name: 'TIMESTAMP', value: timestamp),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
                         context.string(name: 'VERSION', value: javaVersion)
