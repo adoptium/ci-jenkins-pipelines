@@ -87,41 +87,33 @@ node('worker') {
 
         jobs["main"] = {
             def buildPipeline = "build-scripts/openjdk${version}-pipeline"
-            try {
-                stage("Trigger build pipeline - ${buildPipeline}") {
-                    echo "Triggering ${buildPipeline} for $latestAdoptTag"
+            stage("Trigger build pipeline - ${buildPipeline}") {
+                echo "Triggering ${buildPipeline} for $latestAdoptTag"
 
-                    def job = build job: "${buildPipeline}", propagate: true,
-                            parameters: [
+                def job = build job: "${buildPipeline}", propagate: true,
+                        parameters: [
                                 string(name: 'releaseType',             value: "Weekly Without Publish"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
-                            ]
-                    echo "Triggered pipeline build result = "+ job.getResult()
-                }
-            } catch(err) {
-                echo "Exception triggering build pipeline - ${buildPipeline} : ${err}"
+                        ]
+                echo "Triggered pipeline build result = "+ job.getResult()
             }
         }
 
         jobs["evaluation"] = {
             def buildPipeline = "build-scripts/evaluation-openjdk${version}-pipeline"
-            try {
-                stage("Trigger evaluation build pipeline - ${buildPipeline}") {
-                    echo "Triggering ${buildPipeline} for $latestAdoptTag"
+            stage("Trigger evaluation build pipeline - ${buildPipeline}") {
+                echo "Triggering ${buildPipeline} for $latestAdoptTag"
 
-                    def job = build job: "${buildPipeline}", propagate: true,
-                            parameters: [
+                def job = build job: "${buildPipeline}", propagate: true,
+                        parameters: [
                                 string(name: 'releaseType',             value: "Weekly Without Publish"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
-                            ]
-                    echo "Triggered pipeline build result = "+ job.getResult()
-                }
-            } catch(err) {
-                echo "Exception triggering build pipeline - ${buildPipeline} : ${err}"
+                        ]
+                echo "Triggered pipeline build result = "+ job.getResult()
             }
         }
 
