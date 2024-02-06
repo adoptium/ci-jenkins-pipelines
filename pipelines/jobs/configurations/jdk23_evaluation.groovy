@@ -7,8 +7,6 @@ targetConfigurations = [
         ]
 ]
 
-// Build tag driven beta builds now enabled
-
 // scmReferences to use for weekly evaluation release build
 weekly_evaluation_scmReferences = [
         'hotspot'        : '',

@@ -36,12 +36,6 @@ targetConfigurations = [
         // ]
 ]
 
-// Build tag driven beta builds now enabled
-// if set to empty string then it wont get triggered
-//triggerSchedule_evaluation = ''
-// if set to empty string then it wont get triggered
-//triggerSchedule_weekly_evaluation= ''
-
 // scmReferences to use for weekly evaluation build
 weekly_evaluation_scmReferences = [
         'hotspot'        : '',

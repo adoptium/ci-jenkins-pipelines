@@ -33,13 +33,6 @@ targetConfigurations = [
         // ]
 ]
 
-// Build tag driven beta builds now enabled
-// if set to empty string then it wont get triggered
-// 23:30 Tue, Thu
-//triggerSchedule_evaluation = 'TZ=UTC\n30 23 * * 2,4'
-// 12:05 Sun
-//triggerSchedule_weekly_evaluation = 'TZ=UTC\n05 12 * * 7'
-
 // scmReferences to use for weekly evaluation build
 weekly_evaluation_scmReferences = [
         'temurin'        : '',
