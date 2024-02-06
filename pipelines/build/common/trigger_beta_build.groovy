@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import groovy.json.JsonOutput
+
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
   if the given build has not already been published, and the given version has
