@@ -80,7 +80,7 @@ node('worker') {
             }
         }
     } else {
-        echo "FORCE trigger specified, triggering specified builds.."
+        echo "FORCE triggering specified builds.."
         triggerMainBuild = params.FORCE_MAIN ? true : false
         triggerEvaluationBuild = params.FORCE_EVALUATION ? true : false
 
