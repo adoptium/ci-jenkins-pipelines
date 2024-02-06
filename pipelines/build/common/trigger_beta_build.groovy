@@ -26,7 +26,7 @@ import groovy.json.JsonOutput
 node('worker') {
 
     def mirrorRepo="${params.MIRROR_REPO}"
-    def version="${params.JDK_VERSION}".replaceAll("u", "").replaceAll("jdk", "").toInteger()
+    def version="${params.JDK_VERSION}".toInteger()
     def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", "${version}")
 
     def triggerMainBuild = false
