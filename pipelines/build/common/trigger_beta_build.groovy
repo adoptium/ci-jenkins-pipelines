@@ -27,7 +27,10 @@ node('worker') {
     def version="${params.JDK_VERSION}".replaceAll("u", "").replaceAll("jdk", "").toInteger()
     def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", "${version}")
 
-    def triggerBuild = false
+    def triggerMainBuild = false
+    def triggerEvaluationBuild = false
+    def overrideMainTargetConfigurations = ""
+    def overrideEvaluationTargetConfigurations = ""
 
     // Find latest _adopt tag for this version?
     def latestAdoptTag=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
@@ -41,7 +44,7 @@ node('worker') {
     def buildTag=latestAdoptTag.replaceAll("_adopt","-ea-beta")
     def publishTag=latestAdoptTag.replaceAll("_adopt","-ea")
 
-    if (!params.FORCE) {
+    if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         // Determine this versions potential GA tag, so as to not build and publish a GA'd version
         def gaTag
         def versionStr
@@ -65,8 +68,9 @@ node('worker') {
             if (httpCode == "200") {
                 echo "Build tag $buildTag is already published - nothing to do"
             } else if (httpCode == "404") {
-                echo "New unpublished build tag ${buildTag} - triggering build"
-                triggerBuild = true
+                echo "New unpublished build tag ${buildTag} - triggering builds"
+                triggerMainBuild = true
+                triggerEvaluationBuild = true
             } else {
                 def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
                 echo "${error}"
@@ -74,31 +78,57 @@ node('worker') {
             }
         }
     } else {
-        echo "FORCE is true, triggering build.."
-        triggerBuild = true
+        echo "FORCE trigger specified, triggering specified builds.."
+        triggerMainBuild = params.FORCE_MAIN ? true : false
+        triggerEvaluationBuild = params.FORCE_EVALUATION ? true : false
+
+        if (params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS) {
+            overrideMainTargetConfigurations = params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS
+        }
+        if (params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS) {
+            overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
+        }
     }
 
-    if (triggerBuild) {
+    if (triggerMainBuild || triggerEvaluationBuild) {
         // Set version suffix, jdk8 has different mechanism to jdk11+
         def additionalConfigureArgs =  (version > 8) ? "--with-version-opt=ea" : "--with-milestone=beta"
 
         // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
         def jobs = [:]
-        def pipelines = ["build-scripts/openjdk${version}-pipeline", "build-scripts/evaluation-openjdk${version}-pipeline"]
+        def pipelines = [:]
 
-        pipelines.each { pipeline ->
+        if (triggerMainBuild) {
+            pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+        }
+        if (triggerEvaluationBuild) {
+            pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
+        }
+
+        pipelines.keySet().each { pipeline_type ->
+            def pipeline = pipelines[pipeline_type]
             jobs[pipeline] = {
                 catchError {
                     stage("Trigger build pipeline - ${pipeline}") {
                         echo "Triggering ${pipeline} for $latestAdoptTag"
 
-                        def job = build job: "${pipeline}", propagate: true,
-                            parameters: [
+                        def jobParams = [
                                 string(name: 'releaseType',             value: "Weekly"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
                                 string(name: 'overridePublishName',     value: "$publishTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                             ]
+
+                        // Override targetConfigurations if specified for FORCE
+                        if (pipeline_type == "main" && overrideMainTargetConfigurations != "") {
+                            jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint($overrideMainTargetConfigurations")))
+                        }
+                        if (pipeline_type == "evaluation" && overrideEvaluationTargetConfigurations != "") {
+                            jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint($overrideEvaluationTargetConfigurations")))
+                        }
+
+                        def job = build job: "${pipeline}", propagate: true, parameters: jobParams
+
                         echo "Triggered ${pipeline} build result = "+ job.getResult()
                     }
                 }
