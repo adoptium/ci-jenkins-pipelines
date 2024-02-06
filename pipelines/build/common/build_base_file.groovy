@@ -770,11 +770,6 @@ class Builder implements Serializable {
     Call job to push artifacts to github. Usually it's only executed on a nightly build
     */
     def publishBinary() {
-        if (release) {
-            // make sure to skip on release
-            context.println('Not publishing release')
-            return
-        }
 
         def timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
         def tag = "${javaToBuild}-${timestamp}"
@@ -814,6 +809,54 @@ class Builder implements Serializable {
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
                         context.string(name: 'VERSION', value: javaVersion)
                     ]
+        }
+    }
+
+    /*
+    Call job to dry run Release Publish, generate release publish jenkins links
+    */
+    def dryrunReleasePublish() {
+        def javaVersion=determineReleaseToolRepoVersion()
+        def releaseSummary = manager.createSummary("next.svg")
+        releaseSummary.appendText("<b>RELEASE PUBLISH BINARIES:</b><ul>", false)
+
+        Map<String, IndividualBuildConfig> jobConfigurations = getJobConfigurations()
+        def jobs = [:]
+        String paramUrl = "${HUDSON_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
+        context.stage('Dry run release publish') {
+            jobConfigurations.each { configuration ->
+                jobs[configuration.key] = {
+                    IndividualBuildConfig config = configuration.value
+                    def prefixOfArtifactsToCopy = "**/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}"
+                    def artifactsToCopy = "${prefixOfArtifactsToCopy}/*.tar.gz,${prefixOfArtifactsToCopy}/*.zip,${prefixOfArtifactsToCopy}/*.sha256.txt,${prefixOfArtifactsToCopy}/*.msi,${prefixOfArtifactsToCopy}/*.pkg,${prefixOfArtifactsToCopy}/*.json,${prefixOfArtifactsToCopy}/*.sig"
+                    context.println "Dry run publishing : ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}" 
+                    def releaseJob = context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
+                        parameters: [
+                            ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
+                            ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: true],
+                            context.string(name: 'TAG', value: publishName),
+                            context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
+                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
+                            context.string(name: 'ARTIFACTS_TO_COPY', value: "${artifactsToCopy}"),
+                            context.string(name: 'ARTIFACTS_TO_SKIP', value: '**/*testimage*'),
+                            context.string(name: 'VERSION', value: javaVersion)
+                        ]
+                    String releaseToolUrl = "${paramUrl}"
+                    // pulbish release link - if dry run succeeds the link to ready to publish,  if dry run fails the link is dry run link
+                    releaseToolUrl += "VERSION=${javaVersion}&TAG=${publishName}&RELEASE=true&UPSTREAM_JOB_NAME=${env.JOB_NAME}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}&ARTIFACTS_TO_COPY=${artifactsToCopy}&ARTIFACTS_TO_SKIP=**/*testimage*"
+                    def releaseComment = "Release Publish"
+                    if (releaseJob.getResult()) {
+                        releaseToolUrl += "&DRY_RUN=false"
+                        releaseComment = "Dry run release publish"
+                    } else {
+                        releaseToolUrl += "&DRY_RUN=true"
+                    }
+                    URLEncoder.encode(releaseToolUrl.toString(), "UTF-8")
+                    releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>", false)
+                }
+            }
+            context.parallel jobs
+            releaseSummary.appendText("</ul>", false)
         }
     }
 
@@ -910,7 +953,7 @@ class Builder implements Serializable {
                                                 if ( ! ( "${config.TARGET_OS}"    ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ||
                                                      ! ( "${config.ARCHITECTURE}" ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ||
                                                      ! ( "${config.VARIANT}"      ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ) {
-                                                    throw new Exception("[ERROR] Dubious character in TARGET_OS, ARCHITECTURE or VARIANT - aborting");
+                                                    throw new Exception('[ERROR] Dubious character in TARGET_OS, ARCHITECTURE or VARIANT - aborting');
                                                 }
                                                 context.sh "rm -rf target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/"
                                             }
@@ -989,7 +1032,13 @@ class Builder implements Serializable {
                     throw new Exception("[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")
                 }
             } else if (publish && release) {
-                context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY'
+                try {
+                    context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                        dryrunReleasePublish()
+                    }
+                } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Dry run release publish timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")
+                }
             }
         }
     }
