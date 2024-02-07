@@ -151,6 +151,12 @@ disableJob = true
 
 #### triggerSchedule_nightly / triggerSchedule_weekly / triggerSchedule_evaluation / triggerSchedule_weekly_evaluation
 
+All JDK versions now support "beta" EA triggered builds from the publication of upstream build tags. Eclipse Adoptium no
+longer runs scheduled nightly/weekend builds.
+
+The one exception to this is Oracle managed STS versions, whose builds are managed internal to Oracle and not published
+until the GA day. For these a triggerSchedule_weekly is required to build the upstream HEAD commits on a regular basis.
+
 [Cron expression](https://crontab.guru/) that defines when (and how often) nightly/evaluation and weekly/weekly-evaluation builds will be executed
 
 in jdkxx(u).groovy
@@ -169,7 +175,7 @@ triggerSchedule_weekly_evaluation="TZ=UTC\n25 12 * * 6"
 
 #### weekly_release_scmReferences / weekly_evaluation_scmReferences
 
-Source control references (e.g. tags) to use in the weekly release or weekly evaluation builds
+Source control references (e.g. tags) to use in the scheduled weekly release or weekly evaluation builds
 in jdkXX(u).groovy
 Use below two ways can set the job never to run:
 
@@ -178,7 +184,7 @@ Use below two ways can set the job never to run:
 
 #### weekly_release_scmReferences
 
-Source control references (e.g. tags) to use in the weekly release builds
+Source control references (e.g. tags) to use in the scheduled weekly release builds
 jdkxx(u).groovy
 
 ```groovy
