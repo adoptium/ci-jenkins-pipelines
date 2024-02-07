@@ -36,11 +36,6 @@ targetConfigurations = [
         // ]
 ]
 
-// 11:30 Tue, Thu
-triggerSchedule_evaluation = 'TZ=UTC\n30 11 * * 2,4'
-// 23:05 Sun
-triggerSchedule_weekly_evaluation = 'TZ=UTC\n05 23 * * 7'
-
 // scmReferences to use for weekly evaluation build
 weekly_evaluation_scmReferences = [
         'hotspot'        : '',

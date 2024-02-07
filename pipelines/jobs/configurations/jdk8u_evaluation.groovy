@@ -34,11 +34,6 @@ targetConfigurations = [
         // ]
 ]
 
-// if set to empty string then it wont get triggered
-triggerSchedule_evaluation = 'TZ=UTC\n05 18 * * 1,3,5'
-// if set to empty string then it wont get triggered
-triggerSchedule_weekly_evaluation = 'TZ=UTC\n05 12 * * 6'
-
 // scmReferences to use for weekly evaluation build
 weekly_evaluation_scmReferences = [
         'temurin'        : '',
