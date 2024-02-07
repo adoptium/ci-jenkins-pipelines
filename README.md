@@ -387,26 +387,19 @@ until the GA day. For these a triggerSchedule_weekly is required to build the up
 
 pipelines/build/common/trigger_beta_build.groovy job parameters:
 
-- String: JDK_VERSION
-JDK version to trigger. (Numerical version number, 8, 11, 17, ...)
+- String: JDK_VERSION - JDK version to trigger. (Numerical version number, 8, 11, 17, ...)
 
-- String: MIRROR_REPO
-github repository where source mirror is located for the given JDK_VERSION
+- String: MIRROR_REPO - github repository where source mirror is located for the given JDK_VERSION
 
-- String: BINARIES_REPO
-github organisation/repo template for where binaries are published for jdk-NN, "_NN_" gets replaced by the version
+- String: BINARIES_REPO - github organisation/repo template for where binaries are published for jdk-NN, "_NN_" gets replaced by the version
 
-- CheckBox: FORCE_MAIN
-Force the trigger of the "main" pipeline build for the current latest build tag, even if it is already published
+- CheckBox: FORCE_MAIN - Force the trigger of the "main" pipeline build for the current latest build tag, even if it is already published
 
-- CheckBox: FORCE_EVALUATION
-Force the trigger of the "evaluation" pipeline build for the current latest build tag, even if it is already published
+- CheckBox: FORCE_EVALUATION - Force the trigger of the "evaluation" pipeline build for the current latest build tag, even if it is already published
 
-- Multi-line Text: OVERRIDE_MAIN_TARGET_CONFIGURATIONS
-Override targetConfigurations for FORCE_MAIN, eg: { "x64Linux": [ "temurin" ], "x64Mac": [ "temurin" ] }
+- Multi-line Text: OVERRIDE_MAIN_TARGET_CONFIGURATIONS - Override targetConfigurations for FORCE_MAIN, eg: { "x64Linux": [ "temurin" ], "x64Mac": [ "temurin" ] }
 
-- Multi-line Text: OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
-Override targetConfigurations for FORCE_EVALUATION, eg: { "aarch64AlpineLinux": [ "temurin" ] }
+- Multi-line Text: OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS - Override targetConfigurations for FORCE_EVALUATION, eg: { "aarch64AlpineLinux": [ "temurin" ] }
 
 
 ## Build status
