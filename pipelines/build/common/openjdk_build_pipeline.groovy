@@ -184,12 +184,16 @@ class Build {
             jobParams.put('JDK_IMPL', buildConfig.VARIANT)
         }
 
+        context.println 'DEBUG 1'
+
         def arch = buildConfig.ARCHITECTURE
         if (arch == 'x64') {
             arch = 'x86-64'
         } else if (arch == 's390x') {
+            context.println 'DEBUG 2'
             jobParams.put('TIME_LIMIT', '20')
         } else if (arch == 'riscv64') {
+            context.println 'DEBUG 3'
             jobParams.put('TIME_LIMIT', '20')
         }
         def arch_os = "${arch}_${buildConfig.TARGET_OS}"
