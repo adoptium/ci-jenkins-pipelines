@@ -17,8 +17,8 @@ import groovy.json.JsonOutput
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
-  if the given build has not already been published, and the given version has
-  not GA'd (existance of -ga tag).
+  if the given build has not already been published, and the given version is
+  not GA yet (existance of -ga tag).
 
   The "Force" option can be used to re-build and re-publish the existing latest build.
 */
@@ -43,11 +43,14 @@ node('worker') {
     }
     echo "Latest Adoptium tag from ${mirrorRepo} = ${latestAdoptTag}"
 
-    def buildTag=latestAdoptTag.replaceAll("_adopt","-ea-beta")
-    def publishTag=latestAdoptTag.replaceAll("_adopt","-ea")
+    // publishJobTag is TAG that gets passed to the Adoptium "publish job"
+    def publishJobTag   = latestAdoptTag.replaceAll("_adopt","-ea")
+
+    // binariesRepoTag is the resulting published github binaries release tag created by the Adoptium "publish job"
+    def binariesRepoTag = publishJobTag + "-beta"
 
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
-        // Determine this versions potential GA tag, so as to not build and publish a GA'd version
+        // Determine this versions potential GA tag, so as to not build and publish a GA version
         def gaTag
         def versionStr
         if (version > 8) {
@@ -57,32 +60,37 @@ node('worker') {
         }
         gaTag=versionStr+"-ga"
         echo "Expected GA tag to check for = ${gaTag}"
-    
+   
+        // If "-ga" tag exists, then we don't want to trigger a MAIN build 
         def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "'+gaTag+'"', returnStatus:true)
         if (gaTagCheck == 0) {
-            echo "Version "+versionStr+" has already GA'd - nothing to do"
-        } else {
-            echo "This version has not GA'd yet, checking if ${buildTag} is already published?"
+            echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
+        }
 
-            // Check binaries repo for existance of the given release?
-            def desiredRepoTagURL="${binariesRepo}/releases/tag/${buildTag}"
-            def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
-            if (httpCode == "200") {
-                echo "Build tag $buildTag is already published - nothing to do"
-            } else if (httpCode == "404") {
-                echo "New unpublished build tag ${buildTag} - triggering builds"
-                triggerMainBuild = true
-                triggerEvaluationBuild = true
+        // Check binaries repo for existance of the given release?
+        echo "Checking if ${binariesRepoTag} is already published?"
+        def desiredRepoTagURL="${binariesRepo}/releases/tag/${binariesRepoTag}"
+        def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
+
+        if (httpCode == "200") {
+            echo "Build tag ${binariesRepoTag} is already published - nothing to do"
+        } else if (httpCode == "404") {
+            echo "New unpublished build tag ${binariesRepoTag} - triggering builds"
+            if (gaTagCheck == 0) {
+                echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
             } else {
-                def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
-                echo "${error}"
-                throw new Exception("${error}")
+                triggerMainBuild = true
             }
+            triggerEvaluationBuild = true
+        } else {
+            def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
+            echo "${error}"
+           throw new Exception("${error}")
         }
     } else {
         echo "FORCE triggering specified builds.."
-        triggerMainBuild = params.FORCE_MAIN ? true : false
-        triggerEvaluationBuild = params.FORCE_EVALUATION ? true : false
+        triggerMainBuild = params.FORCE_MAIN
+        triggerEvaluationBuild = params.FORCE_EVALUATION
 
         if (params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS) {
             overrideMainTargetConfigurations = params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS
@@ -94,7 +102,7 @@ node('worker') {
 
     if (triggerMainBuild || triggerEvaluationBuild) {
         // Set version suffix, jdk8 has different mechanism to jdk11+
-        def additionalConfigureArgs =  (version > 8) ? "--with-version-opt=ea" : "--with-milestone=beta"
+        def additionalConfigureArgs = (version > 8) ? "--with-version-opt=ea" : ""
 
         // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
         def jobs = [:]
@@ -117,7 +125,7 @@ node('worker') {
                         def jobParams = [
                                 string(name: 'releaseType',             value: "Weekly"),
                                 string(name: 'scmReference',            value: "$latestAdoptTag"),
-                                string(name: 'overridePublishName',     value: "$publishTag"),
+                                string(name: 'overridePublishName',     value: "$publishJobTag"),
                                 string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                             ]
 
