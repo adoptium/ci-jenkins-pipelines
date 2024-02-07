@@ -16,7 +16,7 @@ documentation.
 
 ## Configuration Files
 
-The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory contains two categories of configuration files that our jenkins pipelines use (Nicknamed [#Build Configs](#build) and [#Nightly Configs](#nightly) for short).
+The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory contains two categories of configuration files that our jenkins pipelines use (Nicknamed [#Build Configs](#build) and [#Nightly Configs](#Nightly (beta/non-release)) for short).
 
 To ensure both configurations are not overridden in a race condition scenario by another job, the [job generators](pipelines/build/regeneration/README.md) ensure they remain in the sync with the repository.
 
@@ -76,9 +76,9 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 | codebuild                  | &#10060;  | `Boolean`                                   | Setting this field will tell jenkins to spin up an Azure or [AWS cloud](https://aws.amazon.com/codebuild/) machine, allowing the build to retrieve a machine not normally available on the Jenkins server. It does this by appending a `codebuild` flag to the jenkins label. |
 | cleanWorkspaceAfterBuild   | &#10060;  | `Boolean`                                   | Setting this field will tell jenkins to clean down the workspace after the build has completed. Particularly useful for AIX where disk space can be limited. |
 
-### Nightly (beta/non-release)
+### Nightly
 
-The nightly or beta/non-release  config files are the ones that follow the format `jdkxx(u).groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a simple groovy script that's contents can be [loaded in](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/#load-evaluate-a-groovy-source-file-into-the-pipeline-script) and accessed by another script.
+The nightly or beta/non-release config files are the ones that follow the format `jdkxx(u).groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a simple groovy script that's contents can be [loaded in](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/#load-evaluate-a-groovy-source-file-into-the-pipeline-script) and accessed by another script.
 
 ### Evaluation pipeline/jobs
 
@@ -391,7 +391,7 @@ pipelines/build/common/trigger_beta_build.groovy job parameters:
 
 - String: MIRROR_REPO - github repository where source mirror is located for the given JDK_VERSION
 
-- String: BINARIES_REPO - github organisation/repo template for where binaries are published for jdk-NN, "_NN_" gets replaced by the version
+- String: BINARIES_REPO - github organisation/repo template for where binaries are published for jdk-NN, "\_NN\_" gets replaced by the version
 
 - CheckBox: FORCE_MAIN - Force the trigger of the "main" pipeline build for the current latest build tag, even if it is already published
 
@@ -400,7 +400,6 @@ pipelines/build/common/trigger_beta_build.groovy job parameters:
 - Multi-line Text: OVERRIDE_MAIN_TARGET_CONFIGURATIONS - Override targetConfigurations for FORCE_MAIN, eg: { "x64Linux": [ "temurin" ], "x64Mac": [ "temurin" ] }
 
 - Multi-line Text: OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS - Override targetConfigurations for FORCE_EVALUATION, eg: { "aarch64AlpineLinux": [ "temurin" ] }
-
 
 ## Build status
 
