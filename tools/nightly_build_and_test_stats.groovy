@@ -27,7 +27,7 @@ def getLatestOpenjdkBuildTag(String version) {
     def latestTag
     if (version == "jdk8u") {
         // Need to include jdk8u to avoid picking up old tag format
-        latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' | grep "jdk8u" | sort -V -r | head -1 | tr -d '\\n'")
+        latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' | grep 'jdk8u' | sort -V -r | head -1 | tr -d '\\n'")
     } else {
         latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' | sort -V -r | head -1 | tr -d '\\n'")
     }
