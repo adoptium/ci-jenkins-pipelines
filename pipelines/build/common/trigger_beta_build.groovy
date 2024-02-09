@@ -23,27 +23,30 @@ import groovy.json.JsonOutput
   The "Force" option can be used to re-build and re-publish the existing latest build.
 */
 
+def mirrorRepo="${params.MIRROR_REPO}"
+def version="${params.JDK_VERSION}".toInteger()
+def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", "${version}")
+
+def triggerMainBuild = false
+def triggerEvaluationBuild = false
+def overrideMainTargetConfigurations = ""
+def overrideEvaluationTargetConfigurations = ""
+
+def latestAdoptTag
+def publishJobTag
+
 node('worker') {
-    def mirrorRepo="${params.MIRROR_REPO}"
-    def version="${params.JDK_VERSION}".toInteger()
-    def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", "${version}")
-
-    def triggerMainBuild = false
-    def triggerEvaluationBuild = false
-    def overrideMainTargetConfigurations = ""
-    def overrideEvaluationTargetConfigurations = ""
-
     // Find latest _adopt tag for this version?
-    def latestAdoptTag=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
+    latestAdoptTag = sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
     if (latestAdoptTag.indexOf("_adopt") < 0) {
-        def error="Error finding latest _adopt tag for ${mirrorRepo}"
+        def error = "Error finding latest _adopt tag for ${mirrorRepo}"
         echo "${error}"
         throw new Exception("${error}")
     }
     echo "Latest Adoptium tag from ${mirrorRepo} = ${latestAdoptTag}"
 
     // publishJobTag is TAG that gets passed to the Adoptium "publish job"
-    def publishJobTag   = latestAdoptTag.replaceAll("_adopt","-ea")
+    publishJobTag = latestAdoptTag.replaceAll("_adopt","-ea")
 
     // binariesRepoTag is the resulting published github binaries release tag created by the Adoptium "publish job"
     def binariesRepoTag = publishJobTag + "-beta"
@@ -53,9 +56,9 @@ node('worker') {
         def gaTag
         def versionStr
         if (version > 8) {
-            versionStr=latestAdoptTag.substring(0, latestAdoptTag.indexOf("+"))
+            versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("+"))
         } else {
-            versionStr=latestAdoptTag.substring(0, latestAdoptTag.indexOf("-"))
+            versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("-"))
         }
         gaTag=versionStr+"-ga"
         echo "Expected GA tag to check for = ${gaTag}"
