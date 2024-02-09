@@ -23,6 +23,7 @@ import groovy.json.JsonOutput
   The "Force" option can be used to re-build and re-publish the existing latest build.
 */
 
+node('worker') {
     def mirrorRepo="${params.MIRROR_REPO}"
     def version="${params.JDK_VERSION}".toInteger()
     def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", "${version}")
@@ -97,52 +98,53 @@ import groovy.json.JsonOutput
             overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
         }
     }
+}
 
-    if (triggerMainBuild || triggerEvaluationBuild) {
-        // Set version suffix, jdk8 has different mechanism to jdk11+
-        def additionalConfigureArgs = (version > 8) ? "--with-version-opt=ea" : ""
+if (triggerMainBuild || triggerEvaluationBuild) {
+    // Set version suffix, jdk8 has different mechanism to jdk11+
+    def additionalConfigureArgs = (version > 8) ? "--with-version-opt=ea" : ""
 
-        // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
-        def jobs = [:]
-        def pipelines = [:]
+    // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
+    def jobs = [:]
+    def pipelines = [:]
 
-        if (triggerMainBuild) {
-            pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
-        }
-        if (triggerEvaluationBuild) {
-            pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
-        }
+    if (triggerMainBuild) {
+        pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+    }
+    if (triggerEvaluationBuild) {
+        pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
+    }
 
-        pipelines.keySet().each { pipeline_type ->
-            def pipeline = pipelines[pipeline_type]
-            jobs[pipeline] = {
-                catchError {
-                    stage("Trigger build pipeline - ${pipeline}") {
-                        echo "Triggering ${pipeline} for $latestAdoptTag"
+    pipelines.keySet().each { pipeline_type ->
+        def pipeline = pipelines[pipeline_type]
+        jobs[pipeline] = {
+            catchError {
+                stage("Trigger build pipeline - ${pipeline}") {
+                    echo "Triggering ${pipeline} for $latestAdoptTag"
 
-                        def jobParams = [
-                                string(name: 'releaseType',             value: "Weekly"),
-                                string(name: 'scmReference',            value: "$latestAdoptTag"),
-                                string(name: 'overridePublishName',     value: "$publishJobTag"),
-                                string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
-                            ]
+                    def jobParams = [
+                            string(name: 'releaseType',             value: "Weekly"),
+                            string(name: 'scmReference',            value: "$latestAdoptTag"),
+                            string(name: 'overridePublishName',     value: "$publishJobTag"),
+                            string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
+                        ]
 
-                        // Override targetConfigurations if specified for FORCE
-                        if (pipeline_type == "main" && overrideMainTargetConfigurations != "") {
-                            jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideMainTargetConfigurations)))
-                        }
-                        if (pipeline_type == "evaluation" && overrideEvaluationTargetConfigurations != "") {
-                            jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint($overrideEvaluationTargetConfigurations)))
-                        }
-
-                        def job = build job: "${pipeline}", propagate: true, parameters: jobParams
-
-                        echo "Triggered ${pipeline} build result = "+ job.getResult()
+                    // Override targetConfigurations if specified for FORCE
+                    if (pipeline_type == "main" && overrideMainTargetConfigurations != "") {
+                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideMainTargetConfigurations)))
                     }
+                    if (pipeline_type == "evaluation" && overrideEvaluationTargetConfigurations != "") {
+                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint($overrideEvaluationTargetConfigurations)))
+                    }
+
+                    def job = build job: "${pipeline}", propagate: true, parameters: jobParams
+
+                    echo "Triggered ${pipeline} build result = "+ job.getResult()
                 }
             }
         }
-
-        parallel jobs
     }
+
+    parallel jobs
+}
 
