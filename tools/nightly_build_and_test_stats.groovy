@@ -24,7 +24,10 @@ import java.time.temporal.ChronoUnit
 def getLatestOpenjdkBuildTag(String version) {
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
 
-    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' | sort -V -r | head -1 | tr -d '\\n'")
+    // Need to include jdk8u to avoid picking up old tag format    
+    def jdk8Filter = (version == "jdk8u") ? "| grep 'jdk8u'" : ""
+
+    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest upstream openjdk/${version} tag = ${latestTag}"
 
     return latestTag
@@ -188,10 +191,11 @@ node('worker') {
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
     def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+") // feature versions 
-    def tipRelease      = "${params.TIP_RELEASE}".trim() // Current jdk(head) version, eg.jdk22
+    def tipRelease      = "${params.TIP_RELEASE}".trim() // Current jdk(head) version
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
+    def nonTagBuildReleases = "${params.NON_TAG_BUILD_RELEASES}".split("[, ]+")
 
     def healthStatus = []
     def testStats = []
@@ -204,9 +208,7 @@ node('worker') {
         if (apiVariant == 'hotspot') { // hotspot only for now
             // Determine nightly pipeline health by looking at published assets.
             // In particular, look at first data set for latest published binaries.
-            // If no published assets happened the last 4 days, the nightly pipeline
-            // is considered unhealthy.
-            // For tag triggered versions (jdk-22+) check the binary is published
+            // Check the binary is published
             // The release asset list is also verified
             featureReleases.each { featureRelease ->
               def featureReleaseInt = featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
@@ -218,7 +220,8 @@ node('worker') {
               while(!foundNonEvaluationBinaries && i < assetsJson.size()) {
                 def releaseName = assetsJson[i].release_name
                 def status = []
-                if (featureReleaseInt < 22) {
+                if (nonTagBuildReleases.contains(featureReleaseInt)) {
+                  // A non tag build, eg.a scheduled build for Oracle managed STS versions
                   def ts = assetsJson[i].timestamp // newest timestamp of a jdk asset
                   def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
                   def now = ZonedDateTime.now(ZoneId.of('UTC'))
@@ -490,8 +493,8 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 def releaseName = status['releaseName']
                 def lastPublishedMsg = ""
 
-                // jdk-22+ are latest tag triggered builds
-                if (featureReleaseInt < 22) {
+                // Is it a non-tag triggered build? eg.Oracle STS version
+                if (nonTagBuildReleases.contains(featureReleaseInt)) {
                     // Check for stale published build
                     def days = status['actualDays'] as int
                     lastPublishedMsg = "\nPublished: ${days} day(s) ago." // might actually be days + N hours, where N < 24
