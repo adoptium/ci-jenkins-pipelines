@@ -23,8 +23,6 @@ import groovy.json.JsonOutput
   The "Force" option can be used to re-build and re-publish the existing latest build.
 */
 
-node('worker') {
-
     def mirrorRepo="${params.MIRROR_REPO}"
     def version="${params.JDK_VERSION}".toInteger()
     def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", "${version}")
@@ -147,5 +145,4 @@ node('worker') {
 
         parallel jobs
     }
-}
 
