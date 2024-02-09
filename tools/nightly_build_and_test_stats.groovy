@@ -150,7 +150,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                     // Search for artifacts in the releaseAssets list
                     ftypes.each { ftype ->
                         def arch_fname = archToAsset[osarch]
-                        def findAsset = releaseAssets =~/.*${file_image}_${arch_fname}_[^\."]*${ftype}".*/
+                        def findAsset = releaseAssets =~/.*${file_image}_${arch_fname}_[^"]*${ftype}".*/
                         if (!findAsset) {
                             missingForArch.add("$osarch : $image : $ftype".replaceAll("\\\\", ""))
                         } else {
