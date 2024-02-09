@@ -101,7 +101,7 @@ node('worker') {
             overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
         }
     }
-}
+} // End: node('worker')
 
 if (triggerMainBuild || triggerEvaluationBuild) {
     // Set version suffix, jdk8 has different mechanism to jdk11+
