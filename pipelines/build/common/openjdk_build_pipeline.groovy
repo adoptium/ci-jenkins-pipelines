@@ -155,7 +155,7 @@ class Build {
         return jobParams
     }
 
-    def (testType) {
+    def getAQATestJobParams(testType) {
         def jobParams = getCommonTestJobParams()
         def (level, group) = testType.tokenize('.')
         jobParams.put('LEVELS', level)
@@ -306,7 +306,7 @@ class Build {
 
         // Use BUILD_REF override if specified
         vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
-        
+
         try {
             context.println 'Running smoke test'
             context.stage('smoke test') {
@@ -340,7 +340,6 @@ class Build {
                     ]  
                 currentBuild.result = testJob.getResult()
                 return testJob.getResult()
-                     
             }
         } catch (Exception e) {
             context.println "Failed to execute test: ${e.message}"
@@ -356,7 +355,6 @@ class Build {
         def jdkBranch = getJDKBranch()
         def jdkRepo = getJDKRepo()
         def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == 'openj9') ? buildConfig.SCM_REF : 'master'
- 
         List testList = buildConfig.TEST_LIST
         List dynamicList = buildConfig.DYNAMIC_LIST
         List numMachines = buildConfig.NUM_MACHINES
@@ -1865,7 +1863,7 @@ class Build {
                 context.println "Executing tests: ${buildConfig.TEST_LIST}"
                 context.println "Build num: ${env.BUILD_NUMBER}"
                 context.println "File name: ${filename}"
-                
+
                 def enableReproducibleCompare = Boolean.valueOf(buildConfig.ENABLE_REPRODUCIBLE_COMPARE)
                 def enableTests = Boolean.valueOf(buildConfig.ENABLE_TESTS)
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
@@ -1935,7 +1933,6 @@ class Build {
                                         if (buildConfig.DOCKER_CREDENTIAL) {
                                             context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
                                                 if (buildConfig.DOCKER_ARGS) {
-                                                    
                                                     context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
                                                 } else {
                                                     context.docker.image(buildConfig.DOCKER_IMAGE).pull()
