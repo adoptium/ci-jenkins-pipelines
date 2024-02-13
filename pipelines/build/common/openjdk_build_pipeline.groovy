@@ -527,6 +527,11 @@ class Build {
 
         def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
 
+        if (configureArguments.contains('--enable-headless-only=yes')) {
+            // Headless platforms have no auto-manuals, so do not exclude any tests
+            appOptions=""
+        }
+
         def targets = ['serial': 'sanity.jck,extended.jck,special.jck']
 
         if ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') {
