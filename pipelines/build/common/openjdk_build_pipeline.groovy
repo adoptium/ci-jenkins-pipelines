@@ -469,7 +469,7 @@ class Build {
                         ]
 
                         // If TIME_LIMIT is set, override target job default TIME_LIMIT value.
-                        if (jobParams.any{it -> it.key.equals("TIME_LIMIT")}) {
+                        if (jobParams.any{mapEntry -> mapEntry.key.equals("TIME_LIMIT")}) {
                             testJobParams.add(context.string(name: 'TIME_LIMIT', value: jobParams["TIME_LIMIT"]))
                         }
 
