@@ -155,7 +155,7 @@ class Build {
         return jobParams
     }
 
-    def getAQATestJobParams(testType) {
+    def (testType) {
         def jobParams = getCommonTestJobParams()
         def (level, group) = testType.tokenize('.')
         jobParams.put('LEVELS', level)
@@ -178,24 +178,22 @@ class Build {
         def jobParams = [:]
         String jdk_Version = getJavaVersionNumber() as String
         jobParams.put('JDK_VERSIONS', jdk_Version)
+
         if (buildConfig.VARIANT == 'temurin') {
             jobParams.put('JDK_IMPL', 'hotspot')
         } else {
             jobParams.put('JDK_IMPL', buildConfig.VARIANT)
         }
 
-        context.println 'DEBUG 1'
-
         def arch = buildConfig.ARCHITECTURE
         if (arch == 'x64') {
             arch = 'x86-64'
         } else if (arch == 's390x') {
-            context.println 'DEBUG 2'
             jobParams.put('TIME_LIMIT', '20')
         } else if (arch == 'riscv64') {
-            context.println 'DEBUG 3'
             jobParams.put('TIME_LIMIT', '20')
         }
+
         def arch_os = "${arch}_${buildConfig.TARGET_OS}"
         jobParams.put('ARCH_OS_LIST', arch_os)
         jobParams.put('LIGHT_WEIGHT_CHECKOUT', false)
@@ -453,26 +451,33 @@ class Build {
                             }
                         }
 
+                    def testJobParams = [
+                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+	                    context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+	                    context.string(name: 'SDK_RESOURCE', value: 'upstream'),
+	                    context.string(name: 'JDK_REPO', value: jdkRepo),
+	                    context.string(name: 'JDK_BRANCH', value: jdkBranch),
+	                    context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+	                    context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
+	                    context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
+	                    context.string(name: 'PARALLEL', value: parallel),
+	                    context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
+	                    context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
+	                    context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
+	                    context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
+	                    context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
+	                    context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE),
+	                    context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
+                        ]
+
+                        // If TIME_LIMIT is set, override target job default TIME_LIMIT value.
+                        if (jobParams.any{it -> it.key.equals("TIME_LIMIT")}) {
+                            testJobParams.add(context.string(name: 'TIME_LIMIT', value: jobParams["TIME_LIMIT"]))
+                        }
+
                         def testJob = context.build job: jobName,
                                         propagate: false,
-                                        parameters: [
-                                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                                            context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                                            context.string(name: 'JDK_REPO', value: jdkRepo),
-                                            context.string(name: 'JDK_BRANCH', value: jdkBranch),
-                                            context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-                                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                            context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
-                                            context.string(name: 'PARALLEL', value: parallel),
-                                            context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
-                                            context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
-                                            context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
-                                            context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
-                                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE),
-                                            context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
-                                        ],
+                                        parameters: testJobParams,
                                         wait: true
                         currentBuild.result = testJob.getResult()
                         context.node('worker') {
