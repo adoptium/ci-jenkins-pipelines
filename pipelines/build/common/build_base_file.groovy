@@ -814,7 +814,7 @@ class Builder implements Serializable {
                     context.string(name: 'VERSION', value: javaVersion)
                 ]
             String releaseToolUrl = "${HUDSON_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
-            // pulbish release link - if dry run succeeds the link to ready to publish,  if dry run fails the link is dry run link
+            // publish release link - if dry run succeeds the link to ready to publish,  if dry run fails the link is dry run link
             releaseToolUrl += "VERSION=${javaVersion}&TAG=${publishName}&RELEASE=true&UPSTREAM_JOB_NAME=${env.JOB_NAME}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}&ARTIFACTS_TO_COPY=${artifactsToCopy}&ARTIFACTS_TO_SKIP=**/*testimage*"
             def releaseComment = "Release Publish"
             if (releaseJob.getResult()) {
