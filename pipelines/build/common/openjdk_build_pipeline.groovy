@@ -189,9 +189,9 @@ class Build {
         if (arch == 'x64') {
             arch = 'x86-64'
         } else if (arch == 's390x') {
-            jobParams.put('TIME_LIMIT', '20')
+            jobParams.put('TIME_LIMIT', '25')
         } else if (arch == 'riscv64') {
-            jobParams.put('TIME_LIMIT', '20')
+            jobParams.put('TIME_LIMIT', '25')
         }
 
         def arch_os = "${arch}_${buildConfig.TARGET_OS}"
