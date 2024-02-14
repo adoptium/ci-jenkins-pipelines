@@ -375,11 +375,11 @@ class Build {
                     context.println "Running test: ${testType}"
                     context.stage("${testType}") {
                         def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
-                        def rerunIterations = '3'
+                        def rerunIterations = '1'
                         if ("${testType}".contains('dev') || "${testType}".contains('external')) {
                             rerunIterations = '0'
                         }
-                        if (("${testType}".contains('openjdk')) || ("${testType}".contains('jck'))) {
+                        if (("${testType}".contains('openjdk')) || ("${testType}".contains('jck')) || (testType  == 'dev.functional')) {
                             // Keep test reportdir always for JUnit targets
                             keep_test_reportdir = true
                         }
