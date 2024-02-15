@@ -823,8 +823,7 @@ class Builder implements Serializable {
             } else {
                 releaseToolUrl += "&DRY_RUN=true"
             }
-            URLEncoder.encode(releaseToolUrl.toString(), "UTF-8")
-            echo "dryrunReleasePublish: ${releaseComment} : ${releaseToolUrl}"
+            releaseToolUrl = URLEncoder.encode(releaseToolUrl.toString(), "UTF-8")
             return ["${releaseToolUrl}", "${releaseComment}"]
         }
     }
@@ -971,6 +970,7 @@ class Builder implements Serializable {
 
                                         copyArtifactSuccess = true
                                         def (String releaseToolUrl, String releaseComment) = dryrunReleasePublish(config)
+                                        context.echo "dryrunReleasePublish result = ${releaseComment} : ${releaseToolUrl}"
                                         //releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
                                     }
                             }
