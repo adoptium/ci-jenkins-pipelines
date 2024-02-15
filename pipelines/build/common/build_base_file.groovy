@@ -771,63 +771,57 @@ class Builder implements Serializable {
     /*
     Call job to push artifacts to github. Usually it's only executed on a nightly build
     */
-    def publishBinary() {
-
+    def publishBinary(IndividualBuildConfig config=null) {
         def timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
-        def tag = "${javaToBuild}-${timestamp}"
         def javaVersion=determineReleaseToolRepoVersion()
+        def stageName = 'BETA publish'
+        def releaseComment = 'BETA publish'
+        def tag = "${javaToBuild}-${timestamp}"
         if (publishName) {
             tag = publishName
         }
+        def osArch = 'all available OS&ARCHS'
+        def artifactsToCopy = '**/temurin/*.tar.gz,**/temurin/*.zip,**/temurin/*.sha256.txt,**/temurin/*.msi,**/temurin/*.pkg,**/temurin/*.json,**/temurin/*.sig'
+        def dryRun = false 
+        def artifactsToSkip = ''
+        def String releaseToolUrl = "${context.HUDSON_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
+        if ( config != null ) {
+            def prefixOfArtifactsToCopy = "**/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}"             
+            artifactsToCopy = "${prefixOfArtifactsToCopy}/*.tar.gz,${prefixOfArtifactsToCopy}/*.zip,${prefixOfArtifactsToCopy}/*.sha256.txt,${prefixOfArtifactsToCopy}/*.msi,${prefixOfArtifactsToCopy}/*.pkg,${prefixOfArtifactsToCopy}/*.json,${prefixOfArtifactsToCopy}/*.sig"
+            osArch = "${config.TARGET_OS} ${config.ARCHITECTURE}"
+            dryRun = true
+            timestamp = ''
+            artifactsToSkip = '**/*testimage*'
+            stageName = 'Dry run RELEASE publish'
+        }
+        releaseToolUrl += "VERSION=${javaVersion}&TAG=${tag}&TIMESTAMP=${timestamp}&RELEASE=${release}&UPSTREAM_JOB_NAME=${env.JOB_NAME}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}&ARTIFACTS_TO_COPY=${artifactsToCopy}&ARTIFACTS_TO_SKIP=${artifactsToSkip}"
 
-        context.stage('publish') {
-            context.println "publishing with publishName: ${publishName}"
-            context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
+        context.stage("${stageName}") {
+            context.println "${stageName} with publishName: ${tag} ${osArch}"
+            def releaseJob = context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
                     parameters: [
                         ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
-                        ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: false],
+                        ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: dryRun],
                         context.string(name: 'TAG', value: tag),
                         context.string(name: 'TIMESTAMP', value: timestamp),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
-                        context.string(name: 'VERSION', value: javaVersion)
+                        context.string(name: 'VERSION', value: javaVersion),
+                        context.string(name: 'ARTIFACTS_TO_COPY', value: "${artifactsToCopy}"),
+                        context.string(name: 'ARTIFACTS_TO_SKIP', value: "${artifactsToSkip}")
                     ]
-        }
-    }
-
-    /*
-    Call job to dry run Release Publish, generate release publish jenkins link
-    */
-    def dryrunReleasePublish(IndividualBuildConfig config) {
-        def javaVersion=determineReleaseToolRepoVersion()
-        context.stage('Dry run release publish') {
-            def prefixOfArtifactsToCopy = "**/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}"
-            def artifactsToCopy = "${prefixOfArtifactsToCopy}/*.tar.gz,${prefixOfArtifactsToCopy}/*.zip,${prefixOfArtifactsToCopy}/*.sha256.txt,${prefixOfArtifactsToCopy}/*.msi,${prefixOfArtifactsToCopy}/*.pkg,${prefixOfArtifactsToCopy}/*.json,${prefixOfArtifactsToCopy}/*.sig"
-            context.println "Dry run publishing : ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}" 
-            def releaseJob = context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
-                parameters: [
-                    ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
-                    ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: true],
-                    context.string(name: 'TAG', value: publishName),
-                    context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
-                    context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
-                    context.string(name: 'ARTIFACTS_TO_COPY', value: "${artifactsToCopy}"),
-                    context.string(name: 'ARTIFACTS_TO_SKIP', value: '**/*testimage*'),
-                    context.string(name: 'VERSION', value: javaVersion)
-                ]
-            String releaseToolUrl = "${HUDSON_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
-            // publish release link - if dry run succeeds the link to ready to publish,  if dry run fails the link is dry run link
-            releaseToolUrl += "VERSION=${javaVersion}&TAG=${publishName}&RELEASE=true&UPSTREAM_JOB_NAME=${env.JOB_NAME}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}&ARTIFACTS_TO_COPY=${artifactsToCopy}&ARTIFACTS_TO_SKIP=**/*testimage*"
-            def releaseComment = "Release Publish"
-            if (releaseJob.getResult()) {
-                releaseToolUrl += "&DRY_RUN=false"
-                releaseComment = "Dry run release publish"
-            } else {
-                releaseToolUrl += "&DRY_RUN=true"
+            if (release) {
+                releaseComment = 'RELEASE Publish'
+                if (releaseJob.getResult()) {
+                    releaseToolUrl += '&DRY_RUN=false'
+                } else {
+                    releaseToolUrl += '&DRY_RUN=true'
+                    releaseComment = 'Dry run RELEASE Publish'
+                }
             }
-            releaseToolUrl = URLEncoder.encode(releaseToolUrl.toString(), "UTF-8")
-            return ["${releaseToolUrl}", "${releaseComment}"]
+            releaseToolUrl = URLEncoder.encode(releaseToolUrl.toString(), 'UTF-8')
         }
+        return ["${releaseToolUrl}", "${releaseComment}"]
     }
 
     /*
@@ -842,12 +836,18 @@ class Builder implements Serializable {
             if (!checkConfigIsSane(jobConfigurations)) {
                 return
             }
-
-            if (release) {
-                if (publishName) {
-                    // Keep Jenkins release logs for real releases
-                    currentBuild.setKeepLog(keepReleaseLogs)
-                    currentBuild.setDisplayName(publishName)
+            def releaseSummary
+            if (publish) {
+                releaseSummary = context.manager.createSummary('next.svg')
+                if (release) {
+                    if (publishName) {
+                        // Keep Jenkins release logs for real releases
+                        currentBuild.setKeepLog(keepReleaseLogs)
+                        currentBuild.setDisplayName(publishName)
+                    }
+                    releaseSummary.appendText('<b>RELEASE PUBLISH BINARIES:</b><ul>', false)
+                } else {
+                    releaseSummary.appendText('<b>NIGHTLY PUBLISH BINARIES:</b><ul>', false)
                 }
             }
 
@@ -875,10 +875,6 @@ class Builder implements Serializable {
             context.echo "Force auto generate AQA test jobs: ${aqaAutoGen}"
             context.echo "Keep test reportdir: ${keepTestReportDir}"
             context.echo "Keep release logs: ${keepReleaseLogs}"
-
-            // Disabling for the moment as "manager" only available in postBuild groovy script
-            //def releaseSummary = manager.createSummary('next.svg')
-            //releaseSummary.appendText('<b>RELEASE PUBLISH BINARIES:</b><ul>', false)
 
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
@@ -971,9 +967,10 @@ class Builder implements Serializable {
                                         }
 
                                         copyArtifactSuccess = true
-                                        def (String releaseToolUrl, String releaseComment) = dryrunReleasePublish(config)
-                                        context.echo "dryrunReleasePublish result = ${releaseComment} : ${releaseToolUrl}"
-                                        //releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
+                                        if (release) {
+                                            def (String releaseToolUrl, String releaseComment) = publishBinary(config)
+                                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
+                                        }
                                     }
                             }
                             context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
@@ -997,20 +994,22 @@ class Builder implements Serializable {
                 }
             }
             context.parallel jobs
-            //releaseSummary.appendText('</ul>', false)
             // publish to github if needed
             // Don't publish release automatically
-            if (publish && !release) {
-                //During testing just remove the publish
-                try {
-                    context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                        publishBinary()
+            if (publish) {
+                if (release) {
+                    context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
+                } else {
+                    try {
+                        context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                            def (String releaseToolUrl, String releaseComment) = publishBinary()
+                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
+                        }
+                    } catch (FlowInterruptedException e) {
+                        throw new Exception("[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")
                     }
-                } catch (FlowInterruptedException e) {
-                    throw new Exception("[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")
                 }
-            } else if (publish && release) {
-                context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY'
+                releaseSummary.appendText('</ul>', false)
             }
         }
     }
