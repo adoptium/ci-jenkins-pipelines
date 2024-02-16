@@ -780,7 +780,7 @@ class Builder implements Serializable {
         if (publishName) {
             tag = publishName
         }
-        def osArch = 'all available OS&ARCHS'
+        def osArch = 'all available OS&ARCHs'
         def artifactsToCopy = '**/temurin/*.tar.gz,**/temurin/*.zip,**/temurin/*.sha256.txt,**/temurin/*.msi,**/temurin/*.pkg,**/temurin/*.json,**/temurin/*.sig'
         def dryRun = false 
         def artifactsToSkip = ''
@@ -794,7 +794,6 @@ class Builder implements Serializable {
             artifactsToSkip = '**/*testimage*'
             stageName = 'Dry run RELEASE publish'
         }
-        releaseToolUrl += "VERSION=${javaVersion}&TAG=${tag}&TIMESTAMP=${timestamp}&RELEASE=${release}&UPSTREAM_JOB_NAME=${env.JOB_NAME}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}&ARTIFACTS_TO_COPY=${artifactsToCopy}&ARTIFACTS_TO_SKIP=${artifactsToSkip}"
 
         context.stage("${stageName}") {
             context.println "${stageName} with publishName: ${tag} ${osArch}"
@@ -813,14 +812,21 @@ class Builder implements Serializable {
             if (release) {
                 releaseComment = 'RELEASE Publish'
                 if (releaseJob.getResult()) {
-                    releaseToolUrl += '&DRY_RUN=false'
+                    releaseToolUrl += 'DRY_RUN=false&'
                 } else {
-                    releaseToolUrl += '&DRY_RUN=true'
+                    releaseToolUrl += 'DRY_RUN=true&'
                     releaseComment = 'Dry run RELEASE Publish'
                 }
             }
-            releaseToolUrl = URLEncoder.encode(releaseToolUrl.toString(), 'UTF-8')
         }
+        releaseToolUrl += "VERSION=${javaVersion}&RELEASE=${release}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}"
+        tag = URLEncoder.encode(tag, 'UTF-8')
+        artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
+        artifactsToSkip = URLEncoder.encode(artifactsToSkip, 'UTF-8')
+        def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
+        releaseToolUrl += "&TAG=${tag}&UPSTREAM_JOB_NAME=${urlJobName}&ARTIFACTS_TO_COPY=${artifactsToCopy}&ARTIFACTS_TO_SKIP=${artifactsToSkip}"
+
+        context.echo "return releaseToolUrl is ${releaseToolUrl}"
         return ["${releaseToolUrl}", "${releaseComment}"]
     }
 
