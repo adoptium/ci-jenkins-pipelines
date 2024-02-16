@@ -74,7 +74,6 @@ def isInProgress(String pipelineName, String publishName) {
             // Is job for the required tag and currently inprogress?
             if (overridePublishName == publishName && job.status != null && job.status.equals('Streaming')) {
                 inProgress = true
-                break
             }
         }
     }
