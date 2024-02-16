@@ -555,7 +555,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                             slackColor = 'danger'
                             health = "Unhealthy"
                             errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['expectedReleaseName']+" published ${upstreamTagAge} days ago. No build is in progress."
-                        else {
+                        } else {
                             errorMsg = "\nLatest upstream openjdk build "+status['expectedReleaseName']+" published ${upstreamTagAge} days ago. Build is in progress."
                         }
                     }
