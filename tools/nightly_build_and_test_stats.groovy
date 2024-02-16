@@ -601,7 +601,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} latest pipeline publish status: *${health}*. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
-                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
