@@ -33,6 +33,18 @@ def getLatestOpenjdkBuildTag(String version) {
     return latestTag
 }
 
+// Get how long ago the given upstream tag was published?
+def getOpenjdkBuildTagAge(String version, String tag) {
+    def openjdkRepo = "https://github.com/openjdk/${version}.git"
+
+    def date = sh(returnStdout: true, script:"(rm -rf tmpRepo; git clone --depth 1 --branch ${tag} ${openjdkRepo} tmpRepo; cd tmpRepo; git log --tags --simplify-by-decoration --pretty=\"format:PUBLISH_DATE=%cI\") | grep PUBLISH_DATE | cut -d\"=\" -f2")
+    def tagTs = Instant.parse(date).atZone(ZoneId.of('UTC'))
+    def now = ZonedDateTime.now(ZoneId.of('UTC'))
+    def days = ChronoUnit.DAYS.between(tagTs, now) 
+
+    return days
+}
+
 // Get the latest release tag from the binaries repo
 def getLatestBinariesTag(String version) {
     def binariesRepo = "https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", version)
@@ -41,6 +53,33 @@ def getLatestBinariesTag(String version) {
     echo "latest jdk${version} binaries repo tag = ${latestTag}"
 
     return latestTag    
+}
+
+// Check if a given beta EA pipeline build is inprogress?
+def isInProgress(String pipelineName, String publishName) {
+    def inProgress = false
+
+    def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+    def pipelineJson = new JsonSlurper().parseText(pipeline)
+    if (pipelineJson.size() > 0) {
+        pipelineJson.each { job ->
+            def overridePublishName = ""
+
+            job.buildParams.each { buildParam ->
+                if (buildParam.name == "overridePublishName") {
+                    overridePublishName = buildParam.value
+                }
+            }
+
+            // Is job for the required tag and currently inprogress?
+            if (overridePublishName == publishName && job.status != null && job.status.equals('Streaming')) {
+                inProgress = true
+                break
+            }
+        }
+    }
+
+    return inProgress
 }
 
 // Verify the given release contains all the expected assets
@@ -186,6 +225,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 }
 
 node('worker') {
+  try{
     def variant = "${params.VARIANT}"
     def trssUrl    = "${params.TRSS_URL}"
     def apiUrl    = "${params.API_URL}"
@@ -229,7 +269,8 @@ node('worker') {
                   status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
                 } else {
                   def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
-                  status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+                  def upstreamTagAge     = getOpenjdkBuildTagAge(featureRelease, latestOpenjdkBuild)
+                  status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTagAge: upstreamTagAge]
                 }
 
                 // Verify the given release contains all the expected assets
@@ -248,9 +289,10 @@ node('worker') {
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             if (tipRelease != "") {
               def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
+              def upstreamTagAge     = getOpenjdkBuildTagAge("jdk", latestOpenjdkBuild)
               def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
-              status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+              status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTagAge: upstreamTagAge]
               verifyReleaseContent(tipRelease, releaseName, variant, status)
               echo "  ${tipRelease} release binaries verification: "+status['assets']
               healthStatus[tipVersion] = status
@@ -512,6 +554,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     if (status['releaseName'] != status['expectedReleaseName']) {
                         slackColor = 'danger'
                         health = "Unhealthy"
+echo "AGE: "+status['upstreamTagAge']+" days"
                         errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" !=  latest upstream openjdk build "+status['expectedReleaseName']+"."
                     }
                 }
@@ -555,10 +598,13 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} latest pipeline publish status: *${health}*. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
     }
+  } finally { 
+    cleanWs notFailBuild: true
+  } 
 }
 
