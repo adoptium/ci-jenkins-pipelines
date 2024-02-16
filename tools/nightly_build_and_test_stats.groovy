@@ -549,7 +549,8 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 } else {
                     // Check latest published binaries are for the latest openjdk build tag
                     if (status['releaseName'] != status['expectedReleaseName']) {
-                        def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['expectedReleaseName'].replaceAll("-ea-beta", ""))
+                        def upstreamRepoVersion = (featureRelease == tipRelease) ? "jdk" : featureRelease
+                        def upstreamTagAge    = getOpenjdkBuildTagAge(upstreamRepoVersion, status['expectedReleaseName'].replaceAll("-ea-beta", ""))
                         def isBuildInProgress = isBuildInProgress(trssUrl, "openjdk${featureReleaseInt}-pipeline", status['expectedReleaseName'].replaceAll("-beta", ""))
                         if (upstreamTagAge > 3 && !isBuildInProgress) {
                             slackColor = 'danger'
