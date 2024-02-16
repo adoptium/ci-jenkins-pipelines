@@ -56,7 +56,7 @@ def getLatestBinariesTag(String version) {
 }
 
 // Check if a given beta EA pipeline build is inprogress?
-def isBuildInProgress(String pipelineName, String publishName) {
+def isBuildInProgress(String trssUrl, String pipelineName, String publishName) {
     def inProgress = false
 
     def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
@@ -550,7 +550,7 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                     // Check latest published binaries are for the latest openjdk build tag
                     if (status['releaseName'] != status['expectedReleaseName']) {
                         def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['expectedReleaseName'].replaceAll("-ea-beta", ""))
-                        def isBuildInProgress = isBuildInProgress("openjdk${featureReleaseInt}-pipeline", status['expectedReleaseName'].replaceAll("-beta", ""))
+                        def isBuildInProgress = isBuildInProgress(trssUrl, "openjdk${featureReleaseInt}-pipeline", status['expectedReleaseName'].replaceAll("-beta", ""))
                         if (upstreamTagAge > 3 && !isBuildInProgress) {
                             slackColor = 'danger'
                             health = "Unhealthy"
