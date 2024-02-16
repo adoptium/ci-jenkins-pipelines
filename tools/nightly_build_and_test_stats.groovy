@@ -56,7 +56,7 @@ def getLatestBinariesTag(String version) {
 }
 
 // Check if a given beta EA pipeline build is inprogress?
-def isInProgress(String pipelineName, String publishName) {
+def isBuildInProgress(String pipelineName, String publishName) {
     def inProgress = false
 
     def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
@@ -268,8 +268,7 @@ node('worker') {
                   status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
                 } else {
                   def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
-                  def upstreamTagAge     = getOpenjdkBuildTagAge(featureRelease, latestOpenjdkBuild)
-                  status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTagAge: upstreamTagAge]
+                  status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
                 }
 
                 // Verify the given release contains all the expected assets
@@ -288,10 +287,9 @@ node('worker') {
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             if (tipRelease != "") {
               def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
-              def upstreamTagAge     = getOpenjdkBuildTagAge("jdk", latestOpenjdkBuild)
               def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
-              status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTagAge: upstreamTagAge]
+              status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
               verifyReleaseContent(tipRelease, releaseName, variant, status)
               echo "  ${tipRelease} release binaries verification: "+status['assets']
               healthStatus[tipVersion] = status
@@ -551,10 +549,15 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                 } else {
                     // Check latest published binaries are for the latest openjdk build tag
                     if (status['releaseName'] != status['expectedReleaseName']) {
-                        slackColor = 'danger'
-                        health = "Unhealthy"
-echo "AGE: "+status['upstreamTagAge']+" days"
-                        errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" !=  latest upstream openjdk build "+status['expectedReleaseName']+"."
+                        def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['expectedReleaseName'].replaceAll("-ea-beta", ""))
+                        def isBuildInProgress = isBuildInProgress("openjdk${featureReleaseInt}-pipeline", status['expectedReleaseName'].replaceAll("-beta", ""))
+                        if (upstreamTagAge > 3 && !isBuildInProgress)
+                            slackColor = 'danger'
+                            health = "Unhealthy"
+                            errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['expectedReleaseName']+" published ${upstreamTagAge} days ago. No build is in progress."
+                        else {
+                            errorMsg = "\nLatest upstream openjdk build "+status['expectedReleaseName']+" published ${upstreamTagAge} days ago. Build is in progress."
+                        }
                     }
                 }
 
