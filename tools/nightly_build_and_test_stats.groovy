@@ -557,12 +557,12 @@ echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlyS
                         if (upstreamTagAge > 3 && !isBuildInProgress) {
                             slackColor = 'danger'
                             health = "Unhealthy"
-                            errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['expectedReleaseName']+" published ${upstreamTagAge} days ago. No build is in progress."
+                            errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['expectedReleaseName'].replaceAll("-ea-beta", "")+" published ${upstreamTagAge} days ago. No build is in progress."
                         } else {
                             if (isBuildInProgress) {
-                                errorMsg = "\nLatest upstream openjdk build "+status['expectedReleaseName']+" published ${upstreamTagAge} days ago. Build is in progress."
+                                errorMsg = "\nLatest upstream openjdk build "+status['expectedReleaseName'].replaceAll("-ea-beta", "")+" published ${upstreamTagAge} days ago. Build is in progress."
                             } else {
-                                errorMsg = "\nLatest upstream openjdk build "+status['expectedReleaseName']+" published ${upstreamTagAge} days ago. Build is awaiting 'trigger'."
+                                errorMsg = "\nLatest upstream openjdk build "+status['expectedReleaseName'].replaceAll("-ea-beta", "")+" published ${upstreamTagAge} days ago. Build is awaiting 'trigger'."
                             }
                         }
                     }
