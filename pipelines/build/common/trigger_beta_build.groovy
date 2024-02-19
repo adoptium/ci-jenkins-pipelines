@@ -35,7 +35,7 @@ def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_",
 
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
-def enableTesting = false
+def enableTesting = true
 def overrideMainTargetConfigurations = ""
 def overrideEvaluationTargetConfigurations = ""
 
