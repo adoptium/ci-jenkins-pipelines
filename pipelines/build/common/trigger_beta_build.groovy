@@ -47,7 +47,7 @@ def isDuringReleasePeriod() {
     def releasePeriod = false
     def now = ZonedDateTime.now(ZoneId.of('UTC'))
     def month = now.getMonth()
-month = Month.MARCH
+month = Month.OCTOBER
 
     // Is it a release month?
     if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
@@ -89,7 +89,7 @@ node('worker') {
 
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         if (isDuringReleasePeriod()) {
-            echo "Not triggering as we are within a release period (previsous Sat to the following Sun around the release Tue)"
+            echo "Not triggering as we are within a release period (previous Saturday to the following Sunday around the release Tuesday)"
         } else {
             echo "Not within a release period, so okay to trigger if required"
 
