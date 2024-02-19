@@ -14,6 +14,12 @@ limitations under the License.
 */
 
 import groovy.json.JsonOutput
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.Month
+import java.time.DayOfWeek
+import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAdjusters
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
@@ -29,11 +35,42 @@ def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_",
 
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
+def enableTesting = true
 def overrideMainTargetConfigurations = ""
 def overrideEvaluationTargetConfigurations = ""
 
 def latestAdoptTag
 def publishJobTag
+
+// Is the current day within the release period of from the previous Saturday to the following Sunday
+// from the release Tuesday ?
+def isDuringReleasePeriod() {
+    def releasePeriod = false
+    def now = ZonedDateTime.now(ZoneId.of('UTC'))
+    def month = now.getMonth()
+
+    // Is it a release month? CPU updates in Jan, Apr, Jul, Oct
+    // New major versions are released in Mar and Sept
+    if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
+        // Yes, calculate release Tuesday, which is the closest Tuesday to the 17th
+        def day17th = now.withDayOfMonth(17)
+        def dayOfWeek17th = day17th.getDayOfWeek()
+        def releaseTuesday
+        if (dayOfWeek17th == DayOfWeek.SATURDAY || dayOfWeek17th == DayOfWeek.SUNDAY || dayOfWeek17th == DayOfWeek.MONDAY || dayOfWeek17th == DayOfWeek.TUESDAY) {
+            releaseTuesday = day17th.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY))
+        } else {
+            releaseTuesday = day17th.with(TemporalAdjusters.previous(DayOfWeek.TUESDAY))
+        }
+
+        // Release period no trigger from previous Saturday to following Sunday
+        def days = ChronoUnit.DAYS.between(releaseTuesday, now)
+        if (days >= -3 && days <= 5) {
+            releasePeriod = true
+        }
+    }
+
+    return releasePeriod
+}
 
 node('worker') {
     // Find latest _adopt tag for this version?
@@ -50,6 +87,11 @@ node('worker') {
 
     // binariesRepoTag is the resulting published github binaries release tag created by the Adoptium "publish job"
     def binariesRepoTag = publishJobTag + "-beta"
+
+    if (isDuringReleasePeriod()) {
+        echo "We are within a release period (previous Saturday to the following Sunday around the release Tuesday), so testing is disabled."
+        enableTesting = false
+    }
 
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         // Determine this versions potential GA tag, so as to not build and publish a GA version
@@ -129,6 +171,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                             string(name: 'releaseType',             value: "Weekly"),
                             string(name: 'scmReference',            value: "$latestAdoptTag"),
                             string(name: 'overridePublishName',     value: "$publishJobTag"),
+                            booleanParam(name: 'enableTests',       value: enableTesting),
                             string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                         ]
 
