@@ -35,6 +35,7 @@ def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_",
 
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
+def enableTesting = true
 def overrideMainTargetConfigurations = ""
 def overrideEvaluationTargetConfigurations = ""
 
@@ -86,12 +87,12 @@ node('worker') {
     // binariesRepoTag is the resulting published github binaries release tag created by the Adoptium "publish job"
     def binariesRepoTag = publishJobTag + "-beta"
 
-    if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
-      if (isDuringReleasePeriod()) {
-        echo "Not triggering as we are within a release period (previous Saturday to the following Sunday around the release Tuesday)"
-      } else {
-        echo "Not within a release period, so okay to trigger if required"
+    if (isDuringReleasePeriod()) {
+        echo "We are within a release period (previous Saturday to the following Sunday around the release Tuesday), so Testing is disabled."
+        enableTesting = false
+    }
 
+    if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         // Determine this versions potential GA tag, so as to not build and publish a GA version
         def gaTag
         def versionStr
@@ -129,7 +130,6 @@ node('worker') {
             echo "${error}"
            throw new Exception("${error}")
         }
-      }
     } else {
         echo "FORCE triggering specified builds.."
         triggerMainBuild = params.FORCE_MAIN
@@ -170,6 +170,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                             string(name: 'releaseType',             value: "Weekly"),
                             string(name: 'scmReference',            value: "$latestAdoptTag"),
                             string(name: 'overridePublishName',     value: "$publishJobTag"),
+                            booleanParam(name: 'enableTests',       value: enableTesting),
                             string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                         ]
 
