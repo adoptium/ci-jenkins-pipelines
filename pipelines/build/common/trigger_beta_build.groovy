@@ -60,7 +60,7 @@ node('worker') {
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         def releasePeriod = false
         def now = ZonedDateTime.now(ZoneId.of('UTC'))
-now = now.withMonth(Month.MARCH)
+now = now.withMonth(3)
         def month = now.getMonth()
 
         // Release period is between days 10 and 25 of each release month
