@@ -19,7 +19,7 @@ import java.time.ZonedDateTime
 import java.time.Month
 import java.time.DayOfWeek
 import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalAdjuster
+import java.time.temporal.TemporalAdjusters
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
