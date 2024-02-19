@@ -47,6 +47,7 @@ def isDuringReleasePeriod() {
     def releasePeriod = false
     def now = ZonedDateTime.now(ZoneId.of('UTC'))
     def month = now.getMonth()
+month = Month.MARCH
 
     // Is it a release month?
     if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
