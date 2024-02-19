@@ -102,14 +102,14 @@ node('worker') {
         }
         gaTag=versionStr+"-ga"
         echo "Expected GA tag to check for = ${gaTag}"
-
+    
         // If "-ga" tag exists, then we don't want to trigger a MAIN build 
         def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "'+gaTag+'"', returnStatus:true)
         if (gaTagCheck == 0) {
             echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
         }
 
-        // Check binaries repo for existance of the given release
+        // Check binaries repo for existance of the given release?
         echo "Checking if ${binariesRepoTag} is already published?"
         def desiredRepoTagURL="${binariesRepo}/releases/tag/${binariesRepoTag}"
         def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
