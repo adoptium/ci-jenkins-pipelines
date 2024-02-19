@@ -102,7 +102,7 @@ node('worker') {
         }
         gaTag=versionStr+"-ga"
         echo "Expected GA tag to check for = ${gaTag}"
-    
+   
         // If "-ga" tag exists, then we don't want to trigger a MAIN build 
         def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "'+gaTag+'"', returnStatus:true)
         if (gaTagCheck == 0) {
