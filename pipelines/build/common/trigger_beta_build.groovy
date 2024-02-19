@@ -14,6 +14,9 @@ limitations under the License.
 */
 
 import groovy.json.JsonOutput
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.Month
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
@@ -52,42 +55,60 @@ node('worker') {
     def binariesRepoTag = publishJobTag + "-beta"
 
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
-        // Determine this versions potential GA tag, so as to not build and publish a GA version
-        def gaTag
-        def versionStr
-        if (version > 8) {
-            versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("+"))
+        def releasePeriod = false
+        def now = ZonedDateTime.now(ZoneId.of('UTC'))
+        def month = now.getMonth()
+
+        // Release period is between days 10 and 25 of each release month
+        if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
+            def day = now.getDayOfMonth()
+            if (day >= 10 and day <= 25) {
+                releasePeriod = true
+            }
+        }
+
+        if (releasePeriod) {
+            echo "Not triggering as we are within a release period (days 10-25 of a release month)"
         } else {
-            versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("-"))
-        }
-        gaTag=versionStr+"-ga"
-        echo "Expected GA tag to check for = ${gaTag}"
+            echo "Not within a release period, so okay to trigger if required"
+
+            // Determine this versions potential GA tag, so as to not build and publish a GA version
+            def gaTag
+            def versionStr
+            if (version > 8) {
+                versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("+"))
+            } else {
+                versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("-"))
+            }
+            gaTag=versionStr+"-ga"
+            echo "Expected GA tag to check for = ${gaTag}"
    
-        // If "-ga" tag exists, then we don't want to trigger a MAIN build 
-        def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "'+gaTag+'"', returnStatus:true)
-        if (gaTagCheck == 0) {
-            echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
-        }
-
-        // Check binaries repo for existance of the given release?
-        echo "Checking if ${binariesRepoTag} is already published?"
-        def desiredRepoTagURL="${binariesRepo}/releases/tag/${binariesRepoTag}"
-        def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
-
-        if (httpCode == "200") {
-            echo "Build tag ${binariesRepoTag} is already published - nothing to do"
-        } else if (httpCode == "404") {
-            echo "New unpublished build tag ${binariesRepoTag} - triggering builds"
+            // If "-ga" tag exists, then we don't want to trigger a MAIN build 
+            def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "'+gaTag+'"', returnStatus:true)
             if (gaTagCheck == 0) {
                 echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
-            } else {
-                triggerMainBuild = true
             }
-            triggerEvaluationBuild = true
-        } else {
-            def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
-            echo "${error}"
-           throw new Exception("${error}")
+
+            // Check binaries repo for existance of the given release?
+            echo "Checking if ${binariesRepoTag} is already published?"
+            def desiredRepoTagURL="${binariesRepo}/releases/tag/${binariesRepoTag}"
+            def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
+
+            if (httpCode == "200") {
+                echo "Build tag ${binariesRepoTag} is already published - nothing to do"
+            } else if (httpCode == "404") {
+                echo "New unpublished build tag ${binariesRepoTag} - triggering builds"
+                if (gaTagCheck == 0) {
+                    echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
+                } else {
+                    triggerMainBuild = true
+                }
+                triggerEvaluationBuild = true
+            } else {
+                def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
+                echo "${error}"
+               throw new Exception("${error}")
+            }
         }
     } else {
         echo "FORCE triggering specified builds.."
