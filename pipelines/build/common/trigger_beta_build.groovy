@@ -49,7 +49,8 @@ def isDuringReleasePeriod() {
     def now = ZonedDateTime.now(ZoneId.of('UTC'))
     def month = now.getMonth()
 
-    // Is it a release month?
+    // Is it a release month? CPU updates in Jan, Apr, Jul, Oct
+    // New major versions are released in Mar and Sept
     if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
         // Yes, calculate release Tuesday, which is the closest Tuesday to the 17th
         def day17th = now.withDayOfMonth(17)
