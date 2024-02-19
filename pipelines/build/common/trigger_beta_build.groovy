@@ -62,7 +62,7 @@ node('worker') {
         // Release period is between days 10 and 25 of each release month
         if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
             def day = now.getDayOfMonth()
-            if (day >= 10 and day <= 25) {
+            if (day >= 10 && day <= 25) {
                 releasePeriod = true
             }
         }
