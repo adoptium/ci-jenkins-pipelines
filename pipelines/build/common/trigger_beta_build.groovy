@@ -17,6 +17,9 @@ import groovy.json.JsonOutput
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.Month
+import java.time.DayOfWeek
+import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAdjuster
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
@@ -57,12 +60,22 @@ node('worker') {
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         def releasePeriod = false
         def now = ZonedDateTime.now(ZoneId.of('UTC'))
+now = now.withMonth(Month.MARCH)
         def month = now.getMonth()
 
         // Release period is between days 10 and 25 of each release month
         if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
             def day = now.getDayOfMonth()
-            if (day >= 10 && day <= 25) {
+            def dayOfWeek17th = now.withDayOfMonth(17).getDayOfWeek()
+            def releaseDay
+            if (dayOfWeek17th == DayOfWeek.SATURDAY || dayOfWeek17th == DayOfWeek.SUNDAY || dayOfWeek17th == DayOfWeek.MONDAY || dayOfWeek17th == DayOfWeek.TUESDAY) {
+                releaseDay = dayOfWeek17th.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY))
+            } else {
+                releaseDay = dayOfWeek17th.with(TemporalAdjusters.previous(DayOfWeek.TUESDAY))
+            }
+echo "release day = " + releaseDay
+            def days = ChronoUnit.DAYS.between(releaseDay, now)
+            if (days >= -3 && days <= 5) {
                 releasePeriod = true
             }
         }
