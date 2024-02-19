@@ -65,13 +65,13 @@ now = now.withMonth(3)
 
         // Release period is between days 10 and 25 of each release month
         if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
-            def day = now.getDayOfMonth()
-            def dayOfWeek17th = now.withDayOfMonth(17).getDayOfWeek()
+            def day17th = now.withDayOfMonth(17)
+            def dayOfWeek17th = day17th.getDayOfWeek()
             def releaseDay
             if (dayOfWeek17th == DayOfWeek.SATURDAY || dayOfWeek17th == DayOfWeek.SUNDAY || dayOfWeek17th == DayOfWeek.MONDAY || dayOfWeek17th == DayOfWeek.TUESDAY) {
-                releaseDay = dayOfWeek17th.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY))
+                releaseDay = day17th.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY))
             } else {
-                releaseDay = dayOfWeek17th.with(TemporalAdjusters.previous(DayOfWeek.TUESDAY))
+                releaseDay = day17th.with(TemporalAdjusters.previous(DayOfWeek.TUESDAY))
             }
 echo "release day = " + releaseDay
             def days = ChronoUnit.DAYS.between(releaseDay, now)
