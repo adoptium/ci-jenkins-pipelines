@@ -58,7 +58,7 @@ def getLatestBinariesTag(String version) {
 }
 
 // Check if a given beta EA pipeline build is inprogress? if so return the buildUrl
-def inProgressBuildUrl(String trssUrl, String pipelineName, String publishName) {
+def getInProgressBuildUrl(String trssUrl, String pipelineName, String publishName) {
     def inProgressBuildUrl = ""
 
     def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
@@ -551,7 +551,7 @@ node('worker') {
                     }
                 } else {
                     // Check if build in-progress
-                    inProgressBuildUrl = inProgressBuildUrl(trssUrl, "openjdk${featureReleaseInt}-pipeline", status['expectedReleaseName'].replaceAll("-beta", ""))
+                    inProgressBuildUrl = getInProgressBuildUrl(trssUrl, "openjdk${featureReleaseInt}-pipeline", status['expectedReleaseName'].replaceAll("-beta", ""))
 
                     // Check latest published binaries are for the latest openjdk build tag
                     if (status['releaseName'] != status['expectedReleaseName']) {
