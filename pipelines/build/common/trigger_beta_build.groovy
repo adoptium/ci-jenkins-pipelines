@@ -41,6 +41,35 @@ def overrideEvaluationTargetConfigurations = ""
 def latestAdoptTag
 def publishJobTag
 
+// Is the current day within the release period of from the previous Saturday to the following Sunday
+// from the release Tuesday ?
+def isDuringReleasePeriod() {
+    def releasePeriod = false
+    def now = ZonedDateTime.now(ZoneId.of('UTC'))
+    def month = now.getMonth()
+
+    // Is it a release month?
+    if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
+        // Yes, calculate release Tuesday, which is the closest Tuesday to the 17th
+        def day17th = now.withDayOfMonth(17)
+        def dayOfWeek17th = day17th.getDayOfWeek()
+        def releaseTuesday
+        if (dayOfWeek17th == DayOfWeek.SATURDAY || dayOfWeek17th == DayOfWeek.SUNDAY || dayOfWeek17th == DayOfWeek.MONDAY || dayOfWeek17th == DayOfWeek.TUESDAY) {
+            releaseTuesday = day17th.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY))
+        } else {
+            releaseTuesday = day17th.with(TemporalAdjusters.previous(DayOfWeek.TUESDAY))
+        }
+
+        // Release period no trigger from previous Saturday to following Sunday
+        def days = ChronoUnit.DAYS.between(releaseTuesday, now)
+        if (days >= -3 && days <= 5) {
+            releasePeriod = true
+        }
+    }
+
+    return releasePeriod
+}
+
 node('worker') {
     // Find latest _adopt tag for this version?
     latestAdoptTag = sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
@@ -58,30 +87,8 @@ node('worker') {
     def binariesRepoTag = publishJobTag + "-beta"
 
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
-        def releasePeriod = false
-        def now = ZonedDateTime.now(ZoneId.of('UTC'))
-now = now.withMonth(7)
-        def month = now.getMonth()
-
-        // Release period is between days 10 and 25 of each release month
-        if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
-            def day17th = now.withDayOfMonth(17)
-            def dayOfWeek17th = day17th.getDayOfWeek()
-            def releaseDay
-            if (dayOfWeek17th == DayOfWeek.SATURDAY || dayOfWeek17th == DayOfWeek.SUNDAY || dayOfWeek17th == DayOfWeek.MONDAY || dayOfWeek17th == DayOfWeek.TUESDAY) {
-                releaseDay = day17th.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY))
-            } else {
-                releaseDay = day17th.with(TemporalAdjusters.previous(DayOfWeek.TUESDAY))
-            }
-echo "release day = " + releaseDay
-            def days = ChronoUnit.DAYS.between(releaseDay, now)
-            if (days >= -3 && days <= 5) {
-                releasePeriod = true
-            }
-        }
-
-        if (releasePeriod) {
-            echo "Not triggering as we are within a release period (days 10-25 of a release month)"
+        if (isDuringReleasePeriod()) {
+            echo "Not triggering as we are within a release period (previsous Sat to the following Sun around the release Tue)"
         } else {
             echo "Not within a release period, so okay to trigger if required"
 
