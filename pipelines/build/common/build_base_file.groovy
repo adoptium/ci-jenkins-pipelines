@@ -783,7 +783,6 @@ class Builder implements Serializable {
         def osArch = 'all available OS&ARCHs'
         def artifactsToCopy = '**/temurin/*.tar.gz,**/temurin/*.zip,**/temurin/*.sha256.txt,**/temurin/*.msi,**/temurin/*.pkg,**/temurin/*.json,**/temurin/*.sig'
         def dryRun = false 
-        def artifactsToSkip = ''
         def String releaseToolUrl = "${context.HUDSON_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
         if ( config != null ) {
             def prefixOfArtifactsToCopy = "**/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}"             
@@ -791,7 +790,6 @@ class Builder implements Serializable {
             osArch = "${config.TARGET_OS} ${config.ARCHITECTURE}"
             dryRun = true
             timestamp = ''
-            artifactsToSkip = '**/*testimage*'
             stageName = 'Dry run RELEASE publish'
         }
 
@@ -806,8 +804,7 @@ class Builder implements Serializable {
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
                         context.string(name: 'VERSION', value: javaVersion),
-                        context.string(name: 'ARTIFACTS_TO_COPY', value: "${artifactsToCopy}"),
-                        context.string(name: 'ARTIFACTS_TO_SKIP', value: "${artifactsToSkip}")
+                        context.string(name: 'ARTIFACTS_TO_COPY', value: "${artifactsToCopy}")
                     ]
             if (release) {
                 releaseComment = 'RELEASE Publish'
@@ -822,9 +819,8 @@ class Builder implements Serializable {
         releaseToolUrl += "VERSION=${javaVersion}&RELEASE=${release}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}"
         tag = URLEncoder.encode(tag, 'UTF-8')
         artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
-        artifactsToSkip = URLEncoder.encode(artifactsToSkip, 'UTF-8')
         def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
-        releaseToolUrl += "&TAG=${tag}&UPSTREAM_JOB_NAME=${urlJobName}&ARTIFACTS_TO_COPY=${artifactsToCopy}&ARTIFACTS_TO_SKIP=${artifactsToSkip}"
+        releaseToolUrl += "&TAG=${tag}&UPSTREAM_JOB_NAME=${urlJobName}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
 
         context.echo "return releaseToolUrl is ${releaseToolUrl}"
         return ["${releaseToolUrl}", "${releaseComment}"]
