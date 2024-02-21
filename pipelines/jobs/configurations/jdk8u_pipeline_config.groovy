@@ -23,7 +23,7 @@ class Config8 {
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell.dockerfile'
                 ],
                 test: [
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional’, ’extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
                 ],
                 configureArgs       : [
                         'dragonwell'  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
