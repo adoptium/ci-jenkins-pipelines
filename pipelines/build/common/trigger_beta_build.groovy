@@ -31,7 +31,7 @@ import java.time.temporal.TemporalAdjusters
 
 def mirrorRepo="${params.MIRROR_REPO}"
 def version="${params.JDK_VERSION}".toInteger()
-def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", "${version}")
+def binariesRepo="${params.BINARIES_REPO}"
 
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
