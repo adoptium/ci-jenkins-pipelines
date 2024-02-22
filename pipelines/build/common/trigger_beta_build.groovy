@@ -180,7 +180,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                         jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideMainTargetConfigurations)))
                     }
                     if (pipeline_type == "evaluation" && overrideEvaluationTargetConfigurations != "") {
-                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint($overrideEvaluationTargetConfigurations)))
+                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideEvaluationTargetConfigurations)))
                     }
 
                     def job = build job: "${pipeline}", propagate: true, parameters: jobParams
