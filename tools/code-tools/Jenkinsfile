@@ -7,6 +7,9 @@ pipeline {
     triggers {
         cron(CRON_SETTINGS)
     }
+    options {
+        buildDiscarder logRotator(daysToKeepStr: '30', numToKeepStr: '10')
+    }
     stages {
         stage('Build') {
             parallel {
