@@ -31,7 +31,7 @@ import java.time.temporal.TemporalAdjusters
 
 def mirrorRepo="${params.MIRROR_REPO}"
 def version="${params.JDK_VERSION}".toInteger()
-def binariesRepo="https://github.com/${params.BINARIES_REPO}".replaceAll("_NN_", "${version}")
+def binariesRepo="${params.BINARIES_REPO}"
 
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
@@ -181,7 +181,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                         jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideMainTargetConfigurations)))
                     }
                     if (pipeline_type == "evaluation" && overrideEvaluationTargetConfigurations != "") {
-                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint($overrideEvaluationTargetConfigurations)))
+                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideEvaluationTargetConfigurations)))
                     }
 
                     def job = build job: "${pipeline}", propagate: true, parameters: jobParams
