@@ -29,6 +29,7 @@ import java.time.temporal.TemporalAdjusters
   The "Force" option can be used to re-build and re-publish the existing latest build.
 */
 
+def variant="${params.VARIANT}"
 def mirrorRepo="${params.MIRROR_REPO}"
 def version="${params.JDK_VERSION}".toInteger()
 def binariesRepo="${params.BINARIES_REPO}"
@@ -36,8 +37,9 @@ def binariesRepo="${params.BINARIES_REPO}"
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
 def enableTesting = true
-def overrideMainTargetConfigurations = ""
-def overrideEvaluationTargetConfigurations = ""
+def overrideMainTargetConfigurations = params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS
+def overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
+def ignore_platforms = "${params.IGNORE_PLATFORMS}".split("[, ]+") // platforms not to build
 
 def latestAdoptTag
 def publishJobTag
@@ -72,9 +74,45 @@ def isDuringReleasePeriod() {
     return releasePeriod
 }
 
+// Load the given targetConfigurations from the pipeline config
+def loadTargetConfigurations(String javaVersion, String variant, String configSet, List ignore_platforms) {
+    def target
+    targetConfigurations = null
+    try {
+        target = load "${WORKSPACE}/pipelines/jobs/configurations/jdk${javaVersion}${configSet}.groovy"
+        targetConfigurations = target.targetConfigurations
+    } catch (NoSuchFileException e) {
+        try {
+            println "[WARNING] jdk${javaVersion}${configSet}.groovy does not exist. Trying jdk${javaVersion}u${configSet}.groovy"
+            target = load "${WORKSPACE}/pipelines/jobs/configurations/jdk${javaVersion}u${configSet}.groovy"
+            targetConfigurations = target.targetConfigurations
+        } catch (NoSuchFileException e2) {
+            println "[ERROR] jdk${javaVersion}u${configSet}.groovy does not exist, unable to load targetConfigurations"
+        }
+    }
+
+    def targetConfigurationsForVariant = [:]
+    if (targetConfigurations != null) {
+        targetConfigurations.each { platform ->
+            if (platform.contains(variant) && !ignore_platforms.contains(platform.key)) {
+                targetConfigurationsForVariant[platform.key] = [variant]
+            }
+        }
+    }
+
+    println "targetConfigurations for variant ${variant} = " + JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurationsForVariant))
+
+    return targetConfigurationsForVariant
+}
+
 node('worker') {
+    def adopt_tag_search = 'grep "_adopt"'
+    if (mirrorRepo.contains("aarch32-jdk8u")) {
+        adopt_tag_search = adopt_tag_search + ' | grep "-aarch32-"'
+    }
+
     // Find latest _adopt tag for this version?
-    latestAdoptTag = sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
+    latestAdoptTag = sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | '+adopt_tag_search+' | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
     if (latestAdoptTag.indexOf("_adopt") < 0) {
         def error = "Error finding latest _adopt tag for ${mirrorRepo}"
         echo "${error}"
@@ -135,17 +173,22 @@ node('worker') {
         echo "FORCE triggering specified builds.."
         triggerMainBuild = params.FORCE_MAIN
         triggerEvaluationBuild = params.FORCE_EVALUATION
-
-        if (params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS) {
-            overrideMainTargetConfigurations = params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS
-        }
-        if (params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS) {
-            overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
-        }
     }
 } // End: node('worker')
 
 if (triggerMainBuild || triggerEvaluationBuild) {
+    // Load the targetConfigurations
+    def mainTargetConfigurations       = overrideMainTargetConfigurations
+    def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
+    if (mainTargetConfigurations == "") {
+        // Load "main" targetConfigurations from pipeline config
+        mainTargetConfigurations = loadTargetConfigurations(version, variant, "", ignore_platforms)
+    }
+    if (evaluationTargetConfigurations == "") {
+        // Load "evaluation" targetConfigurations from pipeline config
+        evaluationTargetConfigurations = loadTargetConfigurations(version, variant, "_evaluation", ignore_platforms)
+    }
+
     // Set version suffix, jdk8 has different mechanism to jdk11+
     def additionalConfigureArgs = (version > 8) ? "--with-version-opt=ea" : ""
 
@@ -176,7 +219,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                             string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                         ]
 
-                    // Override targetConfigurations if specified for FORCE
+                    // Override targetConfigurations if specified
                     if (pipeline_type == "main" && overrideMainTargetConfigurations != "") {
                         jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideMainTargetConfigurations)))
                     }
