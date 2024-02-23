@@ -24,19 +24,20 @@ import java.time.temporal.ChronoUnit
 
 // Get the latest upstream openjdk build tag
 def getLatestOpenjdkBuildTag(String version) {
+echo "AA"
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
     if (version == "aarch32-jdk8u") {
         openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
     } else if (version == "alpine-jdk8u") {
         openjdkRepo = "https://github.com/openjdk/jdk8u.git"
     }
-
+echo "BB"
     // Need to include jdk8u to avoid picking up old tag format    
     def jdk8Filter = (version.contains("jdk8u")) ? "| grep 'jdk8u'" : ""
     if (version == "aarch32-jdk8u") {
         jdk8Filter += " | grep '\\-aarch32\\-'"
     }
-
+echo "CC"
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest upstream openjdk/${version} tag = ${latestTag}"
 
