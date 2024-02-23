@@ -85,14 +85,14 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
     def to_be_ignored = ignore_platforms.split("[, ]+")
     targetConfigurations = null
 
-    configFile = "${targetConfigPath}/jdk${javaVersion}${configSet}.groovy"
-    def rc = sh(script: "curl -LO ${configFile}", returnStatus: true)
+    configFile = "jdk${javaVersion}${configSet}.groovy"
+    def rc = sh(script: "curl -LO ${targetConfigPath}/${configFile}", returnStatus: true)
     if (rc != 0) {
-        echo "Error loading ${configFile}, trying ${targetConfigPath}/jdk${javaVersion}u${configSet}.groovy"
-        configFile = "${targetConfigPath}/jdk${javaVersion}u${configSet}.groovy"
-        rc = sh(script: "curl -LO ${configFile}", returnStatus: true)
+        echo "Error loading ${targetConfigPath}/${configFile}, trying ${targetConfigPath}/jdk${javaVersion}u${configSet}.groovy"
+        configFile = "jdk${javaVersion}u${configSet}.groovy"
+        rc = sh(script: "curl -LO ${targetConfigPath}/${configFile}", returnStatus: true)
         if (rc != 0) {
-            echo "Error loading ${configFile}"
+            echo "Error loading ${targetConfigPath}/${configFile}"
         }
     }
 
