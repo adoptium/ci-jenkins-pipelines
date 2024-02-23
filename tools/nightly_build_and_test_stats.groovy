@@ -324,7 +324,9 @@ node('worker') {
                   i += 1
                 } else {
                   foundNonEvaluationBinaries = true
+echo "JJJ"
                   healthStatus[featureRelease] = status
+echo "KKK"
                 }
               }
             }
