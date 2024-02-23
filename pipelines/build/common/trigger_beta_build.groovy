@@ -112,7 +112,7 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
 
     println "targetConfigurations for variant ${variant} = " + JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurationsForVariant))
 
-    return JsonOutput.toJson(targetConfigurationsForVariant)
+    return targetConfigurationsForVariant
 }
 
 node('worker') {
@@ -247,10 +247,10 @@ if (triggerMainBuild || triggerEvaluationBuild) {
 
                     // Specify the required targetConfigurations
                     if (pipeline_type == "main") {
-                        jobParams.add(text(name: 'targetConfigurations',     JsonOutput.prettyPrint(mainTargetConfigurations)))
+                        jobParams.add(text(name: 'targetConfigurations',   value: JsonOutput.prettyPrint(mainTargetConfigurations)))
                     }
                     if (pipeline_type == "evaluation") {
-                        jobParams.add(text(name: 'targetConfigurations',     JsonOutput.prettyPrint(evaluationTargetConfigurations)))
+                        jobParams.add(text(name: 'targetConfigurations',   value: JsonOutput.prettyPrint(evaluationTargetConfigurations)))
                     }
 
                     def job = build job: "${pipeline}", propagate: true, parameters: jobParams
