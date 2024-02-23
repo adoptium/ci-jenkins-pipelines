@@ -83,19 +83,22 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
     def targetConfigPath = "${params.BUILD_CONFIG_URL}"
 
     def to_be_ignored = ignore_platforms.split("[, ]+")
-    def target
     targetConfigurations = null
-    try {
-        target = load "${targetConfigPath}/jdk${javaVersion}${configSet}.groovy"
-        targetConfigurations = target.targetConfigurations
-    } catch (NoSuchFileException e) {
-        try {
-            println "[WARNING] ${targetConfigPath}/jdk${javaVersion}${configSet}.groovy does not exist. Trying jdk${javaVersion}u${configSet}.groovy"
-            target = load "${params.BUILD_CONFIG_URL}/jdk${javaVersion}u${configSet}.groovy"
-            targetConfigurations = target.targetConfigurations
-        } catch (NoSuchFileException e2) {
-            println "[ERROR] ${params.BUILD_CONFIG_URL}/jdk${javaVersion}u${configSet}.groovy does not exist, unable to load targetConfigurations"
+
+    configFile = "${targetConfigPath}/jdk${javaVersion}${configSet}.groovy"
+    def rc = sh(script: "curl -LO ${configFile}", returnStatus: true)
+    if (rc != 0) {
+        echo "Error loading ${configFile}, trying ${targetConfigPath}/jdk${javaVersion}u${configSet}.groovy"
+        configFile = "${targetConfigPath}/jdk${javaVersion}u${configSet}.groovy"
+        rc = sh(script: "curl -LO ${configFile}", returnStatus: true)
+        if (rc != 0) {
+            echo "Error loading ${configFile}"
         }
+    }
+
+    if (rc == 0) {
+        // We successfully downloaded the pipeline config file, now load it into groovy to set targetConfigurations..
+        load configFile
     }
 
     def targetConfigurationsForVariant = [:]
