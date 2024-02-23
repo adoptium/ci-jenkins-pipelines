@@ -42,6 +42,9 @@ def overrideMainTargetConfigurations = params.OVERRIDE_MAIN_TARGET_CONFIGURATION
 def overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
 def ignore_platforms = "${params.IGNORE_PLATFORMS}" // platforms not to build
 
+def mainTargetConfigurations       = overrideMainTargetConfigurations
+def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
+
 def latestAdoptTag
 def publishJobTag
 
@@ -179,8 +182,6 @@ node('worker') {
 
     if (triggerMainBuild || triggerEvaluationBuild) {
         // Load the targetConfigurations
-        def mainTargetConfigurations       = overrideMainTargetConfigurations
-        def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
         if (mainTargetConfigurations == "") {
             // Load "main" targetConfigurations from pipeline config
             mainTargetConfigurations = loadTargetConfigurations((String)version, (String)variant, (String)"", (String)ignore_platforms)
