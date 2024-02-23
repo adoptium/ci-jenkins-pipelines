@@ -40,7 +40,7 @@ def triggerEvaluationBuild = false
 def enableTesting = true
 def overrideMainTargetConfigurations = params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS
 def overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
-def ignore_platforms = "${params.IGNORE_PLATFORMS}".split("[, ]+") // platforms not to build
+def ignore_platforms = "${params.IGNORE_PLATFORMS}" // platforms not to build
 
 def latestAdoptTag
 def publishJobTag
@@ -76,7 +76,8 @@ def isDuringReleasePeriod() {
 }
 
 // Load the given targetConfigurations from the pipeline config
-def loadTargetConfigurations(String javaVersion, String variant, String configSet, List ignore_platforms) {
+def loadTargetConfigurations(String javaVersion, String variant, String configSet, String ignore_platforms) {
+    def to_be_ignored = ignore_platforms.split("[, ]+")
     def target
     targetConfigurations = null
     try {
@@ -95,7 +96,7 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
     def targetConfigurationsForVariant = [:]
     if (targetConfigurations != null) {
         targetConfigurations.each { platform ->
-            if (platform.contains(variant) && !ignore_platforms.contains(platform.key)) {
+            if (platform.contains(variant) && !to_be_ignored.contains(platform.key)) {
                 targetConfigurationsForVariant[platform.key] = [variant]
             }
         }
