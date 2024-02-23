@@ -131,7 +131,12 @@ node('worker') {
     echo "Latest Adoptium tag from ${mirrorRepo} = ${latestAdoptTag}"
 
     // publishJobTag is TAG that gets passed to the Adoptium "publish job"
-    publishJobTag = latestAdoptTag.replaceAll("_adopt","-ea")
+    if (mirrorRepo.contains("aarch32-jdk8u")) {
+        publishJobTag = latestAdoptTag.substring(0, latestAdoptTag.indexOf("-aarch32"))+"-ea"
+    } else {
+        publishJobTag = latestAdoptTag.replaceAll("_adopt","-ea")
+    }
+    echo "publishJobTag = ${publishJobTag}"
 
     // binariesRepoTag is the resulting published github binaries release tag created by the Adoptium "publish job"
     def binariesRepoTag = publishJobTag + "-beta"
