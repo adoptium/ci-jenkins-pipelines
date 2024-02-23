@@ -185,15 +185,16 @@ node('worker') {
         triggerEvaluationBuild = params.FORCE_EVALUATION
     }
 
+    // If we are going to trigger, then load the targetConfigurations
     if (triggerMainBuild || triggerEvaluationBuild) {
         // Load the targetConfigurations
-        if (mainTargetConfigurations == "") {
+        if (triggerMainBuild && mainTargetConfigurations == "") {
             // Load "main" targetConfigurations from pipeline config
             mainTargetConfigurations = loadTargetConfigurations((String)version, (String)variant, (String)"", (String)ignore_platforms)
         }
-        if (evaluationTargetConfigurations == "") {
+        if (triggerEvaluationBuild && evaluationTargetConfigurations == "") {
             // Load "evaluation" targetConfigurations from pipeline config
-            evaluationTargetConfigurations = loadTargetConfigurations((String)version, (String)variant, (String)"_evaluation", (String)ignore_platforms)
+            evaluationTargetConfigurations = loadTargetConfigurations(version, variant, "_evaluation", ignore_platforms)
         }
     }
 } // End: node('worker')
