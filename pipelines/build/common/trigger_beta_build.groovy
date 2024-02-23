@@ -183,11 +183,11 @@ node('worker') {
         def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
         if (mainTargetConfigurations == "") {
             // Load "main" targetConfigurations from pipeline config
-            mainTargetConfigurations = loadTargetConfigurations(version, variant, "", ignore_platforms)
+            mainTargetConfigurations = loadTargetConfigurations((String)version, (String)variant, (String)"", (String)ignore_platforms)
         }
         if (evaluationTargetConfigurations == "") {
             // Load "evaluation" targetConfigurations from pipeline config
-            evaluationTargetConfigurations = loadTargetConfigurations(version, variant, "_evaluation", ignore_platforms)
+            evaluationTargetConfigurations = loadTargetConfigurations((String)version, (String)variant, (String)"_evaluation", (String)ignore_platforms)
         }
     }
 } // End: node('worker')
