@@ -176,21 +176,23 @@ node('worker') {
         triggerMainBuild = params.FORCE_MAIN
         triggerEvaluationBuild = params.FORCE_EVALUATION
     }
+
+    if (triggerMainBuild || triggerEvaluationBuild) {
+        // Load the targetConfigurations
+        def mainTargetConfigurations       = overrideMainTargetConfigurations
+        def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
+        if (mainTargetConfigurations == "") {
+            // Load "main" targetConfigurations from pipeline config
+            mainTargetConfigurations = loadTargetConfigurations(version, variant, "", ignore_platforms)
+        }
+        if (evaluationTargetConfigurations == "") {
+            // Load "evaluation" targetConfigurations from pipeline config
+            evaluationTargetConfigurations = loadTargetConfigurations(version, variant, "_evaluation", ignore_platforms)
+        }
+    }
 } // End: node('worker')
 
 if (triggerMainBuild || triggerEvaluationBuild) {
-    // Load the targetConfigurations
-    def mainTargetConfigurations       = overrideMainTargetConfigurations
-    def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
-    if (mainTargetConfigurations == "") {
-        // Load "main" targetConfigurations from pipeline config
-        mainTargetConfigurations = loadTargetConfigurations(version, variant, "", ignore_platforms)
-    }
-    if (evaluationTargetConfigurations == "") {
-        // Load "evaluation" targetConfigurations from pipeline config
-        evaluationTargetConfigurations = loadTargetConfigurations(version, variant, "_evaluation", ignore_platforms)
-    }
-
     // Set version suffix, jdk8 has different mechanism to jdk11+
     def additionalConfigureArgs = (version > 8) ? "--with-version-opt=ea" : ""
 
