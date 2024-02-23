@@ -194,7 +194,7 @@ node('worker') {
         }
         if (triggerEvaluationBuild && evaluationTargetConfigurations == "") {
             // Load "evaluation" targetConfigurations from pipeline config
-            evaluationTargetConfigurations = loadTargetConfigurations(version, variant, "_evaluation", ignore_platforms)
+            evaluationTargetConfigurations = loadTargetConfigurations(version, variant, "_evaluation", (String)ignore_platforms)
         }
     }
 } // End: node('worker')
