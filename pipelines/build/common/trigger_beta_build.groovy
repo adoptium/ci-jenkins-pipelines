@@ -118,7 +118,7 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
 node('worker') {
     def adopt_tag_search = 'grep "_adopt"'
     if (mirrorRepo.contains("aarch32-jdk8u")) {
-        adopt_tag_search = adopt_tag_search + ' | grep "-aarch32-"'
+        adopt_tag_search = adopt_tag_search + ' | grep "\\-aarch32\\-"'
     }
 
     // Find latest _adopt tag for this version?
