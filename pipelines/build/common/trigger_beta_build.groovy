@@ -190,11 +190,11 @@ node('worker') {
         // Load the targetConfigurations
         if (triggerMainBuild && mainTargetConfigurations == "") {
             // Load "main" targetConfigurations from pipeline config
-            mainTargetConfigurations = loadTargetConfigurations((String)version, (String)variant, (String)"", (String)ignore_platforms)
+            mainTargetConfigurations = loadTargetConfigurations((String)version, variant, "", ignore_platforms)
         }
         if (triggerEvaluationBuild && evaluationTargetConfigurations == "") {
             // Load "evaluation" targetConfigurations from pipeline config
-            evaluationTargetConfigurations = loadTargetConfigurations(version, variant, "_evaluation", (String)ignore_platforms)
+            evaluationTargetConfigurations = loadTargetConfigurations((String)version, variant, "_evaluation", ignore_platforms)
         }
     }
 } // End: node('worker')
@@ -240,12 +240,12 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                             string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                         ]
 
-                    // Override targetConfigurations if specified
-                    if (pipeline_type == "main" && overrideMainTargetConfigurations != "") {
-                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideMainTargetConfigurations)))
+                    // Specify the required targetConfigurations
+                    if (pipeline_type == "main") {
+                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(mainTargetConfigurations)))
                     }
-                    if (pipeline_type == "evaluation" && overrideEvaluationTargetConfigurations != "") {
-                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideEvaluationTargetConfigurations)))
+                    if (pipeline_type == "evaluation") {
+                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(evaluationTargetConfigurations)))
                     }
 
                     def job = build job: "${pipeline}", propagate: true, parameters: jobParams
