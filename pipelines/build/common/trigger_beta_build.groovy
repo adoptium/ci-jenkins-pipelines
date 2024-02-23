@@ -104,7 +104,7 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
     def targetConfigurationsForVariant = [:]
     if (targetConfigurations != null) {
         targetConfigurations.each { platform ->
-            if (platform.contains(variant) && !to_be_ignored.contains(platform.key)) {
+            if (platform.value.contains(variant) && !to_be_ignored.contains(platform.key)) {
                 targetConfigurationsForVariant[platform.key] = [variant]
             }
         }
