@@ -205,7 +205,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
         if (!mainTargetConfigurations) {
             def error =  "Empty mainTargetConfigurations"
             echo "${error}"
-            throw new Exception("${error}
+            throw new Exception("${error}")
         }
     }
     if (triggerEvaluationBuild) {
@@ -213,7 +213,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
         if (!evaluationTargetConfigurations) {
             def error =  "Empty evaluationTargetConfigurations"
             echo "${error}"
-            throw new Exception("${error}
+            throw new Exception("${error}")
         }
     }
 
