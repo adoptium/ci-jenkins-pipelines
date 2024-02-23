@@ -170,6 +170,9 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
             def missingAssets = []
             def foundAtLeastOneAsset = false
             targetConfigurations.keySet().each { osarch ->
+              if (version == "jdk8u" && (osarch == "arm32Linux" || osarch == "x64AlpineLinux")) {
+                echo "ignoring jdk8u:$osarch is built in a unique feature release"
+              } else {
                 def variants = targetConfigurations[osarch]
                 if (!variants.contains(variant)) {
                     return // variant not built for this osarch
@@ -242,6 +245,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                 } else {
                     echo "    $osarch : Complete"
                 }
+              }
             }
 
             // Set overall assets status for this release
