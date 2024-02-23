@@ -88,11 +88,11 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
         targetConfigurations = target.targetConfigurations
     } catch (NoSuchFileException e) {
         try {
-            println "[WARNING] jdk${javaVersion}${configSet}.groovy does not exist. Trying jdk${javaVersion}u${configSet}.groovy"
+            println "[WARNING] ${WORKSPACE}/pipelines/jobs/configurations/jdk${javaVersion}${configSet}.groovy does not exist. Trying jdk${javaVersion}u${configSet}.groovy"
             target = load "${WORKSPACE}/pipelines/jobs/configurations/jdk${javaVersion}u${configSet}.groovy"
             targetConfigurations = target.targetConfigurations
         } catch (NoSuchFileException e2) {
-            println "[ERROR] jdk${javaVersion}u${configSet}.groovy does not exist, unable to load targetConfigurations"
+            println "[ERROR] ${WORKSPACE}/pipelines/jobs/configurations/jdk${javaVersion}u${configSet}.groovy does not exist, unable to load targetConfigurations"
         }
     }
 
