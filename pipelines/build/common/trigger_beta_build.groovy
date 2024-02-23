@@ -169,7 +169,7 @@ node('worker') {
         } else {
             def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
             echo "${error}"
-           throw new Exception("${error}")
+            throw new Exception("${error}")
         }
     } else {
         echo "FORCE triggering specified builds.."
@@ -202,9 +202,19 @@ if (triggerMainBuild || triggerEvaluationBuild) {
 
     if (triggerMainBuild) {
         pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+        if (!mainTargetConfigurations) {
+            def error =  "Empty mainTargetConfigurations"
+            echo "${error}"
+            throw new Exception("${error}
+        }
     }
     if (triggerEvaluationBuild) {
         pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
+        if (!evaluationTargetConfigurations) {
+            def error =  "Empty evaluationTargetConfigurations"
+            echo "${error}"
+            throw new Exception("${error}
+        }
     }
 
     pipelines.keySet().each { pipeline_type ->
