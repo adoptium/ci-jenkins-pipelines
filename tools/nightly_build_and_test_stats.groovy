@@ -599,12 +599,12 @@ node('worker') {
                         if (upstreamTagAge > 3 && inProgressBuildUrl == "") {
                             slackColor = 'danger'
                             health = "Unhealthy"
-                            errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['expectedReleaseName'].replaceAll("-ea-beta", "")+" published ${upstreamTagAge} days ago. *No build is in progress*."
+                            errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *No build is in progress*."
                         } else {
                             if (inProgressBuildUrl != "") {
-                                errorMsg = "\nLatest upstream openjdk build "+status['expectedReleaseName'].replaceAll("-ea-beta", "")+" published ${upstreamTagAge} days ago. <" + inProgressBuildUrl + "|Build is in progress>."
+                                errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. <" + inProgressBuildUrl + "|Build is in progress>."
                             } else {
-                                errorMsg = "\nLatest upstream openjdk build "+status['expectedReleaseName'].replaceAll("-ea-beta", "")+" published ${upstreamTagAge} days ago. *Build is awaiting 'trigger'*."
+                                errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *Build is awaiting 'trigger'*."
                             }
                         }
                     }
