@@ -277,7 +277,7 @@ node('worker') {
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
     def nonTagBuildReleases = "${params.NON_TAG_BUILD_RELEASES}".split("[, ]+")
 
-    def healthStatus = []
+    def healthStatus = [:]
     def testStats = []
 
     stage('getPipelineStatus') {
@@ -325,7 +325,7 @@ node('worker') {
                 } else {
                   foundNonEvaluationBinaries = true
 echo "JJJ"
-                  healthStatus["${featureRelease}"] = status
+                  healthStatus[featureRelease] = status
 echo "KKK"
                 }
               }
@@ -339,7 +339,7 @@ echo "KKK"
               status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
               verifyReleaseContent(tipRelease, releaseName, variant, status)
               echo "  ${tipRelease} release binaries verification: "+status['assets']
-              healthStatus["${tipRelease}"] = status
+              healthStatus[tipRelease] = status
             }
         }
     }
@@ -564,7 +564,7 @@ echo "KKK"
             allReleases.each { featureRelease ->
                 def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
 
-                def status = healthStatus["${featureRelease}"]
+                def status = healthStatus[featureRelease]
 
                 def slackColor = 'good'
                 def health = "Healthy"
