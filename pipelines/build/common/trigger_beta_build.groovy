@@ -195,11 +195,23 @@ node('worker') {
         // Load the targetConfigurations
         if (triggerMainBuild && mainTargetConfigurations == "") {
             // Load "main" targetConfigurations from pipeline config
-            mainTargetConfigurations = loadTargetConfigurations((String)version, variant, "", ignore_platforms)
+            def config = loadTargetConfigurations((String)version, variant, "", ignore_platforms)
+            if (!config) {
+                def error =  "Empty mainTargetConfigurations"
+                echo "${error}"
+                throw new Exception("${error}")
+            }       
+            mainTargetConfigurations = JsonOutput.toJson(config)
         }
         if (triggerEvaluationBuild && evaluationTargetConfigurations == "") {
             // Load "evaluation" targetConfigurations from pipeline config
-            evaluationTargetConfigurations = loadTargetConfigurations((String)version, variant, "_evaluation", ignore_platforms)
+            def config = loadTargetConfigurations((String)version, variant, "_evaluation", ignore_platforms)
+            if (!config) {
+                def error =  "Empty evaluationTargetConfigurations"
+                echo "${error}"
+                throw new Exception("${error}")
+            }
+            evaluationTargetConfigurations = JsonOutput.toJson(config) 
         }
     }
 } // End: node('worker')
@@ -214,19 +226,9 @@ if (triggerMainBuild || triggerEvaluationBuild) {
 
     if (triggerMainBuild) {
         pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
-        if (!mainTargetConfigurations) {
-            def error =  "Empty mainTargetConfigurations"
-            echo "${error}"
-            throw new Exception("${error}")
-        }
     }
     if (triggerEvaluationBuild) {
         pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
-        if (!evaluationTargetConfigurations) {
-            def error =  "Empty evaluationTargetConfigurations"
-            echo "${error}"
-            throw new Exception("${error}")
-        }
     }
 
     pipelines.keySet().each { pipeline_type ->
