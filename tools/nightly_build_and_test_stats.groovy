@@ -24,20 +24,19 @@ import java.time.temporal.ChronoUnit
 
 // Get the latest upstream openjdk build tag
 def getLatestOpenjdkBuildTag(String version) {
-echo "AA"
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
     if (version == "aarch32-jdk8u") {
         openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
     } else if (version == "alpine-jdk8u") {
         openjdkRepo = "https://github.com/openjdk/jdk8u.git"
     }
-echo "BB"
+
     // Need to include jdk8u to avoid picking up old tag format    
     def jdk8Filter = (version.contains("jdk8u")) ? "| grep 'jdk8u'" : ""
     if (version == "aarch32-jdk8u") {
         jdk8Filter += " | grep '\\-aarch32\\-'"
     }
-echo "CC"
+
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest upstream openjdk/${version} tag = ${latestTag}"
 
@@ -292,17 +291,24 @@ node('worker') {
             // The release asset list is also verified
             featureReleases.each { featureRelease ->
               def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
-              def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
+
+              // Extra filter to find latest jdk8u port assets
+              def extraFilter = ""
+              if (featureRelease == "aarch32-jdk8u") {
+                  extraFilter = "architecture=arm&os=linux&"
+              } else if (featureRelease == "alpine-jdk8u") {
+                  extraFilter = "architecture=x64&os=alpine-linux&"
+              }
+
+              def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?${extraFilter}image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
               def assetsJson = new JsonSlurper().parseText(assets)
 
-              def foundNonEvaluationBinaries = false
-              def i=0
-              while(!foundNonEvaluationBinaries && i < assetsJson.size()) {
-                def releaseName = assetsJson[i].release_name
-                def status = []
+              def status = []
+              if (assetsJson.size() > 0) {
+                def releaseName = assetsJson[0].release_name
                 if (nonTagBuildReleases.contains(featureReleaseInt)) {
                   // A non tag build, eg.a scheduled build for Oracle managed STS versions
-                  def ts = assetsJson[i].timestamp // newest timestamp of a jdk asset
+                  def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
                   def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
                   def now = ZonedDateTime.now(ZoneId.of('UTC'))
                   def days = ChronoUnit.DAYS.between(assetTs, now)
@@ -319,15 +325,10 @@ node('worker') {
                 // Verify the given release contains all the expected assets
                 verifyReleaseContent(featureRelease, releaseName, variant, status)
                 echo "  ${featureRelease} release binaries verification: "+status['assets']
-                if (status['assets'] == "Missing ALL artifacts") {
-                  echo "Published ${releaseName} binaries has no non-evaluation artifacts, it must be an 'evaluation' build, skip to next.."
-                  i += 1
-                } else {
-                  foundNonEvaluationBinaries = true
-echo "JJJ"
-                  healthStatus[featureRelease] = status
-echo "KKK"
-                }
+                healthStatus[featureRelease] = status
+              } else {
+                status['assets'] = "Unable to find any releases"
+                echo "  ${featureRelease} release binaries verification: "+status['assets']
               }
             }
 
