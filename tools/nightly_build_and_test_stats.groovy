@@ -182,7 +182,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                 def missingForArch = []
 
                 def imagetypes = ["debugimage", "jdk", "jre", "sbom"]
-                if (version != "jdk8u") {
+                if (!version.contains("jdk8u")) {
                     imagetypes.add("static-libs")
                     imagetypes.add("testimage")
                 }
