@@ -99,6 +99,7 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
     if (rc == 0) {
         // We successfully downloaded the pipeline config file, now load it into groovy to set targetConfigurations..
         load configFile
+        echo "Successfully loaded ${targetConfigPath}/${configFile}"
     }
 
     def targetConfigurationsForVariant = [:]
@@ -109,8 +110,6 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
             }
         }
     }
-
-    println "targetConfigurations for variant ${variant} = " + JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurationsForVariant))
 
     return targetConfigurationsForVariant
 }
@@ -226,9 +225,13 @@ if (triggerMainBuild || triggerEvaluationBuild) {
 
     if (triggerMainBuild) {
         pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+        echo "main build targetConfigurations:"
+        echo JsonOutput.prettyPrint(mainTargetConfigurations)
     }
     if (triggerEvaluationBuild) {
         pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
+        echo "evaluation build targetConfigurations:"
+        echo JsonOutput.prettyPrint(evaluationTargetConfigurations)
     }
 
     pipelines.keySet().each { pipeline_type ->
