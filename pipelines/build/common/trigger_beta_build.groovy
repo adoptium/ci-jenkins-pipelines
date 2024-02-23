@@ -247,10 +247,10 @@ if (triggerMainBuild || triggerEvaluationBuild) {
 
                     // Specify the required targetConfigurations
                     if (pipeline_type == "main") {
-                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(JsonOutput.toJson(mainTargetConfigurations))))
+                        jobParams.add(text(name: 'targetConfigurations',     value: mainTargetConfigurations))
                     }
                     if (pipeline_type == "evaluation") {
-                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(JsonOutput.toJson(evaluationTargetConfigurations))))
+                        jobParams.add(text(name: 'targetConfigurations',     value: evaluationTargetConfigurations))
                     }
 
                     def job = build job: "${pipeline}", propagate: true, parameters: jobParams
