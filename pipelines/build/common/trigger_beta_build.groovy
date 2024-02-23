@@ -80,19 +80,21 @@ def isDuringReleasePeriod() {
 
 // Load the given targetConfigurations from the pipeline config
 def loadTargetConfigurations(String javaVersion, String variant, String configSet, String ignore_platforms) {
+    def targetConfigPath = "${params.BUILD_CONFIG_URL}"
+
     def to_be_ignored = ignore_platforms.split("[, ]+")
     def target
     targetConfigurations = null
     try {
-        target = load "${WORKSPACE}/pipelines/jobs/configurations/jdk${javaVersion}${configSet}.groovy"
+        target = load "${targetConfigPath}/jdk${javaVersion}${configSet}.groovy"
         targetConfigurations = target.targetConfigurations
     } catch (NoSuchFileException e) {
         try {
-            println "[WARNING] ${WORKSPACE}/pipelines/jobs/configurations/jdk${javaVersion}${configSet}.groovy does not exist. Trying jdk${javaVersion}u${configSet}.groovy"
-            target = load "${WORKSPACE}/pipelines/jobs/configurations/jdk${javaVersion}u${configSet}.groovy"
+            println "[WARNING] ${targetConfigPath}/jdk${javaVersion}${configSet}.groovy does not exist. Trying jdk${javaVersion}u${configSet}.groovy"
+            target = load "${params.BUILD_CONFIG_URL}/jdk${javaVersion}u${configSet}.groovy"
             targetConfigurations = target.targetConfigurations
         } catch (NoSuchFileException e2) {
-            println "[ERROR] ${WORKSPACE}/pipelines/jobs/configurations/jdk${javaVersion}u${configSet}.groovy does not exist, unable to load targetConfigurations"
+            println "[ERROR] ${params.BUILD_CONFIG_URL}/jdk${javaVersion}u${configSet}.groovy does not exist, unable to load targetConfigurations"
         }
     }
 
