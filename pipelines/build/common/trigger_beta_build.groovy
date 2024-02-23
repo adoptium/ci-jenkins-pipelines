@@ -86,11 +86,11 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
     targetConfigurations = null
 
     configFile = "jdk${javaVersion}${configSet}.groovy"
-    def rc = sh(script: "curl -LO ${targetConfigPath}/${configFile}", returnStatus: true)
+    def rc = sh(script: "curl --fail -LO ${targetConfigPath}/${configFile}", returnStatus: true)
     if (rc != 0) {
         echo "Error loading ${targetConfigPath}/${configFile}, trying ${targetConfigPath}/jdk${javaVersion}u${configSet}.groovy"
         configFile = "jdk${javaVersion}u${configSet}.groovy"
-        rc = sh(script: "curl -LO ${targetConfigPath}/${configFile}", returnStatus: true)
+        rc = sh(script: "curl --fail -LO ${targetConfigPath}/${configFile}", returnStatus: true)
         if (rc != 0) {
             echo "Error loading ${targetConfigPath}/${configFile}"
         }
