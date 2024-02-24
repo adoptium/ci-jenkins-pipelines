@@ -389,7 +389,7 @@ node('worker') {
                   def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
                   def pipelineJson = new JsonSlurper().parseText(pipeline)
                   if (pipelineJson.size() > 0) {
-                    // Find first in list started by "timer", upstream project "build-scripts/utils/betaTrigger_"
+                    // Find first in list started by "timer", "build-scripts/utils/betaTrigger_" or "build-scripts/utils/releaseTrigger_"
                     pipelineJson.each { job ->
                             def pipeline_id = null
                             def pipelineUrl
@@ -410,15 +410,18 @@ node('worker') {
                             def days = ChronoUnit.DAYS.between(build_time, now)
 
                             // Was job "Done"?
-                            // Report release- pipelines only if built within the last week
-                            if (job.status != null && job.status.equals('Done') && job.startBy != null &&
-                                (!build._id.buildName.startsWith('release-') || days < 7)) {
+                            // Report pipelines built within the last week
+                            if (job.status != null && job.status.equals('Done') && job.startBy != null && days <= 7) {
                                 if (job.startBy.startsWith('timer')) {
                                     // Timer scheduled job
                                     pipeline_id = job._id
                                     pipelineUrl = job.buildUrl
                                 } else if (job.startBy.startsWith("upstream project \"build-scripts/utils/betaTrigger_")) {
-                                    // Build tag triggered build
+                                    // Beta build tag triggered build
+                                    pipeline_id = job._id
+                                    pipelineUrl = job.buildUrl
+                                } else if (job.startBy.startsWith("upstream project \"build-scripts/utils/releaseTrigger_")) {
+                                    // Release build tag triggered build
                                     pipeline_id = job._id
                                     pipelineUrl = job.buildUrl
                                 }
@@ -551,7 +554,7 @@ node('worker') {
         // Slack message:
         slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
-        echo 'Adoptium Latest Builds Success : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
+        echo 'Adoptium last 7 days Overall Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
 
     stage('printPublishStats') {
