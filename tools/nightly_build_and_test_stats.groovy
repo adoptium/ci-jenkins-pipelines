@@ -70,9 +70,12 @@ def getLatestBinariesTag(String version) {
     return latestTag    
 }
 
-// Check if a given beta EA pipeline build is inprogress? if so return the buildUrl
-def getInProgressBuildUrl(String trssUrl, String pipelineName, String publishName, String scmRef) {
+// Make a best guess that the specified build of a given beta EA pipeline build is inprogress? if so return the buildUrl
+def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
     def inProgressBuildUrl = ""
+
+    def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
+    def pipelineName = "openjdk${featureReleaseInt}-pipeline"
 
     def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
     def pipelineJson = new JsonSlurper().parseText(pipeline)
@@ -80,18 +83,30 @@ def getInProgressBuildUrl(String trssUrl, String pipelineName, String publishNam
         pipelineJson.each { job ->
             def overridePublishName = ""
             def buildScmRef = ""
+            def containsX64AlpineLinux = false
+            def containsVariant = false
 
             job.buildParams.each { buildParam ->
                 if (buildParam.name == "overridePublishName") {
                     overridePublishName = buildParam.value
                 } else if (buildParam.name == "scmReference") {
                     buildScmRef = buildParam.value
+                } else if (buildParam.name == "targetConfigurations") {
+                    containsX64AlpineLinux = (buildParam.value.contains("x64AlpineLinux"))
+                    containsVariant        = (buildParam.value.contains(variant))
                 }
             }
 
             // Is job for the required tag and currently inprogress?
-            if (overridePublishName == publishName && buildScmRef == scmRef && job.status != null && job.status.equals('Streaming')) {
-                inProgressBuildUrl = job.buildUrl
+            if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && job.status.equals('Streaming')) {
+                if (featureReleaseInt == 8) {
+                    // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
+                    if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
+                        inProgressBuildUrl = job.buildUrl
+                    }
+                } else {
+                    inProgressBuildUrl = job.buildUrl
+                }
             }
         }
     }
@@ -132,10 +147,10 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
         // aarch32-jdk8u and alpine-jdk8u are single configurations
         if (version == "aarch32-jdk8u") {
             targetConfigurations = [:]
-            targetConfigurations['arm32Linux'] = ['temurin']
+            targetConfigurations['arm32Linux'] = [variant]
         } else if (version == "alpine-jdk8u") {
             targetConfigurations = [:]
-            targetConfigurations['x64AlpineLinux'] = ['temurin']
+            targetConfigurations['x64AlpineLinux'] = [variant]
         } else {
             def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
             echo "    Loading pipeline config file: ${targetConfigPath}"
@@ -593,7 +608,7 @@ node('worker') {
                     }
                 } else {
                     // Check if build in-progress
-                    inProgressBuildUrl = getInProgressBuildUrl(trssUrl, "openjdk${featureReleaseInt}-pipeline", status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
+                    inProgressBuildUrl = getInProgressBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
 
                     // Check latest published binaries are for the latest openjdk build tag
                     if (status['releaseName'] != status['expectedReleaseName']) {
