@@ -17,7 +17,7 @@ pipeline {
         stage('Prepare') { //Copy artifacts, reset parameters,trigger build and copyArtifacts
             agent { label NODE_LABEL }
             options {
-                timeout(time: 2, unit: 'HOURS')
+                timeout(time: 3, unit: 'HOURS')
             }
             steps {
                 cleanWs()
