@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import java.nio.file.NoSuchFileException
 import groovy.json.JsonOutput
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -29,6 +30,7 @@ import java.time.temporal.TemporalAdjusters
   The "Force" option can be used to re-build and re-publish the existing latest build.
 */
 
+def variant="${params.VARIANT}"
 def mirrorRepo="${params.MIRROR_REPO}"
 def version="${params.JDK_VERSION}".toInteger()
 def binariesRepo="${params.BINARIES_REPO}"
@@ -36,8 +38,12 @@ def binariesRepo="${params.BINARIES_REPO}"
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
 def enableTesting = true
-def overrideMainTargetConfigurations = ""
-def overrideEvaluationTargetConfigurations = ""
+def overrideMainTargetConfigurations = params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS
+def overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
+def ignore_platforms = "${params.IGNORE_PLATFORMS}" // platforms not to build
+
+def mainTargetConfigurations       = overrideMainTargetConfigurations
+def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
 
 def latestAdoptTag
 def publishJobTag
@@ -72,9 +78,50 @@ def isDuringReleasePeriod() {
     return releasePeriod
 }
 
+// Load the given targetConfigurations from the pipeline config
+def loadTargetConfigurations(String javaVersion, String variant, String configSet, String ignore_platforms) {
+    def targetConfigPath = "${params.BUILD_CONFIG_URL}"
+
+    def to_be_ignored = ignore_platforms.split("[, ]+")
+    targetConfigurations = null
+
+    configFile = "jdk${javaVersion}${configSet}.groovy"
+    def rc = sh(script: "curl --fail -LO ${targetConfigPath}/${configFile}", returnStatus: true)
+    if (rc != 0) {
+        echo "Error loading ${targetConfigPath}/${configFile}, trying ${targetConfigPath}/jdk${javaVersion}u${configSet}.groovy"
+        configFile = "jdk${javaVersion}u${configSet}.groovy"
+        rc = sh(script: "curl --fail -LO ${targetConfigPath}/${configFile}", returnStatus: true)
+        if (rc != 0) {
+            echo "Error loading ${targetConfigPath}/${configFile}"
+        }
+    }
+
+    if (rc == 0) {
+        // We successfully downloaded the pipeline config file, now load it into groovy to set targetConfigurations..
+        load configFile
+        echo "Successfully loaded ${targetConfigPath}/${configFile}"
+    }
+
+    def targetConfigurationsForVariant = [:]
+    if (targetConfigurations != null) {
+        targetConfigurations.each { platform ->
+            if (platform.value.contains(variant) && !to_be_ignored.contains(platform.key)) {
+                targetConfigurationsForVariant[platform.key] = [variant]
+            }
+        }
+    }
+
+    return targetConfigurationsForVariant
+}
+
 node('worker') {
+    def adopt_tag_search = 'grep "_adopt"'
+    if (mirrorRepo.contains("aarch32-jdk8u")) {
+        adopt_tag_search = adopt_tag_search + ' | grep "\\-aarch32\\-"'
+    }
+
     // Find latest _adopt tag for this version?
-    latestAdoptTag = sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | grep "_adopt" | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
+    latestAdoptTag = sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep -v "\\+0\\$" | grep -v "\\-ga\\$" | '+adopt_tag_search+' | tr -s "\\t " " " | cut -d" " -f2 | sed "s,refs/tags/,," | sort -V -r | head -1 | tr -d "\\n"', returnStdout:true)
     if (latestAdoptTag.indexOf("_adopt") < 0) {
         def error = "Error finding latest _adopt tag for ${mirrorRepo}"
         echo "${error}"
@@ -83,7 +130,12 @@ node('worker') {
     echo "Latest Adoptium tag from ${mirrorRepo} = ${latestAdoptTag}"
 
     // publishJobTag is TAG that gets passed to the Adoptium "publish job"
-    publishJobTag = latestAdoptTag.replaceAll("_adopt","-ea")
+    if (mirrorRepo.contains("aarch32-jdk8u")) {
+        publishJobTag = latestAdoptTag.substring(0, latestAdoptTag.indexOf("-aarch32"))+"-ea"
+    } else {
+        publishJobTag = latestAdoptTag.replaceAll("_adopt","-ea")
+    }
+    echo "publishJobTag = ${publishJobTag}"
 
     // binariesRepoTag is the resulting published github binaries release tag created by the Adoptium "publish job"
     def binariesRepoTag = publishJobTag + "-beta"
@@ -129,18 +181,36 @@ node('worker') {
         } else {
             def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
             echo "${error}"
-           throw new Exception("${error}")
+            throw new Exception("${error}")
         }
     } else {
         echo "FORCE triggering specified builds.."
         triggerMainBuild = params.FORCE_MAIN
         triggerEvaluationBuild = params.FORCE_EVALUATION
+    }
 
-        if (params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS) {
-            overrideMainTargetConfigurations = params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS
+    // If we are going to trigger, then load the targetConfigurations
+    if (triggerMainBuild || triggerEvaluationBuild) {
+        // Load the targetConfigurations
+        if (triggerMainBuild && mainTargetConfigurations == "") {
+            // Load "main" targetConfigurations from pipeline config
+            def config = loadTargetConfigurations((String)version, variant, "", ignore_platforms)
+            if (!config) {
+                def error =  "Empty mainTargetConfigurations"
+                echo "${error}"
+                throw new Exception("${error}")
+            }       
+            mainTargetConfigurations = JsonOutput.toJson(config)
         }
-        if (params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS) {
-            overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
+        if (triggerEvaluationBuild && evaluationTargetConfigurations == "") {
+            // Load "evaluation" targetConfigurations from pipeline config
+            def config = loadTargetConfigurations((String)version, variant, "_evaluation", ignore_platforms)
+            if (!config) {
+                def error =  "Empty evaluationTargetConfigurations"
+                echo "${error}"
+                throw new Exception("${error}")
+            }
+            evaluationTargetConfigurations = JsonOutput.toJson(config) 
         }
     }
 } // End: node('worker')
@@ -155,9 +225,13 @@ if (triggerMainBuild || triggerEvaluationBuild) {
 
     if (triggerMainBuild) {
         pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+        echo "main build targetConfigurations:"
+        echo JsonOutput.prettyPrint(mainTargetConfigurations)
     }
     if (triggerEvaluationBuild) {
         pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
+        echo "evaluation build targetConfigurations:"
+        echo JsonOutput.prettyPrint(evaluationTargetConfigurations)
     }
 
     pipelines.keySet().each { pipeline_type ->
@@ -176,12 +250,12 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                             string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                         ]
 
-                    // Override targetConfigurations if specified for FORCE
-                    if (pipeline_type == "main" && overrideMainTargetConfigurations != "") {
-                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideMainTargetConfigurations)))
+                    // Specify the required targetConfigurations
+                    if (pipeline_type == "main") {
+                        jobParams.add(text(name: 'targetConfigurations',   value: JsonOutput.prettyPrint(mainTargetConfigurations)))
                     }
-                    if (pipeline_type == "evaluation" && overrideEvaluationTargetConfigurations != "") {
-                        jobParams.add(text(name: 'targetConfigurations',     value: JsonOutput.prettyPrint(overrideEvaluationTargetConfigurations)))
+                    if (pipeline_type == "evaluation") {
+                        jobParams.add(text(name: 'targetConfigurations',   value: JsonOutput.prettyPrint(evaluationTargetConfigurations)))
                     }
 
                     def job = build job: "${pipeline}", propagate: true, parameters: jobParams
