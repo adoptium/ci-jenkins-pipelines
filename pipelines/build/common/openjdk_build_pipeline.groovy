@@ -188,11 +188,10 @@ class Build {
         def arch = buildConfig.ARCHITECTURE
         if (arch == 'x64') {
             arch = 'x86-64'
-        } else if (arch == 's390x') {
-            jobParams.put('TIME_LIMIT', '25')
-        } else if (arch == 'riscv64') {
-            jobParams.put('TIME_LIMIT', '25')
         }
+
+        // Default to a 25 hours for all test jobs
+        jobParams.put('TIME_LIMIT', '25')
 
         def arch_os = "${arch}_${buildConfig.TARGET_OS}"
         jobParams.put('ARCH_OS_LIST', arch_os)
