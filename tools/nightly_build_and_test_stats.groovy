@@ -52,7 +52,8 @@ def getOpenjdkBuildTagAge(String version, String tag) {
         openjdkRepo = "https://github.com/openjdk/jdk8u.git"
     } 
 
-    def date = sh(returnStdout: true, script:"(rm -rf tmpRepo; git clone --depth 1 --branch ${tag} ${openjdkRepo} tmpRepo; cd tmpRepo; git log --tags --simplify-by-decoration --pretty=\"format:PUBLISH_DATE=%cI\") | grep PUBLISH_DATE | cut -d\"=\" -f2 | tr -d '\\n'")
+    def date = sh(returnStdout: true, script:"(rm -rf tmpRepo; git clone ${openjdkRepo} tmpRepo; cd tmpRepo; git for-each-ref --format=\"%(refname:short) %(taggerdate:format:%Y-%m-%dT%H:%M:%S%z)\" \"refs/tags/*\"; cd ..; rm -rf tmpRepo) | grep \"${tag}\" | cut -d\" \" -f2 | sed -e 's/.\\{22\\}/&:/1' | tr -d '\\n'")
+
     def tagTs = Instant.parse(date).atZone(ZoneId.of('UTC'))
     def now = ZonedDateTime.now(ZoneId.of('UTC'))
     def days = ChronoUnit.DAYS.between(tagTs, now) 
