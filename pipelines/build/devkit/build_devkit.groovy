@@ -24,7 +24,7 @@ def build_devkit() {
 
     sh(script:"cd ${params.VERSION} && patch -p1<../pipelines/build/devkit/Tools.gmk.patch")
 
-    sh(script:"make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
+    sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
 }
 
 node(params.DEVKIT_BUILD_NODE) {
