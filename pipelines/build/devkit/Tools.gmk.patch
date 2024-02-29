@@ -1,0 +1,31 @@
+diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
+index af37f12f39d..9a14f89f1eb 100644
+--- a/make/devkit/Tools.gmk
++++ b/make/devkit/Tools.gmk
+@@ -62,6 +62,17 @@ ifeq ($(BASE_OS), OL)
+     BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
+     LINUX_VERSION := OL6.4
+   endif
++else ifeq ($(BASE_OS), Centos)
++  DEFAULT_OS_VERSION := 7
++  ifeq ($(BASE_OS_VERSION), )
++    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
++  endif
++  ifeq ($(ARCH), x86_64)
++    BASE_URL := https://vault.centos.org/centos/$(BASE_OS_VERSION)/os/$(ARCH)/Packages
++  else
++    BASE_URL := http://vault.centos.org/altarch/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
++  endif
++  LINUX_VERSION := Centos$(BASE_OS_VERSION)
+ else ifeq ($(BASE_OS), Fedora)
+   ifeq ($(ARCH), riscv64)
+     DEFAULT_OS_VERSION := rawhide/68692
+@@ -246,7 +257,7 @@ download-rpms:
+         # Only run this if rpm dir is empty.
+         ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
+          cd $(DOWNLOAD_RPMS) && \
+-             wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
++             wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
+         endif
+ 
+ ##########################################################################################
