@@ -23,6 +23,8 @@ def build_devkit() {
     sh(script:"cp pipelines/build/devkit/binutils-2.39.patch ${params.VERSION}/make/devkit/patches/${params.ARCH}-binutils-2.39.patch")
 
     sh(script:"cd ${params.VERSION} && patch -p1<../pipelines/build/devkit/Tools.gmk.patch")
+
+    sh(script:"make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
 }
 
 node(params.DEVKIT_BUILD_NODE) {
@@ -33,6 +35,10 @@ node(params.DEVKIT_BUILD_NODE) {
 
     docker.image(params.DOCKER_IMAGE).inside() {
         build_devkit()
+
+        // Compress and archive
+        sh(script:"tar -cf - ${params.VERSION}/build/devkit/result/ | GZIP=-9 gzip -c > ${params.ARCH}-linux-gnu.tar.gz")
+        archiveArtifacts artifacts: 'workspace/target/*'
     }
   } finally { 
     cleanWs notFailBuild: true
