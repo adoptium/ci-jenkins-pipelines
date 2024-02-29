@@ -23,9 +23,9 @@ index 187320ca26e..63bfe418a10 100644
 @@ -246,7 +257,7 @@ download-rpms:
          # Only run this if rpm dir is empty.
          ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
-          cd $(DOWNLOAD_RPMS) && \
--             wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
-+             wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
+ 	  cd $(DOWNLOAD_RPMS) && \
+-	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
++	      wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
          endif
  
  ##########################################################################################
