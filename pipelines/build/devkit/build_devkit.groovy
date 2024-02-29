@@ -38,7 +38,7 @@ node(params.DEVKIT_BUILD_NODE) {
 
         // Compress and archive
         sh(script:"tar -cf - ${params.VERSION}/build/devkit/result/ | GZIP=-9 gzip -c > ${params.ARCH}-linux-gnu.tar.gz")
-        archiveArtifacts artifacts: 'workspace/target/*'
+        archiveArtifacts artifacts: "${params.ARCH}-linux-gnu.tar.gz"
     }
   } finally { 
     cleanWs notFailBuild: true
