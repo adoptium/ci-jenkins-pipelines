@@ -181,7 +181,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
-                        'hotspot'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom'
                 ]
         ],
 
