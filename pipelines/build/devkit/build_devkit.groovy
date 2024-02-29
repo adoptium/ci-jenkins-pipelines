@@ -27,7 +27,7 @@ def build_devkit() {
 
 node(params.DEVKIT_BUILD_NODE) {
   try {
-    context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
+    cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
     docker.image(params.DOCKER_IMAGE).pull()
 
