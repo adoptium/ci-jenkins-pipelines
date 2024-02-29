@@ -18,7 +18,7 @@ def build_devkit() {
  
     checkout scm
  
-    sh(script:"git clone ${openjdkRepo} ${params.VERSION}")
+    sh(script:"git clone --depth 1 ${openjdkRepo} ${params.VERSION}")
 
     sh(script:"cp pipelines/build/devkit/binutils-2.39.patch ${params.VERSION}/make/devkit/patches/${params.ARCH}-binutils-2.39.patch")
 
