@@ -591,21 +591,24 @@ class Builder implements Serializable {
     */
     def formAdditionalTestLabels(Map<String, ?> configuration, String variant) {
         def labels = ''
-
+        context.println 'DEBUG: formAdditionalTestLabels 1'
         if (configuration.containsKey('additionalTestLabels')) {
             def additionalTestLabels
-
+context.println 'DEBUG: formAdditionalTestLabels 2'
             if (isMap(configuration.additionalTestLabels)) {
+                context.println 'DEBUG: formAdditionalTestLabels 3'
                 additionalTestLabels = (configuration.additionalTestLabels as Map<String, ?>).get(variant)
             } else {
+                context.println 'DEBUG: formAdditionalTestLabels 4'
                 additionalTestLabels = configuration.additionalTestLabels
             }
 
             if (additionalTestLabels != null) {
+                context.println 'DEBUG: formAdditionalTestLabels 5'
                 labels = "${additionalTestLabels}"
             }
         }
-
+        context.println 'DEBUG: formAdditionalTestLabels 6'
         return labels
     }
 
