@@ -17,8 +17,6 @@ def build_devkit() {
     stage('Build DevKit') {
         def openjdkRepo = "https://github.com/openjdk/${params.VERSION}.git"
  
-        checkout scm
- 
         // Clone upstream openjdk repo
         sh(script:"git clone --depth 1 ${openjdkRepo} ${params.VERSION}")
 
@@ -68,6 +66,9 @@ node(params.DEVKIT_BUILD_NODE) {
 
     docker.image(params.DOCKER_IMAGE).pull()
     docker.image(params.DOCKER_IMAGE).inside() {
+        // Checkout pipelines code
+        checkout scm
+
         // Create workspace for artifacts
         sh("mkdir workspace")
 
