@@ -27,7 +27,10 @@ def build_devkit() {
         sh(script:"cd ${params.VERSION} && patch -p1<../pipelines/build/devkit/Tools.gmk.patch")
 
         // Perform devkit build
-        sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
+        sh(script:"cd ${params.VERSION}/make/devkit && echo make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
+ 
+        sh(script:"mkdir -p ${params.VERSION}/build/devkit/resulti && echo aaaa > ${params.VERSION}/build/devkit/result/aaaa")
+        sh(script:"ls -l")
 
         // Compress and archive
         sh(script:"tar -cf - ${params.VERSION}/build/devkit/result/ | GZIP=-9 gzip -c > workspace/${params.ARCH}-linux-gnu.tar.gz")
