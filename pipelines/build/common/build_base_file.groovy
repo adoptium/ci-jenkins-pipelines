@@ -57,6 +57,7 @@ class Builder implements Serializable {
     boolean aqaAutoGen
     String publishName
     String additionalConfigureArgs
+    boolean useDevkit
     def scmVars
     String additionalBuildArgs
     String overrideFileNameVersion
@@ -127,6 +128,9 @@ class Builder implements Serializable {
         if (additionalBuildArgs) {
             buildArgs += ' ' + additionalBuildArgs
         }
+
+        def  = getDevkitJob(platformConfig, variant)
+
         def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
         def testList = getTestList(platformConfig, variant)
 
@@ -169,6 +173,7 @@ class Builder implements Serializable {
             AQA_REF: aqaReference,
             AQA_AUTO_GEN: aqaAutoGen,
             BUILD_ARGS: buildArgs,
+            USE_DEVKIT: useDevkit,
             NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${archLabel}",
             ADDITIONAL_TEST_LABEL: "${additionalTestLabels}",
             KEEP_TEST_REPORTDIR: keepTestReportDir,
@@ -557,6 +562,23 @@ class Builder implements Serializable {
         }
         return platformSpecificConfigPath
     }
+
+    /*
+    Get the useDevkit platform configuration value
+    */
+    def get(Map<String, ?> configuration, String variant) {
+        def devkitJobValue = ''
+
+        if (configuration.containsKey('devkitJob')) {
+            if (isMap(configuration.devkitJob)) { 
+                devkitJobValue = (configuration.devkitJob as Map<String, ?>).get(variant)
+            } else {
+                devkitJobValue = configuration.devkitJob
+            }
+        }       
+        
+        return devkitJobValue
+    } 
 
     /*
     Constructs any necessary additional build labels from the build configurations.
