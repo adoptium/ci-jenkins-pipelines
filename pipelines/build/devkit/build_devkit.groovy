@@ -29,7 +29,7 @@ def build_devkit() {
         // Perform devkit build
         sh(script:"cd ${params.VERSION}/make/devkit && echo make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
  
-        sh(script:"mkdir -p ${params.VERSION}/build/devkit/resulti && echo aaaa > ${params.VERSION}/build/devkit/result/aaaa")
+        sh(script:"mkdir -p ${params.VERSION}/build/devkit/result && echo aaaa > ${params.VERSION}/build/devkit/result/aaaa")
         sh(script:"ls -l")
 
         // Compress and archive
