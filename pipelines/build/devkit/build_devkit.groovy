@@ -13,6 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+ * Builds a linux-gnu DevKit for the given openjdk version and architecture.
+ * Supported architectures:
+ *   x86_64
+ *   aarch64
+ *   ppc64le
+ *   s390x
+ */
+
 def build_devkit() {
     stage('Build DevKit') {
         def openjdkRepo = "https://github.com/openjdk/${params.VERSION}.git"
@@ -27,9 +36,6 @@ def build_devkit() {
         // Perform devkit build
         sh(script:"cd ${params.VERSION}/make/devkit && echo make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
  
-        sh(script:"mkdir -p ${params.VERSION}/build/devkit/result && echo aaaa > ${params.VERSION}/build/devkit/result/aaaa")
-        sh(script:"ls -l")
-
         // Compress and archive
         sh(script:"tar -cf - ${params.VERSION}/build/devkit/result/ | GZIP=-9 gzip -c > workspace/${params.ARCH}-linux-gnu.tar.gz")
 
