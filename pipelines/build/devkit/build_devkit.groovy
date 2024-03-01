@@ -35,6 +35,8 @@ def build_devkit() {
 
         // Create sha256.txt
         sh(script:"sha256sum workspace/${params.ARCH}-linux-gnu.tar.gz > workspace/${params.ARCH}-linux-gnu.tar.gz.sha256.txt")
+
+        archiveArtifacts artifacts: "workspace/*"
     }
 }
 
@@ -57,6 +59,8 @@ def gpgSign() {
                fingerprintArtifacts: true,
                target: 'workspace',
                flatten: true)
+
+        archiveArtifacts artifacts: "workspace/*.sig"
     }
 }
 
@@ -74,8 +78,6 @@ node(params.DEVKIT_BUILD_NODE) {
 
         build_devkit()
         gpgSign()
-
-        archiveArtifacts artifacts: "workspace/*"
     }
   } finally { 
     cleanWs notFailBuild: true
