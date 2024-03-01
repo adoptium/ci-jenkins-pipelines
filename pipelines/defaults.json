@@ -9,7 +9,8 @@
     },
     "jenkinsDetails"         : {
         "rootUrl"            : "https://ci.adoptium.net",
-        "rootDirectory"      : "build-scripts"
+        "rootDirectory"      : "build-scripts",
+        "devkitJobRoot"      : ""
     },
     "templateDirectories" : {
         "downstream"         : "pipelines/build/common/create_job_from_template.groovy",
