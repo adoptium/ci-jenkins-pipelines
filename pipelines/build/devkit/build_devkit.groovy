@@ -14,17 +14,49 @@ limitations under the License.
 */
 
 def build_devkit() {
-    def openjdkRepo = "https://github.com/openjdk/${params.VERSION}.git"
+    stage('Build DevKit') {
+        def openjdkRepo = "https://github.com/openjdk/${params.VERSION}.git"
  
-    checkout scm
+        checkout scm
  
-    sh(script:"git clone --depth 1 ${openjdkRepo} ${params.VERSION}")
+        // Clone upstream openjdk repo
+        sh(script:"git clone --depth 1 ${openjdkRepo} ${params.VERSION}")
 
-    sh(script:"cp pipelines/build/devkit/binutils-2.39.patch ${params.VERSION}/make/devkit/patches/${params.ARCH}-binutils-2.39.patch")
+        // Patch to support Centos7
+        sh(script:"cp pipelines/build/devkit/binutils-2.39.patch ${params.VERSION}/make/devkit/patches/${params.ARCH}-binutils-2.39.patch")
+        sh(script:"cd ${params.VERSION} && patch -p1<../pipelines/build/devkit/Tools.gmk.patch")
 
-    sh(script:"cd ${params.VERSION} && patch -p1<../pipelines/build/devkit/Tools.gmk.patch")
+        // Perform devkit build
+        sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
 
-    sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
+        // Compress and archive
+        sh(script:"tar -cf - ${params.VERSION}/build/devkit/result/ | GZIP=-9 gzip -c > workspace/${params.ARCH}-linux-gnu.tar.gz")
+
+        // Create sha256.txt
+        sh(script:"sha256sum workspace/${params.ARCH}-linux-gnu.tar.gz > workspace/${params.ARCH}-linux-gnu.tar.gz.sha256.txt")
+    }
+}
+
+def gpgSign() {
+    stage('GPG sign') {
+        def params = [
+                  context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                  context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                  context.string(name: 'UPSTREAM_DIR', value: 'workspace')
+        ]
+
+        def signSHAsJob = build job: 'build-scripts/release/sign_temurin_gpg',
+               propagate: true,
+               parameters: params
+
+        copyArtifacts(
+               projectName: 'build-scripts/release/sign_temurin_gpg',
+               selector: context.specific("${signSHAsJob.getNumber()}"),
+               filter: '**/*.sig',
+               fingerprintArtifacts: true,
+               target: 'workspace',
+               flatten: true)
+    }
 }
 
 node(params.DEVKIT_BUILD_NODE) {
@@ -32,13 +64,14 @@ node(params.DEVKIT_BUILD_NODE) {
     cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
     docker.image(params.DOCKER_IMAGE).pull()
-
     docker.image(params.DOCKER_IMAGE).inside() {
-        build_devkit()
+        // Create workspace for artifacts
+        mkdir workspace
 
-        // Compress and archive
-        sh(script:"tar -cf - ${params.VERSION}/build/devkit/result/ | GZIP=-9 gzip -c > ${params.ARCH}-linux-gnu.tar.gz")
-        archiveArtifacts artifacts: "${params.ARCH}-linux-gnu.tar.gz"
+        build_devkit()
+        gpgSign()
+
+        archiveArtifacts artifacts: "workspace/*"
     }
   } finally { 
     cleanWs notFailBuild: true
