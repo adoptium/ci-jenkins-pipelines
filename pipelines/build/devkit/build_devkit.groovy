@@ -41,9 +41,9 @@ def build_devkit() {
 def gpgSign() {
     stage('GPG sign') {
         def params = [
-                  context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                  context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                  context.string(name: 'UPSTREAM_DIR', value: 'workspace')
+                  string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                  string(name: 'UPSTREAM_JOB_NAME',   value: "${env.JOB_NAME}"),
+                  string(name: 'UPSTREAM_DIR',        value: 'workspace')
         ]
 
         def signSHAsJob = build job: 'build-scripts/release/sign_temurin_gpg',
@@ -52,7 +52,7 @@ def gpgSign() {
 
         copyArtifacts(
                projectName: 'build-scripts/release/sign_temurin_gpg',
-               selector: context.specific("${signSHAsJob.getNumber()}"),
+               selector: specific("${signSHAsJob.getNumber()}"),
                filter: '**/*.sig',
                fingerprintArtifacts: true,
                target: 'workspace',
