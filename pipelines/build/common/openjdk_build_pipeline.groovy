@@ -255,7 +255,7 @@ class Build {
                 } else if (buildConfig.TARGET_OS == 'alpine-linux' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
                     suffix = 'adoptium/alpine-jdk8u'
                 } else if (buildConfig.ARCHITECTURE == 'riscv64' && buildConfig.JAVA_TO_BUILD == 'jdk11u') {
-                    suffix = 'adoptium/riscv-jdk11u'
+                    suffix = 'adoptium/riscv-port-jdk11u'
                 } else {
                     suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
                 }
