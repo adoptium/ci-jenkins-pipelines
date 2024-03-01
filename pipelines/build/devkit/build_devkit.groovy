@@ -22,10 +22,10 @@ limitations under the License.
  *   s390x
  */
 
-def devkit_file = "workspace/devkit-${params.VERSION}-${params.ARCH}-linux-gnu.tar.gz"
-
 def build_devkit() {
     stage('Build DevKit') {
+        def devkit_file = "workspace/devkit-${params.VERSION}-${params.ARCH}-linux-gnu.tar.gz"
+
         def openjdkRepo = "https://github.com/openjdk/${params.VERSION}.git"
  
         // Clone upstream openjdk repo
@@ -39,10 +39,10 @@ def build_devkit() {
         sh(script:"cd ${params.VERSION}/make/devkit && echo make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
  
         // Compress and archive
-        sh(script:"tar -cf - ${params.VERSION}/build/devkit/result/ | GZIP=-9 gzip -c > "+devkit_file)
+        sh(script:"tar -cf - ${params.VERSION}/build/devkit/result/ | GZIP=-9 gzip -c > ${devkit_file}")
 
         // Create sha256.txt
-        sh(script:"sha256sum "+devkit_file+" > "+devkit_file+".sha256.txt")
+        sh(script:"sha256sum ${devkit_file} > ${devkit_file}.sha256.txt")
 
         archiveArtifacts artifacts: "workspace/*"
     }
