@@ -66,7 +66,7 @@ node(params.DEVKIT_BUILD_NODE) {
     docker.image(params.DOCKER_IMAGE).pull()
     docker.image(params.DOCKER_IMAGE).inside() {
         // Create workspace for artifacts
-        mkdir workspace
+        sh("mkdir workspace")
 
         build_devkit()
         gpgSign()
