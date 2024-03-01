@@ -353,7 +353,7 @@ node('worker') {
               def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
               def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
-              status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta"]
+              status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTag: latestOpenjdkBuild]
               verifyReleaseContent(tipRelease, releaseName, variant, status)
               echo "  ${tipRelease} release binaries verification: "+status['assets']
               healthStatus[tipRelease] = status
@@ -568,7 +568,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
         echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
@@ -673,7 +673,7 @@ node('worker') {
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} latest pipeline publish status: *${health}*. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
