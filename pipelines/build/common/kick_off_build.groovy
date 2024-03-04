@@ -66,7 +66,8 @@ echo "BUILD_CONF = "+BUILD_CONFIGURATION
     }
 
     String helperRef = buildConf.get('HELPER_REF') ?: LOCAL_DEFAULTS_JSON['repository']['helper_ref']
-    library(identifier: "openjdk-jenkins-helper@${helperRef}")
+    //library(identifier: "openjdk-jenkins-helper@${helperRef}")
+    @Library('github.com/andrew-m-leonard/jenkins-helper:devkit')
 
     try {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
