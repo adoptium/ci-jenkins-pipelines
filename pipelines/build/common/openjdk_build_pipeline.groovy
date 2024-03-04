@@ -1452,12 +1452,8 @@ class Build {
                 rm -rf "${WORKSPACE}/devkit"
                 mkdir -p "${WORKSPACE}/devkit"
                 cd "${WORKSPACE}/devkit"
-                if ! curl --fail --silent --show-error -o "devkit.tar.gz" "${devkitUrl}"; then
-                    echo "curl failure"
-                fi
-                if ! tar -xf "devkit.tar.gz"; then
-                   echo "tar failure"
-                fi
+                curl --fail --silent --show-error -o "devkit.tar.gz" "${devkitUrl}"
+                tar -xf "devkit.tar.gz"
             '''
         }
 
@@ -1567,6 +1563,7 @@ class Build {
                     //devkit = downloadDevKit(buildConfig.DEVKIT)
                     devkit = downloadDevKit("job/jdk21u/job/devkit_jdk21u_aarch64Linux/14/artifact/workspace/devkit-jdk21u-aarch64-linux-gnu.tar.gz")
                 //}
+echo "Devkit arg=" + devkit
 
                 // Add platform config path so it can be used if the user doesn't have one
                 def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
