@@ -94,7 +94,7 @@ node('worker') {
     scmVars = checkout scm
 
     String helperRef = DEFAULTS_JSON['repository']['helper_ref']
-    library(identifier: "openjdk-jenkins-helper@${helperRef}")
+    library(identifier: "test-openjdk-jenkins-helper@devkit")
 
     // Load baseFilePath. This is where build_base_file.groovy is located. It runs the downstream job setup and configuration retrieval services.
     def baseFilePath = (params.baseFilePath) ?: DEFAULTS_JSON['baseFileDirectories']['upstream']

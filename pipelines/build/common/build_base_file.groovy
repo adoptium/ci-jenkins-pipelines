@@ -91,7 +91,7 @@ class Builder implements Serializable {
     IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant) {
         // Query the Adopt api to get the "tip_version"
         String helperRef = DEFAULTS_JSON['repository']['helper_ref']
-        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+        def JobHelper = context.library(identifier: "test-openjdk-jenkins-helper@devkit").JobHelper
         context.println 'Querying Adoptium API for the JDK-Head number (tip_version)...'
         def response = JobHelper.getAvailableReleases(context)
         int headVersion = (int) response[('tip_version')]
@@ -696,7 +696,7 @@ context.println "BUILDER : devkit = "+devkit
             context.timeout(time: pipelineTimeouts.API_REQUEST_TIMEOUT, unit: 'HOURS') {
                 // Query the Adopt api to get the "tip_version"
                 String helperRef = DEFAULTS_JSON['repository']['helper_ref']
-                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+                def JobHelper = context.library(identifier: "test-openjdk-jenkins-helper@devkit").JobHelper
                 context.println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
                 def response = JobHelper.getAvailableReleases(context)
                 return (int) response[('tip_version')]
