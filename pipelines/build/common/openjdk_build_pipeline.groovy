@@ -119,7 +119,7 @@ class Build {
                 context.timeout(time: buildTimeouts.API_REQUEST_TIMEOUT, unit: 'HOURS') {
                     // Query the Adopt api to get the "tip_version"
                     String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
-                    def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+                    def JobHelper = context.library(identifier: "test-openjdk-jenkins-helper@devkit").JobHelper
                     context.println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
 
                     def response = JobHelper.getAvailableReleases(context)
@@ -312,7 +312,7 @@ class Build {
                 def jobParams = getSmokeTestJobParams()
                 def jobName = jobParams.TEST_JOB_NAME
                 String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
-                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+                def JobHelper = context.library(identifier: "test-openjdk-jenkins-helper@devkit").JobHelper
                 if (!JobHelper.jobIsRunnable(jobName as String)) {
                     context.node('worker') {
                         context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
@@ -427,7 +427,7 @@ class Build {
 
                         def jobName = jobParams.TEST_JOB_NAME
                         String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
-                        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+                        def JobHelper = context.library(identifier: "test-openjdk-jenkins-helper@devkit").JobHelper
 
                         // Create test job if AQA_AUTO_GEN is set to true, the job doesn't exist or is not runnable
                         if (aqaAutoGen || !JobHelper.jobIsRunnable(jobName as String)) {
@@ -629,7 +629,7 @@ class Build {
         if (!Boolean.valueOf(buildConfig.RELEASE)) {
             // For now set the build as independent, no need to wait for result as the build takes time
             String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
-            def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+            def JobHelper = context.library(identifier: "test-openjdk-jenkins-helper@devkit").JobHelper
             if (!JobHelper.jobIsRunnable(comparedJobName as String)) {
                 context.node('worker') {
                     context.println "Reproduce_compare job doesn't exist, create reproduce_compare job: ${comparedJobName}"
@@ -1838,7 +1838,7 @@ throw e
     */
     def waitForANodeToBecomeActive(def label) {
         String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
-        def NodeHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").NodeHelper
+        def NodeHelper = context.library(identifier: "test-openjdk-jenkins-helper@devkit").NodeHelper
 
         // If label contains mac skip waiting for node to become active as we use Orka
         if (label.contains('mac')) {
