@@ -67,7 +67,7 @@ echo "BUILD_CONF = "+BUILD_CONFIGURATION
 
     String helperRef = buildConf.get('HELPER_REF') ?: LOCAL_DEFAULTS_JSON['repository']['helper_ref']
     //library(identifier: "openjdk-jenkins-helper@${helperRef}")
-def path = "pipelines/library"
+def path = "library"
 sh("rm -rf ${path}/.git && cd ${path} && git init && git add --all . && git config user.email 'none' && git config user.name 'none' && git commit -m init &> /dev/null || true")
 def repoPath = sh(returnStdout: true, script: "pwd").trim() + "/" + path;
 library(identifier: 'local-lib@master', retriever: modernSCM([$class: 'GitSCMSource', remote: repoPath]))
