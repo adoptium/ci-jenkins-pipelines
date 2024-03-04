@@ -182,35 +182,29 @@ class Config11 {
                 os                   : 'linux',
                 arch                 : 'riscv64',
                 dockerImage          : [
-                        'hotspot'    : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                         'temurin'    : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                         'openj9'     : 'adoptopenjdk/centos6_build_image',
                         'bisheng'    : 'adoptopenjdk/centos6_build_image'
                 ],
                 dockerArgs           : [
-                        'hotspot'    : '--platform linux/riscv64',
                         'temurin'    : '--platform linux/riscv64'
                 ],
                 crossCompile         : [
-                        'hotspot'    : 'dockerhost-rise-ubuntu2204-aarch64-1',
                         'temurin'    : 'dockerhost-rise-ubuntu2204-aarch64-1',
                         'openj9'     : 'x64',
                         'bisheng'    : 'x64'
                 ],
                 buildArgs            : [
-                        'hotspot'    : '--create-sbom',
                         'temurin'    : '--create-sbom',
                         'openj9'     : '--cross-compile',
                         'bisheng'    : '--cross-compile --branch risc-v'
                 ],
                 configureArgs        : [
-                        'hotspot'    : '--enable-headless-only=yes --enable-dtrace',
                         'temurin'    : '--enable-headless-only=yes --enable-dtrace --disable-ccache',
                         'openj9'     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
                         'bisheng'    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
                 ],
                 test                : [
-                        'hotspot'   : 'default',
                         'temurin'   : 'default',
                         'openj9'    : [
                                 nightly: ['sanity.openjdk'],
