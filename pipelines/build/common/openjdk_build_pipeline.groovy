@@ -1559,9 +1559,10 @@ class Build {
 
                 // Download devkit if specified
                 def devkit = ""
-                if (buildConfig.DEVKIT != null && !buildConfig.DEVKIT.isEmpty()) {
-                    devkit = downloadDevKit(buildConfig.DEVKIT)
-                }
+                //if (buildConfig.DEVKIT != null && !buildConfig.DEVKIT.isEmpty()) {
+                    //devkit = downloadDevKit(buildConfig.DEVKIT)
+                    devkit = downloadDevKit("job/jdk21u/job/devkit_jdk21u_aarch64Linux/14/artifact/workspace/devkit-jdk21u-aarch64-linux-gnu.tar.gz")
+                //}
 
                 // Add platform config path so it can be used if the user doesn't have one
                 def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
