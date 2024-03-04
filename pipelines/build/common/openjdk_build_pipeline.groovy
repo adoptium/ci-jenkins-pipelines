@@ -1944,7 +1944,7 @@ throw e
                 context.stage('queue') {
                     /* This loads the library containing two Helper classes, and causes them to be
                     imported/updated from their repo. Without the library being imported here, runTests method will fail to execute the post-build test jobs for reasons unknown.*/
-                    context.library(identifier: "openjdk-jenkins-helper@${helperRef}")
+                    context.library(identifier: "test-openjdk-jenkins-helper@devkit")
 
                     // Set Github Commit Status
                     if (env.JOB_NAME.contains('pr-tester')) {
