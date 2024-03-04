@@ -6,7 +6,8 @@ class Config23 {
                 arch                : 'x64',
                 additionalNodeLabels: 'xcode15.0.1',
                 additionalTestLabels: [
-                        openj9      : '!sw.os.osx.10_11'
+                        openj9      : '!sw.os.osx.10_11',
+                        temurin     : '!sw.os.osx.10_14'
                 ],
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
