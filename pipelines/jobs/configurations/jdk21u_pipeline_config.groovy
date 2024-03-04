@@ -21,6 +21,7 @@ class Config21 {
         x64Linux  : [
                 os                  : 'linux',
                 arch                : 'x64',
+                devkit              : 'job/jdk21u/job/devkit_jdk21u_x64Linux/10/artifact/workspace/devkit-jdk21u-x86_64-linux-gnu.tar.gz',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 dockerFile: [
                         openj9      : 'pipelines/build/dockerFiles/cuda.dockerfile'
@@ -112,6 +113,7 @@ class Config21 {
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
+                devkit              : 'job/jdk21u/job/devkit_jdk21u_ppc64leLinux/2/artifact/workspace/devkit-jdk21u-ppc64le-linux-gnu.tar.gz',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 reproducibleCompare : [
@@ -128,6 +130,7 @@ class Config21 {
         aarch64Linux    : [
                 os                  : 'linux',
                 arch                : 'aarch64',
+                devkit              : 'job/jdk21u/job/devkit_jdk21u_aarch64Linux/14/artifact/workspace/devkit-jdk21u-aarch64-linux-gnu.tar.gz',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 reproducibleCompare : [

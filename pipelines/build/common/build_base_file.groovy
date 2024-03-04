@@ -57,7 +57,7 @@ class Builder implements Serializable {
     boolean aqaAutoGen
     String publishName
     String additionalConfigureArgs
-    boolean useDevkit
+    String devkit
     def scmVars
     String additionalBuildArgs
     String overrideFileNameVersion
@@ -129,7 +129,7 @@ class Builder implements Serializable {
             buildArgs += ' ' + additionalBuildArgs
         }
 
-        def  = getDevkitJob(platformConfig, variant)
+        def devkit = getDevkit(platformConfig, variant)
 
         def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
         def testList = getTestList(platformConfig, variant)
@@ -173,7 +173,7 @@ class Builder implements Serializable {
             AQA_REF: aqaReference,
             AQA_AUTO_GEN: aqaAutoGen,
             BUILD_ARGS: buildArgs,
-            USE_DEVKIT: useDevkit,
+            DEVKIT: devkit,
             NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${archLabel}",
             ADDITIONAL_TEST_LABEL: "${additionalTestLabels}",
             KEEP_TEST_REPORTDIR: keepTestReportDir,
@@ -564,21 +564,17 @@ class Builder implements Serializable {
     }
 
     /*
-    Get the useDevkit platform configuration value
+    Get the devkit platform configuration value
     */
-    def get(Map<String, ?> configuration, String variant) {
-        def devkitJobValue = ''
+    def getDevkit(Map<String, ?> configuration, String variant) {
+        def jenkinsDevkitUrl = ((String)DEFAULTS_JSON['jenkinsDetails']['devkitJobRoot'])
 
-        if (configuration.containsKey('devkitJob')) {
-            if (isMap(configuration.devkitJob)) { 
-                devkitJobValue = (configuration.devkitJob as Map<String, ?>).get(variant)
-            } else {
-                devkitJobValue = configuration.devkitJob
-            }
-        }       
-        
-        return devkitJobValue
-    } 
+        String devkit = ""
+        if (configuration.containsKey('devkit')) {
+            devkit = "${jenkinsDevkitUrl}/${configuration.devkit}"
+        }
+        return devkit
+    }
 
     /*
     Constructs any necessary additional build labels from the build configurations.
