@@ -53,6 +53,7 @@ node('worker') {
         userRemoteConfigs = new JsonSlurper().parseText(USER_REMOTE_CONFIGS) as Map
     }
     if (BUILD_CONFIGURATION) { // overwrite branch from USER_REMOTE_CONFIGS if the value is not empty or null
+echo "BUILD_CONF = "+BUILD_CONFIGURATION
         buildConf = new JsonSlurper().parseText(BUILD_CONFIGURATION) as Map
         userRemoteConfigs['branch'] = buildConf.get('CI_REF') ?: userRemoteConfigs['branch']
 
