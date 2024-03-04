@@ -1452,8 +1452,12 @@ class Build {
                 rm -rf "${WORKSPACE}/devkit"
                 mkdir -p "${WORKSPACE}/devkit"
                 cd "${WORKSPACE}/devkit"
-                curl --fail --silent --show-error -o "devkit.tar.gz" "${devkitUrl}"
-                tar -xf "devkit.tar.gz"
+                if !curl --fail --silent --show-error -o "devkit.tar.gz" "${devkitUrl}"; then
+                    echo "curl failure"
+                fi
+                if ! tar -xf "devkit.tar.gz"; then
+                   echo "tar failure"
+                fi
             '''
         }
 
