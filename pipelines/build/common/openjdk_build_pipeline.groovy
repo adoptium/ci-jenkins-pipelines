@@ -1438,6 +1438,22 @@ class Build {
     }
 
     /*
+     Download the given DevKit to ${WORKSPACE}/devkit
+     */
+    def downloadDevKit(devkitUrl) {
+        context.sh '''
+            set -eu
+            rm -rf "${WORKSPACE}/devkit"
+            mkdir -p "${WORKSPACE}/devkit"
+            cd "${WORKSPACE}/devkit"
+            curl --fail --silent --show-error -o "devkit.tar.gz" "${buildConfig.devkit}"
+            tar -xf "devkit.tar.gz"
+        '''
+
+        return "${WORKSPACE}/devkit"
+    }
+
+    /*
      Display the current git repo information
      */
     def printGitRepoInfo() {
@@ -1537,14 +1553,7 @@ class Build {
                 // Download devkit if specified
                 def devkit = ""
                 if (buildConfig.devkit != null && !buildConfig.devkit.isEmpty()) {
-                    context.sh '''
-                        set -eu
-                        rm -rf "${WORKSPACE}/devkit"
-                        mkdir -p "${WORKSPACE}/devkit"
-                        cd "${WORKSPACE}/devkit"
-                        curl --fail --silent --show-error -o "devkit.tar.gz" "${buildConfig.devkit}"
-                        tar -xf "devkit.tar.gz"
-                    '''
+                    devkit = downloadDevKit(buildConfig.devkit)
                 }
 
                 // Add platform config path so it can be used if the user doesn't have one
@@ -1574,7 +1583,8 @@ class Build {
                                     } else {
                                         signBuildArgs = '--make-exploded-image'
                                     }
-                                    context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
+                                    def signConfigureArgs = (devkit != "") ? env.CONFIGURE_ARGS + " " + devkit : env.CONFIGURE_ARGS
+                                    context.withEnv(['BUILD_ARGS=' + signBuildArgs, 'CONFIGURE_ARGS=' + signConfigureArgs]) {
                                         context.println 'Building an exploded image for signing'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
@@ -1687,7 +1697,8 @@ class Build {
                                     } else {
                                         assembleBuildArgs = '--assemble-exploded-image'
                                     }
-                                    context.withEnv(['BUILD_ARGS=' + assembleBuildArgs]) {
+                                    def assembleConfigureArgs = (devkit != "") ? env.CONFIGURE_ARGS + " " + devkit : env.CONFIGURE_ARGS
+                                    context.withEnv(['BUILD_ARGS=' + assembleBuildArgs, 'CONFIGURE_ARGS=' + assembleConfigureArgs]) {
                                         context.println 'Assembling the exploded image'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
@@ -1708,7 +1719,10 @@ class Build {
                                 repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                 repoHandler.checkoutUserBuild(context)
                                 printGitRepoInfo()
-                                context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                def buildConfigureArgs = (devkit != "") ? env.CONFIGURE_ARGS + " " + devkit : env.CONFIGURE_ARGS
+                                context.withEnv(['CONFIGURE_ARGS=' + buildConfigureArgs]) {
+                                    context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                }
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
                                 repoHandler.checkoutUserPipelines(context)
                                 printGitRepoInfo()
