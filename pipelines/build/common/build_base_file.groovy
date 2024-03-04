@@ -158,6 +158,7 @@ class Builder implements Serializable {
             adjustedScmReference = scmReference - ('_adopt')
         }
 
+echo "DEVKIT == "+devkit
         return new IndividualBuildConfig(
             JAVA_TO_BUILD: javaToBuild,
             ARCHITECTURE: platformConfig.arch as String,
