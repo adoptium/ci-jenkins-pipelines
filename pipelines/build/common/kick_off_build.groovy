@@ -67,12 +67,7 @@ echo "BUILD_CONF = "+BUILD_CONFIGURATION
 
     String helperRef = buildConf.get('HELPER_REF') ?: LOCAL_DEFAULTS_JSON['repository']['helper_ref']
     //library(identifier: "openjdk-jenkins-helper@${helperRef}")
-def path = "library"
-sh("rm -rf ${path}/.git && cd ${path} && git init && git add --all . && git config user.email 'none' && git config user.name 'none' && git commit -m init &> /dev/null || true")
-def repoPath = sh(returnStdout: true, script: "pwd").trim() + "/" + path;
-sh("ls -la /home/jenkins/workspace/build-scripts/jobs/jdk21u/jdk21u-linux-aarch64-temurin/library")
-library(identifier: 'local-lib@master', retriever: modernSCM([$class: 'GitSCMSource', remote: repoPath]))
-
+load "${WORKSPACE}/pipelines/build/common/import_lib.groovy"
 
     try {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
