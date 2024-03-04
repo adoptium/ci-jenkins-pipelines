@@ -65,7 +65,7 @@ node('worker') {
     }
 
     String helperRef = buildConf.get('HELPER_REF') ?: LOCAL_DEFAULTS_JSON['repository']['helper_ref']
-    library(identifier: "test-openjdk-jenkins-helper@devkit")
+    library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
     try {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
