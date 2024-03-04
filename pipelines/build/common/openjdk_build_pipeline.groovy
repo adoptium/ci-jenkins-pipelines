@@ -1453,7 +1453,7 @@ echo 3
 echo 4
             cd "${WORKSPACE}/devkit"
 echo 5
-            curl --fail --silent --show-error -o "devkit.tar.gz" "${buildConfig.devkit}"
+            curl --fail --silent --show-error -o "devkit.tar.gz" "${devkitUrl}"
 echo 6
             tar -xf "devkit.tar.gz"
 echo 7
