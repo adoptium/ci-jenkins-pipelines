@@ -1448,6 +1448,7 @@ class Build {
 
         context.withEnv(['devkitUrl='+devkitUrl]) {
             context.sh '''
+                #!/bin/bash
                 set -eu
                 rm -rf "${WORKSPACE}/devkit"
                 mkdir -p "${WORKSPACE}/devkit"
