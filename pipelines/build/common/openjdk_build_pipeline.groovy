@@ -1560,9 +1560,13 @@ echo 7
                 def adoptBranch = buildConfig.BUILD_REF ?: ADOPT_DEFAULTS_JSON['repository']['build_branch']
 
                 // Download devkit if specified
+context.println "DOWNLOAD DEVKIT1"
                 def devkit = ""
+context.println "DOWNLOAD DEVKIT2"
                 if (buildConfig.devkit != null && !buildConfig.devkit.isEmpty()) {
+context.println "DOWNLOAD DEVKIT3"
                     devkit = downloadDevKit(buildConfig.devkit)
+context.println "DOWNLOAD DEVKIT4"
                 }
 
                 // Add platform config path so it can be used if the user doesn't have one
