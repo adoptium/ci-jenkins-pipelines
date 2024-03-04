@@ -1534,6 +1534,19 @@ class Build {
                 // Use BUILD_REF override if specified
                 def adoptBranch = buildConfig.BUILD_REF ?: ADOPT_DEFAULTS_JSON['repository']['build_branch']
 
+                // Download devkit if specified
+                def devkit = ""
+                if (buildConfig.devkit != null && !buildConfig.devkit.isEmpty()) {
+                    context.sh '''
+                        set -eu
+                        rm -rf "${WORKSPACE}/devkit"
+                        mkdir -p "${WORKSPACE}/devkit"
+                        cd "${WORKSPACE}/devkit"
+                        curl --fail --silent --show-error -o "devkit.tar.gz" "${buildConfig.devkit}"
+                        tar -xf "devkit.tar.gz"
+                    '''
+                }
+
                 // Add platform config path so it can be used if the user doesn't have one
                 def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
                 // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
