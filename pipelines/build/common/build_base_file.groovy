@@ -158,7 +158,6 @@ class Builder implements Serializable {
             adjustedScmReference = scmReference - ('_adopt')
         }
 
-echo "DEVKIT == "+devkit
         return new IndividualBuildConfig(
             JAVA_TO_BUILD: javaToBuild,
             ARCHITECTURE: platformConfig.arch as String,
@@ -1059,6 +1058,7 @@ return {
     String overridePublishName,
     String useAdoptShellScripts,
     String additionalConfigureArgs,
+    String devkit,
     def scmVars,
     String additionalBuildArgs,
     String overrideFileNameVersion,
@@ -1125,6 +1125,7 @@ return {
             aqaAutoGen: Boolean.parseBoolean(aqaAutoGen),
             publishName: publishName,
             additionalConfigureArgs: additionalConfigureArgs,
+            devkit: devkit,
             scmVars: scmVars,
             additionalBuildArgs: additionalBuildArgs,
             overrideFileNameVersion: overrideFileNameVersion,
