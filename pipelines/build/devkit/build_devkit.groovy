@@ -39,7 +39,7 @@ def build_devkit() {
         sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
  
         // Compress and archive
-        sh(script:"cd ${params.VERSION}/make/devkit/result/${params.ARCH}-linux-gnu-to-${params.ARCH}-linux-gnu && tar -cf - . | GZIP=-9 gzip -c > ${devkit_file}")
+        sh(script:"cd ${params.VERSION}/build/devkit/result/${params.ARCH}-linux-gnu-to-${params.ARCH}-linux-gnu && tar -cf - . | GZIP=-9 gzip -c > ${devkit_file}")
 
         // Create sha256.txt
         sh(script:"sha256sum ${devkit_file} > ${devkit_file}.sha256.txt")
