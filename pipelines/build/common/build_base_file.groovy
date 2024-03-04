@@ -130,6 +130,7 @@ class Builder implements Serializable {
         }
 
         def devkit = getDevkit(platformConfig, variant)
+context.println "BUILDER : devkit = "+devkit
 
         def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
         def testList = getTestList(platformConfig, variant)
