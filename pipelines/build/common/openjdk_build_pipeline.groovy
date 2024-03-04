@@ -1444,23 +1444,23 @@ class Build {
     def downloadDevKit(devkit) {
         def devkitJobRoot = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS) ? ((String)ADOPT_DEFAULTS_JSON['jenkinsDetails']['devkitJobRoot']) : ((String)DEFAULTS_JSON['jenkinsDetails']['devkitJobRoot'])
         def devkitUrl = devkitJobRoot + "/" + devkit
+        def devkitLoc = context.WORKSPACE + "/devkit"
         context.println 'Downloading DevKit : ' + devkitUrl
+        context.println 'to location : ' + devkitLoc
 
-        context.withEnv(['devkitUrl='+devkitUrl]) {
+        context.withEnv(['devkitUrl='+devkitUrl, 'devkitLoc='+devkitLoc]) {
             context.sh '''
                 #!/bin/bash
                 set -eu
-                rm -rf "${WORKSPACE}/devkit"
-                mkdir -p "${WORKSPACE}/devkit"
-                cd "${WORKSPACE}/devkit"
+                rm -rf "${devkitLoc}"
+                mkdir -p "${devkitLoc}"
+                cd "${devkitLoc}"
                 curl --fail --silent --show-error -o "devkit.tar.gz" "${devkitUrl}"
                 tar -xf "devkit.tar.gz"
-                pwd
-                ls -l "${WORKSPACE}/devkit"
+                rm "devkit.tar.gz"
             '''
         }
-context.println "==> --with-devkit=${WORKSPACE}/devkit"
-        return "--with-devkit=${WORKSPACE}/devkit"
+        return "--with-devkit=\"" + devkitLoc + \""
     }
 
     /*
