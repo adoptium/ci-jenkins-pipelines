@@ -1562,16 +1562,12 @@ class Build {
 
                 // Download devkit if specified
                 def devkit = ""
-try {
                 //if (buildConfig.DEVKIT != null && !buildConfig.DEVKIT.isEmpty()) {
                     //devkit = downloadDevKit(buildConfig.DEVKIT)
                     devkit = downloadDevKit("job/jdk21u/job/devkit_jdk21u_aarch64Linux/14/artifact/workspace/devkit-jdk21u-aarch64-linux-gnu.tar.gz")
                 //}
 context.println "Devkit arg=" + devkit
-} catch(Exception e) {
-context.println "EXCEPTION: "+e
-throw e
-}
+
                 // Add platform config path so it can be used if the user doesn't have one
                 def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
                 // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
@@ -1719,7 +1715,10 @@ throw e
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                 } else {
-                                    context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    def buildConfigureArgs = (devkit != "") ? env.CONFIGURE_ARGS + " " + devkit : env.CONFIGURE_ARGS
+                                    context.withEnv(['CONFIGURE_ARGS=' + buildConfigureArgs]) {
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout...'
                                 // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
