@@ -1566,7 +1566,7 @@ context.println "DOWNLOAD DEVKIT2"
 try {
                 if (buildConfig.DEVKIT != null && !buildConfig.DEVKIT.isEmpty()) {
 context.println "DOWNLOAD DEVKIT3"
-                    devkit = downloadDevKit(buildConfig.devkit)
+                    devkit = downloadDevKit(buildConfig.DEVKIT)
 context.println "DOWNLOAD DEVKIT4"
                 }
 } catch (Exception e) {
