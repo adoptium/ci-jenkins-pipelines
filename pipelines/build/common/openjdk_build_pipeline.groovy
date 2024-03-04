@@ -1563,11 +1563,16 @@ echo 7
 context.println "DOWNLOAD DEVKIT1"
                 def devkit = ""
 context.println "DOWNLOAD DEVKIT2"
+try {
                 if (buildConfig.DEVKIT != null && !buildConfig.DEVKIT.isEmpty()) {
 context.println "DOWNLOAD DEVKIT3"
                     devkit = downloadDevKit(buildConfig.devkit)
 context.println "DOWNLOAD DEVKIT4"
                 }
+} catch (Exception e) {
+context.println e
+throw e
+}
 
                 // Add platform config path so it can be used if the user doesn't have one
                 def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
