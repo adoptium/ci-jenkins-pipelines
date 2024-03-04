@@ -4,7 +4,7 @@ targetConfigurations = [
                 'temurin'
         ],
         'riscv64Linux': [
-                'hotspot'
+                'temurin'
         ]
         // 'x64Mac'        : [
         //         'openj9'
