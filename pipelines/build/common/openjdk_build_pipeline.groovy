@@ -1439,6 +1439,7 @@ class Build {
 
     /*
      Download the given DevKit to ${WORKSPACE}/devkit
+     and return CONFIGURE_ARG "--with-devkit=${WORKSPACE}/devkit"
      */
     def downloadDevKit(devkitUrl) {
         context.sh '''
@@ -1450,7 +1451,7 @@ class Build {
             tar -xf "devkit.tar.gz"
         '''
 
-        return "${WORKSPACE}/devkit"
+        return "--with-devkit=${WORKSPACE}/devkit"
     }
 
     /*
