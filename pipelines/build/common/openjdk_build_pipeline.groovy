@@ -1460,7 +1460,7 @@ class Build {
                 rm "devkit.tar.gz"
             '''
         }
-        return '--with-devkit="' + devkitLoc + '"'
+        return '--with-devkit=' + devkitLoc
     }
 
     /*
