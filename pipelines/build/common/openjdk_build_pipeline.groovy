@@ -1454,6 +1454,8 @@ class Build {
                 cd "${WORKSPACE}/devkit"
                 curl --fail --silent --show-error -o "devkit.tar.gz" "${devkitUrl}"
                 tar -xf "devkit.tar.gz"
+                pwd
+                ls -l "${WORKSPACE}/devkit"
             '''
         }
 context.println "==> --with-devkit=${WORKSPACE}/devkit"
