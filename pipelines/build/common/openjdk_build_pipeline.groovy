@@ -394,7 +394,7 @@ class Build {
                             DYNAMIC_COMPILE = true
                         }
                         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-                        if (testType  == 'dev.openjdk' || testType  == 'dev.system') {
+                        if (testType  == 'dev.openjdk') {
                             context.println "${testType} need extra label sw.tool.docker"
                             if (additionalTestLabel == '') {
                                 additionalTestLabel = 'sw.tool.docker'
