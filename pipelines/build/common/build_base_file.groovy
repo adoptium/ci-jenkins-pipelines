@@ -130,7 +130,6 @@ class Builder implements Serializable {
         }
 
         def devkit = getDevkit(platformConfig, variant)
-context.println "BUILDER : devkit = "+devkit
 
         def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
         def testList = getTestList(platformConfig, variant)
@@ -568,12 +567,14 @@ context.println "BUILDER : devkit = "+devkit
     Get the devkit platform configuration value
     */
     def getDevkit(Map<String, ?> configuration, String variant) {
-        def jenkinsDevkitUrl = ((String)DEFAULTS_JSON['jenkinsDetails']['devkitJobRoot'])
-
-        String devkit = ""
+        def devkit = ''
         if (configuration.containsKey('devkit')) {
-            devkit = "${jenkinsDevkitUrl}/${configuration.devkit}"
-        }
+            if (isMap(configuration.devkit)) {
+                devkit = (configuration.devkit as Map<String, ?>).get(variant)
+            } else {
+                devkit = configuration.devkit
+            }
+        }   
         return devkit
     }
 
