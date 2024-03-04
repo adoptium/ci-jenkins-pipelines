@@ -1563,7 +1563,7 @@ echo 7
 context.println "DOWNLOAD DEVKIT1"
                 def devkit = ""
 context.println "DOWNLOAD DEVKIT2"
-                if (buildConfig.devkit != null && !buildConfig.devkit.isEmpty()) {
+                if (buildConfig.DEVKIT != null && !buildConfig.DEVKIT.isEmpty()) {
 context.println "DOWNLOAD DEVKIT3"
                     devkit = downloadDevKit(buildConfig.devkit)
 context.println "DOWNLOAD DEVKIT4"
