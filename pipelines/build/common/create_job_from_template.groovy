@@ -116,6 +116,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>KEEP_TEST_REPORTDIR</strong></dt><dd>If true, test report dir (including core files where generated) will be kept even when the testcase passes, failed testcases always keep the report dir. Does not apply to JUnit jobs which are always kept, eg.openjdk.</dd>
                 <dt><strong>ACTIVE_NODE_TIMEOUT</strong></dt><dd>Number of minutes we will wait for a label-matching node to become active.</dd>
                 <dt><strong>CODEBUILD</strong></dt><dd>Use a dynamic codebuild machine if no other machine is available</dd>
+                <dt><strong>DEVKIT</strong></dt><dd>Use the DevKit with the specified url relative to [jenkinsDetails][devkitJobRoot], to compile with</dd>
                 <dt><strong>DOCKER_IMAGE</strong></dt><dd>Use a docker build environment</dd>
                 <dt><strong>DOCKER_ARGS</strong></dt><dd>Additional args to be used in conjuction with DOCKER_IMAGE</dd>
                 <dt><strong>DOCKER_FILE</strong></dt><dd>Relative path to a dockerfile to be built and used on top of the DOCKER_IMAGE</dd>
