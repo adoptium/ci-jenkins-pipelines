@@ -66,8 +66,7 @@ echo "BUILD_CONF = "+BUILD_CONFIGURATION
     }
 
     String helperRef = buildConf.get('HELPER_REF') ?: LOCAL_DEFAULTS_JSON['repository']['helper_ref']
-    //library(identifier: "openjdk-jenkins-helper@${helperRef}")
-load "${WORKSPACE}/pipelines/build/common/import_lib.groovy"
+    library(identifier: "test-openjdk-jenkins-helper@devkit")
 
     try {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
