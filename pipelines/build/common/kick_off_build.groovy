@@ -70,8 +70,6 @@ echo "BUILD_CONF = "+BUILD_CONFIGURATION
 
     try {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
-echo "AAA"
-sh(script:"cat ${WORKSPACE}/${baseFilePath}")
     } catch (NoSuchFileException e) {
         println "[WARNING] Using Adopt's base file script as none was found at ${baseFilePath}"
         checkoutAdoptPipelines()
