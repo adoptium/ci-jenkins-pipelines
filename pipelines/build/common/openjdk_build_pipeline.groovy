@@ -1442,13 +1442,21 @@ class Build {
      and return CONFIGURE_ARG "--with-devkit=${WORKSPACE}/devkit"
      */
     def downloadDevKit(devkitUrl) {
+        context.println 'Downloading DevKit : ' + devkitUrl
         context.sh '''
+echo 1
             set -eu
+echo 2
             rm -rf "${WORKSPACE}/devkit"
+echo 3
             mkdir -p "${WORKSPACE}/devkit"
+echo 4
             cd "${WORKSPACE}/devkit"
+echo 5
             curl --fail --silent --show-error -o "devkit.tar.gz" "${buildConfig.devkit}"
+echo 6
             tar -xf "devkit.tar.gz"
+echo 7
         '''
 
         return "--with-devkit=${WORKSPACE}/devkit"
