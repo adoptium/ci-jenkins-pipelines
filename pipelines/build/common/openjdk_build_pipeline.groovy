@@ -1564,7 +1564,7 @@ class Build {
                 def devkit = ""
                 //if (buildConfig.DEVKIT != null && !buildConfig.DEVKIT.isEmpty()) {
                     //devkit = downloadDevKit(buildConfig.DEVKIT)
-                    devkit = downloadDevKit("job/jdk21u/job/devkit_jdk21u_aarch64Linux/14/artifact/workspace/devkit-jdk21u-aarch64-linux-gnu.tar.gz")
+                    devkit = downloadDevKit("job/jdk21u/job/devkit_jdk21u_aarch64Linux/18/artifact/workspace/devkit-jdk21u-aarch64-linux-gnu.tar.gz")
                 //}
 context.println "Devkit arg=" + devkit
 
