@@ -130,7 +130,7 @@ class Config21 {
         aarch64Linux    : [
                 os                  : 'linux',
                 arch                : 'aarch64',
-                devkit              : 'job/jdk21u/job/devkit_jdk21u_aarch64Linux/14/artifact/workspace/devkit-jdk21u-aarch64-linux-gnu.tar.gz',
+                devkit              : 'job/jdk21u/job/devkit_jdk21u_aarch64Linux/18/artifact/workspace/devkit-jdk21u-aarch64-linux-gnu.tar.gz',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 reproducibleCompare : [
