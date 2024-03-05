@@ -50,10 +50,10 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
                     permissions(
                         [
                             'Job/Build',        // 'hudson.model.Item.Build'
-                            'Job/Cancel'        // 'hudson.model.Item.Cancel'
+                            'Job/Cancel',       // 'hudson.model.Item.Cancel'
                             'Job/Configure',    // 'hudson.model.Item.Configure'
-                            'Job/Read'          // 'hudson.model.Item.Read'
-                            'Job/Workspace'     // 'hudson.model.Item.Workspace'
+                            'Job/Read',         // 'hudson.model.Item.Read'
+                            'Job/Workspace',    // 'hudson.model.Item.Workspace'
                             'Run/Update'        // 'hudson.model.Run.Update'
                         ])  
                         
@@ -63,10 +63,10 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
                     permissions(
                         [
                             'Job/Build',        // 'hudson.model.Item.Build'
-                            'Job/Cancel'        // 'hudson.model.Item.Cancel'
+                            'Job/Cancel',       // 'hudson.model.Item.Cancel'
                             'Job/Configure',    // 'hudson.model.Item.Configure'
-                            'Job/Read'          // 'hudson.model.Item.Read'
-                            'Job/Workspace'     // 'hudson.model.Item.Workspace'
+                            'Job/Read',         // 'hudson.model.Item.Read'
+                            'Job/Workspace',    // 'hudson.model.Item.Workspace'
                             'Run/Update'        // 'hudson.model.Run.Update'
                         ])  
                 }
@@ -86,7 +86,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
                             'Job/Read'          // 'hudson.model.Item.Read'
                         ])  
                 }
-                
+
                 //permissions([
                 //'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build', MIGRATED
                 //'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build-triage', MIGRATED
