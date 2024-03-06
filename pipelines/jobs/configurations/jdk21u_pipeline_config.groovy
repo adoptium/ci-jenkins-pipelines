@@ -39,7 +39,7 @@ class Config21 {
                         'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom'
+                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -121,7 +121,7 @@ class Config21 {
                         'openj9'      : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -133,9 +133,12 @@ class Config21 {
                 reproducibleCompare : [
                         'temurin'   : true
                 ],
-                configureArgs : '--enable-dtrace',
+                configureArgs       : [
+                        'openj9'    : '--enable-dtrace',
+                        'temurin'   : '--enable-dtrace --with-jobs=40'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
         ],
 
