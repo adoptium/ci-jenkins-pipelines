@@ -644,9 +644,9 @@ class Regeneration implements Serializable {
                     getPipelines.jobs.name.each { pipeline ->
                         def pipelineName = "openjdk${versionNumbers[0]}-pipeline"
                         if (jobType == "evaluation") {
-                            pipelineName = "evaluation-openjdk${versionNumbers[0]}-pipeline")
+                            pipelineName = "evaluation-openjdk${versionNumbers[0]}-pipeline"
                         } else if (jobType == "trestle") {
-                            pipelineName = "trestle-openjdk${versionNumbers[0]}-pipeline")
+                            pipelineName = "trestle-openjdk${versionNumbers[0]}-pipeline"
                         }
                         if (pipeline == pipelineName) {
                             Boolean inProgress = true
