@@ -92,12 +92,13 @@ Unreferenced items:
 This standard generator generates the [top level](https://ci.adoptium.net/job/build-scripts/) pipeline jobs. It works by iterating through the config files, defining a job dsl configuration for each version that has a version config file.
 It then calls [pipeline_job_template.groovy](pipelines/jobs/pipeline_job_template.groovy) to finalise the dsl. By default, the [job that runs this file](https://ci.adoptium.net/job/build-scripts/job/utils/job/build-pipeline-generator/) has restricted read access so you will likely need to contact a jenkins admin to see the results of the job.
 
-There are another two generators:
+There are another three generators:
 
 1. [release generator](https://ci.adoptium.net/job/build-scripts/job/utils/job/release-build-pipeline-generator/) is only used to regenerate release pipelines.
-2. [evaluation generator](https://ci.adoptium.net/job/build-scripts/job/utils/job/evaluation-pipeline-generator/) is used to regenerator evaluation pipeline and weekly-evaluation pipeline
+2. [evaluation generator](https://ci.adoptium.net/job/build-scripts/job/utils/job/evaluation-pipeline-generator/) is used to regenerate evaluation pipeline and weekly-evaluation pipeline
+3. [trestle generator](https://ci.adoptium.net/job/build-scripts/job/utils/job/trestle-pipeline-generator/) is used to regenerate trestle pipeline
 
-They work in the similar was as the standard one but use different config files
+They all work similarly to the standard one but with different config files
 
 ### Downstream Test Jobs
 

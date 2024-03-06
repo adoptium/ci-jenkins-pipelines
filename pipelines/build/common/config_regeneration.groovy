@@ -642,7 +642,12 @@ class Regeneration implements Serializable {
 
                     // Parse api response to only extract the relevant pipeline
                     getPipelines.jobs.name.each { pipeline ->
-                        def pipelineName = (jobType != "evaluation" ? "openjdk${versionNumbers[0]}-pipeline" : "evaluation-openjdk${versionNumbers[0]}-pipeline")
+                        def pipelineName = "openjdk${versionNumbers[0]}-pipeline"
+                        if (jobType == "evaluation") {
+                            pipelineName = "evaluation-openjdk${versionNumbers[0]}-pipeline")
+                        } else if (jobType == "trestle") {
+                            pipelineName = "trestle-openjdk${versionNumbers[0]}-pipeline")
+                        }
                         if (pipeline == pipelineName) {
                             Boolean inProgress = true
                             while (inProgress) {
