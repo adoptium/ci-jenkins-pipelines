@@ -162,7 +162,8 @@ class PullRequestTestPipeline implements Serializable {
                                     context.booleanParam(name: 'enableTestDynamicParallel', value: false), // not needed unless we enable test
                                     context.booleanParam(name: 'enableInstallers', value: false), // never need this enabled in pr-test
                                     context.booleanParam(name: 'useAdoptBashScripts', value: false), // should not use defaultsJson but adoptDefaultsJson
-                                    context.booleanParam(name: 'keepReleaseLogs', value: false) // never need this enabled in pr-tester
+                                    context.booleanParam(name: 'keepReleaseLogs', value: false), // never need this enabled in pr-tester
+                                    context.booleanParam(name: 'cleanWorkspaceAfterBuild', value: true) // always clean prtester workspace after the build
                                 ]
                         } catch (err) {
                             context.println "[ERROR] JDK ${actualJavaVersion} PIPELINE FAILED\n$err"
