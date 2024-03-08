@@ -33,7 +33,7 @@ def build_devkit() {
         sh(script:"cp pipelines/build/devkit/binutils-2.39.patch ${params.VERSION}/make/devkit/patches/${params.ARCH}-binutils-2.39.patch")
         sh(script:"cd ${params.VERSION} && patch -p1<../pipelines/build/devkit/Tools.gmk.patch")
 
-        dev devkit_target = "${params.ARCH}-linux-gnu"
+        def devkit_target = "${params.ARCH}-linux-gnu"
 
         // Perform devkit build
         sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${devkit_target} BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
