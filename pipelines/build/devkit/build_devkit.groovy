@@ -42,9 +42,10 @@ def build_devkit() {
         sh(script:"echo DEVKIT_ADOPTIUM_ARCH=\"${devkit_target}\" >> ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
 
         // Get gcc version and base OS from devkit.info
-        def gcc_ver=sh(script:"grep DEVKIT_NAME ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info | cut -d\"=\" -f2 | tr -d '\" '", returnStdout: true)
+        def gcc_ver=sh(script:"grep DEVKIT_NAME ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info | tr -d '\\n' | cut -d\"=\" -f2 | tr -d '\" '", returnStdout: true)
 
         def devkit_file = "workspace/devkit-${gcc_ver}-${devkit_target}.tar.gz"
+        println "devkit artifact filename = ${devkit_file}"        
  
         // Compress and archive
         sh(script:"tar -cf - -C ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target} . | GZIP=-9 gzip -c > ${devkit_file}")
