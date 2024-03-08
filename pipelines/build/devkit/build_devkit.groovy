@@ -38,14 +38,16 @@ def build_devkit() {
         // Perform devkit build
         sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${devkit_target} BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
 
-        // Store Adoptium metadata within the devkit.info file
-        sh(script:"echo DEVKIT_ADOPTIUM_ARCH=\"${devkit_target}\" >> ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
-
         // Get gcc version and base OS from devkit.info
         def gcc_ver=sh(script:'grep DEVKIT_NAME '+params.VERSION+'/build/devkit/result/'+devkit_target+'-to-'+devkit_target+'/devkit.info | cut -d"=" -f2 | tr -d "\\" \\n"', returnStdout: true)
 
-        def devkit_file = "workspace/devkit-${gcc_ver}-${devkit_target}.tar.gz"
-        println "devkit artifact filename = ${devkit_file}"        
+        def adoptium_devkit_release_tag = "${gcc_ver}-${devkit_target}-${params.BUILD}"
+
+        // Store Adoptium metadata within the devkit.info file
+        sh(script:"echo ADOPTIUM_DEVKIT_RELEASE_TAG=\"${adoptium_devkit_release_tag}\" >> ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
+
+        def devkit_file = "workspace/devkit-${adoptium_devkit_release_tag}.tar.gz"
+        println "devkit artifact filename = ${devkit_file}"
  
         // Compress and archive
         sh(script:"tar -cf - -C ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target} . | GZIP=-9 gzip -c > ${devkit_file}")
