@@ -24,8 +24,6 @@ limitations under the License.
 
 def build_devkit() {
     stage('Build DevKit') {
-        def devkit_file = "workspace/devkit-${params.VERSION}-${params.ARCH}-linux-gnu.tar.gz"
-
         def openjdkRepo = "https://github.com/openjdk/${params.VERSION}.git"
  
         // Clone upstream openjdk repo
@@ -35,14 +33,21 @@ def build_devkit() {
         sh(script:"cp pipelines/build/devkit/binutils-2.39.patch ${params.VERSION}/make/devkit/patches/${params.ARCH}-binutils-2.39.patch")
         sh(script:"cd ${params.VERSION} && patch -p1<../pipelines/build/devkit/Tools.gmk.patch")
 
+        dev devkit_target = "${params.ARCH}-linux-gnu"
+
         // Perform devkit build
-        sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
+        sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${devkit_target} BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
 
         // Store Adoptium metadata within the devkit.info file
-        sh(script:"echo DEVKIT_ADOPTIUM_ARCH=\"${params.ARCH}-linux-gnu\" >> ${params.VERSION}/build/devkit/result/${params.ARCH}-linux-gnu-to-${params.ARCH}-linux-gnu/devkit.info")
+        sh(script:"echo DEVKIT_ADOPTIUM_ARCH=\"${devkit_target}\" >> ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
+
+        // Get gcc version and base OS from devkit.info
+        def gcc_ver=sh(script:"grep DEVKIT_NAME ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info | cut -d\"=\" -f2 | tr -d '\" '", returnStdout: true)
+
+        def devkit_file = "workspace/devkit-${gcc_ver}-${devkit_target}.tar.gz"
  
         // Compress and archive
-        sh(script:"tar -cf - -C ${params.VERSION}/build/devkit/result/${params.ARCH}-linux-gnu-to-${params.ARCH}-linux-gnu . | GZIP=-9 gzip -c > ${devkit_file}")
+        sh(script:"tar -cf - -C ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target} . | GZIP=-9 gzip -c > ${devkit_file}")
 
         // Create sha256.txt
         sh(script:"sha256sum ${devkit_file} > ${devkit_file}.sha256.txt")
