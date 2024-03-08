@@ -37,6 +37,9 @@ def build_devkit() {
 
         // Perform devkit build
         sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${params.ARCH}-linux-gnu BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
+
+        // Store Adoptium metadata within the devkit.info file
+        sh(script:"echo DEVKIT_ADOPTIUM_ARCH=\"${params.ARCH}-linux-gnu\" >> ${params.VERSION}/build/devkit/result/${params.ARCH}-linux-gnu-to-${params.ARCH}-linux-gnu/devkit.info")
  
         // Compress and archive
         sh(script:"tar -cf - -C ${params.VERSION}/build/devkit/result/${params.ARCH}-linux-gnu-to-${params.ARCH}-linux-gnu . | GZIP=-9 gzip -c > ${devkit_file}")
