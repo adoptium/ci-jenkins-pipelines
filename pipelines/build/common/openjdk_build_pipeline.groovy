@@ -1451,7 +1451,7 @@ class Build {
     def downloadDevKit(devkit) {
         def devkitJobRoot = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS) ? ((String)ADOPT_DEFAULTS_JSON['jenkinsDetails']['devkitJobRoot']) : ((String)DEFAULTS_JSON['jenkinsDetails']['devkitJobRoot'])
         def devkitUrl = devkitJobRoot + "/" + devkit
-        def devkitLoc = context.WORKSPACE + "/devkit"
+        def devkitLoc = context.WORKSPACE + "/workspace/build/src/build/devkit"
         context.println 'Downloading DevKit : ' + devkitUrl
         context.println 'to location : ' + devkitLoc
 
