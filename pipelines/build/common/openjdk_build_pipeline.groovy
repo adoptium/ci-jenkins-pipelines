@@ -1454,6 +1454,7 @@ class Build {
         context.println 'to location : ' + devkitLoc
 
         context.withEnv(['devkitUrl='+devkitUrl, 'devkitLoc='+devkitLoc]) {
+            // groovylint-disable
             context.sh '''
                 #!/bin/bash
                 set -eu
@@ -1464,6 +1465,7 @@ class Build {
                 tar -xf "devkit.tar.gz"
                 rm "devkit.tar.gz"
             '''
+            // groovylint-enable
         }
         return '--with-devkit=' + devkitLoc
     }
