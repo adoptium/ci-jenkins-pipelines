@@ -259,6 +259,8 @@ class Build {
                     suffix = 'adoptium/aarch32-jdk8u'
                 } else if (buildConfig.TARGET_OS == 'alpine-linux' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
                     suffix = 'adoptium/alpine-jdk8u'
+                } else if (buildConfig.ARCHITECTURE == 'riscv64' && buildConfig.JAVA_TO_BUILD == 'jdk11u') {
+                    suffix = 'adoptium/riscv-port-jdk11u'
                 } else {
                     suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
                 }
@@ -357,6 +359,7 @@ class Build {
 
         def vendorTestRepos = ''
         def vendorTestBranches = ''
+        def vendorTestDirs = ''
         List testList = buildConfig.TEST_LIST
         List dynamicList = buildConfig.DYNAMIC_LIST
         List numMachines = buildConfig.NUM_MACHINES
@@ -391,7 +394,7 @@ class Build {
                             DYNAMIC_COMPILE = true
                         }
                         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-                        if (testType  == 'dev.openjdk' || testType  == 'dev.system') {
+                        if (testType  == 'dev.openjdk') {
                             context.println "${testType} need extra label sw.tool.docker"
                             if (additionalTestLabel == '') {
                                 additionalTestLabel = 'sw.tool.docker'
@@ -405,6 +408,7 @@ class Build {
                             vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
                             vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
                             vendorTestRepos = vendorTestRepos - ('.git')
+                            vendorTestDirs = '/test/system'
                             // Use BUILD_REF override if specified
                             vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
                         }
@@ -479,6 +483,7 @@ class Build {
                         context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE),
                         context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
                         context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
+                        context.string(name: 'VENDOR_TEST_DIRS', value: vendorTestDirs),
                         context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
                         ]
 

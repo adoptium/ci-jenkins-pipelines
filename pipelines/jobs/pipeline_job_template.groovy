@@ -65,16 +65,68 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
                     // Do not inherit permissions from global configuration
                     nonInheriting()
                 }
-                permissions(['GROUP:hudson.model.Item.Build:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build-triage',
-                'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
-                'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
-                'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build-triage',
+
+                entries {
+                    group {
+                        name('AdoptOpenJDK*build')
+                        permissions(
+                            [
+                                'Job/Build',        // 'hudson.model.Item.Build'
+                                'Job/Cancel',       // 'hudson.model.Item.Cancel'
+                                'Job/Configure',    // 'hudson.model.Item.Configure'
+                                'Job/Read',         // 'hudson.model.Item.Read'
+                                'Job/Workspace',    // 'hudson.model.Item.Workspace'
+                                'Run/Update'        // 'hudson.model.Run.Update'
+                            ])  
+                            
+                    }
+                    group {
+                        name('AdoptOpenJDK*build-triage')
+                        permissions(
+                            [
+                                'Job/Build',        // 'hudson.model.Item.Build'
+                                'Job/Cancel',       // 'hudson.model.Item.Cancel'
+                                'Job/Configure',    // 'hudson.model.Item.Configure'
+                                'Job/Read',         // 'hudson.model.Item.Read'
+                                'Job/Workspace',    // 'hudson.model.Item.Workspace'
+                                'Run/Update'        // 'hudson.model.Run.Update'
+                            ])  
+                    }
+                    // eclipse-temurin-bot needs read access for TRSS
+                    user {
+                        name('eclipse-temurin-bot')
+                        permissions(
+                            [
+                                'Job/Read'          // 'hudson.model.Item.Read'
+                            ])  
+                    }
+                    // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance for copying artifacts
+                    user {
+                        name('eclipse-temurin-compliance-bot')
+                        permissions(
+                            [
+                                'Job/Read'          // 'hudson.model.Item.Read'
+                            ])  
+                    }
+                }
+
+                //permissions([
+                //'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build', MIGRATED 
+                //'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build', MIGRATED 
+                //'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build-triage', MIGRATED
                 // eclipse-temurin-bot needs read access for TRSS
-                'USER:hudson.model.Item.Read:eclipse-temurin-bot',
+                //'USER:hudson.model.Item.Read:eclipse-temurin-bot', MIGRATED
                 // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance
-                'USER:hudson.model.Item.Read:eclipse-temurin-compliance-bot',
-                'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build', 'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
-                'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build', 'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
+                //'USER:hudson.model.Item.Read:eclipse-temurin-compliance-bot', MIGRATED
+                //'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build-triage']) MIGRATED
             }
         }
         pipelineTriggers {
