@@ -131,6 +131,8 @@ node('worker') {
             // either use root path or flag from job to determinate if it is evaluation
         } else if (jobRoot.contains('evaluation') || params.IS_EVALUATION_JOB) {
             jobType = "evaluation"
+        } else if (jobRoot.contains('trestle')) {
+            jobType = "trestle"
         } else {
             jobType = "nightly"
         }

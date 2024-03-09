@@ -648,6 +648,7 @@ class Regeneration implements Serializable {
                         } else if (jobType == "trestle") {
                             pipelineName = "trestle-openjdk${versionNumbers[0]}-pipeline"
                         }
+                        context.println "[INFO] Proceeding with ${pipelineName} ..."
                         if (pipeline == pipelineName) {
                             Boolean inProgress = true
                             while (inProgress) {

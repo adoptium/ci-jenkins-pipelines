@@ -292,9 +292,9 @@ node('worker') {
 
             // Fail if nothing was generated
             if (generatedPipelines == []) {
-                throw new Exception('[ERROR] NO PIPELINES WERE GENERATED!')
+                throw new Exception('[ERROR] NO TRESTLE PIPELINES WERE GENERATED!')
             } else {
-                println "[SUCCESS] THE FOLLOWING PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER"
+                println "[SUCCESS] THE FOLLOWING TRESTLE PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER"
                 println generatedPipelines
             }
             }
