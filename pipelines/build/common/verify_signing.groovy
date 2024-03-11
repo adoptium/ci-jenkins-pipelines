@@ -40,7 +40,7 @@ String find_signtool() {
 
     def windowsKitPath = "/cygdrive/c/'Program Files (x86)'/'Windows Kits'"
 
-    def files = sh(script:"find ${windowsKitPath} -type f -path */${arch}/signtool.exe", \
+    def files = sh(script:"find ${windowsKitPath} -type f -path */${arch}/signtool.exe | sort -r", \
                    returnStdout:true).split("\\r?\\n|\\r")
 
     // Return the first one we find
