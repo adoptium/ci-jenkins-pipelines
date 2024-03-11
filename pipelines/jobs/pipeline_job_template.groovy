@@ -1,7 +1,8 @@
 import groovy.json.JsonOutput
 
 gitRefSpec = ''
-propagateFailures = false
+propagateFailures = true
+runReproducibleCompare = enableReproducibleCompare
 runTests = enableTests
 runParallel = enableTestDynamicParallel
 runInstaller = true
@@ -9,6 +10,8 @@ runSigner = true
 cleanWsBuildOutput = true
 jdkVersion = "${JAVA_VERSION}"
 isLightweight = true
+jobReleaseType = "${releaseType}"
+pipelineSchedule = pipelineSchedule
 
 // if true means this is running in the pr builder pipeline
 if (binding.hasVariable('PR_BUILDER')) {
@@ -17,6 +20,8 @@ if (binding.hasVariable('PR_BUILDER')) {
     propagateFailures = true
     runTests = false
     runParallel = true
+    runSigner = false
+    runInstaller = false
     isLightweight = false
 }
 
@@ -54,21 +59,75 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
 
     properties {
         // Hide top level pipeline access from the public as they contain non Temurin artefacts
-        authorizationMatrix {
-            inheritanceStrategy {
-                // Do not inherit permissions from global configuration
-                nonInheriting()
+        if (JENKINS_URL.contains('adopt')) {
+            authorizationMatrix {
+                inheritanceStrategy {
+                    // Do not inherit permissions from global configuration
+                    nonInheriting()
+                }
+
+                entries {
+                    group {
+                        name('AdoptOpenJDK*build')
+                        permissions(
+                            [
+                                'Job/Build',        // 'hudson.model.Item.Build'
+                                'Job/Cancel',       // 'hudson.model.Item.Cancel'
+                                'Job/Configure',    // 'hudson.model.Item.Configure'
+                                'Job/Read',         // 'hudson.model.Item.Read'
+                                'Job/Workspace',    // 'hudson.model.Item.Workspace'
+                                'Run/Update'        // 'hudson.model.Run.Update'
+                            ])  
+                            
+                    }
+                    group {
+                        name('AdoptOpenJDK*build-triage')
+                        permissions(
+                            [
+                                'Job/Build',        // 'hudson.model.Item.Build'
+                                'Job/Cancel',       // 'hudson.model.Item.Cancel'
+                                'Job/Configure',    // 'hudson.model.Item.Configure'
+                                'Job/Read',         // 'hudson.model.Item.Read'
+                                'Job/Workspace',    // 'hudson.model.Item.Workspace'
+                                'Run/Update'        // 'hudson.model.Run.Update'
+                            ])  
+                    }
+                    // eclipse-temurin-bot needs read access for TRSS
+                    user {
+                        name('eclipse-temurin-bot')
+                        permissions(
+                            [
+                                'Job/Read'          // 'hudson.model.Item.Read'
+                            ])  
+                    }
+                    // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance for copying artifacts
+                    user {
+                        name('eclipse-temurin-compliance-bot')
+                        permissions(
+                            [
+                                'Job/Read'          // 'hudson.model.Item.Read'
+                            ])  
+                    }
+                }
+
+                //permissions([
+                //'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build', MIGRATED 
+                //'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build', MIGRATED 
+                //'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build-triage', MIGRATED
+                // eclipse-temurin-bot needs read access for TRSS
+                //'USER:hudson.model.Item.Read:eclipse-temurin-bot', MIGRATED
+                // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance
+                //'USER:hudson.model.Item.Read:eclipse-temurin-compliance-bot', MIGRATED
+                //'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build-triage']) MIGRATED
             }
-            permissions(['hudson.model.Item.Build:AdoptOpenJDK*build', 'hudson.model.Item.Build:AdoptOpenJDK*build-triage',
-            'hudson.model.Item.Cancel:AdoptOpenJDK*build', 'hudson.model.Item.Cancel:AdoptOpenJDK*build-triage',
-            'hudson.model.Item.Configure:AdoptOpenJDK*build', 'hudson.model.Item.Configure:AdoptOpenJDK*build-triage',
-            'hudson.model.Item.Read:AdoptOpenJDK*build', 'hudson.model.Item.Read:AdoptOpenJDK*build-triage',
-            // eclipse-temurin-bot needs read access for TRSS
-            'hudson.model.Item.Read:eclipse-temurin-bot',
-            // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance
-            'hudson.model.Item.Read:eclipse-temurin-compliance-bot',
-            'hudson.model.Item.Workspace:AdoptOpenJDK*build', 'hudson.model.Item.Workspace:AdoptOpenJDK*build-triage',
-            'hudson.model.Run.Update:AdoptOpenJDK*build', 'hudson.model.Run.Update:AdoptOpenJDK*build-triage'])
         }
         pipelineTriggers {
             triggers {
@@ -84,19 +143,20 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
 
     parameters {
         textParam('targetConfigurations', JsonOutput.prettyPrint(JsonOutput.toJson(targetConfigurations)))
-        stringParam('activeNodeTimeout', '0', 'Number of minutes we will wait for a label-matching node to become active.')
-        stringParam('jdkVersion', jdkVersion, 'The JDK version of the pipeline e.g (11, 8, 17).')
+        stringParam('activeNodeTimeout', '5', 'Number of minutes we will wait for a label-matching node to become active.')
+        stringParam('jdkVersion', jdkVersion, 'The JDK version of the pipeline e.g (8, 11, 17).')
         stringParam('dockerExcludes', '', 'Map of targetConfigurations to exclude from docker building. If a targetConfiguration (i.e. { "x64LinuxXL": [ "openj9" ], "aarch64Linux": [ "hotspot", "openj9" ] }) has been entered into this field, jenkins will build the jdk without using docker. This param overrides the dockerImage and dockerFile downstream job parameters.')
         stringParam('baseFilePath', '', "Relative path to where the build_base_file.groovy file is located. This runs the downstream job setup and configuration retrieval services.<br>Default: <code>${defaultsJson['baseFileDirectories']['upstream']}</code>")
         stringParam('buildConfigFilePath', '', "Relative path to where the jdkxx_pipeline_config.groovy file is located. It contains the build configurations for each platform, architecture and variant.<br>Default: <code>${defaultsJson['configDirectories']['build']}/jdkxx_pipeline_config.groovy</code>")
-        choiceParam('releaseType', ['Nightly', 'Nightly Without Publish', 'Weekly', 'Release'], 'Nightly - release a standard nightly build.<br/>Nightly Without Publish - run a nightly but do not publish.<br/>Weekly - release a standard weekly build, run with extended tests.<br/>Release - this is a release, this will need to be manually promoted.')
+        choiceParam('releaseType', [jobReleaseType, 'Nightly', 'Nightly Without Publish', 'Weekly', 'Weekly Without Publish', 'Release'].unique(), 'Nightly - release a standard nightly build.<br/>Nightly Without Publish - run a nightly but do not publish.<br/>Weekly - release a standard weekly build, run with extended tests.<br/>Weekly Without Publish - run a weekly but do not publish.<br/>Release - this is a release, this will need to be manually promoted.')
         stringParam('overridePublishName', '', '<strong>REQUIRED for OpenJ9</strong>: Name that determines the publish name (and is used by the meta-data file), defaults to scmReference(minus _adopt if present).<br/>Nightly builds: Leave blank (defaults to a date_time stamp).<br/>OpenJ9 Release build Java 8 example <code>jdk8u192-b12_openj9-0.12.1</code> and for OpenJ9 Java 11 example <code>jdk-11.0.2+9_openj9-0.12.1</code>.')
-        stringParam('scmReference', '', 'Tag name or Branch name from which to build. Nightly builds: Defaults to, Hotspot=dev, OpenJ9=openj9, others=master.</br>Release builds: For hotspot JDK8 this would be the OpenJDK tag, for hotspot JDK11+ this would be the Adopt merge tag for the desired OpenJDK tag eg.jdk-11.0.4+10_adopt, and for OpenJ9 this will be the release branch, eg.openj9-0.14.0.')
-        stringParam('buildReference', '', 'Tag name or Branch name of temurin-build repo. Defaults to master')
-        stringParam('ciReference', '', 'Tag name or Branch name of ci-jenkins-pipeline repo. Defaults to master')
+        stringParam('scmReference', '', 'Tag name or Branch name from which openjdk source code repo to build. Nightly builds: Defaults to, Hotspot=dev, OpenJ9=openj9, others=master.</br>Release builds: For hotspot JDK8 this would be the OpenJDK tag, for hotspot JDK11+ this would be the Adopt merge tag for the desired OpenJDK tag eg.jdk-11.0.4+10_adopt, and for OpenJ9 this will be the release branch, eg.openj9-0.14.0.')
+        stringParam('buildReference', '', 'SHA1 or Tag name or Branch name of temurin-build repo. Defaults to master')
+        stringParam('ciReference', '', 'SHA1 or Tag name or Branch name of ci-jenkins-pipeline repo. Defaults to master')
         stringParam('helperReference', '', 'Tag name or Branch name of jenkins-helper repo. Defaults to master')
         stringParam('aqaReference', '', 'Tag name or Branch name of aqa-tests. Defaults to master')
         booleanParam('aqaAutoGen', false, 'If set to true, force auto generate AQA test jobs. Defaults to false')
+        booleanParam('enableReproducibleCompare', runReproducibleCompare, 'If set to true the reproducible compare job might be triggerred')
         booleanParam('enableTests', runTests, 'If set to true the test pipeline will be executed')
         booleanParam('enableTestDynamicParallel', runParallel, 'If set to true test will be run parallel')
         booleanParam('enableInstallers', runInstaller, 'If set to true the installer pipeline will be executed')
@@ -108,11 +168,11 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         booleanParam('cleanWorkspaceBeforeBuild', false, 'Clean out the workspace before the build')
         booleanParam('cleanWorkspaceAfterBuild', false, 'Clean out the workspace after the build')
         booleanParam('cleanWorkspaceBuildOutputAfterBuild', cleanWsBuildOutput, 'Clean out the workspace/build/src/build and workspace/target output only, after the build')
-        booleanParam('propagateFailures', propagateFailures, 'If true, a failure of <b>ANY</b> downstream build (but <b>NOT</b> test) will cause the whole build to fail')
+        booleanParam('propagateFailures', propagateFailures, 'If true, a failure of <b>ANY</b> downstream build will cause the whole build to fail')
         booleanParam('keepTestReportDir', false, 'If true, test report dir (including core files where generated) will be kept even when the testcase passes, failed testcases always keep the report dir. Does not apply to JUnit jobs which are always kept, eg.openjdk.')
         booleanParam('keepReleaseLogs', true, 'If true, "Release" type pipeline Jenkins logs will be marked as "Keep this build forever".')
         stringParam('adoptBuildNumber', '', 'Empty by default. If you ever need to re-release then bump this number. Currently this is only added to the build metadata file.')
         textParam('defaultsJson', JsonOutput.prettyPrint(JsonOutput.toJson(defaultsJson)), '<strong>DO NOT ALTER THIS PARAM UNLESS YOU KNOW WHAT YOU ARE DOING!</strong> This passes down the user\'s default constants to the downstream jobs.')
-        textParam('adoptDefaultsJson', JsonOutput.prettyPrint(JsonOutput.toJson(adoptDefaultsJson)), '<strong>DO NOT ALTER THIS PARAM UNDER ANY CIRCUMSTANCES!</strong> This passes down adopt\'s default constants to the downstream jobs. NOTE: <code>defaultsJson</code> has priority, the constants contained within this param will only be used as a failsafe.')
+        textParam('adoptDefaultsJson', JsonOutput.prettyPrint(JsonOutput.toJson(adoptDefaultsJson)), '<strong>DO NOT ALTER THIS PARAM UNDER ANY CIRCUMSTANCES!</strong> This passes down adoptium\'s default constants to the downstream jobs. NOTE: <code>defaultsJson</code> has priority, the constants contained within this param will only be used as a failsafe.')
     }
 }

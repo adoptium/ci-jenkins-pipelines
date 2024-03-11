@@ -12,6 +12,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/* groovylint-disable MethodCount */
+
 import common.IndividualBuildConfig
 import groovy.json.*
 
@@ -39,6 +41,7 @@ class Builder implements Serializable {
     Map<String, ?> DEFAULTS_JSON
     String activeNodeTimeout
     Map<String, List<String>> dockerExcludes
+    boolean enableReproducibleCompare
     boolean enableTests
     boolean enableTestDynamicParallel
     boolean enableInstallers
@@ -86,8 +89,9 @@ class Builder implements Serializable {
     */
     IndividualBuildConfig buildConfiguration(Map<String, ?> platformConfig, String variant) {
         // Query the Adopt api to get the "tip_version"
-        def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
-        context.println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
+        String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+        context.println 'Querying Adoptium API for the JDK-Head number (tip_version)...'
         def response = JobHelper.getAvailableReleases(context)
         int headVersion = (int) response[('tip_version')]
         context.println "Found Java Version Number: ${headVersion}"
@@ -95,6 +99,8 @@ class Builder implements Serializable {
         if (javaToBuild == "jdk${headVersion}") {
             javaToBuild = 'jdk'
         }
+
+        Boolean isWeekly = (releaseType == "Weekly") ? true : false
 
         def additionalNodeLabels = formAdditionalBuildNodeLabels(platformConfig, variant)
 
@@ -121,7 +127,7 @@ class Builder implements Serializable {
         if (additionalBuildArgs) {
             buildArgs += ' ' + additionalBuildArgs
         }
-
+        def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
         def testList = getTestList(platformConfig, variant)
 
         def dynamicTestsParameters = getDynamicParams(platformConfig, variant)
@@ -142,6 +148,12 @@ class Builder implements Serializable {
             cleanWsAfter = platformCleanWorkspaceAfterBuild
         }
 
+        // We need to ensure that _adopt is stripped from any tags used in hotspot variant builds, as *_adopt tags do not exist upstream.
+        def adjustedScmReference = scmReference
+        if (variant.equals("hotspot")) {
+            adjustedScmReference = scmReference - ('_adopt')
+        }
+
         return new IndividualBuildConfig(
             JAVA_TO_BUILD: javaToBuild,
             ARCHITECTURE: platformConfig.arch as String,
@@ -150,7 +162,7 @@ class Builder implements Serializable {
             TEST_LIST: testList,
             DYNAMIC_LIST: dynamicList,
             NUM_MACHINES: numMachines,
-            SCM_REF: scmReference,
+            SCM_REF: adjustedScmReference,
             BUILD_REF: buildReference,
             CI_REF: ciReference,
             HELPER_REF: helperReference,
@@ -175,8 +187,10 @@ class Builder implements Serializable {
             ADDITIONAL_FILE_NAME_TAG: platformConfig.additionalFileNameTag as String,
             JDK_BOOT_VERSION: platformConfig.bootJDK as String,
             RELEASE: release,
+            WEEKLY: isWeekly,
             PUBLISH_NAME: publishName,
             ADOPT_BUILD_NUMBER: adoptBuildNumber,
+            ENABLE_REPRODUCIBLE_COMPARE: enableReproducibleCompare,
             ENABLE_TESTS: enableTests,
             ENABLE_TESTDYNAMICPARALLEL: enableTestDynamicParallel,
             ENABLE_INSTALLERS: enableInstallers,
@@ -212,61 +226,75 @@ class Builder implements Serializable {
 
         return ''
     }
+    /*
+    Get reproduciableCompare flag from the build configurations.
+    */
+    Boolean isEnableReproducibleCompare(Map<String, ?> configuration, String variant) {
+        Boolean enableReproducibleCompare = DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean
+        if ( env.JOB_NAME.contains('pr-tester') || env.JOB_NAME.contains('release')) {
+            enableReproducibleCompare = false
+        } else {
+            if (configuration.containsKey('reproducibleCompare')) {
+                def reproducibleCompare
+                if (isMap(configuration.reproducibleCompare)) {
+                    reproducibleCompare = (configuration.reproducibleCompare as Map).get(variant)
+                } else {
+                    reproducibleCompare = configuration.reproducibleCompare
+                }
+                if (reproducibleCompare != null) {
+                    enableReproducibleCompare = reproducibleCompare
+                }
+            }
+        }
+        return enableReproducibleCompare
+    }
 
     /*
     Get the list of tests to run from the build configurations.
     We run different test categories depending on if this build is a release or nightly. This function parses and applies this to the individual build config.
     */
     List<String> getTestList(Map<String, ?> configuration, String variant) {
-        final List<String> nightly = DEFAULTS_JSON['testDetails']['nightlyDefault']
-        final List<String> weekly = DEFAULTS_JSON['testDetails']['weeklyDefault']
         List<String> testList = []
         /*
         * No test key or key value is test: false  --- test disabled
-        * Key value is test: 'default' --- nightly build trigger 'nightly' test set, weekly build trigger or release build trigger 'nightly' + 'weekly' test sets
-        * Key value is test: [customized map] specified nightly and weekly test lists
+        * Key value is test: 'default' --- nightly build trigger 'nightly' test set, weekly build trigger 'weekly' or release build trigger 'release' test sets
+        * Key value is test: [customized map] specified nightly, weekly, release test lists
         * Key value is test: [customized map] specified for different variant
         */
         if (configuration.containsKey('test') && configuration.get('test')) {
             def testJobType = 'nightly'
-            if (releaseType.equals('Weekly') || releaseType.equals('Release')) {
+            if (releaseType.startsWith('Weekly')) {
                 testJobType = 'weekly'
+            } else if (releaseType.equals('Release')){
+                testJobType = 'release'
             }
             if (isMap(configuration.test)) {
                 if (configuration.test.containsKey(variant)) {
-                    //Test is enable for the variant
+                    //Test is enabled for the variant
                     if (configuration.test.get(variant)) {
                         def testObj = configuration.test.get(variant)
                         if (isMap(testObj)) {
-                            if (testJobType == 'nightly') {
-                                testList = (configuration.test.get(variant) as Map).get('nightly') as List<String>
+                            if (testObj.containsKey(testJobType)) {
+                                testList = (configuration.test as Map).get(testJobType) as List<String>
                             } else {
-                                testList = ((configuration.test.get(variant) as Map).get('nightly') as List<String>) + ((configuration.test as Map).get('weekly') as List<String>)
+                                testList = getDefaultTestList(testJobType)
                             }
                         } else if (testObj instanceof List) {
                             testList = (configuration.test as Map).get(variant) as List<String>
                         } else {
-                            if (testJobType == 'nightly') {
-                                testList = nightly
-                            } else {
-                                testList = nightly + weekly
-                            }
+                            testList = getDefaultTestList(testJobType)
                         }
                     }
                 } else {
-                    if (testJobType == 'nightly') {
-                        testList = (configuration.test as Map).get('nightly') as List<String>
+                    if (configuration.test.containsKey(testJobType)) {
+                        testList = (configuration.test as Map).get(testJobType) as List<String>
                     } else {
-                        testList = ((configuration.test as Map).get('nightly') as List<String>) + ((configuration.test as Map).get('weekly') as List<String>)
+                        testList = getDefaultTestList(testJobType)
                     }
                 }
             } else {
                 // Default to the test sets declared if one isn't set in the build configuration
-                if (testJobType == 'nightly') {
-                    testList = nightly
-                } else {
-                    testList = nightly + weekly
-                }
+                testList = getDefaultTestList(testJobType)
             }
         }
 
@@ -274,6 +302,26 @@ class Builder implements Serializable {
 
         return testList
     }
+
+    /*
+    Get default test list
+    */
+    List<String> getDefaultTestList(String testJobType) {
+        final List<String> nightly = DEFAULTS_JSON['testDetails']['nightlyDefault']
+        final List<String> weekly = DEFAULTS_JSON['testDetails']['weeklyDefault']
+        final List<String> release = DEFAULTS_JSON['testDetails']['releaseDefault']
+        List<String> testList = []
+
+        if (testJobType == 'nightly') {
+            testList = nightly
+        } else if (testJobType == 'weekly') {
+            testList = weekly
+        } else {
+            testList = release
+        }
+        return testList
+    }
+    
     /*
     Get the list of tests to dynamically run parallel builds from the build configurations.
     This function parses and applies this to the individual build config.
@@ -492,18 +540,20 @@ class Builder implements Serializable {
 
     /*
     Retrieves the platformSpecificConfigPath from the build configurations.
-    This determines where the location of the operating system setup files are in comparison to the repository root. The param is formatted like this because we need to download and source the file from the bash scripts.
+    This determines where the location of the operating system setup files are in comparison to the repository root.
+    The param is formatted like this because we need to download and source the file from the bash scripts.
     */
     def getPlatformSpecificConfigPath(Map<String, ?> configuration) {
         def splitUserUrl = ((String)DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
         // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
         String userOrgRepo = "${splitUserUrl[splitUserUrl.size() - 2]}/${splitUserUrl[splitUserUrl.size() - 1]}"
 
+        def buildRef = configuration.buildRef ?: DEFAULTS_JSON['repository']['build_branch']
         // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
-        def platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${DEFAULTS_JSON['configDirectories']['platform']}"
+        def platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${DEFAULTS_JSON['configDirectories']['platform']}"
         if (configuration.containsKey('platformSpecificConfigPath')) {
             // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations.linux.sh
-            platformSpecificConfigPath = "${userOrgRepo}/${DEFAULTS_JSON['repository']['build_branch']}/${configuration.platformSpecificConfigPath}"
+            platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
     }
@@ -626,7 +676,8 @@ class Builder implements Serializable {
         try {
             context.timeout(time: pipelineTimeouts.API_REQUEST_TIMEOUT, unit: 'HOURS') {
                 // Query the Adopt api to get the "tip_version"
-                def JobHelper = context.library(identifier: 'openjdk-jenkins-helper@master').JobHelper
+                String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
                 context.println 'Querying Adopt Api for the JDK-Head number (tip_version)...'
                 def response = JobHelper.getAvailableReleases(context)
                 return (int) response[('tip_version')]
@@ -660,19 +711,40 @@ class Builder implements Serializable {
         return "jdk${number}"
     }
 
+
+    /*
+    Returns the downstream build job's type by checking job folder's path
+    can be "evaluation" or "release" or null (in this case it is for the nightly or pr-tester)
+    */
+    def getBuildJobType() {
+        if (currentBuild.fullProjectName.contains("evaluation")){
+            return "evaluation"
+        } else if (currentBuild.fullProjectName.contains("release")) {
+            return "release"
+        }
+        return
+    }
+
     /*
     Returns the job name of the target downstream job
     */
     def getJobName(displayName) {
-        return "${javaToBuild}-${displayName}"
+        // if getBuildJobType return null, it is nightly or pr-tester
+        def buildJobType = getBuildJobType() ? getBuildJobType() + "-" : ""
+        return "${javaToBuild}-${buildJobType}${displayName}"
     }
 
     /*
-    Returns the jenkins folder of where it's assumed the downstream build jobs have been regenerated
+    Returns the jenkins folder of where we assume the downstream build jobs have been regenerated
+    e.g:
+    nightly:    build-scripts/jobs/jdk11u/jdk11u-linux-aarch64-temurin
+    evaluation:  build-scripts/jobs/evaluation/jobs/jdk17u/jdk17u-evaluation-mac-x64-openj9
+    release:    build-scripts/jobs/release/jobs/jdk21/jdk21-release-aix-ppc64-temurin
     */
     def getJobFolder() {
         def parentDir = currentBuild.fullProjectName.substring(0, currentBuild.fullProjectName.lastIndexOf('/'))
-        return parentDir + '/jobs/' + javaToBuild
+        def buildJobType = getBuildJobType() ? "/jobs/" + getBuildJobType() : ""
+        return parentDir + buildJobType + '/jobs/' + javaToBuild
     }
 
     /*
@@ -699,68 +771,64 @@ class Builder implements Serializable {
     /*
     Call job to push artifacts to github. Usually it's only executed on a nightly build
     */
-    def publishBinary() {
-        if (release) {
-            // make sure to skip on release
-            context.println('Not publishing release')
-            return
-        }
-
+    def publishBinary(IndividualBuildConfig config=null) {
         def timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
+        def javaVersion=determineReleaseToolRepoVersion()
+        def stageName = 'BETA publish'
+        def releaseComment = 'BETA publish'
         def tag = "${javaToBuild}-${timestamp}"
-
         if (publishName) {
             tag = publishName
         }
+        def osArch = 'all available OS&ARCHs'
+        def artifactsToCopy = '**/temurin/*.tar.gz,**/temurin/*.zip,**/temurin/*.sha256.txt,**/temurin/*.msi,**/temurin/*.pkg,**/temurin/*.json,**/temurin/*.sig'
+        def dryRun = false 
+        def String releaseToolUrl = "${context.HUDSON_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
+        if ( config != null ) {
+            def prefixOfArtifactsToCopy = "**/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}"             
+            artifactsToCopy = "${prefixOfArtifactsToCopy}/*.tar.gz,${prefixOfArtifactsToCopy}/*.zip,${prefixOfArtifactsToCopy}/*.sha256.txt,${prefixOfArtifactsToCopy}/*.msi,${prefixOfArtifactsToCopy}/*.pkg,${prefixOfArtifactsToCopy}/*.json,${prefixOfArtifactsToCopy}/*.sig"
+            osArch = "${config.TARGET_OS} ${config.ARCHITECTURE}"
+            dryRun = true
+            timestamp = ''
+            stageName = 'Dry run RELEASE publish'
+        }
 
-        context.stage('publish') {
-            context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
+        context.stage("${stageName}") {
+            context.println "${stageName} with publishName: ${tag} ${osArch}"
+            def releaseJob = context.build job: 'build-scripts/release/refactor_openjdk_release_tool',
                     parameters: [
                         ['$class': 'BooleanParameterValue', name: 'RELEASE', value: release],
+                        ['$class': 'BooleanParameterValue', name: 'DRY_RUN', value: dryRun],
                         context.string(name: 'TAG', value: tag),
                         context.string(name: 'TIMESTAMP', value: timestamp),
                         context.string(name: 'UPSTREAM_JOB_NAME', value: env.JOB_NAME),
                         context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${currentBuild.getNumber()}"),
-                        context.string(name: 'VERSION', value: determineReleaseToolRepoVersion())
+                        context.string(name: 'VERSION', value: javaVersion),
+                        context.string(name: 'ARTIFACTS_TO_COPY', value: "${artifactsToCopy}")
                     ]
+            if (release) {
+                releaseComment = 'RELEASE Publish'
+                if (releaseJob.getResult()) {
+                    releaseToolUrl += 'DRY_RUN=false&'
+                } else {
+                    releaseToolUrl += 'DRY_RUN=true&'
+                    releaseComment = 'Dry run RELEASE Publish'
+                }
+            }
         }
+        releaseToolUrl += "VERSION=${javaVersion}&RELEASE=${release}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}"
+        tag = URLEncoder.encode(tag, 'UTF-8')
+        artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
+        def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
+        releaseToolUrl += "&TAG=${tag}&UPSTREAM_JOB_NAME=${urlJobName}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
+
+        context.echo "return releaseToolUrl is ${releaseToolUrl}"
+        return ["${releaseToolUrl}", "${releaseComment}"]
     }
 
     /*
-    Remote Trigger JCK tests for weekly temurin builds
-    */
-    def remoteTriggerJckTests(String platforms) {
-        boolean isTemurin = true
-        targetConfigurations
-        .each { target ->
-            target.value.each { variant ->
-                    if (!variant.equals('temurin')) {
-                        isTemurin = false
-                    }
-            }
-        }
-        if (isTemurin) {
-            def jdkVersion = getJavaVersionNumber()
-            //def sdkUrl="https://ci.adoptopenjdk.net/job/build-scripts/job/openjdk${jdkVersion}-pipeline/${env.BUILD_NUMBER}/"
-            def sdkUrl = "${env.BUILD_URL}"
-            def targets = 'sanity.jck,extended.jck,special.jck'
-            context.triggerRemoteJob abortTriggeredJob: true,
-                                blockBuildUntilComplete: false,
-                                job: 'AQA_Test_Pipeline',
-                                parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                       context.MapParameter(name: 'TARGETS', value: targets),
-                                                                       context.MapParameter(name: 'TOP_LEVEL_SDK_URL', value: "${sdkUrl}"),
-                                                                       context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                       context.MapParameter(name: 'PLATFORMS', value: "${platforms}")]),
-                                remoteJenkinsName: 'temurin-compliance',
-                                shouldNotFailBuild: true,
-                                token: 'RemoteTrigger',
-                                useCrumbCache: true,
-                                useJobInfoCache: true
-        }
-    }
-    /*
-    Main function. This is what is executed remotely via the openjdkxx-pipeline and pr tester jobs
+    Main function. This is what is executed remotely via the [release-|evaluation-]openjdkxx-pipeline and pr-tester jobs
+    Running in the *openjdkX-pipeline
     */
     @SuppressWarnings('unused')
     def doBuild() {
@@ -770,12 +838,18 @@ class Builder implements Serializable {
             if (!checkConfigIsSane(jobConfigurations)) {
                 return
             }
-
-            if (release) {
-                if (publishName) {
-                    // Keep Jenkins release logs for real releases
-                    currentBuild.setKeepLog(keepReleaseLogs)
-                    currentBuild.setDisplayName(publishName)
+            def releaseSummary
+            if (publish) {
+                releaseSummary = context.manager.createSummary('next.svg')
+                if (release) {
+                    if (publishName) {
+                        // Keep Jenkins release logs for real releases
+                        currentBuild.setKeepLog(keepReleaseLogs)
+                        currentBuild.setDisplayName(publishName)
+                    }
+                    releaseSummary.appendText('<b>RELEASE PUBLISH BINARIES:</b><ul>', false)
+                } else {
+                    releaseSummary.appendText('<b>NIGHTLY PUBLISH BINARIES:</b><ul>', false)
                 }
             }
 
@@ -788,6 +862,7 @@ class Builder implements Serializable {
 
             context.echo "Java: ${javaToBuild}"
             context.echo "OS: ${targetConfigurations}"
+            context.echo "Enable reproducible compare: ${enableReproducibleCompare}"
             context.echo "Enable tests: ${enableTests}"
             context.echo "Enable Installers: ${enableInstallers}"
             context.echo "Enable Signer: ${enableSigner}"
@@ -802,16 +877,18 @@ class Builder implements Serializable {
             context.echo "Force auto generate AQA test jobs: ${aqaAutoGen}"
             context.echo "Keep test reportdir: ${keepTestReportDir}"
             context.echo "Keep release logs: ${keepReleaseLogs}"
-            def buildPlatforms = ''
+
             jobConfigurations.each { configuration ->
                 jobs[configuration.key] = {
                     IndividualBuildConfig config = configuration.value
 
-                    // jdk11u-linux-x64-hotspot
+                    // jdk21-linux-x64-temurin
                     def jobTopName = getJobName(configuration.key)
                     def jobFolder = getJobFolder()
-
-                    // i.e jdk11u/job/jdk11u-linux-x64-hotspot
+                    /*
+                        build-scripts/jobs/jdk21/jdk21-linux-x64-temurin for nightly
+                        build-scripts/evaluation/jobs/jdk21/jdk21-evaluation-linux-aarch64-hotspot for evaluation
+                    */
                     def downstreamJobName = "${jobFolder}/${jobTopName}"
                     context.echo 'build name ' + downstreamJobName
 
@@ -819,16 +896,38 @@ class Builder implements Serializable {
                         // Execute build job for configuration i.e jdk11u/job/jdk11u-linux-x64-hotspot
                         context.stage(configuration.key) {
                             // Triggering downstream job ${downstreamJobName}
-                            def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: config.toBuildParams()
 
-                            if (downstreamJob.getResult() == 'SUCCESS') {
-                                // copy artifacts from build
-                                context.println '[NODE SHIFT] MOVING INTO CONTROLLER NODE...'
-                                context.node('worker') {
-                                    context.catchError {
+                            def buildJobParams = config.toBuildParams()
+
+                            // Pass down constructed USER_REMOTE_CONFIGS if useAdoptShellScripts is false
+                            // But not for pr-tester as it generates target jobs with required remoteConfigs
+                            if (!useAdoptShellScripts && !env.JOB_NAME.contains('pr-tester')) {
+                                def user_ci_branch = ciReference ?: DEFAULTS_JSON["repository"]["pipeline_branch"]
+                                def user_ci_url    = DEFAULTS_JSON["repository"]["pipeline_url"]
+                                Map<String, ?> USER_REMOTE_CONFIGS = ["branch": user_ci_branch, "remotes": ["url": user_ci_url]]
+                                buildJobParams.add(['$class': 'TextParameterValue', name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(USER_REMOTE_CONFIGS)) ])
+                            }
+
+                            // Pass down DEFAULTS_JSON
+                            buildJobParams.add(['$class': 'TextParameterValue', name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(DEFAULTS_JSON)) ])
+
+                            def copyArtifactSuccess = false
+                            def downstreamJob = context.build job: downstreamJobName, propagate: false, parameters: buildJobParams
+
+                            context.println "Downstream job ${downstreamJobName} completed, result = "+downstreamJob.getResult()
+
+                            // copy artifacts from build regardless of job result
+                            context.println '[NODE SHIFT] MOVING INTO CONTROLLER NODE...'
+                            context.node('worker') {
+                                    context.catchError(message: "Error during copy and archive artifacts for build job: ${downstreamJobName}") {
                                         //Remove the previous artifacts
                                         try {
                                             context.timeout(time: pipelineTimeouts.REMOVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                                                if ( ! ( "${config.TARGET_OS}"    ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ||
+                                                     ! ( "${config.ARCHITECTURE}" ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ||
+                                                     ! ( "${config.VARIANT}"      ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ) {
+                                                    throw new Exception('[ERROR] Dubious character in TARGET_OS, ARCHITECTURE or VARIANT - aborting')
+                                                }
                                                 context.sh "rm -rf target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/"
                                             }
                                         } catch (FlowInterruptedException e) {
@@ -860,18 +959,6 @@ class Builder implements Serializable {
                                         }
                                         // Checksum
                                         context.sh 'for file in $(ls target/*/*/*/*.tar.gz target/*/*/*/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
-                                        def platform = ''
-                                        if (config.ARCHITECTURE.contains('x64')) {
-                                            platform = 'x86-64_' + config.TARGET_OS
-                                        } else {
-                                            platform = config.ARCHITECTURE + '_' + config.TARGET_OS
-                                        }
-                                        if (buildPlatforms == '') {
-                                            buildPlatforms = platform
-                                        } else {
-                                            buildPlatforms = buildPlatforms + ',' + platform
-                                        }
-
                                         // Archive in Jenkins
                                         try {
                                             context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
@@ -880,36 +967,51 @@ class Builder implements Serializable {
                                         } catch (FlowInterruptedException e) {
                                             throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
+
+                                        copyArtifactSuccess = true
+                                        if (release) {
+                                            def (String releaseToolUrl, String releaseComment) = publishBinary(config)
+                                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
+                                        }
                                     }
+                            }
+                            context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
+
+                            if (propagateFailures) {
+                                String previousPipelineStatus = currentBuild.result
+                                context.println("Propagating downstream job result: ${downstreamJobName}, Result: "+downstreamJob.getResult()+" CopyArtifactsSuccess: "+copyArtifactSuccess)
+                                if (copyArtifactSuccess) {
+                                    // currentBuild.result only allows itself to be set if the new status is worse than its current status.
+                                    // So FAILURE overrides UNSTABLE, and UNSTABLE overrides SUCCESS.
+                                    context.println("Attempting to set pipeline result to \""+downstreamJob.getResult()+"\".")
+                                    currentBuild.result = downstreamJob.getResult()
+                                } else {
+                                    context.println("Attempting to set pipeline result to \"FAILURE\".")
+                                    currentBuild.result = 'FAILURE'
                                 }
-                                context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
-                            } else if (propagateFailures) {
-                                context.error("Build failed due to downstream failure of ${downstreamJobName}")
-                                currentBuild.result = 'FAILURE'
+                                context.println("Attempt complete. Pipeline status was \""+previousPipelineStatus+"\", and is now \""+currentBuild.result+"\".")
                             }
                         }
                     }
                 }
             }
             context.parallel jobs
-
             // publish to github if needed
             // Don't publish release automatically
-            if (publish && !release) {
-                //During testing just remove the publish
-                try {
-                    context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                        publishBinary()
+            if (publish) {
+                if (release) {
+                    context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
+                } else {
+                    try {
+                        context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                            def (String releaseToolUrl, String releaseComment) = publishBinary()
+                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
+                        }
+                    } catch (FlowInterruptedException e) {
+                        throw new Exception("[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")
                     }
-                } catch (FlowInterruptedException e) {
-                    throw new Exception("[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")
                 }
-            } else if (publish && release) {
-                context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY'
-            } else if (release && enableTests) {
-                //remote trigger job https://ci.eclipse.org/temurin-compliance/job/AQA_Test_Pipeline/
-                context.echo 'Trigger the remote JCK jobs'
-                remoteTriggerJckTests(buildPlatforms)
+                releaseSummary.appendText('</ul>', false)
             }
         }
     }
@@ -923,6 +1025,7 @@ return {
     Map<String, ?> DEFAULTS_JSON,
     String activeNodeTimeout,
     String dockerExcludes,
+    String enableReproducibleCompare,
     String enableTests,
     String enableTestDynamicParallel,
     String enableInstallers,
@@ -964,10 +1067,14 @@ return {
     String publishName = '' // This is set to a timestamp later on if undefined
     if (overridePublishName) {
         publishName = overridePublishName
-        } else if (release) {
+    } else if (release) {
         // Default to scmReference, remove any trailing "_adopt" from the tag if present
         if (scmReference) {
             publishName = scmReference - ('_adopt')
+            //jdk8 arm jdk8u372-b07-aarch32-20230426 -> jdk8u372-b07
+            if (publishName.indexOf('-') != -1 && publishName.indexOf('-') != publishName.lastIndexOf('-')) {
+                publishName = publishName.substring(0, publishName.indexOf('-', publishName.indexOf('-') +1 ))
+            }
         }
     }
 
@@ -983,6 +1090,7 @@ return {
             DEFAULTS_JSON: DEFAULTS_JSON,
             activeNodeTimeout: activeNodeTimeout,
             dockerExcludes: buildsExcludeDocker,
+            enableReproducibleCompare: Boolean.parseBoolean(enableReproducibleCompare),
             enableTests: Boolean.parseBoolean(enableTests),
             enableTestDynamicParallel: Boolean.parseBoolean(enableTestDynamicParallel),
             enableInstallers: Boolean.parseBoolean(enableInstallers),

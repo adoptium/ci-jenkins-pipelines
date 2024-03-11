@@ -27,6 +27,46 @@ node('worker') {
     // Fail if unable to clean..
     cleanWs notFailBuild: false
 
+    if (params.releaseType == 'Release' && params.aqaReference != '' && params.scmReference != '') {
+        def propertyFile = 'testenv.properties'
+        if (params.jdkVersion == '8' && params.targetConfigurations.contains('arm32Linux')) {
+            propertyFile = 'testenv_arm32.properties'
+        }
+        if ( ! ( "${params.aqareference}" ==~ /^[A-Za-z0-9\/\.\-_]*$/ ) ) {
+          throw new Exception("[ERROR] Dubious characters in aqa reference - aborting");
+        }
+        sh("curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/${params.aqaReference}/testenv/${propertyFile}")
+
+        def buildTag = params.scmReference
+        if (params.scmReference.contains('_adopt')) {
+            buildTag = params.scmReference.substring(0, params.scmReference.length() - 6) // remove _adopt suffix
+        }
+
+        def list = readFile("${propertyFile}").readLines()
+        def jdkBranch = ""
+        def jdkOpenj9Branch = ""
+        for (item in list) {
+            if (item.contains("JDK${params.jdkVersion}_BRANCH")) {
+                def branchInfo = item.split('=')
+                jdkBranch = branchInfo[1]
+            } else if (item.contains("JDK${params.jdkVersion}_OPENJ9_BRANCH")) {
+                def branchInfo = item.split('=')
+                jdkOpenj9Branch = branchInfo[1]
+            }
+            if (jdkBranch && jdkOpenj9Branch) {
+                break
+            }
+        }
+        if (jdkBranch == buildTag) {
+            println "[INFO] scmReference=${buildTag} matches with JDK${params.jdkVersion}_BRANCH=${jdkBranch} in ${propertyFile} in aqa-tests release branch."
+        } else if (jdkOpenj9Branch == buildTag) {
+            println "[INFO] scmReference=${buildTag} matches with JDK${params.jdkVersion}_OPENJ9_BRANCH=${jdkOpenj9Branch} in ${propertyFile} in aqa-tests release branch."
+        } else {
+            println "[ERROR] scmReference does not match with any JDK branch in ${propertyFile} in aqa-tests release branch. Please update aqa-tests ${params.aqaReference} release branch. Set the current build result to FAILURE!"
+            currentBuild.result = 'FAILURE'
+            return
+        }
+    }
     // Load defaultsJson. These are passed down from the build_pipeline_generator and is a JSON object containing user's default constants.
     if (!params.defaultsJson || defaultsJson == '') {
         throw new Exception('[ERROR] No User Defaults JSON found! Please ensure the defaultsJson parameter is populated and not altered during parameter declaration.')
@@ -53,7 +93,8 @@ node('worker') {
 
     scmVars = checkout scm
 
-    library(identifier: 'openjdk-jenkins-helper@master')
+    String helperRef = DEFAULTS_JSON['repository']['helper_ref']
+    library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
     // Load baseFilePath. This is where build_base_file.groovy is located. It runs the downstream job setup and configuration retrieval services.
     def baseFilePath = (params.baseFilePath) ?: DEFAULTS_JSON['baseFileDirectories']['upstream']
@@ -111,6 +152,7 @@ if (scmVars != null || configureBuild != null || buildConfigurations != null) {
             DEFAULTS_JSON,
             activeNodeTimeout,
             dockerExcludes,
+            enableReproducibleCompare,
             enableTests,
             enableTestDynamicParallel,
             enableInstallers,

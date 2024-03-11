@@ -4,8 +4,8 @@ class Config11 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels : 'macos10.14',
                 test                : 'default',
+                additionalNodeLabels: 'xcode15.0.1',
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto --with-cmake',
                         'temurin'     : '--enable-dtrace=auto'
@@ -22,12 +22,11 @@ class Config11 {
                 dockerFile: [
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional'],
-                        weekly : ['extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external']
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
                 ],
                 configureArgs       : [
-                        'openj9'      : '--enable-jitserver --enable-dtrace=auto',
+                        'openj9'      : '--enable-dtrace=auto',
                         'temurin'     : '--enable-dtrace=auto',
                         'corretto'    : '--enable-dtrace=auto',
                         'SapMachine'  : '--enable-dtrace=auto',
@@ -66,7 +65,7 @@ class Config11 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: [
-                        temurin:    'win2012&&vs2019',
+                        temurin:    'win2022&&vs2019',
                         openj9:     'win2012&&vs2017',
                         dragonwell: 'win2012'
                 ],
@@ -76,21 +75,10 @@ class Config11 {
                 test                : 'default'
         ],
 
-        aarch64Windows: [
-                os                  : 'windows',
-                arch                : 'aarch64',
-                crossCompile        : 'x64',
-                additionalNodeLabels: 'win2016&&vs2019',
-                test                : false,
-                buildArgs       : [
-                        'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile'
-                ]
-        ],
-
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2012&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 buildArgs : [
                         temurin : '--jvm-variant client,server --create-sbom'
                 ],
@@ -100,11 +88,9 @@ class Config11 {
         ppc64Aix    : [
                 os                  : 'aix',
                 arch                : 'ppc64',
-                additionalNodeLabels: [
-                        temurin: 'xlc16&&aix710',
-                        openj9:  'xlc16&&aix715'
-                ],
+                additionalNodeLabels: 'xlc13&&aix720',
                 test                : 'default',
+                additionalTestLabels: 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -114,6 +100,7 @@ class Config11 {
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
+                dockerImage         : 'rhel7_build_image',
                 test                : 'default',
                 configureArgs       : '--enable-dtrace=auto',
                 buildArgs           : [
@@ -134,11 +121,11 @@ class Config11 {
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                additionalNodeLabels : 'centos7',
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
                         'temurin'     : '--enable-dtrace=auto',
-                        'openj9'      : '--enable-dtrace=auto --enable-jitserver'
+                        'openj9'      : '--enable-dtrace=auto'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -149,8 +136,8 @@ class Config11 {
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
-                additionalNodeLabels: 'macos11',
                 test                : 'default',
+                additionalNodeLabels: 'xcode15.0.1',
                 configureArgs       : '--disable-ccache',
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -188,7 +175,6 @@ class Config11 {
                         'dragonwell': "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
                         'bisheng'   : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
                 ],
-                testDynamic        : false,
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -196,28 +182,52 @@ class Config11 {
 
         riscv64Linux      :  [
                 os                   : 'linux',
+                arch                 : 'riscv64',
                 dockerImage          : [
+                        'temurin'    : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                         'openj9'     : 'adoptopenjdk/centos6_build_image',
                         'bisheng'    : 'adoptopenjdk/centos6_build_image'
                 ],
-                arch                 : 'riscv64',
+                dockerArgs           : [
+                        'temurin'    : '--platform linux/riscv64'
+                ],
                 crossCompile         : [
+                        'temurin'    : 'dockerhost-rise-ubuntu2204-aarch64-1',
                         'openj9'     : 'x64',
                         'bisheng'    : 'x64'
                 ],
                 buildArgs            : [
+                        'temurin'    : '--create-sbom',
                         'openj9'     : '--cross-compile',
-                        'bisheng'    : '--cross-compile --branch risc-v',
-                        'temurin'    : '--create-sbom'
+                        'bisheng'    : '--cross-compile --branch risc-v'
                 ],
                 configureArgs        : [
+                        'temurin'    : '--enable-headless-only=yes --enable-dtrace --disable-ccache',
                         'openj9'     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
                         'bisheng'    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
                 ],
                 test                : [
-                        nightly: ['sanity.openjdk'],
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                        'temurin'   : 'default',
+                        'openj9'    : [
+                                nightly: ['sanity.openjdk'],
+                                weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                        ],
+                        'bisheng'   : [
+                                nightly: ['sanity.openjdk'],
+                                weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                        ]
                 ],
+        ],
+
+        aarch64Windows: [
+                os                  : 'windows',
+                arch                : 'aarch64',
+                crossCompile        : 'x64',
+                additionalNodeLabels: 'win2022&&vs2019',
+                test                : 'default',
+                buildArgs       : [
+                        'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile'
+                ]
         ]
   ]
 

@@ -10,6 +10,6 @@ Unsure where to raise something? Here are some of the common places:
 - If your issue is related to our end user shell scripts (not the jenkins groovy scripts), raise it in [temurin-build](https://github.com/adoptium/temurin-build/)
 - If your issue is related to our installers (as opposed to tgz/zip downloads), raise it in [installer](https://github.com/adoptium/installer)
 - If your issue is related to and end-user visible issue with the JDK, or an underlying java bug, please raise it in [adoptium-support](https://github.com/adoptium/adoptium-support/issues)
-- Otherwise, take a look at our TSC repository directory [here](https://github.com/AdoptOpenJDK/TSC/#dependent-projects). If you're still not sure then join our [slack channel[(http://adoptium.net/slack) and ask on `#general`
+- Otherwise, take a look at our Adoptium repository directory [here](https://github.com/adoptium/adoptium/#Eclipse-Adoptium). If you're still not sure then join our [slack channel[(http://adoptium.net/slack) and ask on `#general`
 
 **Problem description:**

@@ -2,15 +2,17 @@
 
 ## High level diagram on Jenkins build/test jobs interaction
 
+### Nightly and Weekly pipeline
+
 ```mermaid
 
 flowchart TD
 
 WeeklyTimer --run job--> PipelineW["Weekly Job:\nbuild-scripts/weekly-openjdk*ver-pipeline"]
 
-PipelineW --multiple trigger by variants as Release releaseType--> PipelineN["Nightly Job:\nbuild-scripts/openjdk*ver-pipeline"]
+PipelineW --multiple trigger by variants and use 'Release' as releaseType--> PipelineN["Nightly Job:\nbuild-scripts/openjdk*ver-pipeline"]
 
-NightlyTimer --run job with Nightly as releaseType--> PipelineN
+NightlyTimer --run job with 'Nightly' as releaseType--> PipelineN
 
 PipelineN --run downstream--> DS1["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
 PipelineN --run downstream--> DS2["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
@@ -32,36 +34,67 @@ class DS12 c12
 
 ```
 
+### Evaluation and Weekly-evaluation pipeline
+
+```mermaid
+
+flowchart TD
+EvaluationWeeklyTimer --run job--> PipelineWP["evaluation Weekly Job:\nbuild-scripts/weekly-evaluation-openjdk*ver-pipeline"]
+
+PipelineWP --multiple trigger by variants and use 'Nightly Not Publish' as releaseType--> PipelineNP["Evaluation Job:\nbuild-scripts/evaluation-openjdk*ver-pipeline"]
+
+EvaluationNightlyTimer --run job with 'Nightly Not Publish' as releaseType--> PipelineNP
+
+PipelineNP --run downstream--> DS1P["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+PipelineNP --run downstream--> DS2P["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+PipelineNP --run downstream --> DS3P["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
+PipelineNP --run downstream --> DS12P["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"] 
+
+```
+
 ## High level diagram on Jenkins Pipeline Creation
 
 ```mermaid
 
-flowchart LR
+flowchart
 
 subgraph 1
 
-Trigger[SCM change] --trigger--> Seed1["Seed Job:\nbuild-scripts/utils/build-pipeline-generator"]
-
-Seed1 --create jobs--> Pipelinen1["Nightly Job:\nbuild-scripts/openjdk*ver-pipeline"]
-
-Seed1 --create jobs--> Pipelinew1["Weekly Job:\nbuild-scripts/weekly-openjdk*ver-pipeline"]
+Trigger[SCM change from GitHub] --trigger--> Seed21["Main Seed Job:\nbuild-scripts/utils/build-pipeline-generator"]
+Trigger --trigger--> Seed22["Evaluation Seed Job:\nbuild-scripts/utils/evaluation-pipeline-generator"]
 
 end
 
 subgraph 2
 
-Seed["Seed Job:\nbuild-scripts/utils/build-pipeline-generator"] --call--> Call1["Script: build/regeneration/build_pipeline_generator.groovy"]
+Seed21 --create jobs--> Pipelinen1["Nightly Pipeline:\nbuild-scripts/openjdk*ver-pipeline"]
+Seed21 --create jobs--> Pipelinew1["Weekly Pipeline:\nbuild-scripts/weekly-openjdk*ver-pipeline"]
 
-Seed--load--> Load1["Load Config: jobs/configurations/*.groovy"]
+Seed22 --create jobs--> Pipelinenp1["Evaluation Pipeline:\nbuild-scripts/evaluation-openjdk*ver-pipeline"]
+Seed22 --create jobs--> Pipelinewp1["Weekly Evaluation Pipeline:\nbuild-scripts/weekly-evaluation-openjdk*ver-pipeline"]
 
-Call1 & Load1--> Pipelinew["Weekly Job: build-scripts/weekly-openjdk*ver-pipeline"] & Pipelinen["Nightly Job: build-scripts/openjdk*ver-pipeline"]
+end
+
+subgraph 3
+
+Seed1["Main Seed Job:\nbuild-scripts/utils/build-pipeline-generator"] --use--> Call1["Jenkinsfile: build/regeneration/build_pipeline_generator.groovy"]
+
+Seed1--load--> Load1["Load Config: jobs/configurations/jdk*ver(u).groovy"]
+
+Call1 & Load1--> Pipelinew["Weekly Pipeline: build-scripts/weekly-openjdk*ver-pipeline"] & Pipelinen["Nightly Pipeline: build-scripts/openjdk*ver-pipeline"]
+
+Seed2["Evaluation Seed Job:\nbuild-scripts/utils/evaluation-pipeline-generator"] --use--> Call2["Jenkinsfile: build/regeneration/evaluation?pipeline_generator.groovy"]
+
+Seed2--load--> Load2["Load Config: jobs/configurations/jdk*ver(u)_evaluation.groovy"]
+
+Call2 & Load2--> Pipelinew2["Weekly Evaluation Pipeline: build-scripts/weekly-evaluation-openjdk*ver-pipeline"] & Pipelinen2["Evaluation Pipeline: build-scripts/evaluation-openjdk*ver-pipeline"]
 
 end
 
 classDef red fill:#ffcce5,stroke:#333,stroke-width:2px
 classDef yellow fill:#ffff99,stroke:#333,stroke-width:2px
 classDef grey fill:#999999,stroke:#333,stroke-width:2px
-class Seed1,Seed red
+class Seed1,Seed21 red
 class Pipelinen1,Pipelinen yellow
 class Pipelinew1,Pipelinew grey
 
@@ -75,12 +108,15 @@ flowchart LR
 
 subgraph 1
 
-Trigger2[manual trigger] --> Seed["Seed Job:\nbuild-scripts/utils/pipeline_jobs_generator_jdk*ver"]
+Trigger2[SCM change from GitHub] --> Seed["Seed Job:\nbuild-scripts/utils/pipeline_jobs_generator_jdk*ver"]
+Trigger2 --> Seedp["Seed Job:\nbuild-scripts/utils/evaluation-pipeline_jobs_generator_jdk*ver"]
 
 Seed --create--> Downstream1["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
 Seed --create--> Downstream2["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
 Seed --create--> Downstream3["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
-Seed --create--> Downstream4["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
+Seedp --create--> Downstreamp1["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
+Seedp --create--> Downstreamp2["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
+Seedp --create--> Downstreamp3["Job:\nbuild-scripts/jobs/evaluation/jobs/jdk*ver/jdk*ver-*os-*arch-*var"]
 
 end
 
@@ -92,14 +128,13 @@ Call2[Script: build/regeneration/build_job_generator.groovy]
 Call2 --create job--> DS1["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
 Call2 --create job--> DS2["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
 Call2 --create job--> DS3["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
-Call2 --create job--> DS12["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"]
 
 end
 
 subgraph 3
 
 s3["build/regeneration/build_job_generator.groovy"] --read and parse-->
-confile["defaults.json"] --checkout--> gitrepo["repository.pipeline_url@pipeline_branch"] --library--> library["openjdk-jenkins-helper@master"] 
+confile["defaults.json"] --checkout--> gitrepo["repository.pipeline_url@pipeline_branch"] --library--> library["openjdk-jenkins-helper@${helperRef}"] 
 
 library --load config--> Load1["Build Config:\npipelines/jobs/configurations/jdk*ver(u)_pipeline_config.groovy"]  --initial--> const
 library --load config --> Load2["Target Config:\npipelines/jobs/configurations/jdk*ver.groovy"]  --initial--> const
@@ -143,13 +178,13 @@ class DS12,Downstream4 c6
 
 ```
 
-## Mainflow logic of running Nightly pipeline: build-scripts/openjdk\*ver-pipeline
+## Mainflow logic of running Nightly and Evaluation pipeline: build-scripts/openjdk\*ver-pipeline
 
 ```mermaid
 
 flowchart TD
 
-subgraph nightly_pipeline_job
+subgraph nightly_and_evaluation_pipeline_job
 
 Call[build/openjdk_pipeline.groovy] --load script-->
 Load1[build/common/build_base_file.groovy]
@@ -166,8 +201,10 @@ end
 
 Build --"run downstream job" -->
 variantJob["Job:\nbuild-scripts/jobs/jdk*ver/jdk*ver-*os-*arch-*variant"] -->
-checkpublish{publish && !release} --true: run-->
+copyArtifacts["copy up binary and tap file back to pipeline"] -->
+checkpublish{publish && !release} --"only when it is Nightly pipeline"-->
 Publish["Job:\nbuild-scripts/release/refactor_openjdk_release_tool"]
+
 
 classDef yellow fill:#ffff99
 classDef c12 fill:#ccffff,stroke:#333,stroke-width:2px
@@ -184,14 +221,14 @@ flowchart TD
 
 subgraph job
 
-starter["pipeline script: pipeline/build/common/kick_off_build.groovy"] --library--> library["openjdk-jenkins-helper@master"]  --load class--> Load1["pipelines/build/common/openjdk_build_pipeline.groovy"] --internal_call--> Builder["build()"]
+starter["pipeline script: pipeline/build/common/kick_off_build.groovy"] --library--> library["openjdk-jenkins-helper@${helperRef}"]  --load class--> Load1["pipelines/build/common/openjdk_build_pipeline.groovy"] --internal_call--> Builder["build()"]
 
 starter --parameter--> p1["LOCAL_DEFAULTS_JSON"] --pass--> Load1
 starter --parameter--> p2["ADOPT_DEFAULTS_JSON"] --pass--> Load1
 
 subgraph internal_build
 
-Builder --library--> library2["openjdk-jenkins-helper@master"] --> docker{"DOCKER_IMAGE"}
+Builder --library--> library2["openjdk-jenkins-helper@${helperRef}"] --> docker{"DOCKER_IMAGE"}
 
 docker --true: run--> dockerbuild["Jenkins'call: docker.build(build-image)"] --> sign
 docker --false:call_function--> CallbuildScript["buildScripts()"] --> sign{enableSigner} --true:call_function--> sign2["sign()"] --> testStage{enableTests}
@@ -200,7 +237,16 @@ testStage --"true:call_function"--> smoketest["runSmokeTests()"] --> parallel{"T
 testStage --"false"--> shouldInstaller
 parallel --"false"--> shouldInstaller
 
-subgraph parallel_tests
+smoketest --> checkJCK{"check if remoteTriggerJckTests"} 
+
+
+subgraph parallel_jck__tests
+
+checkJCK --"temurin & Release"--> remoteTriggerJckTests
+
+end
+
+subgraph parallel_aqa__tests
 
 parallel --"true: run as stages in pipeline"-->
 Stage2["runAQATests() as parallel stages"] --"invoke"-->
@@ -387,7 +433,7 @@ job[openjdk_build_docker_multiarch] --load--> load[Jenkinsfile] --stage1-->
 
 stage1[Docker build stage]
 
-stage1 --> 11[linux x64] --> stagecheck{ build all pass}
+stage1 --> 11[linux x64] --> stagecheck{ builds all pass}
 
 stage1 --> 12[linux aarch64]--> stagecheck
 

@@ -5,8 +5,7 @@ class Config8 {
                 os                  : 'mac',
                 arch                : 'x64',
                 additionalNodeLabels: [
-                        temurin : 'macos10.14',
-                        corretto: 'build-macstadium-macos1010-1',
+                        temurin : 'xcode11.7',
                         openj9  : 'macos10.14'
                 ],
                 test                 : 'default',
@@ -23,9 +22,10 @@ class Config8 {
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile',
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell.dockerfile'
                 ],
-                test                 : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
+                ],
                 configureArgs       : [
-                        'openj9'      : '--enable-jitserver',
                         'dragonwell'  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
                 ],
                 buildArgs           : [
@@ -58,7 +58,7 @@ class Config8 {
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2017',
+                additionalNodeLabels: 'win2022&&vs2017',
                 test                 : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -68,7 +68,7 @@ class Config8 {
         x32Windows    : [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2012',
+                additionalNodeLabels: 'win2022',
                 buildArgs : [
                         temurin : '--jvm-variant client,server --create-sbom'
                 ],
@@ -78,11 +78,9 @@ class Config8 {
         ppc64Aix      : [
                 os  : 'aix',
                 arch: 'ppc64',
-                additionalNodeLabels: [
-                        temurin: 'xlc13&&aix710',
-                        openj9:  'xlc13&&aix715'
-                ],
+                additionalNodeLabels: 'xlc13&&aix720',
                 test                 : 'default',
+                additionalTestLabels : 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -96,6 +94,7 @@ class Config8 {
                         temurin: ['sanity.openjdk'],
                         openj9: 'default'
                 ],
+                dockerImage         : 'rhel7_build_image',
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -122,11 +121,8 @@ class Config8 {
         ppc64leLinux  : [
                 os  : 'linux',
                 arch: 'ppc64le',
-                additionalNodeLabels : 'centos7',
-                test                 : 'default',
-                configureArgs       : [
-                        'openj9'      : '--enable-jitserver'
-                ],
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
+                test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -152,7 +148,6 @@ class Config8 {
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell_aarch64.dockerfile'
                 ],
                 test                 : 'default',
-                testDynamic          : false,
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]

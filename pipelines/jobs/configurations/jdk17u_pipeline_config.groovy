@@ -4,11 +4,14 @@ class Config17 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels: 'macos10.14',
+                additionalNodeLabels: 'xcode15.0.1',
                 additionalTestLabels: [
                         openj9      : '!sw.os.osx.10_11'
                 ],
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -25,12 +28,17 @@ class Config17 {
                 dockerFile: [
                         openj9      : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
+                ],
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 additionalTestLabels: [
                         openj9      : '!(centos6||rhel6)'
                 ],
                 configureArgs       : [
-                        'openj9'    : '--enable-dtrace --enable-jitserver',
+                        'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
@@ -63,29 +71,23 @@ class Config17 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
+                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22000.0/ucrt/DLLs/x64'",
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
-                ]
-        ],
-
-        aarch64Windows: [
-                os                  : 'windows',
-                arch                : 'aarch64',
-                crossCompile        : 'x64',
-                additionalNodeLabels: 'win2016&&vs2019',
-                test                : false,
-                buildArgs       : [
-                        'temurin'   : '--create-jre-image --create-sbom --cross-compile'
                 ]
         ],
 
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2012&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
+                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22000.0/ucrt/DLLs/x86'",
                 buildArgs           : [
                         'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom'
                 ]
@@ -94,11 +96,9 @@ class Config17 {
         ppc64Aix    : [
                 os                  : 'aix',
                 arch                : 'ppc64',
-                additionalNodeLabels: [
-                        temurin: 'xlc16&&aix710',
-                        openj9:  'xlc16&&aix715'
-                ],
+                additionalNodeLabels: 'xlc13&&aix720',
                 test                : 'default',
+                additionalTestLabels: 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -108,7 +108,11 @@ class Config17 {
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
+                dockerImage         : 'rhel7_build_image',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -118,11 +122,10 @@ class Config17 {
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                additionalNodeLabels: 'centos7',
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                configureArgs       : [
-                        'temurin'     : '--enable-dtrace',
-                        'openj9'      : '--enable-dtrace --enable-jitserver'
+                reproducibleCompare : [
+                        'temurin'   : true
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -135,7 +138,9 @@ class Config17 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs : '--enable-dtrace',
-                testDynamic          : false,
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -145,8 +150,11 @@ class Config17 {
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
-                additionalNodeLabels: 'macos11',
+                additionalNodeLabels: 'xcode15.0.1',
                 test                : 'default',
+                reproducibleCompare : [
+                        'temurin'   : true
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -164,8 +172,31 @@ class Config17 {
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
-        ]
+        ],
 
+        riscv64Linux      :  [
+                os                  : 'linux',
+                arch                : 'riscv64',
+                crossCompile        : 'dockerhost-rise-ubuntu2204-aarch64-1',
+                dockerImage         : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
+                dockerArgs          : '--platform linux/riscv64',
+                test                : 'default',
+                configureArgs       : '--enable-headless-only=yes --enable-dtrace',
+                buildArgs           : [
+                        'temurin'   : '--create-jre-image --create-sbom'
+                ]
+        ],
+
+        aarch64Windows: [
+                os                  : 'windows',
+                arch                : 'aarch64',
+                crossCompile        : 'x64',
+                additionalNodeLabels: 'win2022&&vs2019',
+                test                : 'default',
+                buildArgs       : [
+                        'temurin'   : '--create-jre-image --create-sbom --cross-compile'
+                ]
+        ]
   ]
 
 }

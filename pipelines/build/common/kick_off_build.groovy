@@ -34,6 +34,7 @@ if (!ADOPT_DEFAULTS_JSON) {
 def baseFilePath = (params.CUSTOM_BASEFILE_LOCATION) ?: LOCAL_DEFAULTS_JSON['baseFileDirectories']['downstream']
 
 def userRemoteConfigs = [:]
+def buildConf = [:]
 def downstreamBuilder = null
 node('worker') {
     /*
@@ -51,8 +52,20 @@ node('worker') {
     if (params.USER_REMOTE_CONFIGS) {
         userRemoteConfigs = new JsonSlurper().parseText(USER_REMOTE_CONFIGS) as Map
     }
+    if (BUILD_CONFIGURATION) { // overwrite branch from USER_REMOTE_CONFIGS if the value is not empty or null
+        buildConf = new JsonSlurper().parseText(BUILD_CONFIGURATION) as Map
+        userRemoteConfigs['branch'] = buildConf.get('CI_REF') ?: userRemoteConfigs['branch']
 
-    library(identifier: 'openjdk-jenkins-helper@master')
+        // If using User scripts and USER_REMOTE_CONFIGS supplied ensure downstreamBuilder is loaded from the user repo
+        def useAdoptShellScripts = Boolean.valueOf(buildConf.get('USE_ADOPT_SHELL_SCRIPTS'))
+        if (!useAdoptShellScripts && params.USER_REMOTE_CONFIGS) {
+            println "Checking out User pipelines url from userRemoteConfigs: ${userRemoteConfigs}"
+            checkout([$class: 'GitSCM', userRemoteConfigs: [[url: userRemoteConfigs['remotes']['url']]], branches: [[name: userRemoteConfigs['branch']]] ])
+        }
+    }
+
+    String helperRef = buildConf.get('HELPER_REF') ?: LOCAL_DEFAULTS_JSON['repository']['helper_ref']
+    library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
     try {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
@@ -64,6 +77,7 @@ node('worker') {
     }
 }
 
+// construct class Build()
 downstreamBuilder(
     BUILD_CONFIGURATION,
     userRemoteConfigs,

@@ -11,9 +11,6 @@ targetConfigurations = [
         'x64Windows'  : [
                 'temurin'
         ],
-        'aarch64Windows' : [
-                'temurin'
-        ],
         'x32Windows'  : [
                 'temurin'
         ],
@@ -52,5 +49,7 @@ weekly_release_scmReferences = [
         'corretto'       : '',
         'dragonwell'     : ''
 ]
+
+disableJob = true
 
 return this

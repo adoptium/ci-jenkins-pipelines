@@ -6,7 +6,7 @@ The demo pipelines are colloquially known as "The PR Tester" and the others are 
 
 ## When they're used
 
-Except for the [#openjdk-build-pr-tester](#openjdk-build-pr-tester), all of the [test groups](#what-they-are) are executed automatically on every PR and are defined inside the [.github/workflows directory](.github/workflows).
+Except for the [#openjdk-build-pr-tester](#openjdk-build-pr-tester), all of the [test groups](#what they are) are executed automatically on every PR and are defined inside the [.github/workflows directory](.github/workflows).
 These tests lint & compile the code you have altered, as well as executing full JDK builds using your code.
 Every new pull request to this repository that alters any groovy code OR that will likely affect our Jenkins builds should have the PR tester ([#openjdk-build-pr-tester](#openjdk-build-pr-tester)) run on it at least once to verify the changes don't break anything significant inside a Jenkins build environment (documentation changes being excluded from this rule).
 
@@ -14,15 +14,15 @@ Every new pull request to this repository that alters any groovy code OR that wi
 
 There are four "groups" of tests that can be run on each PR:
 
-- [#Test](#Test)
-- [#openjdk-build-pr-tester](#openjdk-build-pr-tester) (**OPTIONAL, SEE [#When they're used](#When-they're-used)**)
+- GitHub action [Test](#test)
+- Jenkins [openjdk-build-pr-tester](#openjdk-build-pr-tester) (**OPTIONAL, SEE [When they're used](#when they're used)**)
 
 The results of these jobs will appear as [GitHub Status Check Results](https://docs.github.com/en/github/administering-a-repository/about-required-status-checks) at the bottom of the PR being tested:
 ![Image of PR Tester Checks](./images/pr_tester_checks.png)
 
 ### Test
 
-This group consists of [GitHub Status Checks](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-status-checks) run inside GitHub itself. They unit test any code changes you have made.
+This group consists of [GitHub Status Checks Results](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-status-checks) run inside GitHub itself. They unit-test any code changes you have made.
 
 #### Groovy
 
@@ -35,12 +35,13 @@ cd pipelines/
 ./gradlew --info test
 ```
 
-### openjdk-build-pr-tester
+### Openjdk-build-pr-tester
 
-- **Seen in the PR Status Checks as `pipeline-build-check`, the job is located [here](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/)**
-- This job runs the a set of [sandbox pipelines](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/build-test/) to test the changes that you have made to our codebase.
-- It first executes [kick_off_tester.groovy](pipelines/build/prTester/kick_off_tester.groovy) which in turn kicks off our [pr_test_pipeline](pipelines/build/prTester/pr_test_pipeline.groovy), the main base file for this job.
-- NOTE: This tester is only really worth running if your code changes affect our groovy code OR Jenkins environment. Otherwise, the [#Build](#Build) jobs are sufficient enough to flag any problems with your code.
+- **Seen in the PR Status Checks as `pipeline-build-check`, the job is located [here](https://ci.adoptium.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/)**
+- This job runs the a set of [sandbox pipelines](https://ci.adoptium.net/job/build-scripts-pr-tester/job/build-test/) to test the changes that you have made to our codebase.
+- It first executes [kick_off_tester.groovy](pipelines/build/prTester/kick_off_tester.groovy) which in turn kicks off our [pr_test_pipeline](pipelines/build/prTester/pr_test_pipeline.groovy), then main base file for this job.
+- NOTE: This tester is only really worth running if your code changes affect our groovy code OR Jenkins environment. Otherwise, the [Build](https://ci.adoptium.net/job/build-scripts/) jobs are sufficient enough to flag any problems with your code.
+- NOTE2: Any PR change made into [kick_off_tester.groovy](pipelines/build/prTester/kick_off_tester.groovy) requires updates in [pipeline-build-check](https://ci.adoptium.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/) asking admin for assistant if you do not have permission to update job config.
 
 #### Usage
 
@@ -51,7 +52,7 @@ If you are on either list, the PR tester will run against your PR whenever you c
 
 - Executes a new [#openjdk-build-pr-tester](#openjdk-build-pr-tester) job against this PR. These jobs will populate the GitHub status checks field as described above.
 
-Please be patient as the tester does not run concurrently so it may take some time to execute the jobs if there is a long job queue. You can track the progress of it in [Jenkins](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/) OR look at the status check message:
+Please be patient as the tester does not run concurrently so it may take some time to execute the jobs if there is a long job queue. You can track the progress of it in [Jenkins](https://ci.adoptium.net/job/build-scripts-pr-tester/) OR look at the status check message:
 
 - Example of a PR that is in the queue:
   ![Image of queued tester](./images/pr_tester_queued.png)
@@ -76,12 +77,12 @@ If you're unsure if the tests failed because of your changes or not, check our [
 
 Similar to `run tests` but runs a subset of jdk test jobs. Without specific jdk version, it uses 17, otherwise loops over given versions
 Example:
-`run tests quick` is the same as `run tests quick 19`
-`run tests quick 11, 19, 8` generates all jobs then runs openjdk pipeline on 8, 11 and 19
+`run tests quick` is the same as `run tests quick 21`
+`run tests quick 11, 21, 8` generates all jobs then runs openjdk pipeline on 8, 11 and 21
 
 ##### `add to whitelist`
 
 - **ADMIN COMMAND ONLY**
 - This command adds a new user to the whitelist but not to the admin list of the [#openjdk-build-pr-tester](#openjdk-build-pr-tester) job. As of typing this, there is [currently no way to check if you have the correct permissions](https://github.com/adoptium/temurin-build/issues/2055#issuecomment-688801090).
 - Should you want to be promoted to the whitelist, please contact one of the admins through [#infrastructure](https://adoptopenjdk.slack.com/archives/C53GHCXL4) in Slack.
-- Should you want the up to date admin or white list, check the configuration of the [openjdk-build-pr-tester](https://ci.adoptopenjdk.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/) job. If you don't have the permissions to view the configuration, then try out the `add to whitelist` and `run tests` commands on a test PR to see if they work.
+- Should you want the up to date admin or white list, check the configuration of the [openjdk-build-pr-tester](https://ci.adoptium.net/job/build-scripts-pr-tester/job/openjdk-build-pr-tester/) job. If you don't have the permissions to view the configuration, then try out the `add to whitelist` and `run tests` commands on a test PR to see if they work.
