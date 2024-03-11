@@ -9,7 +9,7 @@ file used as jenkinsfile to generator trestle pipelines
 node('worker') {
     try {
         // Pull in Adopt defaults
-        String ADOPT_DEFAULTS_FILE_URL = 'https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json'
+        String ADOPT_DEFAULTS_FILE_URL = 'https://raw.githubusercontent.com/smlambert/ci-jenkins-pipelines/master/pipelines/defaults.json'
         def getAdopt = new URL(ADOPT_DEFAULTS_FILE_URL).openConnection()
         Map<String, ?> ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(getAdopt.getInputStream().getText()) as Map
         if (!ADOPT_DEFAULTS_JSON || !Map.isInstance(ADOPT_DEFAULTS_JSON)) {
@@ -89,16 +89,16 @@ node('worker') {
             }
 
         /*
-        Load nightlyFolderPath. This is the folder where the configurations/jdkxx_pipeline_config.groovy code is located compared to the repository root.
-        These define what the default set of nightlies will be.
+        Load trestleFolderPath. This is the folder where the configurations/jdkxx_pipeline_config.groovy code is located compared to the repository root.
+        These define what the default set of trestle pipelines will be.
         */
-            def nightlyFolderPath = (params.NIGHTLY_FOLDER_PATH) ?: DEFAULTS_JSON['configDirectories']['nightly']
+            def trestleFolderPath = (params.NIGHTLY_FOLDER_PATH) ?: DEFAULTS_JSON['configDirectories']['trestle']
 
-            if (!fileExists(nightlyFolderPath)) {
-                println "[WARNING] ${nightlyFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
+            if (!fileExists(trestleFolderPath)) {
+                println "[WARNING] ${trestleFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
                 checkoutAdoptPipelines()
-                nightlyFolderPath = ADOPT_DEFAULTS_JSON['configDirectories']['nightly']
-                println "[SUCCESS] The path is now ${nightlyFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
+                trestleFolderPath = ADOPT_DEFAULTS_JSON['configDirectories']['trestle']
+                println "[SUCCESS] The path is now ${trestleFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
                 checkoutUserPipelines()
             }
 
@@ -133,7 +133,7 @@ node('worker') {
             println "REPOSITORY_BRANCH = $repoBranch"
             println "JOB_ROOT = $jobRoot"
             println "SCRIPT_FOLDER_PATH = $scriptFolderPath"
-            println "NIGHTLY_FOLDER_PATH = $nightlyFolderPath"
+            println "TRESTLE_FOLDER_PATH = $trestleFolderPath"
             println "JOB_TEMPLATE_PATH = $jobTemplatePath"
             println "ENABLE_PIPELINE_SCHEDULE = $enablePipelineSchedule"
             println "USE_ADOPT_SHELL_SCRIPTS = $useAdoptShellScripts"
@@ -158,21 +158,21 @@ node('worker') {
                     BUILD_FOLDER        : jobRoot,
                     CHECKOUT_CREDENTIALS: checkoutCreds,
                     JAVA_VERSION        : javaVersion,
-                    JOB_NAME            : "openjdk${javaVersion}-pipeline",
+                    JOB_NAME            : "trestle-openjdk${javaVersion}-pipeline",
                     SCRIPT              : "${scriptFolderPath}/openjdk_pipeline.groovy",
                     disableJob          : false,
                     pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
                     adoptScripts        : false,
-                    releaseType         : 'Nightly' 
+                    releaseType         : 'Nightly Not Publish' 
                 ]
 
                 def target
                 try {
-                    target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}.groovy"
+                    target = load "${WORKSPACE}/${trestleFolderPath}/jdk${javaVersion}.groovy"
                 } catch (NoSuchFileException e) {
                     try {
-                        println "[WARNING] jdk${javaVersion}.groovy does not exist, chances are we want a jdk${javaVersion}u.groovy file. Trying ${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
-                        target = load "${WORKSPACE}/${nightlyFolderPath}/jdk${javaVersion}u.groovy"
+                        println "[WARNING] jdk${javaVersion}.groovy does not exist, chances are we want a jdk${javaVersion}u.groovy file. Trying ${WORKSPACE}/${trestleFolderPath}/jdk${javaVersion}u.groovy"
+                        target = load "${WORKSPACE}/${trestleFolderPath}/jdk${javaVersion}u.groovy"
                     } catch (NoSuchFileException e2) {
                         println "[WARNING] jdk${javaVersion}u.groovy does not exist, chances are we are generating from a repository that isn't Adopt's. Pulling Adopt's nightlies in..."
 

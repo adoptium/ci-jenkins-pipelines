@@ -23,6 +23,7 @@ limitations under the License.
     - build-scripts/jobs/jdk11u/evaluation-jdk11u-linux-arm-temurin (when jobType = "evaluation")
     - build-scripts/release/jobs/release-jdk17u-mac-x64-temurin (when jobType = "release")
     - build-scripts-pr-tester/build-test/jobs/jdk21/jdk21-alpine-linux-x64-temurin (when "pr-tester")
+    - build-scripts/jobs/jdk21u/trestle-jdk11u-linux-arm-temurin (when jobType = "trestle")
 */
 
 String javaVersion = params.JAVA_VERSION
