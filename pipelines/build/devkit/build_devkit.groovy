@@ -25,7 +25,7 @@ limitations under the License.
 def build_devkit() {
     stage('Build DevKit') {
         // Make DevKit
-        sh("cd pipelines/build/devkit && ./make_devkit.sh ${params.VERSION} ${params.ARCH} ${params.BASE_OS} ${params.BASE_OS_VERSION})
+        sh("cd pipelines/build/devkit && ./make_devkit.sh ${params.VERSION} ${params.ARCH} ${params.BASE_OS} ${params.BASE_OS_VERSION}")
 
         def devkit_target="${params.ARCH}-linux-gnu"
 
