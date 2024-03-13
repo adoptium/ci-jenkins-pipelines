@@ -44,5 +44,5 @@ cd make/devkit && make TARGETS=${devkit_target} BASE_OS=${BASE_OS} BASE_OS_VERSI
 # Back to original folder
 cd ../../..
 
-echo "DevKit build successful: ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}"
+echo "DevKit build successful: ${VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}"
 
