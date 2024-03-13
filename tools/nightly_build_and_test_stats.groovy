@@ -180,7 +180,8 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                                arm32Linux:     "arm_linux",
                                x32Windows:     "x86-32_windows",
                                x64Solaris:     "x64_solaris",
-                               sparcv9Solaris: "sparcv9_solaris"
+                               sparcv9Solaris: "sparcv9_solaris",
+                               riscv64Linux:   "riscv64_linux"
                               ]
                                
             def missingAssets = []

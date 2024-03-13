@@ -958,7 +958,7 @@ class Build {
                 if (buildConfig.TARGET_OS == "windows") {
                     verifyNode = "ci.role.test&&sw.os.windows"
                 } else {
-                    verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)"
+                    verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)&&!sw.os.osx.10_14"
                 }
                 if (buildConfig.ARCHITECTURE == "aarch64") {
                     verifyNode = verifyNode + "&&hw.arch.aarch64"
@@ -1973,7 +1973,7 @@ context.println "Devkit arg=" + devkit
 
                         context.println "[NODE SHIFT] MOVING INTO DOCKER NODE MATCHING LABELNAME ${label}..."
                         if ( ! ( "${buildConfig.DOCKER_IMAGE}" ==~ /^[A-Za-z0-9\/\.\-_:]*$/ ) ||
-                             ! ( "${buildConfig.DOCKER_ARGS}"  ==~ /^[A-Za-z0-9\/\.\-_\ ]*$/ ) ) {
+                             ! ( "${buildConfig.DOCKER_ARGS}"  ==~ /^[A-Za-z0-9\/\.\-_=\ ]*$/ ) ) {
                              throw new Exception("[ERROR] Dubious characters in DOCKER* image or parameters: ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS} - aborting");
                         }
                         context.node(label) {
