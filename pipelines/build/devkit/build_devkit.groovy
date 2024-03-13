@@ -22,6 +22,9 @@ limitations under the License.
  *   s390x
  */
 
+// The built devkit tag to publish
+def adoptium_devkit_release_tag
+
 def build_devkit() {
     stage('Build DevKit') {
         // Make DevKit
@@ -32,7 +35,7 @@ def build_devkit() {
         // Get gcc version and base OS from devkit.info
         def gcc_ver=sh(script:'grep DEVKIT_NAME pipelines/build/devkit/'+params.VERSION+'/build/devkit/result/'+devkit_target+'-to-'+devkit_target+'/devkit.info | cut -d"=" -f2 | tr -d "\\" \\n"', returnStdout: true)
 
-        def adoptium_devkit_release_tag = "${gcc_ver}-${devkit_target}-${params.BUILD}"
+        adoptium_devkit_release_tag = "${gcc_ver}-${devkit_target}-${params.BUILD}"
 
         // Store Adoptium metadata within the devkit.info file
         sh(script:"echo ADOPTIUM_DEVKIT_RELEASE_TAG=\"${adoptium_devkit_release_tag}\" >> pipelines/build/devkit/${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
@@ -74,6 +77,24 @@ def gpgSign() {
     }
 }
 
+def dryrunPublish() {
+    stage('Dry run publish') {
+        println "Running a DRY_RUN publish_devkit_tool"
+
+        def params = [
+                  string(name: 'TAG',                 value: "${adoptium_devkit_release_tag}"),
+                  string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                  string(name: 'UPSTREAM_JOB_NAME',   value: "${env.JOB_NAME}"),
+                  string(name: 'ARTIFACTS_TO_COPY',   value: '**/*.tar.xz,**/*.sha256.txt,**/*.sig'),
+                  booleanParam(name: 'DRY_RUN',       value: true)
+        ]
+
+        build job: 'build-scripts/release/publish_devkit_tool',
+               propagate: true,
+               parameters: params
+    }
+}
+
 node(params.DEVKIT_BUILD_NODE) {
   try {
     cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
@@ -87,7 +108,10 @@ node(params.DEVKIT_BUILD_NODE) {
         sh("mkdir workspace")
 
         build_devkit()
+
         gpgSign()
+
+        dryrunPublish()
     }
   } finally { 
     cleanWs notFailBuild: true
