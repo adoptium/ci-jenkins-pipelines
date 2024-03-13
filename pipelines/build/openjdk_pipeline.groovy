@@ -99,7 +99,7 @@ node('worker') {
         }
 
         // If testenv tag is a "-ga" tag, then resolve to the actual openjdk build tag it's tagging
-        if (jdkBranch.contains("-ga"))
+        if (jdkBranch.contains("-ga")) {
             jdkBranch = resolveGaTag("${params.jdkVersion}", jdkBranch)
         }
 
