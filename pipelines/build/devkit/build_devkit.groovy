@@ -24,36 +24,27 @@ limitations under the License.
 
 def build_devkit() {
     stage('Build DevKit') {
-        def openjdkRepo = "https://github.com/openjdk/${params.VERSION}.git"
- 
-        // Clone upstream openjdk repo
-        sh(script:"git clone --depth 1 ${openjdkRepo} ${params.VERSION}")
+        // Make DevKit
+        sh("cd pipelines/build/devkit && ./make_devkit.sh ${params.VERSION} ${params.ARCH} ${params.BASE_OS} ${params.BASE_OS_VERSION})
 
-        // Patch to support Centos7
-        sh(script:"cp pipelines/build/devkit/binutils-2.39.patch ${params.VERSION}/make/devkit/patches/${params.ARCH}-binutils-2.39.patch")
-        sh(script:"cd ${params.VERSION} && patch -p1<../pipelines/build/devkit/Tools.gmk.patch")
-
-        def devkit_target = "${params.ARCH}-linux-gnu"
-
-        // Perform devkit build
-        sh(script:"cd ${params.VERSION}/make/devkit && make TARGETS=${devkit_target} BASE_OS=${params.BASE_OS} BASE_OS_VERSION=${params.BASE_OS_VERSION}")
+        def devkit_target="${params.ARCH}-linux-gnu"
 
         // Get gcc version and base OS from devkit.info
-        def gcc_ver=sh(script:'grep DEVKIT_NAME '+params.VERSION+'/build/devkit/result/'+devkit_target+'-to-'+devkit_target+'/devkit.info | cut -d"=" -f2 | tr -d "\\" \\n"', returnStdout: true)
+        def gcc_ver=sh(script:'grep DEVKIT_NAME pipelines/build/devkit/'+params.VERSION+'/build/devkit/result/'+devkit_target+'-to-'+devkit_target+'/devkit.info | cut -d"=" -f2 | tr -d "\\" \\n"', returnStdout: true)
 
         def adoptium_devkit_release_tag = "${gcc_ver}-${devkit_target}-${params.BUILD}"
 
         // Store Adoptium metadata within the devkit.info file
-        sh(script:"echo ADOPTIUM_DEVKIT_RELEASE_TAG=\"${adoptium_devkit_release_tag}\" >> ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
+        sh(script:"echo ADOPTIUM_DEVKIT_RELEASE_TAG=\"${adoptium_devkit_release_tag}\" >> pipelines/build/devkit/${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
 
-        def devkit_file = "workspace/devkit-${adoptium_devkit_release_tag}.tar.gz"
-        println "devkit artifact filename = ${devkit_file}"
+        def devkit_tarball = "workspace/devkit-${adoptium_devkit_release_tag}.tar.xz"
+        println "devkit artifact filename = ${devkit_tarball}"
  
         // Compress and archive
-        sh(script:"tar -cf - -C ${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target} . | GZIP=-9 gzip -c > ${devkit_file}")
+        sh(script:"tar -cf - -C pipelines/build/devkit/${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target} . | GZIP=-9 xz -c > ${devkit_tarball}")
 
         // Create sha256.txt
-        sh(script:"sha256sum ${devkit_file} > ${devkit_file}.sha256.txt")
+        sh(script:"sha256sum ${devkit_tarball} > ${devkit_tarball}.sha256.txt")
 
         archiveArtifacts artifacts: "workspace/*"
     }
