@@ -35,15 +35,16 @@ def build_devkit() {
         // Get gcc version and base OS from devkit.info
         def gcc_ver=sh(script:'grep DEVKIT_NAME pipelines/build/devkit/'+params.VERSION+'/build/devkit/result/'+devkit_target+'-to-'+devkit_target+'/devkit.info | cut -d"=" -f2 | tr -d "\\" \\n"', returnStdout: true)
 
-        def adoptium_devkit_release = "${gcc_ver}-${devkit_target}-${params.BUILD}"
+        def adoptium_devkit_filename = "devkit-${gcc_ver}-${devkit_target}-${params.BUILD}"
 
         // The devkit release tag this build will get published under
         adoptium_devkit_release_tag = "${gcc_ver}-${params.BUILD}"
 
         // Store Adoptium metadata within the devkit.info file
-        sh(script:"echo ADOPTIUM_DEVKIT_RELEASE=\"${adoptium_devkit_release}\" >> pipelines/build/devkit/${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
+        sh(script:"echo ADOPTIUM_DEVKIT_RELEASE=\"${adoptium_devkit_release_tag}\" >> pipelines/build/devkit/${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
+        sh(script:"echo ADOPTIUM_DEVKIT_TARGET=\"${devkit_target}\" >> pipelines/build/devkit/${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
 
-        def devkit_tarball = "workspace/devkit-${adoptium_devkit_release}.tar.xz"
+        def devkit_tarball = "workspace/${adoptium_devkit_filename}.tar.xz"
         println "devkit artifact filename = ${devkit_tarball}"
  
         // Compress and archive
