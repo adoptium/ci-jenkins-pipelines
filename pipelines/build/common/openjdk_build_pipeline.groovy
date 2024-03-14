@@ -1445,34 +1445,6 @@ class Build {
     }
 
     /*
-     Download the given DevKit to ${WORKSPACE}/devkit
-     and return CONFIGURE_ARG "--with-devkit=${WORKSPACE}/devkit"
-     */
-    def downloadDevKit(devkit) {
-        def devkitJobRoot = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS) ? ((String)ADOPT_DEFAULTS_JSON['jenkinsDetails']['devkitJobRoot']) : ((String)DEFAULTS_JSON['jenkinsDetails']['devkitJobRoot'])
-        def devkitUrl = devkitJobRoot + "/" + devkit
-        def devkitLoc = context.WORKSPACE + "/workspace/build/src/build/devkit"
-        context.println 'Downloading DevKit : ' + devkitUrl
-        context.println 'to location : ' + devkitLoc
-
-        context.withEnv(['devkitUrl='+devkitUrl, 'devkitLoc='+devkitLoc]) {
-            // groovylint-disable
-            context.sh '''
-                #!/bin/bash
-                set -eu
-                rm -rf "${devkitLoc}"
-                mkdir -p "${devkitLoc}"
-                cd "${devkitLoc}"
-                curl --fail --silent --show-error -o "devkit.tar.gz" "${devkitUrl}"
-                tar -xf "devkit.tar.gz"
-                rm "devkit.tar.gz"
-            '''
-            // groovylint-enable
-        }
-        return '--with-devkit=' + devkitLoc
-    }
-
-    /*
      Display the current git repo information
      */
     def printGitRepoInfo() {
@@ -1511,6 +1483,15 @@ class Build {
             context.println '    buildConfig.CI_REF: ' + buildConfig.CI_REF
             context.println '    buildConfig.BUILD_REF: ' + buildConfig.BUILD_REF
             context.println '    buildConfig.HELPER_REF: ' + buildConfig.HELPER_REF
+
+            def openjdk_build_dir = context.WORKSPACE + '/workspace/build/src/build'
+            def openjdk_build_dir_arg = ""
+            if (getJavaVersionNumber() >= 21) {
+                // For reproducible jdk-21+ builds ensure not to build within the openjdk source folder
+                // so that debug symbols can be reproducibly mapped (https://bugs.openjdk.org/browse/JDK-8326685)
+                openjdk_build_dir =  context.WORKSPACE + '/workspace/build/openjdkbuild'
+                openjdk_build_dir_arg = " --user-openjdk-build-root-directory ${openjdk_build_dir}"
+            }
 
             if (cleanWorkspace) {
                 try {
@@ -1569,14 +1550,6 @@ class Build {
                 // Use BUILD_REF override if specified
                 def adoptBranch = buildConfig.BUILD_REF ?: ADOPT_DEFAULTS_JSON['repository']['build_branch']
 
-                // Download devkit if specified
-                def devkit = ""
-                //if (buildConfig.DEVKIT != null && !buildConfig.DEVKIT.isEmpty()) {
-                    //devkit = downloadDevKit(buildConfig.DEVKIT)
-                    devkit = downloadDevKit("job/jdk21u/job/devkit_jdk21u_x64Linux/11/artifact/workspace/devkit-jdk21u-x86_64-linux-gnu.tar.gz")
-                //}
-context.println "Devkit arg=" + devkit
-
                 // Add platform config path so it can be used if the user doesn't have one
                 def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
                 // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
@@ -1600,12 +1573,11 @@ context.println "Devkit arg=" + devkit
                                     context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                        signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image'
+                                        signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image' + openjdk_build_dir_arg
                                     } else {
-                                        signBuildArgs = '--make-exploded-image'
+                                        signBuildArgs = '--make-exploded-image' + openjdk_build_dir_arg
                                     }
-                                    def signConfigureArgs = (devkit != "") ? env.CONFIGURE_ARGS + " " + devkit : env.CONFIGURE_ARGS
-                                    context.withEnv(['BUILD_ARGS=' + signBuildArgs, 'CONFIGURE_ARGS=' + signConfigureArgs]) {
+                                    context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
@@ -1714,18 +1686,22 @@ context.println "Devkit arg=" + devkit
 
                                     def assembleBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                        assembleBuildArgs = env.BUILD_ARGS + ' --assemble-exploded-image'
+                                        assembleBuildArgs = env.BUILD_ARGS + ' --assemble-exploded-image' + openjdk_build_dir_arg
                                     } else {
-                                        assembleBuildArgs = '--assemble-exploded-image'
+                                        assembleBuildArgs = '--assemble-exploded-image' + openjdk_build_dir_arg
                                     }
-                                    def assembleConfigureArgs = (devkit != "") ? env.CONFIGURE_ARGS + " " + devkit : env.CONFIGURE_ARGS
-                                    context.withEnv(['BUILD_ARGS=' + assembleBuildArgs, 'CONFIGURE_ARGS=' + assembleConfigureArgs]) {
+                                    context.withEnv(['BUILD_ARGS=' + assembleBuildArgs]) {
                                         context.println 'Assembling the exploded image'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                 } else {
-                                    def buildConfigureArgs = (devkit != "") ? env.CONFIGURE_ARGS + " " + devkit : env.CONFIGURE_ARGS
-                                    context.withEnv(['CONFIGURE_ARGS=' + buildConfigureArgs]) {
+                                    def buildArgs
+                                    if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+                                        buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
+                                    } else {
+                                        buildArgs = openjdk_build_dir_arg
+                                    }
+                                    context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                 }
@@ -1743,8 +1719,13 @@ context.println "Devkit arg=" + devkit
                                 repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                 repoHandler.checkoutUserBuild(context)
                                 printGitRepoInfo()
-                                def buildConfigureArgs = (devkit != "") ? env.CONFIGURE_ARGS + " " + devkit : env.CONFIGURE_ARGS
-                                context.withEnv(['CONFIGURE_ARGS=' + buildConfigureArgs]) {
+                                def buildArgs
+                                if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+                                    buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
+                                } else {
+                                    buildArgs = openjdk_build_dir_arg
+                                }
+                                context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                     context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
@@ -1812,10 +1793,12 @@ context.println "Devkit arg=" + devkit
                                         context.println "Failed to clean ${e}"
                                     }
                                 } else if (cleanWorkspaceBuildOutputAfter) {
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/src/build'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/src/build')
+                                    context.println 'Cleaning workspace build output files: ' + openjdk_build_dir
+                                    context.sh(script: 'rm -rf ' + openjdk_build_dir)
                                     context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/target'
                                     context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
+                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/devkit'
+                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'

@@ -57,7 +57,6 @@ class Builder implements Serializable {
     boolean aqaAutoGen
     String publishName
     String additionalConfigureArgs
-    String devkit
     def scmVars
     String additionalBuildArgs
     String overrideFileNameVersion
@@ -129,8 +128,6 @@ class Builder implements Serializable {
             buildArgs += ' ' + additionalBuildArgs
         }
 
-        def devkit = getDevkit(platformConfig, variant)
-
         def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
         def testList = getTestList(platformConfig, variant)
 
@@ -173,7 +170,6 @@ class Builder implements Serializable {
             AQA_REF: aqaReference,
             AQA_AUTO_GEN: aqaAutoGen,
             BUILD_ARGS: buildArgs,
-            DEVKIT: devkit,
             NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${archLabel}",
             ADDITIONAL_TEST_LABEL: "${additionalTestLabels}",
             KEEP_TEST_REPORTDIR: keepTestReportDir,
@@ -561,21 +557,6 @@ class Builder implements Serializable {
             platformSpecificConfigPath = "${userOrgRepo}/${buildRef}/${configuration.platformSpecificConfigPath}"
         }
         return platformSpecificConfigPath
-    }
-
-    /*
-    Get the devkit platform configuration value
-    */
-    def getDevkit(Map<String, ?> configuration, String variant) {
-        def devkit = ''
-        if (configuration.containsKey('devkit')) {
-            if (isMap(configuration.devkit)) {
-                devkit = (configuration.devkit as Map<String, ?>).get(variant)
-            } else {
-                devkit = configuration.devkit
-            }
-        }   
-        return devkit
     }
 
     /*
@@ -1060,7 +1041,6 @@ return {
     String overridePublishName,
     String useAdoptShellScripts,
     String additionalConfigureArgs,
-    String devkit,
     def scmVars,
     String additionalBuildArgs,
     String overrideFileNameVersion,
@@ -1127,7 +1107,6 @@ return {
             aqaAutoGen: Boolean.parseBoolean(aqaAutoGen),
             publishName: publishName,
             additionalConfigureArgs: additionalConfigureArgs,
-            devkit: devkit,
             scmVars: scmVars,
             additionalBuildArgs: additionalBuildArgs,
             overrideFileNameVersion: overrideFileNameVersion,
