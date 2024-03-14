@@ -127,7 +127,6 @@ class Builder implements Serializable {
         if (additionalBuildArgs) {
             buildArgs += ' ' + additionalBuildArgs
         }
-
         def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
         def testList = getTestList(platformConfig, variant)
 
