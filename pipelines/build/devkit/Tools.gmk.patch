@@ -12,7 +12,7 @@ index 187320ca26e..63bfe418a10 100644
 +    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
 +  endif
 +  ifeq ($(BASE_OS_VERSION),7.9.2009)
-+     CENTOS_MIRROR := mirror.centos.org
++     CENTOS_MIRROR := mirror.centos.org/centos
 +  else
 +     CENTOS_MIRROR := vault.centos.org
 +  endif
