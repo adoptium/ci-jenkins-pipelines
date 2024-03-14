@@ -2,7 +2,7 @@ diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
 index 187320ca26e..63bfe418a10 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
-@@ -62,6 +62,17 @@ ifeq ($(BASE_OS), OL)
+@@ -62,6 +62,22 @@ ifeq ($(BASE_OS), OL)
      BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
      LINUX_VERSION := OL6.4
    endif
@@ -11,10 +11,15 @@ index 187320ca26e..63bfe418a10 100644
 +  ifeq ($(BASE_OS_VERSION), )
 +    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
 +  endif
-+  ifeq ($(ARCH), x86_64)
-+    BASE_URL := https://vault.centos.org/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
++  ifeq ($(BASE_OS_VERSION),7.9.2009)
++     CENTOS_MIRROR := mirror.centos.org
 +  else
-+    BASE_URL := https://vault.centos.org/altarch/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
++     CENTOS_MIRROR := vault.centos.org
++  endif
++  ifeq ($(ARCH), x86_64)
++    BASE_URL := https://$(CENTOS_MIRROR)/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
++  else
++    BASE_URL := https://$(CENTOS_MIRROR)/altarch/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
 +  endif
 +  LINUX_VERSION := Centos$(BASE_OS_VERSION)
  else ifeq ($(BASE_OS), Fedora)
