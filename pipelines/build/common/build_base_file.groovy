@@ -839,7 +839,7 @@ class Builder implements Serializable {
                 return
             }
             def releaseSummary
-            if (publish) {
+            if ( publish || release ) {
                 releaseSummary = context.manager.createSummary('next.svg')
                 if (release) {
                     if (publishName) {
