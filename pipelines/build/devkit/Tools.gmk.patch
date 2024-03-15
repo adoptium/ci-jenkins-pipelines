@@ -12,12 +12,12 @@ index 187320ca26e..63bfe418a10 100644
 +    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
 +  endif
 +  ifeq ($(BASE_OS_VERSION),7.9.2009)
-+     CENTOS_MIRROR := mirror.centos.org/centos
++     CENTOS_MIRROR := mirror.centos.org
 +  else
 +     CENTOS_MIRROR := vault.centos.org
 +  endif
 +  ifeq ($(ARCH), x86_64)
-+    BASE_URL := http://$(CENTOS_MIRROR)/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
++    BASE_URL := http://$(CENTOS_MIRROR)/centos/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
 +  else
 +    BASE_URL := http://$(CENTOS_MIRROR)/altarch/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
 +  endif
