@@ -23,6 +23,7 @@ limitations under the License.
  */
 
 // The devkit release tag this build will get published under
+// groovylint-disable-next-line
 def adoptium_devkit_release_tag
 
 def build_devkit() {
