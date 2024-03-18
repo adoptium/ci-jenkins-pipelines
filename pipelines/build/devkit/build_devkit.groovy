@@ -83,7 +83,7 @@ def gpgSign() {
 
 def dryrunPublish() {
     stage('Dry run publish') {
-        println "Running a DRY_RUN publish_devkit_tool"
+        println "Running a DRY_RUN publish_devkit_tool for tag: " + adoptium_devkit_release_tag
 
         def params = [
                   string(name: 'TAG',                 value: "${adoptium_devkit_release_tag}"),
