@@ -1,8 +1,8 @@
 diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
-index 187320ca26e..63bfe418a10 100644
+index 187320ca2..93df82362 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
-@@ -62,6 +62,22 @@ ifeq ($(BASE_OS), OL)
+@@ -62,6 +62,23 @@ ifeq ($(BASE_OS), OL)
      BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
      LINUX_VERSION := OL6.4
    endif
@@ -11,6 +11,7 @@ index 187320ca26e..63bfe418a10 100644
 +  ifeq ($(BASE_OS_VERSION), )
 +    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
 +  endif
++  BASE_OS_MAJOR_VERSION := $(shell echo $(BASE_OS_VERSION) | cut -d'.' -f1)
 +  ifeq ($(BASE_OS_VERSION),7.9.2009)
 +     CENTOS_MIRROR := mirror.centos.org
 +  else
@@ -25,12 +26,70 @@ index 187320ca26e..63bfe418a10 100644
  else ifeq ($(BASE_OS), Fedora)
    ifeq ($(ARCH), riscv64)
      DEFAULT_OS_VERSION := rawhide/68692
-@@ -246,7 +257,7 @@ download-rpms:
+@@ -95,16 +112,36 @@ endif
+ ##########################################################################################
+ # Define external dependencies
+ 
++# Centos GPG KEYS
++Centos_7_GPG_KEY_aarch64 := EF8F3CA66EFDF32B36CDADF76C7CB6EF305D49D6
++Centos_7_GPG_KEY_x86_64 := 6341AB2753D78A78A7C27BB124C6A8A7F4A80EB5
++Centos_7_GPG_KEY_ppc64le := BAFA3436FC50768E3C3C2E4EA963BBDBF533F4FA
++
++# PGP Signature file extensions
++GCC_SIG := sig
++BINUTILS_SIG := sig
++CCACHE_SIG := asc
++GMP_SIG := sig
++MPC_SIG := sig
++GDB_SIG := sig
++
+ # Latest that could be made to work.
+ GCC_VER := 11.3.0
+ ifeq ($(GCC_VER), 11.3.0)
+   gcc_ver := gcc-11.3.0
++  GCC_GPG_KEY := 7F74F97C103468EE5D750B583AB00996FC26A641
+   binutils_ver := binutils-2.39
++  BINUTILS_GPG_KEY := 3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F
+   ccache_ver := ccache-3.7.12
++  CCACHE_GPG_KEY := 5A939A71A46792CF57866A51996DDA075594ADB8
+   mpfr_ver := mpfr-4.1.1
++  MPFR_SHA256 := 85fdf11614cc08e3545386d6b9c8c9035e3db1e506211a45f4e108117fe3c951
+   gmp_ver := gmp-6.2.1
++  GMP_GPG_KEY := 343C2FF0FBEE5EC2EDBEF399F3599FF828C67298
+   mpc_ver := mpc-1.2.1
++  MPC_GPG_KEY := AD17A21EF8AED8F1CC02DBD9F7D5C9BF765C61E3
+   gdb_ver := gdb-11.2
++  GDB_GPG_KEY := F40ADB902B24264AA42E50BF92EDB04BFF325CF3
+   REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
+ else ifeq ($(GCC_VER), 11.2.0)
+   gcc_ver := gcc-11.2.0
+@@ -246,7 +283,13 @@ download-rpms:
          # Only run this if rpm dir is empty.
          ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
- 	  cd $(DOWNLOAD_RPMS) && \
--	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
-+	      wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
+          cd $(DOWNLOAD_RPMS) && \
+-             wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
++             wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
++         gpg --keyserver keyserver.ubuntu.com --recv-keys \
++             $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH))
++         rm -f $(DOWNLOAD_RPMS)/rpm.sig && gpg --armor --export \
++              $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH)) > $(DOWNLOAD_RPMS)/rpm.sig
++         rpm --import $(DOWNLOAD_RPMS)/rpm.sig
++         rpm -K $(DOWNLOAD_RPMS)/*.rpm
          endif
  
  ##########################################################################################
+@@ -271,6 +314,14 @@ define Download
+ 
+   $$($(1)_FILE) :
+        wget -P $(DOWNLOAD) $$($(1))
++        ifeq ($(1),MPFR)
++           echo $($(1)_SHA256) $$@ | sha256sum -c
++        else
++           wget -P $(DOWNLOAD) $$($(1)).$($(1)_SIG)
++           gpg --keyserver keyserver.ubuntu.com --recv-keys $($(1)_GPG_KEY)
++           echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $($(1)_GPG_KEY) trust;
++           gpg --verify $$@.$($(1)_SIG) $$@
++        endif
+ endef
+ 
+ # Download and unpack all source packages
