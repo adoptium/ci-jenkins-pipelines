@@ -27,14 +27,8 @@ def adoptium_devkit_release_tag
 
 def build_devkit() {
     stage('Build DevKit') {
-        // Setup temporary gpg home for verifying DevKit downloads
-        def GNUPGHOME=sh(script:'mktemp -d /tmp/.gpg-temp.XXXXXX', returnStdout: true)
-        sh(script:'chmod 700 '+GNUPGHOME)
-
-        withEnv(['GNUPGHOME='+GNUPGHOME]) {
-            // Make DevKit
-            sh("cd pipelines/build/devkit && ./make_devkit.sh ${params.VERSION} ${params.ARCH} ${params.BASE_OS} ${params.BASE_OS_VERSION}")
-        }
+        // Make DevKit
+        sh("cd pipelines/build/devkit && ./make_devkit.sh ${params.VERSION} ${params.ARCH} ${params.BASE_OS} ${params.BASE_OS_VERSION}")
 
         def devkit_target="${params.ARCH}-linux-gnu"
 

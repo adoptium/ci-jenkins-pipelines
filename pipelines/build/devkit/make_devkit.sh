@@ -26,6 +26,11 @@ ARCH=$2
 BASE_OS=$3
 BASE_OS_VERSION=$4
 
+# Create temp GPG home
+GNUPGHOME="$(mktemp -d /tmp/.gpg-temp.XXXXXX)"
+chmod 700 ${GNUPGHOME}
+export GNUPGHOME
+
 openjdkRepo="https://github.com/openjdk/${VERSION}.git"
 
 # Clone upstream openjdk repo
