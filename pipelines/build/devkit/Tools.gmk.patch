@@ -1,5 +1,5 @@
 diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
-index 187320ca2..93df82362 100644
+index 187320ca2..1c009f945 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
 @@ -62,6 +62,23 @@ ifeq ($(BASE_OS), OL)
@@ -66,29 +66,29 @@ index 187320ca2..93df82362 100644
 @@ -246,7 +283,13 @@ download-rpms:
          # Only run this if rpm dir is empty.
          ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
-          cd $(DOWNLOAD_RPMS) && \
--             wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
-+             wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
-+         gpg --keyserver keyserver.ubuntu.com --recv-keys \
-+             $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH))
-+         rm -f $(DOWNLOAD_RPMS)/rpm.sig && gpg --armor --export \
-+              $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH)) > $(DOWNLOAD_RPMS)/rpm.sig
-+         rpm --import $(DOWNLOAD_RPMS)/rpm.sig
-+         rpm -K $(DOWNLOAD_RPMS)/*.rpm
+ 	  cd $(DOWNLOAD_RPMS) && \
+-	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
++	     wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
++	  gpg --keyserver keyserver.ubuntu.com --recv-keys \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH))
++	  rm -f $(DOWNLOAD_RPMS)/rpm.sig && gpg --armor --export \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH)) > $(DOWNLOAD_RPMS)/rpm.sig
++	  rpm --import $(DOWNLOAD_RPMS)/rpm.sig
++	  rpm -K $(DOWNLOAD_RPMS)/*.rpm
          endif
  
  ##########################################################################################
 @@ -271,6 +314,14 @@ define Download
  
    $$($(1)_FILE) :
-        wget -P $(DOWNLOAD) $$($(1))
+ 	wget -P $(DOWNLOAD) $$($(1))
 +        ifeq ($(1),MPFR)
-+           echo $($(1)_SHA256) $$@ | sha256sum -c
++	   echo $($(1)_SHA256) $$@ | sha256sum -c
 +        else
-+           wget -P $(DOWNLOAD) $$($(1)).$($(1)_SIG)
-+           gpg --keyserver keyserver.ubuntu.com --recv-keys $($(1)_GPG_KEY)
-+           echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $($(1)_GPG_KEY) trust;
-+           gpg --verify $$@.$($(1)_SIG) $$@
++	   wget -P $(DOWNLOAD) $$($(1)).$($(1)_SIG)
++	   gpg --keyserver keyserver.ubuntu.com --recv-keys $($(1)_GPG_KEY)
++	   echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $($(1)_GPG_KEY) trust;
++	   gpg --verify $$@.$($(1)_SIG) $$@
 +        endif
  endef
  
