@@ -839,7 +839,7 @@ class Builder implements Serializable {
                 return
             }
             def releaseSummary
-            if (publish) {
+            if ( publish || release ) {
                 releaseSummary = context.manager.createSummary('next.svg')
                 if (release) {
                     if (publishName) {
@@ -998,7 +998,7 @@ class Builder implements Serializable {
             context.parallel jobs
             // publish to github if needed
             // Don't publish release automatically
-            if (publish) {
+            if (publish || release) {
                 if (release) {
                     context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
                 } else {
