@@ -158,7 +158,7 @@ pipeline {
                         sh "find . -type f -name 'OpenJDK*-jdk*.tar.gz' -delete"
                     }
                     try {
-                        dir('temurin-build/tooling') {
+                        dir('temurin-build/tooling/reproducible') {
                             def rc = 0
                             if (COMPARED_JOB_NAME.contains('linux')) {
                                 rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced Linux"
