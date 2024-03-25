@@ -45,7 +45,7 @@ def build_devkit() {
         sh(script:"echo ADOPTIUM_DEVKIT_RELEASE=\"${adoptium_devkit_release_tag}\" >> pipelines/build/devkit/${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
         sh(script:"echo ADOPTIUM_DEVKIT_TARGET=\"${devkit_target}\" >> pipelines/build/devkit/${params.VERSION}/build/devkit/result/${devkit_target}-to-${devkit_target}/devkit.info")
 
-        def devkit_tarball = "workspace/${adoptium_devkit_filename}.tar.xz"
+        def devkit_tarball = "${adoptium_devkit_filename}.tar.xz"
         println "devkit artifact filename = ${devkit_tarball}"
  
         // Compress and archive
@@ -54,7 +54,7 @@ def build_devkit() {
         // Create sha256.txt
         sh(script:"sha256sum ${devkit_tarball} > ${devkit_tarball}.sha256.txt")
 
-        archiveArtifacts artifacts: "workspace/*"
+        archiveArtifacts artifacts: "*.tar.xz, *.tar.xz.sha256.txt"
     }
 }
 
@@ -63,7 +63,7 @@ def gpgSign() {
         def params = [
                   string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                   string(name: 'UPSTREAM_JOB_NAME',   value: "${env.JOB_NAME}"),
-                  string(name: 'UPSTREAM_DIR',        value: 'workspace')
+                  string(name: 'UPSTREAM_DIR',        value: '.')
         ]
 
         def signSHAsJob = build job: 'build-scripts/release/sign_temurin_gpg',
@@ -75,10 +75,9 @@ def gpgSign() {
                selector: specific("${signSHAsJob.getNumber()}"),
                filter: '**/*.sig',
                fingerprintArtifacts: true,
-               target: 'workspace',
                flatten: true)
 
-        archiveArtifacts artifacts: "workspace/*.sig"
+        archiveArtifacts artifacts: "*.sig"
     }
 }
 
@@ -90,7 +89,7 @@ def dryrunPublish() {
                   string(name: 'TAG',                 value: "${adoptium_devkit_release_tag}"),
                   string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                   string(name: 'UPSTREAM_JOB_NAME',   value: "${env.JOB_NAME}"),
-                  string(name: 'ARTIFACTS_TO_COPY',   value: '**/*.tar.xz,**/*.sha256.txt,**/*.sig'),
+                  string(name: 'ARTIFACTS_TO_COPY',   value: '*.tar.xz,*.sha256.txt,*.sig'),
                   booleanParam(name: 'DRY_RUN',       value: true)
         ]
 
@@ -108,9 +107,6 @@ node(params.DEVKIT_BUILD_NODE) {
     docker.image(params.DOCKER_IMAGE).inside() {
         // Checkout pipelines code
         checkout scm
-
-        // Create workspace for artifacts
-        sh("mkdir workspace")
 
         build_devkit()
 
