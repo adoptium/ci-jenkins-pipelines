@@ -54,7 +54,9 @@ def build_devkit() {
         // Create sha256.txt
         sh(script:"sha256sum ${devkit_tarball} > ${devkit_tarball}.sha256.txt")
 
-        archiveArtifacts artifacts: "*.tar.xz, *.tar.xz.sha256.txt"
+        mkdir workspace
+        mv adoptium_devkit_filename.* workspace
+        archiveArtifacts artifacts: "workspace/*"
     }
 }
 
