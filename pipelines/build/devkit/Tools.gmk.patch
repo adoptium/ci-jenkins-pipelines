@@ -1,5 +1,5 @@
 diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
-index 187320ca2..c9d3f0076 100644
+index 187320ca2..07b70994d 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
 @@ -62,6 +62,23 @@ ifeq ($(BASE_OS), OL)
@@ -102,17 +102,36 @@ index 187320ca2..c9d3f0076 100644
 +# devkit-produced binaries.
 +# Assuming GNU sed for --in-place, hack the following headers to
 +# eliminate RHEL-7.6 to RHEL-7.9 line number shifts: bits/socket.h,
-+# netinet/in.h.
++# netinet/in.h, linux/in.h.
  $(libs) : $(rpms)
  	@echo Patching libc and pthreads
  	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-@@ -332,6 +388,9 @@ $(libs) : $(rpms)
+@@ -332,6 +389,10 @@ $(libs) : $(rpms)
  	      -e 's|/lib/||g' ) > $$f.tmp ; \
  	  mv $$f.tmp $$f ; \
  	done)
 +	@find $(SYSROOT) -name '*.[ao]' -exec objcopy --remove-section .comment '{}' ';'
 +	@sed --in-place '/^#define [AP]F_\(IB\|MPLS\).*/d' $(SYSROOT)/usr/include/bits/socket.h
 +	@sed --in-place '/IPPROTO_MPLS/d' $(SYSROOT)/usr/include/netinet/in.h
++	@sed --in-place -e 's/^#if __UAPI_DEF_IN_ADDR$//' -e 's/^#if __UAPI_DEF_IN_CLASS$//' -e '/libc-compat.h/d' -e '/^#if.*__UAPI.*$/d' -e '/INADDR_MAX_LOCAL_GROUP.*$/{n;s/^#endif//;}' -e '/^#endif$/d' $(SYSROOT)/usr/include/linux/in.h
  	@mkdir -p $(SYSROOT)/usr/lib
  	@touch $@
  
+@@ -440,6 +501,9 @@ endif
+ 
+ # Makefile creation. Simply run configure in build dir.
+ # Setting CFLAGS to -O2 generates a much faster ld.
++# Use --enable-deterministic-archives so that make targets that
++# generate "ar" archives, such as "static-libs-image", produce
++# deterministic .a files.
+ $(bfdmakes) \
+ $(BUILDDIR)/$(binutils_ver)/Makefile \
+     : $(BINUTILS_CFG)
+@@ -454,6 +518,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
+ 	      --with-sysroot=$(SYSROOT) \
+ 	      --disable-nls \
+ 	      --program-prefix=$(TARGET)- \
++	      --enable-deterministic-archives \
+ 	      --enable-multilib \
+ 	      --enable-threads \
+ 	      --enable-plugins \
