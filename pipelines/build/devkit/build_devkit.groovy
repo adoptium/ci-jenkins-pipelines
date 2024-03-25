@@ -100,20 +100,30 @@ def dryrunPublish() {
     }
 }
 
+def build() {
+    // Checkout pipelines code
+    checkout scm
+
+    build_devkit()
+
+    gpgSign()
+
+    dryrunPublish()
+}
+
 node(params.DEVKIT_BUILD_NODE) {
   try {
     cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
-    docker.image(params.DOCKER_IMAGE).pull()
-    docker.image(params.DOCKER_IMAGE).inside() {
-        // Checkout pipelines code
-        checkout scm
-
-        build_devkit()
-
-        gpgSign()
-
-        dryrunPublish()
+    if (params.DOCKER_IMAGE != "") { 
+        // Build within docker container
+        docker.image(params.DOCKER_IMAGE).pull()
+        docker.image(params.DOCKER_IMAGE).inside() {
+            build()
+        }
+    } else {
+        // Build directly on host
+        build()
     }
   } finally { 
     cleanWs notFailBuild: true
