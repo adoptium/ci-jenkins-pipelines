@@ -76,9 +76,10 @@ def gpgSign() {
                selector: specific("${signSHAsJob.getNumber()}"),
                filter: '**/*.sig',
                fingerprintArtifacts: true,
+               target: 'workspace',
                flatten: true)
 
-        archiveArtifacts artifacts: "*.sig"
+        archiveArtifacts artifacts: "workspace/*.sig"
     }
 }
 
