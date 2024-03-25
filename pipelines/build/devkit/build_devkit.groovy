@@ -90,7 +90,7 @@ def dryrunPublish() {
                   string(name: 'TAG',                 value: "${adoptium_devkit_release_tag}"),
                   string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                   string(name: 'UPSTREAM_JOB_NAME',   value: "${env.JOB_NAME}"),
-                  string(name: 'ARTIFACTS_TO_COPY',   value: '*.tar.xz,*.sha256.txt,*.sig'),
+                  string(name: 'ARTIFACTS_TO_COPY',   value: 'workspace/*.tar.xz,workspace/*.sha256.txt,workspace/*.sig'),
                   booleanParam(name: 'DRY_RUN',       value: true)
         ]
 
