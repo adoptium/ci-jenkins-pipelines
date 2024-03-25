@@ -113,7 +113,7 @@ index 187320ca2..07b70994d 100644
 +	@find $(SYSROOT) -name '*.[ao]' -exec objcopy --remove-section .comment '{}' ';'
 +	@sed --in-place '/^#define [AP]F_\(IB\|MPLS\).*/d' $(SYSROOT)/usr/include/bits/socket.h
 +	@sed --in-place '/IPPROTO_MPLS/d' $(SYSROOT)/usr/include/netinet/in.h
-+	@sed --in-place -e 's/^#if __UAPI_DEF_IN_ADDR$//' -e 's/^#if __UAPI_DEF_IN_CLASS$//' -e '/libc-compat.h/d' -e '/^#if.*__UAPI.*$/d' -e '/INADDR_MAX_LOCAL_GROUP.*$/{n;s/^#endif//;}' -e '/^#endif$/d' $(SYSROOT)/usr/include/linux/in.h
++	@sed --in-place -e 's/^#if __UAPI_DEF_IN_ADDR$$//' -e 's/^#if __UAPI_DEF_IN_CLASS$$//' -e '/libc-compat.h/d' -e '/^#if.*__UAPI.*$$/d' -e '/INADDR_MAX_LOCAL_GROUP.*$$/{n;s/^#endif//;}' -e '/^#endif$$/d' $(SYSROOT)/usr/include/linux/in.h
  	@mkdir -p $(SYSROOT)/usr/lib
  	@touch $@
  
