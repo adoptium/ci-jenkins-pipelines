@@ -64,7 +64,7 @@ def gpgSign() {
         def params = [
                   string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                   string(name: 'UPSTREAM_JOB_NAME',   value: "${env.JOB_NAME}"),
-                  string(name: 'UPSTREAM_DIR',        value: '.')
+                  string(name: 'UPSTREAM_DIR',        value: 'workspace')
         ]
 
         def signSHAsJob = build job: 'build-scripts/release/sign_temurin_gpg',
