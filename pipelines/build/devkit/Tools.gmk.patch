@@ -26,7 +26,7 @@ index 187320ca2..07b70994d 100644
  else ifeq ($(BASE_OS), Fedora)
    ifeq ($(ARCH), riscv64)
      DEFAULT_OS_VERSION := rawhide/68692
-@@ -95,16 +112,36 @@ endif
+@@ -95,16 +112,37 @@ endif
  ##########################################################################################
  # Define external dependencies
  
@@ -34,6 +34,7 @@ index 187320ca2..07b70994d 100644
 +Centos_7_GPG_KEY_aarch64 := EF8F3CA66EFDF32B36CDADF76C7CB6EF305D49D6 #gitleaks:allow
 +Centos_7_GPG_KEY_x86_64 := 6341AB2753D78A78A7C27BB124C6A8A7F4A80EB5  #gitleaks:allow
 +Centos_7_GPG_KEY_ppc64le := BAFA3436FC50768E3C3C2E4EA963BBDBF533F4FA #gitleaks:allow
++Centos_7_GPG_KEY_s390x := CA81B2C85E4F4D4A1A3F723407477E65FB4B18E6   #gitleaks:allow
 +
 +# PGP Signature file extensions
 +GCC_SIG := sig
