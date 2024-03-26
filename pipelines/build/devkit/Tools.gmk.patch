@@ -83,7 +83,7 @@ index 187320ca2..9f1454d5e 100644
 +	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH))
 +	  rm -f $(DOWNLOAD_RPMS)/rpm.sig && gpg --armor --export \
 +	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH)) > $(DOWNLOAD_RPMS)/rpm.sig
-+	  rpm --import $(DOWNLOAD_RPMS)/rpm.sig
++	  rpm --import $(DOWNLOAD_RPMS)/rpm.sig || true
 +	  rpm -K $(DOWNLOAD_RPMS)/*.rpm
          endif
  
