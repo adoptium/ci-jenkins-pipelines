@@ -93,26 +93,21 @@ index 187320ca2..07b70994d 100644
  endef
  
  # Download and unpack all source packages
-@@ -323,6 +374,12 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
+@@ -323,6 +374,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
  # have it anyway, but just to make sure...
  # Patch libc.so and libpthread.so to force linking against libraries in sysroot
  # and not the ones installed on the build machine.
 +# Remove comment sections from static libraries and C runtime objects
 +# to prevent leaking RHEL-specific package versions into
 +# devkit-produced binaries.
-+# Assuming GNU sed for --in-place, hack the following headers to
-+# eliminate RHEL-7.6 to RHEL-7.9 line number shifts: bits/socket.h,
-+# netinet/in.h, linux/in.h.
  $(libs) : $(rpms)
  	@echo Patching libc and pthreads
  	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-@@ -332,6 +389,9 @@ $(libs) : $(rpms)
+@@ -332,6 +389,7 @@ $(libs) : $(rpms)
  	      -e 's|/lib/||g' ) > $$f.tmp ; \
  	  mv $$f.tmp $$f ; \
  	done)
 +	@find $(SYSROOT) -name '*.[ao]' -exec objcopy --remove-section .comment '{}' ';'
-+	@sed --in-place '/^#define [AP]F_\(IB\|MPLS\).*/d' $(SYSROOT)/usr/include/bits/socket.h
-+	@sed --in-place '/IPPROTO_MPLS/d' $(SYSROOT)/usr/include/netinet/in.h
  	@mkdir -p $(SYSROOT)/usr/lib
  	@touch $@
  
