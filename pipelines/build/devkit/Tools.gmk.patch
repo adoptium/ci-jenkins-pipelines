@@ -113,29 +113,3 @@ index 187320ca2..9f1454d5e 100644
  $(libs) : $(rpms)
  	@echo Patching libc and pthreads
  	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-@@ -332,6 +389,7 @@ $(libs) : $(rpms)
- 	      -e 's|/lib/||g' ) > $$f.tmp ; \
- 	  mv $$f.tmp $$f ; \
- 	done)
-+	@find $(SYSROOT) -name '*.[ao]' -exec objcopy --remove-section .comment '{}' ';'
- 	@mkdir -p $(SYSROOT)/usr/lib
- 	@touch $@
- 
-@@ -440,6 +498,9 @@ endif
- 
- # Makefile creation. Simply run configure in build dir.
- # Setting CFLAGS to -O2 generates a much faster ld.
-+# Use --enable-deterministic-archives so that make targets that
-+# generate "ar" archives, such as "static-libs-image", produce
-+# deterministic .a files.
- $(bfdmakes) \
- $(BUILDDIR)/$(binutils_ver)/Makefile \
-     : $(BINUTILS_CFG)
-@@ -454,6 +515,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
- 	      --with-sysroot=$(SYSROOT) \
- 	      --disable-nls \
- 	      --program-prefix=$(TARGET)- \
-+	      --enable-deterministic-archives \
- 	      --enable-multilib \
- 	      --enable-threads \
- 	      --enable-plugins \
