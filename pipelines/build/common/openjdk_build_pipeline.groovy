@@ -2125,7 +2125,7 @@ class Build {
                         throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
                     }
                 }
-                if (!env.JOB_NAME.contains('pr-tester')) {
+                if (!env.JOB_NAME.contains('pr-tester') && JENKINS_URL.contains('adopt')) {
                     try {
                         gpgSign()
                     } catch (Exception e) {
