@@ -188,11 +188,7 @@ class Config11 {
                         'openj9'     : 'adoptopenjdk/centos6_build_image',
                         'bisheng'    : 'adoptopenjdk/centos6_build_image'
                 ],
-                dockerArgs           : [
-                        'temurin'    : '--platform linux/riscv64'
-                ],
                 crossCompile         : [
-                        'temurin'    : 'dockerhost-rise-ubuntu2204-aarch64-1',
                         'openj9'     : 'x64',
                         'bisheng'    : 'x64'
                 ],

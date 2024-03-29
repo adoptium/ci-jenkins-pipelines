@@ -135,9 +135,7 @@ class Config23 {
         riscv64Linux      :  [
                 os                  : 'linux',
                 arch                : 'riscv64',
-                crossCompile        : 'dockerhost-rise-ubuntu2204-aarch64-1',
                 dockerImage         : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
-                dockerArgs          : '--platform linux/riscv64',
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
