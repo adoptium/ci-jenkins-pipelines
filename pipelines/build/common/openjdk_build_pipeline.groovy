@@ -12,6 +12,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/* groovylint-disable MethodCount */
+
 import common.IndividualBuildConfig
 import common.MetaData
 import common.VersionInfo
@@ -1482,6 +1484,15 @@ class Build {
             context.println '    buildConfig.BUILD_REF: ' + buildConfig.BUILD_REF
             context.println '    buildConfig.HELPER_REF: ' + buildConfig.HELPER_REF
 
+            def openjdk_build_dir = context.WORKSPACE + '/workspace/build/src/build'
+            def openjdk_build_dir_arg = ""
+            if (getJavaVersionNumber() >= 21) {
+                // For reproducible jdk-21+ builds ensure not to build within the openjdk source folder
+                // so that debug symbols can be reproducibly mapped (https://bugs.openjdk.org/browse/JDK-8326685)
+                openjdk_build_dir =  context.WORKSPACE + '/workspace/build/openjdkbuild'
+                openjdk_build_dir_arg = " --user-openjdk-build-root-directory ${openjdk_build_dir}"
+            }
+
             if (cleanWorkspace) {
                 try {
                     try {
@@ -1562,9 +1573,9 @@ class Build {
                                     context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                        signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image'
+                                        signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image' + openjdk_build_dir_arg
                                     } else {
-                                        signBuildArgs = '--make-exploded-image'
+                                        signBuildArgs = '--make-exploded-image' + openjdk_build_dir_arg
                                     }
                                     context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
@@ -1675,16 +1686,24 @@ class Build {
 
                                     def assembleBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                        assembleBuildArgs = env.BUILD_ARGS + ' --assemble-exploded-image'
+                                        assembleBuildArgs = env.BUILD_ARGS + ' --assemble-exploded-image' + openjdk_build_dir_arg
                                     } else {
-                                        assembleBuildArgs = '--assemble-exploded-image'
+                                        assembleBuildArgs = '--assemble-exploded-image' + openjdk_build_dir_arg
                                     }
                                     context.withEnv(['BUILD_ARGS=' + assembleBuildArgs]) {
                                         context.println 'Assembling the exploded image'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                 } else {
-                                    context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    def buildArgs
+                                    if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+                                        buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
+                                    } else {
+                                        buildArgs = openjdk_build_dir_arg
+                                    }
+                                    context.withEnv(['BUILD_ARGS=' + buildArgs]) {
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout...'
                                 // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
@@ -1700,7 +1719,15 @@ class Build {
                                 repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                 repoHandler.checkoutUserBuild(context)
                                 printGitRepoInfo()
-                                context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                def buildArgs
+                                if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+                                    buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
+                                } else {
+                                    buildArgs = openjdk_build_dir_arg
+                                }
+                                context.withEnv(['BUILD_ARGS=' + buildArgs]) {
+                                    context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                }
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
                                 repoHandler.checkoutUserPipelines(context)
                                 printGitRepoInfo()
@@ -1766,10 +1793,12 @@ class Build {
                                         context.println "Failed to clean ${e}"
                                     }
                                 } else if (cleanWorkspaceBuildOutputAfter) {
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/src/build'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/src/build')
+                                    context.println 'Cleaning workspace build output files: ' + openjdk_build_dir
+                                    context.sh(script: 'rm -rf ' + openjdk_build_dir)
                                     context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/target'
                                     context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
+                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/devkit'
+                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
