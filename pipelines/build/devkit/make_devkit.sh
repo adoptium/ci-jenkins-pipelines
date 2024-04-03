@@ -44,15 +44,15 @@ patch -p1 < ../Tools.gmk.patch
 devkit_target="${ARCH}-linux-gnu"
 
 if [ "${BASE_OS}" = "rhel" ]; then
-  mkdir -p ../../../build/devkit/jdk21u/build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}
+  mkdir -p ../../../build/devkit/${VERSION}/build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}
   # Downlod RPMS from RHEL (Requires machine to be attached to RHEL subscription)
   RPMDIR=/var/cache/yum/s390x/7Server/rhel-7-for-system-z-rpms/packages
   pwd
   for A in glibc glibc-headers glibc-devel cups-libs cups-devel libX11 libX11-devel xorg-x11-proto-devel alsa-lib alsa-lib-devel libXext libXext-devel libXtst libXtst-devel libXrender libXrender-devel libXrandr libXrandr-devel freetype freetype-devel libXt libXt-devel libSM libSM-devel libICE libICE-devel libXi libXi-devel libXdmcp libXdmcp-devel libXau libXau-devel libgcc libxcrypt zlib zlib-devel libffi libffi-devel fontconfig fontconfig-devel kernel-headers; do
     if [ ! -z "$(ls $RPMDIR/${A}-[0-9]*${ARCH}*.rpm)" ]; then
-      cp -pv ${RPMDIR}/${A}-[0-9]*${ARCH}*.rpm "../../../build/devkit/jdk21u/build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}"
+      cp -pv ${RPMDIR}/${A}-[0-9]*${ARCH}*.rpm "../../../build/devkit/${VERSION}/build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}"
     elif [ ! -z "$(ls $RPMDIR/${A}-[0-9]*noarch.rpm)" ]; then
-      cp -pv ${RPMDIR}/${A}-[0-9]*noarch.rpm "../../../build/devkit/jdk21u/build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}"
+      cp -pv ${RPMDIR}/${A}-[0-9]*noarch.rpm "../../../build/devkit/${VERSION}/build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}"
     fi
   done
   # Temporary fudge to use Centos logic until we adjust Tools.gmk
