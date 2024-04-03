@@ -105,7 +105,7 @@ class Config21 {
                         'temurin'   : true
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit s390x-on-s390x.RH7'
                 ]
         ],
 
