@@ -2046,7 +2046,7 @@ class Build {
                                 if (isPodman == 0) {
                                     // Note: --userns was introduced in podman 4.3.0
                                     // Add uid and gid userns mapping required for podman
-                                    dockerRunArg += " --userns keep-id:uid=1000,gid=1000"
+                                    dockerRunArg += " --userns keep-id:uid=1002,gid=1003"
                                 }
                                 context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                     buildScripts(
