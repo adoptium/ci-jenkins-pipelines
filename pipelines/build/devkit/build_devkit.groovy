@@ -122,7 +122,7 @@ node(params.DEVKIT_BUILD_NODE) {
             docker.image(params.DOCKER_IMAGE).pull()
         }
         String dockerRunArg=""
-        // Add extra mapping for Marist s390x machiens if running podman
+        // Add extra mapping for Adoptium RHEL machines running podman
         if ( ! sh(script: "docker --version | grep podman", returnStatus:true) ) {
             dockerRunArg += " --userns keep-id:uid=1002,gid=1003"
         }
