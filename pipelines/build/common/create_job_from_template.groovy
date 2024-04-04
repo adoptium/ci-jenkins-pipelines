@@ -21,8 +21,17 @@ limitations under the License.
 
 String buildFolder = "$JOB_FOLDER"
 
-if (!binding.hasVariable('GIT_URL')) GIT_URL = "https://github.com/adoptium/ci-jenkins-pipelines.git"
-if (!binding.hasVariable('GIT_BRANCH')) GIT_BRANCH = "master"
+if (!binding.hasVariable('GIT_URL')) {
+    GIT_URL = 'https://github.com/adoptium/ci-jenkins-pipelines.git'
+}
+if (!binding.hasVariable('GIT_BRANCH')) {
+    GIT_BRANCH = 'master'
+}
+
+//TODO: need more logic to handle when it is a tag in format of "refs/tags/<tagName>"
+if (binding.hasVariable('CHECKOUT_AS_TAG')) {
+    GIT_BRANCH = "refs/heads/"+GIT_BRANCH
+}
 
 isLightweight = true
 if (binding.hasVariable('PR_BUILDER')) {
@@ -41,7 +50,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 git {
                     remote {
                         url(GIT_URL)
-                        refspec(" +refs/pull/*:refs/remotes/origin/pr/* +refs/heads/master:refs/remotes/origin/master +refs/heads/*:refs/remotes/origin/*")
+                        refspec(' +refs/pull/*:refs/remotes/origin/pr/* +refs/heads/master:refs/remotes/origin/master +refs/heads/*:refs/remotes/origin/*')
                         credentials("${CHECKOUT_CREDENTIALS}")
                     }
                     branch("${GIT_BRANCH}")
@@ -56,7 +65,78 @@ pipelineJob("$buildFolder/$JOB_NAME") {
         }
     }
     properties {
-    disableConcurrentBuilds()
+        // Hide all non Temurin builds or release builds from public view on the Adoptium CI instance
+        if ((JENKINS_URL.contains('adopt') && (VARIANT != 'temurin')) || ((JENKINS_URL.contains('adopt') && JOB_NAME.contains('release')))) {
+            authorizationMatrix {
+                inheritanceStrategy {
+                    // Do not inherit permissions from global configuration
+                    nonInheriting()
+                }
+
+                entries {
+                    group {
+                        name('AdoptOpenJDK*build')
+                        permissions(
+                            [
+                                'Job/Build',        // 'hudson.model.Item.Build'
+                                'Job/Cancel',       // 'hudson.model.Item.Cancel'
+                                'Job/Configure',    // 'hudson.model.Item.Configure'
+                                'Job/Read',         // 'hudson.model.Item.Read'
+                                'Job/Workspace',    // 'hudson.model.Item.Workspace'
+                                'Run/Update'        // 'hudson.model.Run.Update'
+                            ])  
+                            
+                    }
+                    group {
+                        name('AdoptOpenJDK*build-triage')
+                        permissions(
+                            [
+                                'Job/Build',        // 'hudson.model.Item.Build'
+                                'Job/Cancel',       // 'hudson.model.Item.Cancel'
+                                'Job/Configure',    // 'hudson.model.Item.Configure'
+                                'Job/Read',         // 'hudson.model.Item.Read'
+                                'Job/Workspace',    // 'hudson.model.Item.Workspace'
+                                'Run/Update'        // 'hudson.model.Run.Update'
+                            ])  
+                    }
+                    // eclipse-temurin-bot needs read access for TRSS
+                    user {
+                        name('eclipse-temurin-bot')
+                        permissions(
+                            [
+                                'Job/Read'          // 'hudson.model.Item.Read'
+                            ])  
+                    }
+                    // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance for copying artifacts
+                    user {
+                        name('eclipse-temurin-compliance-bot')
+                        permissions(
+                            [
+                                'Job/Read'          // 'hudson.model.Item.Read'
+                            ])  
+                    }
+                }
+
+                //permissions([
+                //'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Item.Build:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build', MIGRATED 
+                //'GROUP:hudson.model.Item.Cancel:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build', MIGRATED 
+                //'GROUP:hudson.model.Item.Configure:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Item.Read:AdoptOpenJDK*build-triage', MIGRATED
+                // eclipse-temurin-bot needs read access for TRSS
+                //'USER:hudson.model.Item.Read:eclipse-temurin-bot', MIGRATED
+                // eclipse-temurin-compliance bot needs read access for https://ci.eclipse.org/temurin-compliance
+                //'USER:hudson.model.Item.Read:eclipse-temurin-compliance-bot', MIGRATED
+                //'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Item.Workspace:AdoptOpenJDK*build-triage', MIGRATED
+                //'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build', MIGRATED
+                //'GROUP:hudson.model.Run.Update:AdoptOpenJDK*build-triage']) MIGRATED
+            }
+        }
+        disableConcurrentBuilds()
         copyArtifactPermission {
             projectNames('*')
         }
@@ -73,8 +153,15 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>TARGET_OS</strong></dt><dd>windows, linux, aix...</dd>
                 <dt><strong>VARIANT</strong></dt><dd>hotspot, openj9...</dd>
                 <dt><strong>JAVA_TO_BUILD</strong></dt><dd>i.e jdk11u, jdk12u...</dd>
-                <dt><strong>TEST_LIST</strong></dt><dd>Comma seperated list of tests, i.e: sanity.openjdk,sanity.perf,sanity.system</dd>
-                <dt><strong>SCM_REF</strong></dt><dd>Source code ref to build, i.e branch, tag, commit id</dd>
+                <dt><strong>TEST_LIST</strong></dt><dd>Comma separated list of tests, i.e: sanity.openjdk,sanity.perf,sanity.system</dd>
+                <dt><strong>DYNAMIC_LIST</strong></dt><dd>Comma separated list of tests, i.e: sanity.openjdk,sanity.perf,sanity.system</dd>
+                <dt><strong>NUM_MACHINES</strong></dt><dd>The number of machines for parallel=dynamic</dd>
+                <dt><strong>SCM_REF</strong></dt><dd>Source code ref to build, i.e branch, tag, commit id.</dd>
+                <dt><strong>BUILD_REF</strong></dt><dd>Specify temurin-build tag or branch or SHA1.</dd>
+                <dt><strong>CI_REF</strong></dt><dd>Specify ci-jenkins-pipeline tag or branch or SHA1.</dd>
+                <dt><strong>HELPER_REF</strong></dt><dd>Specify jenkins-helper tag or branch (we only support these two formats).</dd>
+                <dt><strong>AQA_REF</strong></dt><dd>Specific aqa-tests release or branch.</dd>
+                <dt><strong>AQA_AUTO_GEN</strong></dt><dd>If true, froce auto generate AQA test jobs.</dd>
                 <dt><strong>BUILD_ARGS</strong></dt><dd>args to pass to makejdk-any-platform.sh</dd>
                 <dt><strong>NODE_LABEL</strong></dt><dd>Labels of node to build on</dd>
                 <dt><strong>ADDITIONAL_TEST_LABEL</strong></dt><dd>Additional label for test jobs</dd>
@@ -82,6 +169,7 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>ACTIVE_NODE_TIMEOUT</strong></dt><dd>Number of minutes we will wait for a label-matching node to become active.</dd>
                 <dt><strong>CODEBUILD</strong></dt><dd>Use a dynamic codebuild machine if no other machine is available</dd>
                 <dt><strong>DOCKER_IMAGE</strong></dt><dd>Use a docker build environment</dd>
+                <dt><strong>DOCKER_ARGS</strong></dt><dd>Additional args to be used in conjuction with DOCKER_IMAGE</dd>
                 <dt><strong>DOCKER_FILE</strong></dt><dd>Relative path to a dockerfile to be built and used on top of the DOCKER_IMAGE</dd>
                 <dt><strong>DOCKER_REGISTRY</strong></dt><dd>Custom Docker registry to pull DOCKER_IMAGE from</dd>
                 <dt><strong>DOCKER_CREDENTIAL</strong></dt><dd>Username & Password Jenkins credential ID for Docker registry login</dd>
@@ -92,7 +180,9 @@ pipelineJob("$buildFolder/$JOB_NAME") {
                 <dt><strong>RELEASE</strong></dt><dd>Is this build a release</dd>
                 <dt><strong>PUBLISH_NAME</strong></dt><dd>Set name of publish</dd>
                 <dt><strong>ADOPT_BUILD_NUMBER</strong></dt><dd>Adopt build number</dd>
+                <dt><strong>ENABLE_REPRODUCIBLE_COMPARE</strong></dt><dd>Run reproducible compare build</dd>
                 <dt><strong>ENABLE_TESTS</strong></dt><dd>Run tests</dd>
+                <dt><strong>ENABLE_TESTDYNAMICPARALLEL</strong></dt><dd>Run parallel</dd>
                 <dt><strong>ENABLE_INSTALLERS</strong></dt><dd>Run installers</dd>
                 <dt><strong>ENABLE_SIGNER</strong></dt><dd>Run signer</dd>
                 <dt><strong>CLEAN_WORKSPACE</strong></dt><dd>Wipe out workspace before build</dd>
@@ -109,9 +199,6 @@ pipelineJob("$buildFolder/$JOB_NAME") {
         textParam('ADOPT_DEFAULTS_JSON', "$ADOPT_DEFAULTS_JSON", """
         <strong>DO NOT ALTER THIS PARAM UNDER ANY CIRCUMSTANCES!</strong> This passes down adopt's default constants to the downstream job. NOTE: <code>DEFAULTS_JSON</code> has priority, the constants contained within this param will only be used as a failsafe.
         """)
-        if (binding.hasVariable('CUSTOM_LIBRARY_LOCATION')) {
-            stringParam('CUSTOM_LIBRARY_LOCATION', "$CUSTOM_LIBRARY_LOCATION")
-        }
         if (binding.hasVariable('CUSTOM_BASEFILE_LOCATION')) {
             stringParam('CUSTOM_BASEFILE_LOCATION', "$CUSTOM_BASEFILE_LOCATION")
         }

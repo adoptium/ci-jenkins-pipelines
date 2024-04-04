@@ -24,26 +24,26 @@ Downstream job root executor file, it sets up the library and runs the bash scri
 // We have to declare JSON defaults again because we're utilising it's content at start of job
 def LOCAL_DEFAULTS_JSON = new JsonSlurper().parseText(DEFAULTS_JSON) as Map
 if (!LOCAL_DEFAULTS_JSON) {
-    throw new Exception("[ERROR] No User Defaults JSON found! Please ensure the DEFAULTS_JSON parameter is populated and not altered during parameter declaration.")
+    throw new Exception('[ERROR] No User Defaults JSON found! Please ensure the DEFAULTS_JSON parameter is populated and not altered during parameter declaration.')
 }
 def ADOPT_DEFAULTS_JSON = new JsonSlurper().parseText(ADOPT_DEFAULTS_JSON) as Map
 if (!ADOPT_DEFAULTS_JSON) {
-    throw new Exception("[ERROR] No Adopt Defaults JSON found! Please ensure the ADOPT_DEFAULTS_JSON parameter is populated and not altered during parameter declaration.")
+    throw new Exception('[ERROR] No Adopt Defaults JSON found! Please ensure the ADOPT_DEFAULTS_JSON parameter is populated and not altered during parameter declaration.')
 }
 
-def libraryPath = (params.CUSTOM_LIBRARY_LOCATION) ?: LOCAL_DEFAULTS_JSON["importLibraryScript"]
-def baseFilePath = (params.CUSTOM_BASEFILE_LOCATION) ?: LOCAL_DEFAULTS_JSON["baseFileDirectories"]["downstream"]
+def baseFilePath = (params.CUSTOM_BASEFILE_LOCATION) ?: LOCAL_DEFAULTS_JSON['baseFileDirectories']['downstream']
 
 def userRemoteConfigs = [:]
+def buildConf = [:]
 def downstreamBuilder = null
-node("master") {
+node('worker') {
     /*
     Changes dir to Adopt's pipeline repo. Use closures as functions aren't accepted inside node blocks
     */
     def checkoutAdoptPipelines = { ->
-      checkout([$class: 'GitSCM',
-        branches: [ [ name: ADOPT_DEFAULTS_JSON["repository"]["pipeline_branch"] ] ],
-        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON["repository"]["pipeline_url"] ] ]
+        checkout([$class: 'GitSCM',
+        branches: [ [ name: ADOPT_DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
+        userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]
       ])
     }
 
@@ -52,15 +52,20 @@ node("master") {
     if (params.USER_REMOTE_CONFIGS) {
         userRemoteConfigs = new JsonSlurper().parseText(USER_REMOTE_CONFIGS) as Map
     }
+    if (BUILD_CONFIGURATION) { // overwrite branch from USER_REMOTE_CONFIGS if the value is not empty or null
+        buildConf = new JsonSlurper().parseText(BUILD_CONFIGURATION) as Map
+        userRemoteConfigs['branch'] = buildConf.get('CI_REF') ?: userRemoteConfigs['branch']
 
-    try {
-        load "${WORKSPACE}/${libraryPath}"
-    } catch (NoSuchFileException e) {
-        println "[WARNING] Using Adopt's import library script as none was found at ${WORKSPACE}/${libraryPath}"
-        checkoutAdoptPipelines()
-        load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['importLibraryScript']}"
-        checkout scm
+        // If using User scripts and USER_REMOTE_CONFIGS supplied ensure downstreamBuilder is loaded from the user repo
+        def useAdoptShellScripts = Boolean.valueOf(buildConf.get('USE_ADOPT_SHELL_SCRIPTS'))
+        if (!useAdoptShellScripts && params.USER_REMOTE_CONFIGS) {
+            println "Checking out User pipelines url from userRemoteConfigs: ${userRemoteConfigs}"
+            checkout([$class: 'GitSCM', userRemoteConfigs: [[url: userRemoteConfigs['remotes']['url']]], branches: [[name: userRemoteConfigs['branch']]] ])
+        }
     }
+
+    String helperRef = buildConf.get('HELPER_REF') ?: LOCAL_DEFAULTS_JSON['repository']['helper_ref']
+    library(identifier: "openjdk-jenkins-helper@${helperRef}")
 
     try {
         downstreamBuilder = load "${WORKSPACE}/${baseFilePath}"
@@ -70,9 +75,9 @@ node("master") {
         downstreamBuilder = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['baseFileDirectories']['downstream']}"
         checkout scm
     }
-
 }
 
+// construct class Build()
 downstreamBuilder(
     BUILD_CONFIGURATION,
     userRemoteConfigs,

@@ -1,110 +1,105 @@
 #!/bin/bash
-# shellcheck disable=SC2035
 
-set -eu
-export BUILD_DIR
+###################################################################
+# Script to build sigtest reusable by jdk testing community       #
+# currently builds tip and latest released version                #
+###################################################################
 
-downloadJDK() {
-  cd "$BUILD_DIR/"
-  JDK_NAME="$1"
-  JDK_INSTALLER_FILENAME="$2"
-  JDK_TARGET_FOLDER="${BUILD_DIR}/.."
-  export JDK_HOME_DIR="${JDK_TARGET_FOLDER}/$3"
+# shellcheck disable=SC2035,SC2155
+set -euo pipefail
+WORKSPACE=$PWD
 
-  if [[ -s "${JDK_TARGET_FOLDER}/${JDK_INSTALLER_FILENAME}" ]]; then
-    echo "${JDK_NAME} binary installer: ${JDK_INSTALLER_FILENAME}, already exists, reusing it"
-  else
-      wget --quiet "https://ci.adoptopenjdk.net/userContent/jdk-binaries/${JDK_INSTALLER_FILENAME}" -P "${JDK_TARGET_FOLDER}"
-  fi
-
-  if [[ -e "${JDK_HOME_DIR}" ]]; then
-      echo "${JDK_TARGET_FOLDER}/${JDK_INSTALLER_FILENAME} already unpacked into ${JDK_HOME_DIR}, reusing the unpacked JDK"
-  else
-    echo "Unpacking ${JDK_INSTALLER_FILENAME}"
-    unzip "${JDK_TARGET_FOLDER}/${JDK_INSTALLER_FILENAME}" -d "${JDK_TARGET_FOLDER}"
-    echo "Waiting for unpacking to finish."
-  fi
-
-  if [[ -e "${JDK_HOME_DIR}" ]]; then
-    "${JDK_HOME_DIR}"/bin/java -version
-      echo "${JDK_NAME} is available at ${JDK_HOME_DIR}"
-  else
-      echo "For some reason, ${JDK_NAME} is NOT available at ${JDK_HOME_DIR}, check if ${JDK_INSTALLER_FILENAME} ran properly."
-  fi
-  "${JDK_HOME_DIR}"/bin/java -version
+function hashArtifacts() {
+  echo "Creating checksums all sigtest*.zip"
+  for file in `ls sigtest*.zip` ; do
+    sha256sum $file > $file.sha256sum.txt
+  done
 }
 
-buildSigTest()
-{
-  cd "$BUILD_DIR/build"
+function detectJdks() {
+  jvm_dir="/usr/lib/jvm/"
+  find ${jvm_dir} -maxdepth 1 | sort
+  echo "Available jdks 8 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8
+  echo "Available jdks 11 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-11-     -e jdk-11
+  jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8   | head -n 1))
+  jdk11=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-11-     -e jdk-11  | head -n 1))
+}
 
-  echo "Building sigtest"
+function setJdks() {
   set -x
-  ant build -Djdk5.home="${JAVA5_HOME}" -Djdk6.home="${JAVA6_HOME}" -Djdk7.home="${JAVA7_HOME}" -Djdk8.home="${JAVA8_HOME}" -Djdk9.home="${JAVA9_HOME}"
+  sed "s|jdk7.home=.*|jdk7.home=$jdk08|g" -i build/build.properties
+  sed "s|jdk8.home=.*|jdk8.home=$jdk08|g" -i build/build.properties
+  sed "s|jdk9.home=.*|jdk9.home=$jdk11|g" -i build/build.properties
+  sed "s|<property name=\"javac.jt.level.bin\" value=\"1.6\" />|<property name=\"javac.jt.level.bin\" value=\"1.7\" />|g" -i build/build.xml
+  sed "s|<property name=\"javac.jt.level.src\" value=\"1.6\" />|<property name=\"javac.jt.level.src\" value=\"1.7\" />|g" -i build/build.xml
   set +x
-  cd ../..
-
-  artifact=sigtest
-
-  cd SIGTEST_BUILD
-
-  echo "*** Tar-ing ${artifact} into ${artifact}.tar"
-  tar fcv ${artifact}.tar ${artifact}*.zip
-
-  ls ${artifact}*.zip
-
-  echo "*** Moving ${artifact}.tar to .."
-  mv $artifact.tar ..
-
-  cd ..
-  pwd
-  ls *.tar
-
-  echo "*** Gzipping ${artifact}.tar"
-  gzip -9 -f ${artifact}.tar
-  ls *.tar.gz
-
-  echo "*** Moving ${artifact}.tar.gz to $BUILD_DIR"
-  df -k .
-  df -k "$BUILD_DIR"
-  ls -l ${artifact}.tar.gz
-  pwd
-  echo mv ${artifact}.tar.gz "$BUILD_DIR"
-  mv ${artifact}.tar.gz "$BUILD_DIR"
-  echo Cabbage
-
-  cd "$BUILD_DIR"
-  ls *.tar.gz
 }
 
-cloneSigTest() {
-  tagName=$(git describe --tags "$(git rev-list --tags --max-count=1)")
-  echo "Tag: ${tagName}"
-
-  git checkout "${tagName}"
+function resetRepo() {
+  local branch=${1}
+  local forceJdk=${2}
+  rm -f .git/index.lock ;
+  git reset --hard ;
+  git checkout $branch
+  if [ "x$forceJdk" == "xtrue" ] ; then
+    setJdks
+  fi
 }
 
-export JDK9_FOLDER_NAME=jdk-9
+function cleanRepo() {
+  pushd build
+    ant clean
+  popd
+  rm -rf ../$BUILD_PATH
+}
 
-cd sigtest
+REPO_DIR="sigtest"
+BUILD_PATH=SIGTEST_BUILD/
+main_file=sigtest
+if [ ! -e $REPO_DIR ] ; then
+  git clone https://github.com/openjdk/$REPO_DIR.git
+else
+  rm -vf $REPO_DIR/$main_file*.zip
+fi
 
-BUILD_DIR=$(pwd)
+detectJdks
 
-cloneSigTest
+pushd $REPO_DIR
+  resetRepo master false
+  rm -rf ../$BUILD_PATH
+  tip=`git log | head -n 1 | sed "s/.*\s\+//"` || true
+  tip_shortened=`echo ${tip:0:10}`
+  latestRelease=`git tag -l | sort -Vr | head -n 1`
+  latestReleaseNumber=`echo $latestRelease | sed s/$main_file//g`
+  rc=$main_file-$latestRelease
 
-downloadJDK "JDK 5" jdk1.5.0_22.zip jdk1.5.0_22
-JAVA5_HOME=${JDK_HOME_DIR}
+  # latest released
+  resetRepo "$latestRelease" true
+  pushd build
+    ant test | tee ../$rc.zip.txt || true
+    ant build
+  popd
+  mv  ../$BUILD_PATH/$main_file-$latestReleaseNumber.zip $rc.zip
+  mv  ../$BUILD_PATH/$main_file-examples-$latestReleaseNumber.zip $rc-exmaples.zip
+  echo "Manually renaming $rc.zip as $main_file.zip to provide latest-stable-recommended file"
+  ln -fv $rc.zip $main_file.zip
+  cleanRepo
 
-downloadJDK "JDK 6" JDK6_u45.zip JDK6_u45
-JAVA6_HOME=${JDK_HOME_DIR}
+  # tip
+  resetRepo master true
+  pushd build
+    ant test | tee ../$main_file-$tip_shortened.zip.txt || true
+    ant build
+  popd
+  mv  ../$BUILD_PATH/$main_file-$latestReleaseNumber.zip $main_file-$tip_shortened.zip
+  mv  ../$BUILD_PATH/$main_file-examples-$latestReleaseNumber.zip $main_file-$tip_shortened-examples.zip
+  echo "Manually renaming $main_file-$tip_shortened.zip as $main_file-tip.zip to provide latest-unstable-recommended file"
+  ln -fv $main_file-$tip_shortened.zip $main_file-tip.zip
+  cleanRepo
 
-downloadJDK "JDK 7" JDK7_u80.zip JDK7_u80
-JAVA7_HOME=${JDK_HOME_DIR}
-
-downloadJDK "JDK 8" JDK8_u172.zip JDK8_u172
-JAVA8_HOME=${JDK_HOME_DIR}
-
-downloadJDK "JDK 9" JDK9.0.1.zip JDK9.0.1
-JAVA9_HOME=${JDK_HOME_DIR}
-
-buildSigTest
+  echo "Resetting repo back to master"
+  resetRepo master false
+  hashArtifacts
+popd

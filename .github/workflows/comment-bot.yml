@@ -4,14 +4,20 @@ on:
   pull_request_target:
     types: [ opened ]
 
+permissions:
+  contents: read
+
 jobs:
   Comment:
+    permissions:
+      issues: write  # for peter-evans/create-or-update-comment to create or update comment
+      pull-requests: write  # for peter-evans/create-or-update-comment to create or update comment
     name: Add Comment
     runs-on: ubuntu-latest
 
     steps:
       - name: Create comment
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
@@ -24,5 +30,6 @@ jobs:
             ## Tests
             Github actions will run a set of jobs against your PR that will lint and unit test your changes. Keep an eye out for the results from these on the latest commit you submitted. For more information, please see our [testing documentation](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/prTester/README.md).
 
-            In order to run the advanced [pipeline tests](https://github.com/adoptium/ci-jenkins-pipelines/tree/master/pipelines/build/prTester#openjdk-build-pr-tester) (executing a set of mock pipelines), I require an admin to post `run tests` on this PR.
+            In order to run the advanced [pipeline tests](https://github.com/adoptium/ci-jenkins-pipelines/tree/master/pipelines/build/prTester#openjdk-build-pr-tester) (executing a set of mock pipelines), it requires an admin to post `run tests` on this PR.
             If you are not an admin, please ask for one's attention in [#infrastructure on Slack](https://adoptium.slack.com/archives/C53GHCXL4) or ping one here.
+            To run full set of tests, use "run tests"; a subset of tests on specific jdk version, use "run tests quick 11,21" 

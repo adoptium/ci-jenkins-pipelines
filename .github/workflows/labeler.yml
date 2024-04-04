@@ -7,35 +7,20 @@ on:
   issue_comment:
 
 jobs:
-  Label:
+  label:
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     runs-on: ubuntu-latest
     name: Assign Labels
     steps:
-    - uses: actions/labeler@main
+    - uses: actions/labeler@8558fd74291d67161a8a78ce36a881fa63b766a9 # v5.0.0
       if: ${{ github.event.pull_request }}
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
 
-    - uses: fuxingloh/multi-labeler@v1
+    - uses: fuxingloh/multi-labeler@b15a54460c38f54043fa75f7b08a0e2aa5b94b5b # v4.0.0
       with:
         github-token: "${{secrets.GITHUB_TOKEN}}"
         config-path: .github/regex_labeler.yml
-
-  Project:
-    runs-on: ubuntu-latest
-    name: Assign to Project
-    steps:
-    - name: Assign NEW issues and NEW pull requests
-      uses: srggrs/assign-one-project-github-action@1.2.1
-      if: github.event.action == 'opened'
-      with:
-        project: 'https://github.com/adoptium/ci-jenkins-pipelines/projects/1'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Assign issues and pull requests with `good first issue` label
-      uses: srggrs/assign-one-project-github-action@1.2.1
-      if: contains(github.event.issue.labels.*.name, 'good first issue')
-      with:
-        project: 'https://github.com/orgs/adoptium/projects/1'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

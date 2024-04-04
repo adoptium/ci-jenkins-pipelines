@@ -1,5 +1,6 @@
 class Config13 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
@@ -19,7 +20,7 @@ class Config13 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
                         weekly : []
                 ],
-                additionalFileNameTag: "macosXL",
+                additionalFileNameTag: 'macosXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
         ],
 
@@ -59,7 +60,7 @@ class Config13 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
                         weekly : []
                 ],
-                additionalFileNameTag: "windowsXL",
+                additionalFileNameTag: 'windowsXL',
                 configureArgs        : '--with-noncompressedrefs'
         ],
 
@@ -154,7 +155,7 @@ class Config13 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system'],
                         weekly : []
                 ],
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace=auto'
         ],
         s390xLinuxXL    : [
@@ -164,7 +165,7 @@ class Config13 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system'],
                         weekly : []
                 ],
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace=auto'
         ],
         ppc64leLinuxXL    : [
@@ -174,11 +175,11 @@ class Config13 {
                         nightly: ['sanity.openjdk', 'sanity.system', 'extended.system'],
                         weekly : []
                 ],
-                additionalFileNameTag: "linuxXL",
+                additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace=auto'
         ],
   ]
-  
+
 }
 
 Config13 config = new Config13()

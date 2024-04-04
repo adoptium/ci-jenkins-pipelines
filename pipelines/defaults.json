@@ -1,23 +1,27 @@
 {
     "repository"             : {
-        "build_url"          : "https://github.com/AdoptOpenJDK/openjdk-build.git",
+        "build_url"          : "https://github.com/adoptium/temurin-build.git",
         "build_branch"       : "master",
         "test_dirs"          : "/test/functional",
         "pipeline_url"       : "https://github.com/adoptium/ci-jenkins-pipelines.git",
-        "pipeline_branch"    : "master"
+        "pipeline_branch"    : "master",
+        "helper_ref"         : "master"
     },
     "jenkinsDetails"         : {
-        "rootUrl"            : "https://ci.adoptopenjdk.net",
+        "rootUrl"            : "https://ci.adoptium.net",
         "rootDirectory"      : "build-scripts"
     },
     "templateDirectories" : {
         "downstream"         : "pipelines/build/common/create_job_from_template.groovy",
         "upstream"           : "pipelines/jobs/pipeline_job_template.groovy",
-        "weekly"             : "pipelines/jobs/weekly_release_pipeline_job_template.groovy"
+        "weekly"             : "pipelines/jobs/weekly_release_pipeline_job_template.groovy",
+        "release"            : "pipelines/jobs/release_pipeline_job_template.groovy"
     },
     "configDirectories"      : {
         "build"              : "pipelines/jobs/configurations",
         "nightly"            : "pipelines/jobs/configurations",
+        "release"            : "pipelines/jobs/configurations",
+        "evaluation"          : "pipelines/jobs/configurations",
         "platform"           : "build-farm/platform-specific-configurations"
     },
     "scriptDirectories"      : {
@@ -33,6 +37,7 @@
         "downstream"         : "pipelines/build/common/openjdk_build_pipeline.groovy"
     },
     "testDetails"            : {
+        "enableReproducibleCompare" : false,
         "enableTests"        : true,
         "nightlyDefault"     : [
             "sanity.openjdk",
@@ -43,11 +48,34 @@
             "extended.functional"
         ],
         "weeklyDefault"     : [
+            "sanity.openjdk",
+            "sanity.system",
+            "extended.system",
+            "sanity.perf",
+            "sanity.functional",
+            "extended.functional",
+            "extended.openjdk",
+            "extended.perf",
+            "special.functional",
+            "special.openjdk",
+            "dev.functional"
+        ],
+        "releaseDefault"     : [
+            "sanity.openjdk",
+            "sanity.system",
+            "extended.system",
+            "sanity.perf",
+            "sanity.functional",
+            "extended.functional",
             "extended.openjdk",
             "extended.perf",
             "special.functional"
-        ]
+        ],
+        "enableTestDynamicParallel"      : true,
+        "defaultDynamicParas": {
+            "testLists"      : ["extended.openjdk"],
+            "numMachines"    : ["3"]
+        }
     },
-    "importLibraryScript"    : "pipelines/build/common/import_lib.groovy",
     "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
 }

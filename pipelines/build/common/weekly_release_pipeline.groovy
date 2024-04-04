@@ -13,25 +13,37 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-stage("Submit Release Pipelines") {
+stage('Submit Release Pipelines') {
     // Map of <variant> : <scmRef>
     def Map<String, String> scmRefs = new JsonSlurper().parseText("${params.scmReferences}") as Map
 
     // Map of <platform> : [<variant>,<variant>,..]
     def Map<String, List<String>> targetConfigurations = new JsonSlurper().parseText("${params.targetConfigurations}") as Map
 
-    def jobs = [:]
+    def Map<String, String> jobs = [:]
 
-    // For each variant create a release pipeline job
-    scmRefs.each{ variant ->
+    // Ensure workspace is clean so we don't archive any old failed pipeline artifacts
+    node('worker') {
+        println '[INFO] Cleaning up controller worker workspace prior to running pipelines..'
+        // Fail if unable to clean..
+        cleanWs notFailBuild: false
+    }
+
+    // ensure test jobs are regenerated weekly
+    def aqaAutoGen = false
+    if  ( params.releaseType  == 'Weekly' ) {
+        aqaAutoGen = true
+    }   
+
+    // For each variant, launch a pipeline job with "releaseType" based on the build parameter.
+    scmRefs.each { variant ->
         def variantName = variant.key
         def scmRef = variant.value
         def Map<String, List<String>> targetConfig = [:]
 
-        targetConfigurations.each{ target ->
+        targetConfigurations.each { target ->
             if (target.value.contains(variantName)) {
-                targetConfig.put(target.key,[variantName])
+                targetConfig.put(target.key, [variantName])
             }
         }
 
@@ -39,19 +51,44 @@ stage("Submit Release Pipelines") {
             echo("Creating ${params.buildPipeline} - ${variantName}")
             jobs[variantName] = {
                 stage("Build - ${params.buildPipeline} - ${variantName}") {
-                  build job: "${params.buildPipeline}",
-                      parameters: [
-                          string(name: 'releaseType',        value: 'Release'),
-                          string(name: 'scmReference',       value: scmRef),
-                          text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
-                          ['$class': 'BooleanParameterValue', name: 'keepReleaseLogs', value: false]
-                      ]
+                    result = build job: "${params.buildPipeline}",
+                            parameters: [
+                                string(name: 'releaseType',        value: "${params.releaseType}"),
+                                string(name: 'scmReference',       value: scmRef),
+                                booleanParam(name: 'aqaAutoGen', value: aqaAutoGen),
+                                text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
+                                ['$class': 'BooleanParameterValue', name: 'keepReleaseLogs', value: false]
+                            ]
+                    // For reproducible builds to have comparison on multiple builds' artifacts.
+                    // Copy artifacts from downstream and archive again on weekly-pipeline. For details, see issue: https://github.com/adoptium/ci-jenkins-pipelines/issues/301
+                    if (result.getCurrentResult() == 'SUCCESS') {
+                        node('worker') {
+                            copyArtifacts(
+                                projectName: result.getProjectName(), // copy-up
+                                selector: specific(result.getNumber().toString()), // buildNumber need to be string not int
+                                filter: '**/*.tar.gz, **/*.zip',
+                                fingerprintArtifacts: true,
+                                target: 'workspace',
+                                flatten: true,
+                                optional: true  // do not fail pipeline if not find matching filter
+                            )
+                        }
+                    }
                 }
             }
+        } else {
+            // This might happen when it is an empty evaluation targetConfiguration, should disable pipeline or set trigger to ""
+            println '[WARNING] Empty targetConfigurations was given, will not trigger openjdk-pipeline...'
         }
     }
-
-    // Submit jobs
+    // Run downstream jobs in parallel
     parallel jobs
+    node('worker') {
+        try {
+            archiveArtifacts artifacts: 'workspace/*'
+        } finally {
+            println '[INFO] Cleaning up controller worker workspace...'
+            cleanWs notFailBuild: true
+        }
+    }
 }
-

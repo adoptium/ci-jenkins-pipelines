@@ -1,0 +1,188 @@
+/*
+Jenkins job does reproducible build compare.
+*/
+import groovy.json.JsonOutput
+
+env.NODE_LABEL = 'worker'
+pipeline {
+    agent none
+    parameters {
+        string(name: 'COMPARED_JOB_NUMBER', defaultValue: '', description: 'Compared nightly build job number')
+        string(name: 'COMPARED_JOB_NAME', defaultValue: '', description: 'Compared nightly build job name')
+        string(name: 'COMPARED_AGENT', defaultValue: '', description: 'Compared nightly build job agent')
+        string(name: 'COMPARED_JOB_PARAMS', defaultValue: '', description: 'Compared nightly build job parameters')
+    }
+
+    stages {
+        stage('Prepare') { //Copy artifacts, reset parameters,trigger build and copyArtifacts
+            agent { label NODE_LABEL }
+            options {
+                timeout(time: 3, unit: 'HOURS')
+            }
+            steps {
+                cleanWs()
+                checkout scm
+                copyArtifacts excludes: '**/OpenJDK*-sbom*metadata.json,**/OpenJDK*-jdk-sources*.tar.gz', 
+                                filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip,**/OpenJDK*-sbom*.json',
+                                fingerprintArtifacts: true, 
+                                flatten: true, 
+                                projectName: "${params.COMPARED_JOB_NAME}",
+                                target: 'original/',
+                                selector: specific("${params.COMPARED_JOB_NUMBER}")
+                script {
+                    def sbomFiles = findFiles(glob: "**/OpenJDK*-sbom*.json")
+                    def sbomParams = readJSON file: "${sbomFiles[0].path}"
+
+                    def sbomProperties = sbomParams.components[0].properties
+                    def reproducedParams = [:]
+                    sbomProperties.each { propertyItem -> 
+                        def paramFound = false
+                        propertyItem.each { key, value ->
+                            if (value in ["SCM Ref", "Temurin Build Ref", "Build Timestamp"]) {
+                                paramFound = true
+                            }
+                        }
+                        if (paramFound) {
+                            reproducedParams.put(propertyItem.name, propertyItem.value)
+                        }
+                    }
+                    
+                    def scmRef = reproducedParams["SCM Ref"]
+                    def buildTimeStamp = "'" + reproducedParams["Build Timestamp"] + "'"
+                    def buildRef = reproducedParams["Temurin Build Ref"]
+                    buildRef = buildRef.substring(buildRef.lastIndexOf('/')+1)
+
+                    // Convert COMPARED_JOB_PARAMS to json format string
+                    def jobParams = COMPARED_JOB_PARAMS.replaceAll("=\\{", ":\\{")
+                    jobParams = jobParams.replace("ADOPT_DEFAULTS_JSON", "ADOPT_DEFAULTS_TEMP")
+                    jobParams = jobParams.replace("DEFAULTS_JSON", "\"DEFAULTS_JSON\"")
+                    jobParams = jobParams.replace("USER_REMOTE_CONFIGS", "\"USER_REMOTE_CONFIGS\"")
+                    jobParams = jobParams.replace("ADOPT_DEFAULTS_TEMP", "\"ADOPT_DEFAULTS_JSON\"")
+                    jobParams = jobParams.replace("BUILD_CONFIGURATION", "\"BUILD_CONFIGURATION\"")
+                    
+                    // Set Reproducible build parameters
+                    def jsonJobParams = new groovy.json.JsonSlurper().parseText(jobParams)
+                    jsonJobParams.BUILD_CONFIGURATION.SCM_REF = scmRef
+                    jsonJobParams.BUILD_CONFIGURATION.BUILD_REF = buildRef
+                    jsonJobParams.BUILD_CONFIGURATION.BUILD_ARGS += " --build-reproducible-date ${buildTimeStamp}"
+                    jsonJobParams.BUILD_CONFIGURATION.ENABLE_REPRODUCIBLE_COMPARE = false
+                    jsonJobParams.BUILD_CONFIGURATION.ENABLE_TESTS = false
+                    jsonJobParams.BUILD_CONFIGURATION.ENABLE_INSTALLERS = false
+                    
+                    NODE_LABEL=jsonJobParams.BUILD_CONFIGURATION.NODE_LABEL
+                    if (!jsonJobParams.BUILD_CONFIGURATION.DOCKER_IMAGE) {
+                        jsonJobParams.BUILD_CONFIGURATION.NODE_LABEL = "${NODE_LABEL}&&!${COMPARED_AGENT}"
+                    }
+                    def buildParams = [
+                        text(name: 'BUILD_CONFIGURATION', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.BUILD_CONFIGURATION))),
+                        text(name: 'USER_REMOTE_CONFIGS', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.USER_REMOTE_CONFIGS))),
+                        text(name: 'DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.DEFAULTS_JSON))),
+                        text(name: 'ADOPT_DEFAULTS_JSON', value: JsonOutput.prettyPrint(JsonOutput.toJson(jsonJobParams.DEFAULTS_JSON)))
+                    ]
+                    def reproducibleJob = build job: "${COMPARED_JOB_NAME}",
+                            propagate: false,
+                            parameters: buildParams
+                    
+                    def result = reproducibleJob.getResult()
+                    if (result == 'SUCCESS') {
+                        try {
+                            timeout(time: 2, unit: 'HOURS') {
+                                copyArtifacts(
+                                    projectName:"${COMPARED_JOB_NAME}",
+                                    selector:specific("${reproducibleJob.getNumber()}"),
+                                    excludes: '**/OpenJDK*-jdk-sources*.tar.gz',
+                                    filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip',
+                                    target: 'reproduced/',
+                                    fingerprintArtifacts: true,
+                                    flatten: true
+                                )
+                            }
+                        } catch (Exception e) {
+                            echo "Cannot run copyArtifacts from job ${COMPARED_JOB_NAME}. Exception: ${e.message}. Skipping copyArtifacts..."
+                        }
+                    } else {
+                        error "Reproducible jenkins job ${COMPARED_JOB_NAME} failed, exit comparision"
+                        return
+                    }
+
+                    archiveArtifacts artifacts: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip', fingerprint: true
+                }
+            }
+        }
+        stage('Compare') {
+            agent { label NODE_LABEL }
+            options {
+                // Timeout counter starts BEFORE agent is allocated
+                timeout(time: 30, unit: 'MINUTES')
+            }
+            steps {
+                cleanWs() // Ensure Prepare stage contents cleaned
+                copyArtifacts filter: '**/OpenJDK*-jdk*.tar.gz,**/OpenJDK*-jdk*.zip',
+                    fingerprintArtifacts: true, 
+                    projectName: env.JOB_NAME,
+                    selector: specific("${env.BUILD_NUMBER}")
+                checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "temurin-build"]], submoduleCfg: [], userRemoteConfigs: [[url: "https://github.com/adoptium/temurin-build.git"]]])
+            
+                script {
+                    if (COMPARED_JOB_NAME.contains('windows')) {
+                        def originalJDKFile = findFiles(glob: "original/*.zip")
+                        def reproducedJDKFile = findFiles(glob: "reproduced/*.zip")
+                        def untarOriginalJDK = sh returnStatus: true, script: "cd original && temp=`mktemp -d` && unzip -d ${temp} ${originalJDKFile[0].name} && mv ${temp}/*/* ./ && rmdir ${temp}/* ${temp}"
+                        if (untarOriginalJDK != 0 ) {
+                            currentBuild.result = 'FAILURE'
+                            error " Unzip ${originalJDKFile[0].name} failed"
+                            return
+                        }
+                        def untarReproducedJDK = sh returnStatus: true, script: "cd reproduced && temp=`mktemp -d` && unzip -d ${temp} ${reproducedJDKFile[0].name} && mv ${temp}/*/* ./ && rmdir ${temp}/* ${temp}"
+                        if (untarReproducedJDK != 0 ) {
+                            currentBuild.result = 'FAILURE'
+                            error " Unzip ${originalJDKFile[0].name} failed"
+                            return
+                        }
+                        sh "find . -type f -name 'OpenJDK*-jdk*.zip' -delete"
+                    } else {
+                        def originalJDKFile = findFiles(glob: "original/*.tar.gz")
+                        def reproducedJDKFile = findFiles(glob: "reproduced/*.tar.gz")
+                        def untarOriginalJDK = sh returnStatus: true, script: "tar xzf ${originalJDKFile[0].path} --strip-components=1 -C original"
+                        if (untarOriginalJDK != 0 ) {
+                            currentBuild.result = 'FAILURE'
+                            error " Untar ${originalJDKFile[0].name} failed"
+                            return
+                        }
+                        def untarReproducedJDK = sh returnStatus: true, script: "tar xzf ${reproducedJDKFile[0].path} --strip-components=1 -C reproduced"
+                        if (untarReproducedJDK != 0 ) {
+                            currentBuild.result = 'FAILURE'
+                            error " Untar ${reproducedJDKFile[0].name} failed"
+                            return
+                        }
+                        sh "find . -type f -name 'OpenJDK*-jdk*.tar.gz' -delete"
+                    }
+                    try {
+                        dir('temurin-build/tooling/reproducible') {
+                            def rc = 0
+                            if (COMPARED_JOB_NAME.contains('linux')) {
+                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original temurin ${WORKSPACE}/reproduced Linux"
+                            } else if (COMPARED_JOB_NAME.contains('mac')) {
+                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin ${WORKSPACE}/original/Contents/Home temurin ${WORKSPACE}/reproduced/Contents/Home Darwin"
+                            } else if (COMPARED_JOB_NAME.contains('windows')) {
+                                rc = sh returnStatus: true, script: "./repro_compare.sh temurin `pwd`/../../original temurin `pwd`/../../reproduced CYGWIN"
+                            }
+                            if (rc != 0) {
+                                currentBuild.result = 'UNSTABLE'
+                                echo 'Differences found: two builds are not the same! Please see the archived repro_diff.out.'
+                            } else {
+                                echo 'Success: two builds are the same!'
+                            }
+                            archiveArtifacts artifacts: "**/repro_diff.out"
+                        }
+                    } catch (Exception err) {
+                        echo err.getMessage()
+                        currentBuild.result = 'FAILURE'
+                    } finally {
+                        cleanWs()
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,59 +1,61 @@
 targetConfigurations = [
-        "x64Mac"        : [
-                "hotspot",
-                "openj9"
+        'x64Mac'        : [
+                'temurin'
         ],
-        "x64Linux"      : [
-                "hotspot",
-                "openj9",
-                "corretto",
-                "dragonwell",
-                "bisheng"
+        'x64Linux'      : [
+                'temurin',
+                'openj9',
+                'corretto',
+                'dragonwell',
+                'bisheng'
         ],
-        "x32Windows"    : [
-                "hotspot",
-                "openj9"
+        'x64AlpineLinux' : [
+                'temurin'
         ],
-        "x64Windows"    : [
-                "hotspot",
-                "openj9",
-                "dragonwell"
+        'x32Windows'    : [
+                'temurin',
+                'openj9'
         ],
-        "ppc64Aix"      : [
-                "hotspot",
-                "openj9"
+        'x64Windows'    : [
+                'temurin',
+                'openj9',
+                'dragonwell'
         ],
-        "ppc64leLinux"  : [
-                "hotspot",
-                "openj9"
+        'ppc64Aix'      : [
+                'temurin',
+                'openj9'
         ],
-        "s390xLinux"    : [
-                "hotspot",
-                "openj9"
+        'ppc64leLinux'  : [
+                'temurin',
+                'openj9'
         ],
-        "aarch64Linux"  : [
-                "hotspot",
-                "openj9",
-                "dragonwell",
-                "bisheng"
+        's390xLinux'    : [
+                'openj9'
         ],
-        "arm32Linux"  : [
-                "hotspot"
+        'aarch64Linux'  : [
+                'temurin',
+                'openj9',
+                'dragonwell',
+                'bisheng'
+        ],
+        'arm32Linux'  : [
+                'temurin'
+        ],
+        'x64Solaris': [
+                'temurin'
+        ],
+        'sparcv9Solaris': [
+                'temurin'
         ]
 ]
 
-// 18:05 Mon, Wed, Fri
-triggerSchedule_nightly="TZ=UTC\n05 18 * * 1,3,5"
-// 12:05 Sat
-triggerSchedule_weekly="TZ=UTC\n05 12 * * 6"
-
 // scmReferences to use for weekly release build
-weekly_release_scmReferences=[
-        "hotspot"        : "",
-        "openj9"         : "",
-        "corretto"       : "",
-        "dragonwell"     : "",
-        "bisheng"        : ""
+weekly_release_scmReferences = [
+        'temurin'        : '',
+        'openj9'         : '',
+        'corretto'       : '',
+        'dragonwell'     : '',
+        'bisheng'        : ''
 ]
 
 return this

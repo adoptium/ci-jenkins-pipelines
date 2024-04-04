@@ -1,147 +1,77 @@
 #!/bin/bash
-# shellcheck disable=SC2035
 
-set -eu
+###################################################################
+# Script to build jtharness reusable by jdk testing community     #
+# currently builds tip and latest released version                #
+###################################################################
 
-cd jtharness
+# shellcheck disable=SC2035,SC2155
+set -euo pipefail
+WORKSPACE=$PWD
 
-tagName=$(git describe --tags "$(git rev-list --tags --max-count=1)")
-echo "Tag: ${tagName}"
+function hashArtifacts() {
+  echo "Creating checksums all jtharness*.jar"
+  for file in `ls javatest*.jar` ; do
+    sha256sum $file > $file.sha256sum.txt
+  done
+}
 
-git checkout "${tagName}"
+function detectJdks() {
+  jvm_dir="/usr/lib/jvm/"
+  find ${jvm_dir} -maxdepth 1 | sort
+  echo "Available jdks 11 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-11- -e jdk-11
+  jdk11=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-11- -e jdk-11 | head -n 1))
+}
 
-#rm -fr jh2.0
-if [ ! -d "jh2.0" ]; then
-   wget https://github.com/glub/secureftp/raw/master/contrib/javahelp2_0_05.zip
-   unzip -o javahelp2_0_05.zip
-   cp jh2.0/javahelp/lib/jhall.jar build/
-   cp jh2.0/javahelp/lib/jh.jar build/
+REPO_DIR="jtharness"
+BUILD_PATH=JTHarness-build/binaries/lib
+main_file=javatest
+if [ ! -e $REPO_DIR ] ; then
+  git clone https://github.com/openjdk/$REPO_DIR.git
+else
+  rm -vf $REPO_DIR/$main_file*.jar
 fi
+detectJdks
+pushd $REPO_DIR
+  git checkout master
+  rm -rf ../$BUILD_PATH
+  tip=`git log | head -n 1 | sed "s/.*\s\+//"` || true
+  tip_shortened=`echo ${tip:0:10}`
+  latestRelease=`git tag -l | sort -Vr | head -n 1`
+  rc=$main_file-$latestRelease
 
+  # latest released
+  git checkout $latestRelease
+  export JAVA_HOME=$jdk11
+  pushd build
+    ant test | tee ../$rc.jar.txt || true
+    ant build
+  popd
+  mv  ../$BUILD_PATH/$main_file.jar $rc.jar
+  echo "Manually renaming $rc.jar as $main_file.jar to provide latest-stable-recommended file"
+  ln -fv $rc.jar $main_file.jar
+  pushd build
+    ant clean
+  popd
+  rm -rf ../$BUILD_PATH
 
-#rm -fr junit
-if [ ! -d junit ]; then
-   mkdir junit
-   cd junit
+  # tip
+  git checkout master
+  export JAVA_HOME=$jdk11
+  pushd build
+    ant test | tee ../$main_file-$tip_shortened.jar.txt || true
+    ant build
+  popd
+  mv  ../$BUILD_PATH/$main_file.jar $main_file-$tip_shortened.jar
+  echo "Manually renaming $main_file-$tip_shortened.jar as $main_file-tip.jar to provide latest-unstable-recommended file"
+  ln -fv $main_file-$tip_shortened.jar $main_file-tip.jar
+  pushd build
+    ant clean
+  popd
+  rm -rf ../$BUILD_PATH
 
-   wget https://repo1.maven.org/maven2/junit/junit/4.4/junit-4.4.jar
-   cp junit-4.4.jar ../build/
-
-   cd ..
-fi
-
-#rm -fr jcomapi
-if [ ! -d jcomapi ]; then
-   mkdir jcomapi
-   cd jcomapi
-
-   wget www.java2s.com/Code/JarDownload/comm/comm-2.0.jar.zip
-   unzip comm-2.0.jar.zip
-   cp comm-2.0.jar ../build/comm.jar
-
-   cd ..
-fi
-
-#rm -fr servletapi
-if [ ! -d servletapi ]; then
-   mkdir servletapi
-   cd servletapi
-
-   wget www.java2s.com/Code/JarDownload/servlet/servlet-api.jar.zip
-   unzip servlet-api.jar.zip
-   mv servlet-api.jar ../build/
-
-   cd ..
-fi
-
-#rm -fr asm
-if [ ! -d asm ]; then
-   mkdir asm
-   cd asm
-
-   wget www.java2s.com/Code/JarDownload/asm/asm-3.1.jar.zip
-   unzip asm-3.1.jar.zip
-   mv asm-3.1.jar ../build/
-
-   wget www.java2s.com/Code/JarDownload/asm/asm-commons-3.1.jar.zip
-   unzip asm-commons-3.1.jar.zip
-   mv asm-commons-3.1.jar ../build/
-
-   cd ..
-fi
-
-
-ls -lash
-
-cd build
-
-rm local.properties
-
-# shellcheck disable=SC2129
-echo '#Please specify location of jhall.jar here - for compilation' >> local.properties
-echo 'jhalljar = ./build/jhall.jar' >> local.properties
-echo '' >> local.properties
-echo '# needed only at runtime' >> local.properties
-echo 'jhjar = ./build/jh.jar' >> local.properties
-echo '' >> local.properties
-echo '# location of jar with with implementation of java serial communications API' >> local.properties
-echo 'jcommjar = ./build/comm.jar' >> local.properties
-echo '' >> local.properties
-echo '# location of jar with servlet API implementation' >> local.properties
-echo 'servletjar = ./build/servlet-api.jar' >> local.properties
-echo '' >> local.properties
-echo '# bytecode library (BCEL or ASM)' >> local.properties
-echo '# these are not interchangable' >> local.properties
-echo 'bytecodelib = ./build/asm-3.1.jar:./build/asm-commons-3.1.jar' >> local.properties
-echo '' >> local.properties
-echo '# JUnit Library - Version 4 currently used to compile 3 and 4 support' >> local.properties
-echo 'junitlib = ./build/junit-4.4.jar' >> local.properties
-echo '' >> local.properties
-echo '# Please specify location where the build distribution (output) will be created' >> local.properties
-echo 'BUILD_DIR = ./JTHarness-build' >> local.properties
-
-pwd
-
-which java
-whereis java
-java -version
-echo "Building jtharness"
-ant build -propertyfile ./local.properties -Djvmargs='-Xdoclint:none' -debug
-cd ..
-
-rm -f *.zip
-rm -f *.tar.gz
-
-artifact='jtharness'
-
-
-ROOT_FOLDER=$(pwd)
-cd JTHarness-build/binaries
-
-echo "$ROOT_FOLDER"
-
-cp -fr "$ROOT_FOLDER/legal/" .
-touch COPYRIGHT-javatest.html
-mkdir -p doc/javatest
-touch doc/javatest/javatestGUI.pdf
-
-pwd
-ls -lash
-echo "tar-ing jtharness into ${artifact}.tar"
-cd ..
-mv binaries jtharness
-tar fcv "$artifact.tar" jtharness
-pwd
-echo "moving ${artifact}.tar to .."
-mv "$artifact.tar" ..
-pwd
-cd ..
-pwd
-echo "gzipping ${artifact}.tar"
-gzip -9 "${artifact}.tar"
-
-echo "Creating checksum for ${artifact}.tar.gz"
-sha256sum "${artifact}.tar.gz" > "${artifact}.tar.gz.sha256sum.txt"
-
-pwd
-rm -fr "${artifact}"
+  echo "Resetting repo back to master"
+  git checkout master
+  hashArtifacts
+popd

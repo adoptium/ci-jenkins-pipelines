@@ -3,7 +3,8 @@
         "build_url"          : "1",
         "build_branch"       : "20",
         "pipeline_url"       : "19",
-        "pipeline_branch"    : "21"
+        "pipeline_branch"    : "21",
+        "helper_ref"         : "24"
     },
     "jenkinsDetails"         : {
         "rootUrl"            : "3",
@@ -32,10 +33,11 @@
         "downstream"         : "17"
     },
     "testDetails"            : {
+        "enableReproducibleCompare" : false,
         "enableTests"        : true,
         "nightlyDefault"     : [ "test1", "test2", "test3" ],
-        "weeklyDefault"      : [ "test4", "test5", "test6" ]
+        "weeklyDefault"      : [ "test4", "test5", "test6", "test7"],
+        "releaseDefault"     : [ "test8", "test9"]
     },
-    "importLibraryScript"    : "18",
     "defaultsUrl"            : "23"
 }

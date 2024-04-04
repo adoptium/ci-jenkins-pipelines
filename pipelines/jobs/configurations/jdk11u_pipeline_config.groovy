@@ -1,23 +1,18 @@
 class Config11 {
-  final Map<String, Map<String, ?>> buildConfigurations = [
+
+    final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                additionalNodeLabels : 'macos10.14',
                 test                : 'default',
+                additionalNodeLabels: 'xcode15.0.1',
                 configureArgs       : [
-                        "openj9"      : '--enable-dtrace=auto --with-cmake',
-                        "hotspot"     : '--enable-dtrace=auto'
+                        'openj9'      : '--enable-dtrace=auto --with-cmake',
+                        'temurin'     : '--enable-dtrace=auto'
+                ],
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
                 ]
-        ],
-
-        x64MacXL    : [
-                os                   : 'mac',
-                arch                 : 'x64',
-                additionalNodeLabels : 'macos10.14',
-                test                 : 'default',
-                additionalFileNameTag: "macosXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto --with-cmake'
         ],
 
         x64Linux  : [
@@ -27,14 +22,42 @@ class Config11 {
                 dockerFile: [
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
+                ],
                 configureArgs       : [
-                        "openj9"      : '--enable-jitserver --enable-dtrace=auto',
-                        "hotspot"     : '--enable-dtrace=auto',
-                        "corretto"    : '--enable-dtrace=auto',
-                        "SapMachine"  : '--enable-dtrace=auto',
-                        "dragonwell"  : '--enable-dtrace=auto --enable-unlimited-crypto --with-jvm-variants=server --with-zlib=system --with-jvm-features=zgc',
-                        "bisheng"     : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server --disable-warnings-as-errors'
+                        'openj9'      : '--enable-dtrace=auto',
+                        'temurin'     : '--enable-dtrace=auto',
+                        'corretto'    : '--enable-dtrace=auto',
+                        'SapMachine'  : '--enable-dtrace=auto',
+                        'dragonwell'  : '--enable-dtrace=auto --enable-unlimited-crypto --with-jvm-variants=server --with-zlib=system --with-jvm-features=zgc',
+                        'fast_startup': '--enable-dtrace=auto',
+                        'bisheng'     : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server --disable-warnings-as-errors'
+                ],
+                buildArgs            : [
+                        'temurin'     : '--create-source-archive --create-sbom'
+                ]
+        ],
+
+        x64AlpineLinux  : [
+                os                  : 'alpine-linux',
+                arch                : 'x64',
+                dockerImage         : 'adoptopenjdk/alpine3_build_image',
+                test                : 'default',
+                configureArgs       : '--enable-headless-only=yes',
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
+                ]
+        ],
+
+        aarch64AlpineLinux  : [
+                os                  : 'alpine-linux',
+                arch                : 'aarch64',
+                dockerImage         : 'adoptopenjdk/alpine3_build_image',
+                test                : 'default',
+                configureArgs       : '--enable-headless-only=yes',
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
@@ -42,31 +65,22 @@ class Config11 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: [
-                        hotspot:    'win2012',
+                        temurin:    'win2022&&vs2019',
                         openj9:     'win2012&&vs2017',
                         dragonwell: 'win2012'
                 ],
                 buildArgs : [
-                        hotspot : '--jvm-variant client,server'
+                        temurin : '--jvm-variant client,server --create-sbom'
                 ],
                 test                : 'default'
-        ],
-
-        x64WindowsXL    : [
-                os                   : 'windows',
-                arch                 : 'x64',
-                additionalNodeLabels : 'win2012&&vs2017',
-                test                 : 'default',
-                additionalFileNameTag: "windowsXL",
-                configureArgs        : '--with-noncompressedrefs'
         ],
 
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2012',
+                additionalNodeLabels: 'win2022&&vs2019',
                 buildArgs : [
-                        hotspot : '--jvm-variant client,server'
+                        temurin : '--jvm-variant client,server --create-sbom'
                 ],
                 test                : 'default'
         ],
@@ -74,45 +88,73 @@ class Config11 {
         ppc64Aix    : [
                 os                  : 'aix',
                 arch                : 'ppc64',
-                additionalNodeLabels: [
-                        hotspot: 'xlc13&&aix710',
-                        openj9:  'xlc13&&aix715'
-                ],
+                additionalNodeLabels: 'xlc13&&aix720',
                 test                : 'default',
-                cleanWorkspaceAfterBuild: true
+                additionalTestLabels: 'sw.os.aix.7_2',
+                cleanWorkspaceAfterBuild: true,
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
+                ]
         ],
 
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
+                dockerImage         : 'rhel7_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace=auto'
+                configureArgs       : '--enable-dtrace=auto',
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
+                ]
         ],
 
         sparcv9Solaris    : [
                 os                  : 'solaris',
                 arch                : 'sparcv9',
                 test                : false,
-                configureArgs       : '--enable-dtrace=auto'
+                configureArgs       : '--enable-dtrace=auto',
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
+                ]
         ],
 
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                additionalNodeLabels : 'centos7',
+                dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
-                        "hotspot"     : '--enable-dtrace=auto',
-                        "openj9"      : '--enable-dtrace=auto --enable-jitserver'
+                        'temurin'     : '--enable-dtrace=auto',
+                        'openj9'      : '--enable-dtrace=auto'
+                ],
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
                 ]
 
+        ],
+
+        aarch64Mac: [
+                os                  : 'mac',
+                arch                : 'aarch64',
+                test                : 'default',
+                additionalNodeLabels: 'xcode15.0.1',
+                configureArgs       : '--disable-ccache',
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
+                ]
         ],
 
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
+                crossCompile        : 'aarch64',
+                dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
+                dockerArgs          : '--platform linux/arm/v7',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace=auto'
+                configureArgs       : '--enable-dtrace=auto',
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
+                ]
         ],
 
         aarch64Linux    : [
@@ -121,72 +163,70 @@ class Config11 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 additionalNodeLabels: [
-                        dragonwell: 'dragonwell'
+                        dragonwell: 'armv8.2'
                 ],
                 additionalTestLabels: [
-                        dragonwell: 'dragonwell'
+                        dragonwell: 'armv8.2'
                 ],
                 configureArgs       : [
-                        "hotspot" : '--enable-dtrace=auto',
-                        "openj9" : '--enable-dtrace=auto',
-                        "corretto" : '--enable-dtrace=auto',
-                        "dragonwell" : "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
-                        "bisheng" : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
+                        'temurin'   : '--enable-dtrace=auto',
+                        'openj9'    : '--enable-dtrace=auto',
+                        'corretto'  : '--enable-dtrace=auto',
+                        'dragonwell': "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
+                        'bisheng'   : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
+                ],
+                buildArgs           : [
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
-        x64LinuxXL    : [
-                os                   : 'linux',
-                dockerImage          : 'adoptopenjdk/centos6_build_image',
-                dockerFile: [
-                        openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
-                ],
-                arch                 : 'x64',
-                test                 : "default",
-                additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-jitserver --enable-dtrace=auto'
-        ],
-        s390xLinuxXL    : [
-                os                   : 'linux',
-                arch                 : 's390x',
-                test                 : 'default',
-                additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
-        ],
-        ppc64leLinuxXL    : [
-                os                   : 'linux',
-                arch                 : 'ppc64le',
-                additionalNodeLabels : 'centos7',
-                test                 : 'default',
-                additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto --enable-jitserver'
-        ],
-        aarch64LinuxXL    : [
-                os                   : 'linux',
-                dockerImage          : 'adoptopenjdk/centos7_build_image',
-                arch                 : 'aarch64',
-                test                 : 'default',
-                additionalFileNameTag: "linuxXL",
-                configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
-        ],
         riscv64Linux      :  [
                 os                   : 'linux',
-                dockerImage          : [
-                        "openj9"     : 'adoptopenjdk/centos6_build_image',
-                        "bisheng"    : 'adoptopenjdk/centos6_build_image'
-                ],
                 arch                 : 'riscv64',
+                dockerImage          : [
+                        'temurin'    : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
+                        'openj9'     : 'adoptopenjdk/centos6_build_image',
+                        'bisheng'    : 'adoptopenjdk/centos6_build_image'
+                ],
+                dockerArgs           : [
+                        'temurin'    : '--platform linux/riscv64'
+                ],
                 crossCompile         : [
-                        "openj9"     : 'x64',
-                        "bisheng"    : 'x64'
+                        'temurin'    : 'dockerhost-rise-ubuntu2204-aarch64-1',
+                        'openj9'     : 'x64',
+                        'bisheng'    : 'x64'
                 ],
                 buildArgs            : [
-                        "openj9"     : '--cross-compile',
-                        "bisheng"    : '--cross-compile --branch risc-v'
+                        'temurin'    : '--create-sbom',
+                        'openj9'     : '--cross-compile',
+                        'bisheng'    : '--cross-compile --branch risc-v'
                 ],
                 configureArgs        : [
-                        "openj9"     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
-                        "bisheng"    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
+                        'temurin'    : '--enable-headless-only=yes --enable-dtrace --disable-ccache',
+                        'openj9'     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
+                        'bisheng'    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
+                ],
+                test                : [
+                        'temurin'   : 'default',
+                        'openj9'    : [
+                                nightly: ['sanity.openjdk'],
+                                weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                        ],
+                        'bisheng'   : [
+                                nightly: ['sanity.openjdk'],
+                                weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
+                        ]
+                ],
+        ],
+
+        aarch64Windows: [
+                os                  : 'windows',
+                arch                : 'aarch64',
+                crossCompile        : 'x64',
+                additionalNodeLabels: 'win2022&&vs2019',
+                test                : 'default',
+                buildArgs       : [
+                        'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile'
                 ]
         ]
   ]

@@ -1,13 +1,15 @@
 plugins {
-  id "com.github.johnrengelman.shadow" version "6.0.0"
+    // TODO Latest version now at 8.1.1 (2nd Jan 2024) - will force update of base Gradle version
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
 }
 
+// TODO Suspect this should change to adoptium
 group 'adoptopenjdk'
 version '1.0.0-SNAPSHOT'
 
 apply plugin: 'groovy'
 
-// Get compile errors if using 11
+// TODO Get compile errors if using 11
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -18,7 +20,7 @@ dependencyLocking {
 sourceSets {
     main {
         groovy {
-            srcDirs = ['build', 'src/main/groovy', 'library/src']
+            srcDirs = ['build', 'src/main/groovy', 'jenkins-helper/src/common']
             buildDir = 'target'
         }
     }
@@ -30,7 +32,7 @@ repositories {
         url 'https://repo.jenkins-ci.org/releases'
     }
     maven {
-        url "https://repo.jenkins-ci.org/public"
+        url 'https://repo.jenkins-ci.org/public'
     }
 }
 
@@ -39,13 +41,26 @@ shadowJar {
 }
 
 dependencies {
+    // TODO This is the lib from 2017, probably need to use its replacement (2.432) from Nov 14 2023
     compile group: 'org.jenkins-ci.main', name: 'jenkins-core', version: '2.85', ext: 'pom'
+    // TODO This is the lib from 2017, probably need to use its https://mvnrepository.com/artifact/org.jenkins-ci.plugins.workflow/workflow-step-api/650.v14346f713b_00
     compile group: 'org.jenkins-ci.plugins.workflow', name: 'workflow-step-api', version: '2.22', ext: 'jar'
-    compile 'org.codehaus.groovy:groovy-all:3.0.4'
-    testCompile('org.junit.jupiter:junit-jupiter-api:5.4.1')
-    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.1')
+    compile 'org.codehaus.groovy:groovy-all:3.0.20'
+    testCompile('org.junit.jupiter:junit-jupiter-api:5.10.1')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.10.1')
+}
+
+// Checkout Jenkins Helper so that it can be added to the classpath
+task checkoutJenkinsHelper {
+    doFirst {
+        delete 'jenkins-helper'
+        exec {
+            commandLine 'git', 'clone', 'https://github.com/adoptium/jenkins-helper.git', 'jenkins-helper'
+        }
+    }
 }
 
 test {
+    dependsOn checkoutJenkinsHelper
     useJUnitPlatform()
 }
