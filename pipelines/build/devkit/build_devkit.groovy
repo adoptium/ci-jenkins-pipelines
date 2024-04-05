@@ -118,8 +118,15 @@ node(params.DEVKIT_BUILD_NODE) {
 
     if (params.DOCKER_IMAGE != "") { 
         // Build within docker container
-        docker.image(params.DOCKER_IMAGE).pull()
-        docker.image(params.DOCKER_IMAGE).inside() {
+        if (!("${params.DOCKER_IMAGE}".contains('rhel'))) {
+            docker.image(params.DOCKER_IMAGE).pull()
+        }
+        String dockerRunArg=""
+        // Add extra mapping for Adoptium RHEL machines running podman
+        if ( ! sh(script: "docker --version | grep podman", returnStatus:true) ) {
+            dockerRunArg += " --userns keep-id:uid=1002,gid=1003"
+        }
+        docker.image(params.DOCKER_IMAGE).inside(dockerRunArg) {
             build()
         }
     } else {
