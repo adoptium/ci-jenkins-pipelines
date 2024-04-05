@@ -192,7 +192,7 @@ class Config11 {
                         'temurin'    : '--platform linux/riscv64'
                 ],
                 crossCompile         : [
-                        'temurin'    : 'dockerhost-rise-ubuntu2204-aarch64-1',
+                        'temurin'    : 'qemustatic',
                         'openj9'     : 'x64',
                         'bisheng'    : 'x64'
                 ],
