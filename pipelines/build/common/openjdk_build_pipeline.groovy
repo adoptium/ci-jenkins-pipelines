@@ -1581,7 +1581,11 @@ class Build {
                                         context.println 'Building an exploded image for signing'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
-                                    def base_path = context.sh(script: "ls -d ${openjdk_build_dir}/* | tr -d '\\n'", returnStdout:true)
+                                    def base_path = openjdk_build_dir
+                                    if (openjdk_build_dir_arg == "") {
+                                        // If not using a custom openjdk build dir, then query what autoconf created as the build folder
+                                        base_path = context.sh(script: "ls -d ${openjdk_build_dir}/* | tr -d '\\n'", returnStdout:true)
+                                    }
                                     context.println "base build path for jmod signing = ${base_path}"
                                     context.stash name: 'jmods',
                                         includes: "${base_path}/hotspot/variant-server/**/*," +
