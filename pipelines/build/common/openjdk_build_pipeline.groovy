@@ -1484,13 +1484,20 @@ class Build {
             context.println '    buildConfig.BUILD_REF: ' + buildConfig.BUILD_REF
             context.println '    buildConfig.HELPER_REF: ' + buildConfig.HELPER_REF
 
-            def openjdk_build_dir = context.WORKSPACE + '/workspace/build/src/build'
-            def openjdk_build_dir_arg = ""
+            def build_path
+            def openjdk_build_dir
+            def openjdk_build_dir_arg
+
             if (getJavaVersionNumber() >= 21) {
                 // For reproducible jdk-21+ builds ensure not to build within the openjdk source folder
                 // so that debug symbols can be reproducibly mapped (https://bugs.openjdk.org/browse/JDK-8326685)
-                openjdk_build_dir =  context.WORKSPACE + '/workspace/build/openjdkbuild'
+                build_path = 'workspace/build/openjdkbuild'
+                openjdk_build_dir =  context.WORKSPACE + '/' + build_path
                 openjdk_build_dir_arg = " --user-openjdk-build-root-directory ${openjdk_build_dir}"
+            } else {
+                build_path = 'workspace/build/src/build'
+                openjdk_build_dir =  context.WORKSPACE + '/' + build_path
+                openjdk_build_dir_arg = ""
             }
 
             if (cleanWorkspace) {
@@ -1581,7 +1588,11 @@ class Build {
                                         context.println 'Building an exploded image for signing'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
-                                    def base_path = context.sh(script: "ls -d workspace/build/src/build/* | tr -d '\\n'", returnStdout:true)
+                                    def base_path = build_path
+                                    if (openjdk_build_dir_arg == "") {
+                                        // If not using a custom openjdk build dir, then query what autoconf created as the build sub-folder
+                                        base_path = context.sh(script: "ls -d ${build_path}/* | tr -d '\\n'", returnStdout:true)
+                                    }
                                     context.println "base build path for jmod signing = ${base_path}"
                                     context.stash name: 'jmods',
                                         includes: "${base_path}/hotspot/variant-server/**/*," +
