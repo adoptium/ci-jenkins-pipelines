@@ -594,8 +594,6 @@ node('worker') {
                allReleases.addAll(nonTagBuildReleases)
             }
             allReleases.each { featureRelease ->
-                def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
-
                 def status = healthStatus[featureRelease]
 
                 def slackColor = 'good'
