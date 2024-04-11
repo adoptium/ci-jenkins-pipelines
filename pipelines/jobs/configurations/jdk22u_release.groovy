@@ -20,9 +20,6 @@ targetConfigurations = [
         'ppc64leLinux': [
                 'temurin'
         ],
-        's390xLinux'  : [
-                'temurin'
-        ],
         'aarch64Linux': [
                 'temurin'
         ],
