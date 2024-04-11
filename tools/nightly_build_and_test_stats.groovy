@@ -306,7 +306,12 @@ node('worker') {
             // In particular, look at first data set for latest published binaries.
             // Check the binary is published
             // The release asset list is also verified
-            featureReleases.each { featureRelease ->
+            def allNonTipReleases = []
+            allNonTipReleases.addAll(featureReleases)
+            if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
+                allNonTipReleases.addAll(nonTagBuildReleases)
+            }
+            allNonTipReleases.each { featureRelease ->
               def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
 
               // Extra filter to find latest jdk8u port assets
