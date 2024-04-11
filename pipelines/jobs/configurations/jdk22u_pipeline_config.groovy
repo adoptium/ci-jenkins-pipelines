@@ -55,9 +55,6 @@ class Config22 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                additionalTestLabels: [
-                        temurin     : '!(centos6||rhel6)'
-                ],
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
