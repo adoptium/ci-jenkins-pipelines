@@ -97,9 +97,6 @@ class Config22 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
-                additionalTestLabels: [
-                        temurin     : '!(centos6||rhel6)'
-                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit s390x-on-s390x.RH7'
                 ]
@@ -110,9 +107,6 @@ class Config22 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                additionalTestLabels: [
-                        temurin     : '!(centos6||rhel6)'
-                ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace'
                 ],
@@ -126,9 +120,6 @@ class Config22 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                additionalTestLabels: [
-                        temurin     : '!(centos6||rhel6)'
-                ],
                 configureArgs : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.6.1810-b02'
@@ -152,9 +143,6 @@ class Config22 {
                 dockerImage         : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                 dockerArgs          : '--platform linux/riscv64',
                 test                : 'default',
-                additionalTestLabels: [
-                        temurin     : '!(centos6||rhel6)'
-                ],
                 configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'

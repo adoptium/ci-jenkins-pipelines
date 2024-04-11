@@ -102,9 +102,6 @@ class Config21 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
-                additionalTestLabels: [
-                        temurin     : '!(centos6||rhel6)'
-                ],
                 reproducibleCompare : [
                         'temurin'   : true
                 ],
@@ -118,9 +115,6 @@ class Config21 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                additionalTestLabels: [
-                        temurin     : '!(centos6||rhel6)'
-                ],
                 reproducibleCompare : [
                         'temurin'   : true
                 ],
@@ -137,9 +131,6 @@ class Config21 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                additionalTestLabels: [
-                        temurin     : '!(centos6||rhel6)'
-                ],
                 reproducibleCompare : [
                         'temurin'   : true
                 ],
@@ -172,9 +163,6 @@ class Config21 {
                 dockerImage         : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                 dockerArgs          : '--platform linux/riscv64',
                 test                : 'default',
-                additionalTestLabels: [
-                        temurin     : '!(centos6||rhel6)'
-                ],
                 configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
