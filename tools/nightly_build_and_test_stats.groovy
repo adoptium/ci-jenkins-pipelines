@@ -382,6 +382,9 @@ node('worker') {
         if (tipRelease != "") {
             allReleases.add(tipRelease)
         }
+        if (!nonTagBuildReleases.isEmpty()) {
+           allReleases.addAll(nonTagBuildReleases)
+        }
         allReleases.each { release ->
            def featureReleaseStr = (release == "aarch32-jdk8u" || release == "alpine-jdk8u") ? "8" : release.replaceAll("u", "").replaceAll("jdk", "")
 
@@ -581,6 +584,9 @@ node('worker') {
             allReleases.addAll(featureReleases)
             if (tipRelease != "") {
                 allReleases.add(tipRelease)
+            }
+            if (!nonTagBuildReleases.isEmpty()) {
+               allReleases.addAll(nonTagBuildReleases)
             }
             allReleases.each { featureRelease ->
                 def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
