@@ -32,7 +32,8 @@ class Config21 {
                         'temurin'   : true
                 ],
                 additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
+                        openj9      : '!(centos6||rhel6)',
+                        temurin     : '!(centos6||rhel6)'
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
