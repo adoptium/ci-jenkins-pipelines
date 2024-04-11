@@ -382,7 +382,7 @@ node('worker') {
         if (tipRelease != "") {
             allReleases.add(tipRelease)
         }
-        if (!nonTagBuildReleases.isEmpty()) {
+        if (!nonTagBuildReleases.empty) {
            allReleases.addAll(nonTagBuildReleases)
         }
         allReleases.each { release ->
@@ -585,7 +585,7 @@ node('worker') {
             if (tipRelease != "") {
                 allReleases.add(tipRelease)
             }
-            if (!nonTagBuildReleases.isEmpty()) {
+            if (!nonTagBuildReleases.empty) {
                allReleases.addAll(nonTagBuildReleases)
             }
             allReleases.each { featureRelease ->
