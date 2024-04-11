@@ -27,7 +27,8 @@ class Config23 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'dev.openjdk', 'dev.functional', 'dev.system']
                 ],
                 additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
+                        openj9      : '!(centos6||rhel6)',
+                        temurin     : '!(centos6||rhel6)'
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
@@ -103,6 +104,9 @@ class Config23 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                additionalTestLabels: [
+                        temurin     : '!(centos6||rhel6)'
+                ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace'
                 ],
@@ -116,6 +120,9 @@ class Config23 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                additionalTestLabels: [
+                        temurin     : '!(centos6||rhel6)'
+                ],
                 configureArgs : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.6.1810-b02'
@@ -139,6 +146,9 @@ class Config23 {
                 dockerImage         : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                 dockerArgs          : '--platform linux/riscv64',
                 test                : 'default',
+                additionalTestLabels: [
+                        temurin     : '!(centos6||rhel6)'
+                ],
                 configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'

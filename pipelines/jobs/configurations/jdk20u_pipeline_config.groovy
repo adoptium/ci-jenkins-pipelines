@@ -24,7 +24,8 @@ class Config20 {
                 ],
                 test                : 'default',
                 additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
+                        openj9      : '!(centos6||rhel6)',
+                        temurin     : '!(centos6||rhel6)'
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
@@ -89,6 +90,9 @@ class Config20 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
+                additionalTestLabels: [
+                        temurin     : '!(centos6||rhel6)'
+                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -100,6 +104,9 @@ class Config20 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                additionalTestLabels: [
+                        temurin     : '!(centos6||rhel6)'
+                ],
                 configureArgs       : [
                         'temurin'     : '--enable-dtrace',
                         'openj9'      : '--enable-dtrace'
@@ -114,6 +121,9 @@ class Config20 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                additionalTestLabels: [
+                        temurin     : '!(centos6||rhel6)'
+                ],
                 configureArgs : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -137,6 +147,9 @@ class Config20 {
                 dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
                 dockerArgs          : '--platform linux/arm/v7',
                 test                : 'default',
+                additionalTestLabels: [
+                        temurin     : '!(centos6||rhel6)'
+                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -150,6 +163,9 @@ class Config20 {
                 dockerImage         : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                 dockerArgs          : '--platform linux/riscv64',
                 test                : 'default',
+                additionalTestLabels: [
+                        temurin     : '!(centos6||rhel6)'
+                ],
                 configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
