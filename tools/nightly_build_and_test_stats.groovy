@@ -382,7 +382,7 @@ node('worker') {
         if (tipRelease != "") {
             allReleases.add(tipRelease)
         }
-        if (!nonTagBuildReleases.empty) {
+        if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
            allReleases.addAll(nonTagBuildReleases)
         }
         allReleases.each { release ->
@@ -585,7 +585,7 @@ node('worker') {
             if (tipRelease != "") {
                 allReleases.add(tipRelease)
             }
-            if (!nonTagBuildReleases.empty) {
+            if (("${params.NON_TAG_BUILD_RELEASES}".trim() != "")) {
                allReleases.addAll(nonTagBuildReleases)
             }
             allReleases.each { featureRelease ->
