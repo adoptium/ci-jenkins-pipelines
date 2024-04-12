@@ -52,7 +52,7 @@ def getOpenjdkBuildTagAge(String version, String tag) {
         openjdkRepo = "https://github.com/openjdk/jdk8u.git"
     } 
 
-    def date = sh(returnStdout: true, script:"(rm -rf tmpRepo; git clone ${openjdkRepo} tmpRepo; cd tmpRepo; git for-each-ref --format=\"%(refname:short) %(taggerdate:format:%Y-%m-%dT%H:%M:%S%z)\" \"refs/tags/*\"; cd ..; rm -rf tmpRepo) | grep \"${tag}\" | cut -d\" \" -f2 | sed -e 's/.\\{22\\}/&:/1' | tr -d '\\n'")
+    def date = sh(returnStdout: true, script:"(rm -rf tmpRepo; git clone ${openjdkRepo} tmpRepo; cd tmpRepo; git for-each-ref --format=\"%(refname:short) %(creatordate:format:%Y-%m-%dT%H:%M:%S%z)\" \"refs/tags/*\"; cd ..; rm -rf tmpRepo) | grep \"${tag}\" | cut -d\" \" -f2 | sed -e 's/.\\{22\\}/&:/1' | tr -d '\\n'")
 
     def tagTs = Instant.parse(date).atZone(ZoneId.of('UTC'))
     def now = ZonedDateTime.now(ZoneId.of('UTC'))
@@ -306,7 +306,12 @@ node('worker') {
             // In particular, look at first data set for latest published binaries.
             // Check the binary is published
             // The release asset list is also verified
-            featureReleases.each { featureRelease ->
+            def allNonTipReleases = []
+            allNonTipReleases.addAll(featureReleases)
+            if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
+                allNonTipReleases.addAll(nonTagBuildReleases)
+            }
+            allNonTipReleases.each { featureRelease ->
               def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
 
               // Extra filter to find latest jdk8u port assets
@@ -323,7 +328,7 @@ node('worker') {
               def status = []
               if (assetsJson.size() > 0) {
                 def releaseName = assetsJson[0].release_name
-                if (nonTagBuildReleases.contains(featureReleaseInt)) {
+                if (nonTagBuildReleases.contains(featureRelease)) {
                   // A non tag build, eg.a scheduled build for Oracle managed STS versions
                   def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
                   def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
@@ -381,6 +386,9 @@ node('worker') {
         allReleases.addAll(featureReleases)
         if (tipRelease != "") {
             allReleases.add(tipRelease)
+        }
+        if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
+           allReleases.addAll(nonTagBuildReleases)
         }
         allReleases.each { release ->
            def featureReleaseStr = (release == "aarch32-jdk8u" || release == "alpine-jdk8u") ? "8" : release.replaceAll("u", "").replaceAll("jdk", "")
@@ -582,9 +590,10 @@ node('worker') {
             if (tipRelease != "") {
                 allReleases.add(tipRelease)
             }
+            if (("${params.NON_TAG_BUILD_RELEASES}".trim() != "")) {
+               allReleases.addAll(nonTagBuildReleases)
+            }
             allReleases.each { featureRelease ->
-                def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
-
                 def status = healthStatus[featureRelease]
 
                 def slackColor = 'good'
@@ -595,7 +604,7 @@ node('worker') {
                 def inProgressBuildUrl = ""
 
                 // Is it a non-tag triggered build? eg.Oracle STS version
-                if (nonTagBuildReleases.contains(featureReleaseInt)) {
+                if (nonTagBuildReleases.contains(featureRelease)) {
                     // Check for stale published build
                     def days = status['actualDays'] as int
                     lastPublishedMsg = "\nPublished: ${days} day(s) ago." // might actually be days + N hours, where N < 24
