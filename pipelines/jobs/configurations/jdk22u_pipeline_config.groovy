@@ -27,7 +27,8 @@ class Config22 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'dev.openjdk', 'dev.functional', 'dev.system']
                 ],
                 additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
+                        openj9      : '!(centos6||rhel6)',
+                        temurin     : '!(centos6||rhel6)'
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
