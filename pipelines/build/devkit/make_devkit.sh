@@ -59,9 +59,6 @@ if [ "${BASE_OS}" = "rhel" ]; then
   BASE_OS=Centos
 fi
 
-# clean any old build
-rm -rf build/devkit
-
 # Perform "bootstrap" devkit build
 echo "Building 'bootstrap' DevKit toolchain, to be used to build the final DevKit..."
 cd make/devkit && pwd && make TARGETS=${devkit_target} BASE_OS=${BASE_OS} BASE_OS_VERSION=${BASE_OS_VERSION}
