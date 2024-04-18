@@ -22,7 +22,7 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 
-// Get the latest upstream openjdk build tag
+// Get the latest upstream openjdk build tag, ignoring "-ga" builds which are not EA beta builds
 def getLatestOpenjdkBuildTag(String version) {
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
     if (version == "aarch32-jdk8u") {
@@ -38,6 +38,20 @@ def getLatestOpenjdkBuildTag(String version) {
     }
 
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | head -1 | tr -d '\\n'")
+
+    def buildCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${latestTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    def gaCheckTag
+    if (version.contains("jdk8u")) {
+        gaCheckTag = latestTag.substring(0, latestTag.indexOf("-"))+"-ga"
+    } else {
+        gaCheckTag = latestTag.substring(0, latestTag.indexOf("+"))+"-ga"
+    }
+    def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    if (gaCommitSHA != "" && buildCommitSHA == gaCommitSHA) {
+        echo "latest upstream openjdk/${version} tag = ${latestTag}, which is a GA tag, looking for previous EA build tag..."
+        latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | grep -v \"${gaCheckTag}\" | sort -V -r | head -1 | tr -d '\\n'")
+    }
+
     echo "latest upstream openjdk/${version} tag = ${latestTag}"
 
     return latestTag
@@ -577,7 +591,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
         echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
@@ -683,7 +697,7 @@ node('worker') {
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} latest pipeline publish status: *${health}*. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
