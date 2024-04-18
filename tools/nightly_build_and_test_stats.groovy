@@ -21,9 +21,34 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
+// Check if the given tag is a -ga tag ?
+def isGaTag(String version, String tag) {
+    def openjdkRepo = "https://github.com/openjdk/${version}.git"
+    if (version == "aarch32-jdk8u") {
+        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
+    } else if (version == "alpine-jdk8u") {
+        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
+    }
 
-// Get the latest upstream openjdk build tag, ignoring "-ga" builds which are not EA beta builds
-def getLatestOpenjdkBuildTag(String version) {
+    def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+
+    def gaCheckTag
+    if (version.contains("jdk8u")) {
+        gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+    } else {
+        gaCheckTag = tag.substring(0, tag.indexOf("+"))+"-ga"
+    }
+    def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+
+    if (gaCommitSHA != "" && tagCommitSHA == gaCommitSHA) {
+        return true
+    } else {
+        return false
+    }
+}
+
+// Get the latest(or 2nd latest..) upstream openjdk build tag
+def getLatestOpenjdkBuildTag(String version, Integer headMinus) {
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
     if (version == "aarch32-jdk8u") {
         openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
@@ -37,22 +62,9 @@ def getLatestOpenjdkBuildTag(String version) {
         jdk8Filter += " | grep '\\-aarch32\\-'"
     }
 
-    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | head -1 | tr -d '\\n'")
+    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | head ${headMinus} | tr -d '\\n'")
 
-    def buildCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${latestTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
-    def gaCheckTag
-    if (version.contains("jdk8u")) {
-        gaCheckTag = latestTag.substring(0, latestTag.indexOf("-"))+"-ga"
-    } else {
-        gaCheckTag = latestTag.substring(0, latestTag.indexOf("+"))+"-ga"
-    }
-    def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
-    if (gaCommitSHA != "" && buildCommitSHA == gaCommitSHA) {
-        echo "latest upstream openjdk/${version} tag = ${latestTag}, which is a GA tag, looking for previous EA build tag..."
-        latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | grep -v \"${latestTag}\" | sort -V -r | head -1 | tr -d '\\n'")
-    }
-
-    echo "latest upstream openjdk/${version} tag = ${latestTag}"
+    echo "latest(head ${headMinus}) upstream openjdk/${version} tag = ${latestTag}"
 
     return latestTag
 }
@@ -131,7 +143,7 @@ def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease,
 
 // Verify the given release contains all the expected assets
 def verifyReleaseContent(String version, String release, String variant, Map status) {
-    echo "Verifying ${version} asserts in release: ${release}"
+    echo "Verifying ${version} assets in release: ${release}"
     status['assets'] = "Error"
 
     def configVersion = version
@@ -340,8 +352,21 @@ node('worker') {
               def assetsJson = new JsonSlurper().parseText(assets)
 
               def status = []
+
+              // Get the latest published release unless it's a GA tag, in which case get the previous release
+              def releaseName = ""
               if (assetsJson.size() > 0) {
-                def releaseName = assetsJson[0].release_name
+                def tag = assetsJson[0].release_name.replaceAll("-ea-beta", "")
+                if (isGaTag(featureRelease, tag)) {
+                  if (assetsJson.size() > 1) {
+                    releaseName = assetsJson[1].release_name
+                  }
+                } else {
+                  releaseName = assetsJson[0].release_name
+                }
+              }
+
+              if (releaseName != "") {
                 if (nonTagBuildReleases.contains(featureRelease)) {
                   // A non tag build, eg.a scheduled build for Oracle managed STS versions
                   def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
@@ -350,7 +375,10 @@ node('worker') {
                   def days = ChronoUnit.DAYS.between(assetTs, now)
                   status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
                 } else {
-                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
+                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease, -1)
+                  if (isGaTag(featureRelease, latestOpenjdkBuild)) {
+                      latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease, -2)
+                  }
                   def expectedReleaseName = "${latestOpenjdkBuild}-ea-beta"
                   if (featureRelease == "aarch32-jdk8u") {
                       expectedReleaseName = latestOpenjdkBuild.substring(0, latestOpenjdkBuild.indexOf("-aarch32"))+"-ea-beta"
@@ -370,7 +398,10 @@ node('worker') {
 
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             if (tipRelease != "") {
-              def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
+              def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk", -1)
+              if (isGaTag("jdk", latestOpenjdkBuild)) {
+                  latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk", -2)
+              }
               def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
               status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTag: latestOpenjdkBuild]
