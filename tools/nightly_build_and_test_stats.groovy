@@ -49,7 +49,7 @@ def getLatestOpenjdkBuildTag(String version) {
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     if (gaCommitSHA != "" && buildCommitSHA == gaCommitSHA) {
         echo "latest upstream openjdk/${version} tag = ${latestTag}, which is a GA tag, looking for previous EA build tag..."
-        latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | grep -v \"${gaCheckTag}\" | sort -V -r | head -1 | tr -d '\\n'")
+        latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | grep -v \"${latestTag}\" | sort -V -r | head -1 | tr -d '\\n'")
     }
 
     echo "latest upstream openjdk/${version} tag = ${latestTag}"
