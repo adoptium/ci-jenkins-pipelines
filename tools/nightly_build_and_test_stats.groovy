@@ -32,11 +32,15 @@ def isGaTag(String version, String tag) {
 
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
 
-    def gaCheckTag
+    def gaCheckTag = "unknown"
     if (version.contains("jdk8u")) {
-        gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+        if (tag.indexOf("-") > 0) {
+            gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+        }
     } else {
-        gaCheckTag = tag.substring(0, tag.indexOf("+"))+"-ga"
+        if (tag.indexOf("+") > 0) {
+            gaCheckTag = tag.substring(0, tag.indexOf("+"))+"-ga"
+        }
     }
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
 
