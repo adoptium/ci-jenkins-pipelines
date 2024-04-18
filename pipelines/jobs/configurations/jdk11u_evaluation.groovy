@@ -36,6 +36,9 @@ targetConfigurations = [
         // ]
 ]
 
+// 08:05 Sat - Weekend schedule so we get riscv64Linux HEAD builds, since they don't operate regular build tagging...
+triggerSchedule_weekly  = 'TZ=UTC\n05 08 * * 6'
+
 // scmReferences to use for weekly evaluation build
 weekly_evaluation_scmReferences = [
         'hotspot'        : '',
