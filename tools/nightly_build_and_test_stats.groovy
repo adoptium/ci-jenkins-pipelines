@@ -23,6 +23,11 @@ import java.time.temporal.ChronoUnit
 
 // Check if the given tag is a -ga tag ?
 def isGaTag(String version, String tag) {
+    if (version == "${params.TIP_RELEASE}".trim()) {
+        // Tip release has no GA tags
+        return false
+    }
+
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
     if (version == "aarch32-jdk8u") {
         openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
@@ -359,11 +364,12 @@ node('worker') {
                 def releaseName = assetsJson[0].release_name
                 if (nonTagBuildReleases.contains(featureRelease)) {
                   // A non tag build, eg.a scheduled build for Oracle managed STS versions
+                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
                   def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
                   def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
                   def now = ZonedDateTime.now(ZoneId.of('UTC'))
                   def days = ChronoUnit.DAYS.between(assetTs, now)
-                  status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
+                  status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days, upstreamTag: latestOpenjdkBuild]
                 } else {
                   def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
                   def expectedReleaseName = "${latestOpenjdkBuild}-ea-beta"
