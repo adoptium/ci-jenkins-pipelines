@@ -668,44 +668,47 @@ node('worker') {
                     }
                 }
 
-                // Verify if any artifacts missing?                    
-                def missingAssets = []
-                if (status['assets'] != 'Complete') {
-                    slackColor = 'danger'
-                    health = "Unhealthy"
-                    errorMsg += "\nArtifact status: "+status['assets']
-                    if (inProgressBuildUrl != "") {
-                        errorMsg += ", <" + inProgressBuildUrl + "|Build is in progress>"
-                    } else {
-                        errorMsg += ", *No build is in progress*"
-                    }
-                    missingAssets = status['missingAssets']
-                }
-                 
-                // Print out formatted missing artifacts if any missing
-                def missingMsg = ""
-                if (missingAssets.size() > 0) {
-                    missingMsg += " :"
-                    // Collate by arch, array is sequenced by architecture
-                    def archName = ""
-                    def missingFiles = ""
-                    missingAssets.each { missing ->
-                        // arch : imageType : fileType
-                        def missingFile = missing.split("[ :]+")
-                        if (missingFile[0] != archName) {
-                            if (archName != "") {
-                                missingMsg += "\n    *${archName}*: ${missingFiles}"
-                                echo "===> ${missingMsg}"
-                            }
-                            archName = missingFile[0]
-                            missingFiles = missingFile[1]+missingFile[2]
+                // Verify if any artifacts missing?
+                // Don't check if upstream tag is a GA, as the ea-beta will only be for evaluation platforms
+                if (nonTagBuildReleases.contains(featureRelease) || !isGaTag(featureRelease, status['upstreamTag'])) {
+                    def missingAssets = []
+                    if (status['assets'] != 'Complete') {
+                        slackColor = 'danger'
+                        health = "Unhealthy"
+                        errorMsg += "\nArtifact status: "+status['assets']
+                        if (inProgressBuildUrl != "") {
+                            errorMsg += ", <" + inProgressBuildUrl + "|Build is in progress>"
                         } else {
-                            missingFiles += ", "+missingFile[1]+missingFile[2]
-                        }                        
-                    } 
-                    if (missingFiles != "") {
-                        missingMsg += "\n    *${archName}*: ${missingFiles}"
-                        echo "===> ${missingMsg}"
+                            errorMsg += ", *No build is in progress*"
+                        }
+                        missingAssets = status['missingAssets']
+                    }
+                 
+                    // Print out formatted missing artifacts if any missing
+                    def missingMsg = ""
+                    if (missingAssets.size() > 0) {
+                        missingMsg += " :"
+                        // Collate by arch, array is sequenced by architecture
+                        def archName = ""
+                        def missingFiles = ""
+                        missingAssets.each { missing ->
+                            // arch : imageType : fileType
+                            def missingFile = missing.split("[ :]+")
+                            if (missingFile[0] != archName) {
+                                if (archName != "") {
+                                    missingMsg += "\n    *${archName}*: ${missingFiles}"
+                                    echo "===> ${missingMsg}"
+                                }
+                                archName = missingFile[0]
+                                missingFiles = missingFile[1]+missingFile[2]
+                            } else {
+                               missingFiles += ", "+missingFile[1]+missingFile[2]
+                            }                        
+                        } 
+                        if (missingFiles != "") {
+                            missingMsg += "\n    *${archName}*: ${missingFiles}"
+                            echo "===> ${missingMsg}"
+                        }
                     }
                 }
 
