@@ -671,7 +671,7 @@ node('worker') {
                 // Verify if any artifacts missing?
                 def missingMsg = ""
                 // Don't check if upstream tag is a GA, as the ea-beta will only be for evaluation platforms
-                if (nonTagBuildReleases.contains(featureRelease) || !isGaTag(featureRelease, status['upstreamTag'])) {
+                if (!isGaTag(featureRelease, status['upstreamTag'])) {
                     def missingAssets = []
                     if (status['assets'] != 'Complete') {
                         slackColor = 'danger'
