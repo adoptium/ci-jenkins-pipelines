@@ -669,6 +669,7 @@ node('worker') {
                 }
 
                 // Verify if any artifacts missing?
+                def missingMsg = ""
                 // Don't check if upstream tag is a GA, as the ea-beta will only be for evaluation platforms
                 if (nonTagBuildReleases.contains(featureRelease) || !isGaTag(featureRelease, status['upstreamTag'])) {
                     def missingAssets = []
@@ -685,7 +686,6 @@ node('worker') {
                     }
                  
                     // Print out formatted missing artifacts if any missing
-                    def missingMsg = ""
                     if (missingAssets.size() > 0) {
                         missingMsg += " :"
                         // Collate by arch, array is sequenced by architecture
