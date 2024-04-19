@@ -51,8 +51,8 @@ def isGaTag(String version, String tag) {
     }
 }
 
-// Get the latest(or 2nd latest..) upstream openjdk build tag
-def getLatestOpenjdkBuildTag(String version, Integer headMinus) {
+// Get the latest upstream openjdk build tag
+def getLatestOpenjdkBuildTag(String version) {
     def openjdkRepo = "https://github.com/openjdk/${version}.git"
     if (version == "aarch32-jdk8u") {
         openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
@@ -66,9 +66,9 @@ def getLatestOpenjdkBuildTag(String version, Integer headMinus) {
         jdk8Filter += " | grep '\\-aarch32\\-'"
     }
 
-    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | head ${headMinus} | tail -1 | tr -d '\\n'")
+    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | tail -1 | tr -d '\\n'")
 
-    echo "latest(head ${headMinus}) upstream openjdk/${version} tag = ${latestTag}"
+    echo "latest upstream openjdk/${version} tag = ${latestTag}"
 
     return latestTag
 }
@@ -356,21 +356,8 @@ node('worker') {
               def assetsJson = new JsonSlurper().parseText(assets)
 
               def status = []
-
-              // Get the latest published release unless it's a GA tag, in which case get the previous release
-              def releaseName = ""
               if (assetsJson.size() > 0) {
-                def tag = assetsJson[0].release_name.replaceAll("-ea-beta", "")
-                if (isGaTag(featureRelease, tag)) {
-                  if (assetsJson.size() > 1) {
-                    releaseName = assetsJson[1].release_name
-                  }
-                } else {
-                  releaseName = assetsJson[0].release_name
-                }
-              }
-
-              if (releaseName != "") {
+                def releaseName = assetsJson[0].release_name
                 if (nonTagBuildReleases.contains(featureRelease)) {
                   // A non tag build, eg.a scheduled build for Oracle managed STS versions
                   def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
@@ -379,10 +366,7 @@ node('worker') {
                   def days = ChronoUnit.DAYS.between(assetTs, now)
                   status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
                 } else {
-                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease, -1)
-                  if (isGaTag(featureRelease, latestOpenjdkBuild)) {
-                      latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease, -2)
-                  }
+                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
                   def expectedReleaseName = "${latestOpenjdkBuild}-ea-beta"
                   if (featureRelease == "aarch32-jdk8u") {
                       expectedReleaseName = latestOpenjdkBuild.substring(0, latestOpenjdkBuild.indexOf("-aarch32"))+"-ea-beta"
@@ -402,10 +386,7 @@ node('worker') {
 
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             if (tipRelease != "") {
-              def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk", -1)
-              if (isGaTag("jdk", latestOpenjdkBuild)) {
-                  latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk", -2)
-              }
+              def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
               def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
               status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTag: latestOpenjdkBuild]
@@ -670,8 +651,8 @@ node('worker') {
                     // Check if build in-progress
                     inProgressBuildUrl = getInProgressBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
 
-                    // Check latest published binaries are for the latest openjdk build tag
-                    if (status['releaseName'] != status['expectedReleaseName']) {
+                    // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
+                    if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
                         def upstreamRepoVersion = (featureRelease == tipRelease) ? "jdk" : featureRelease
                         def upstreamTagAge    = getOpenjdkBuildTagAge(upstreamRepoVersion, status['upstreamTag'])
                         if (upstreamTagAge > 3 && inProgressBuildUrl == "") {
