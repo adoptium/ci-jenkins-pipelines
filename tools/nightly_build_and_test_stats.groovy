@@ -21,6 +21,40 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
+// Check if the given tag is a -ga tag ?
+def isGaTag(String version, String tag) {
+    if (version == "${params.TIP_RELEASE}".trim()) {
+        // Tip release has no GA tags
+        return false
+    }
+
+    def openjdkRepo = "https://github.com/openjdk/${version}.git"
+    if (version == "aarch32-jdk8u") {
+        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
+    } else if (version == "alpine-jdk8u") {
+        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
+    }
+
+    def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+
+    def gaCheckTag = "unknown"
+    if (version.contains("jdk8u")) {
+        if (tag.indexOf("-") > 0) {
+            gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+        }
+    } else {
+        if (tag.indexOf("+") > 0) {
+            gaCheckTag = tag.substring(0, tag.indexOf("+"))+"-ga"
+        }
+    }
+    def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+
+    if (gaCommitSHA != "" && tagCommitSHA == gaCommitSHA) {
+        return true
+    } else {
+        return false
+    }
+}
 
 // Get the latest upstream openjdk build tag
 def getLatestOpenjdkBuildTag(String version) {
@@ -117,7 +151,7 @@ def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease,
 
 // Verify the given release contains all the expected assets
 def verifyReleaseContent(String version, String release, String variant, Map status) {
-    echo "Verifying ${version} asserts in release: ${release}"
+    echo "Verifying ${version} assets in release: ${release}"
     status['assets'] = "Error"
 
     def configVersion = version
@@ -330,11 +364,12 @@ node('worker') {
                 def releaseName = assetsJson[0].release_name
                 if (nonTagBuildReleases.contains(featureRelease)) {
                   // A non tag build, eg.a scheduled build for Oracle managed STS versions
+                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
                   def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
                   def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
                   def now = ZonedDateTime.now(ZoneId.of('UTC'))
                   def days = ChronoUnit.DAYS.between(assetTs, now)
-                  status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days]
+                  status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days, upstreamTag: latestOpenjdkBuild]
                 } else {
                   def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
                   def expectedReleaseName = "${latestOpenjdkBuild}-ea-beta"
@@ -621,8 +656,8 @@ node('worker') {
                     // Check if build in-progress
                     inProgressBuildUrl = getInProgressBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
 
-                    // Check latest published binaries are for the latest openjdk build tag
-                    if (status['releaseName'] != status['expectedReleaseName']) {
+                    // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
+                    if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
                         def upstreamRepoVersion = (featureRelease == tipRelease) ? "jdk" : featureRelease
                         def upstreamTagAge    = getOpenjdkBuildTagAge(upstreamRepoVersion, status['upstreamTag'])
                         if (upstreamTagAge > 3 && inProgressBuildUrl == "") {
@@ -639,49 +674,52 @@ node('worker') {
                     }
                 }
 
-                // Verify if any artifacts missing?                    
-                def missingAssets = []
-                if (status['assets'] != 'Complete') {
-                    slackColor = 'danger'
-                    health = "Unhealthy"
-                    errorMsg += "\nArtifact status: "+status['assets']
-                    if (inProgressBuildUrl != "") {
-                        errorMsg += ", <" + inProgressBuildUrl + "|Build is in progress>"
-                    } else {
-                        errorMsg += ", *No build is in progress*"
-                    }
-                    missingAssets = status['missingAssets']
-                }
-                 
-                // Print out formatted missing artifacts if any missing
+                // Verify if any artifacts missing?
                 def missingMsg = ""
-                if (missingAssets.size() > 0) {
-                    missingMsg += " :"
-                    // Collate by arch, array is sequenced by architecture
-                    def archName = ""
-                    def missingFiles = ""
-                    missingAssets.each { missing ->
-                        // arch : imageType : fileType
-                        def missingFile = missing.split("[ :]+")
-                        if (missingFile[0] != archName) {
-                            if (archName != "") {
-                                missingMsg += "\n    *${archName}*: ${missingFiles}"
-                                echo "===> ${missingMsg}"
-                            }
-                            archName = missingFile[0]
-                            missingFiles = missingFile[1]+missingFile[2]
+                // Don't check if upstream tag is a GA, as the ea-beta will only be for evaluation platforms
+                if (!isGaTag(featureRelease, status['upstreamTag'])) {
+                    def missingAssets = []
+                    if (status['assets'] != 'Complete') {
+                        slackColor = 'danger'
+                        health = "Unhealthy"
+                        errorMsg += "\nArtifact status: "+status['assets']
+                        if (inProgressBuildUrl != "") {
+                            errorMsg += ", <" + inProgressBuildUrl + "|Build is in progress>"
                         } else {
-                            missingFiles += ", "+missingFile[1]+missingFile[2]
-                        }                        
-                    } 
-                    if (missingFiles != "") {
-                        missingMsg += "\n    *${archName}*: ${missingFiles}"
-                        echo "===> ${missingMsg}"
+                            errorMsg += ", *No build is in progress*"
+                        }
+                        missingAssets = status['missingAssets']
+                    }
+                 
+                    // Print out formatted missing artifacts if any missing
+                    if (missingAssets.size() > 0) {
+                        missingMsg += " :"
+                        // Collate by arch, array is sequenced by architecture
+                        def archName = ""
+                        def missingFiles = ""
+                        missingAssets.each { missing ->
+                            // arch : imageType : fileType
+                            def missingFile = missing.split("[ :]+")
+                            if (missingFile[0] != archName) {
+                                if (archName != "") {
+                                    missingMsg += "\n    *${archName}*: ${missingFiles}"
+                                    echo "===> ${missingMsg}"
+                                }
+                                archName = missingFile[0]
+                                missingFiles = missingFile[1]+missingFile[2]
+                            } else {
+                               missingFiles += ", "+missingFile[1]+missingFile[2]
+                            }                        
+                        } 
+                        if (missingFiles != "") {
+                            missingMsg += "\n    *${archName}*: ${missingFiles}"
+                            echo "===> ${missingMsg}"
+                        }
                     }
                 }
 
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} latest pipeline publish status: *${health}*. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
+                def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
                 slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
