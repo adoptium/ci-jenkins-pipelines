@@ -32,6 +32,7 @@ def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
         println "Searching for Lightweight git tag with name '${jdkBranch}' using repo base: ${openjdkRepo}"
     }
 
+    // Annotated tags are refs with suffix ^{}
     def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| grep -v '\\^{}'")
 
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
@@ -79,6 +80,7 @@ def resolveGaTag(String jdkVersion, String jdkBranch) {
     if (resolveGaCommit == null) {
         println "[ERROR] Unable to resolve ${jdkBranch} upstream commit, will try to match tag as-is"
     } else {
+        // Annotated tags are refs with suffix ^{}
         def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| grep -v '\\^{}'")
         def foundRepo = resolveGaCommit.get(0)
         def foundSHA  = resolveGaCommit.get(1)
