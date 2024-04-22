@@ -21,6 +21,81 @@ Closure configureBuild = null
 def buildConfigurations = null
 Map<String, ?> DEFAULTS_JSON = null
 
+// Find the testenv ga commit SHA specified by the jdkBranch
+// Returns a Tuple2 of "repository", "gaCommitSHA"
+def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
+    def openjdkRepo = repo
+
+    if (annotatedTag) {
+        println "Searching for Annotated git tag with name '${jdkBranch}' using repo base: ${openjdkRepo}"
+    } else {
+        println "Searching for Lightweight git tag with name '${jdkBranch}' using repo base: ${openjdkRepo}"
+    }
+
+    // Annotated tags are refs with suffix ^{}
+    def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| grep -v '\\^{}'")
+
+    def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    if (gaCommitSHA == "") {
+        // Try "updates" repo..
+        openjdkRepo = "https://github.com/openjdk/jdk${jdkVersion}u.git"
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
+    if (gaCommitSHA == "") {
+        // Maybe an Adoptium "dryrun" try Adoptium mirror repo..
+        openjdkRepo = "https://github.com/adoptium/jdk${jdkVersion}.git"
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
+    if (gaCommitSHA == "") {
+        // Maybe an Adoptium "dryrun" try Adoptium mirror "updates" repo..
+        openjdkRepo = "https://github.com/adoptium/jdk${jdkVersion}u.git"
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
+
+    if (gaCommitSHA != "") {
+        return new Tuple2(openjdkRepo, gaCommitSHA)
+    } else {
+        return null
+    }
+}
+
+// Resolve a "-ga" tag to the actual upstream openjdk build tag of the same commit
+// Also check adoptium mirror for "dryrun" tags
+def resolveGaTag(String jdkVersion, String jdkBranch) {
+    def resolvedTag = jdkBranch // Default to as-is
+
+    def openjdkRepo = "https://github.com/openjdk/jdk${jdkVersion}.git"
+    if (jdkBranch.contains("jdk8u") && jdkBranch.contains("aarch32")) {
+        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
+    }
+
+    Boolean annotatedTag = true
+    def resolveGaCommit = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
+    if (resolveGaCommit == null) {
+        // Try searching for a lightweight tag
+        annotatedTag = false
+        resolveGaCommit = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
+    }
+
+    if (resolveGaCommit == null) {
+        println "[ERROR] Unable to resolve ${jdkBranch} upstream commit, will try to match tag as-is"
+    } else {
+        // Annotated tags are refs with suffix ^{}
+        def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| grep -v '\\^{}'")
+        def foundRepo = resolveGaCommit.get(0)
+        def foundSHA  = resolveGaCommit.get(1)
+        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${foundRepo} ${annotatedTagFilter} | grep \"${foundSHA}\" | grep -v \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
+        if (upstreamTag != "") {
+            println "[INFO] Resolved ${jdkBranch} to upstream build tag ${upstreamTag}"
+            resolvedTag = upstreamTag
+        } else {
+            println "[ERROR] Unable to resolve ${jdkBranch} upstream commit, will try to match tag as-is"
+        }
+    }
+
+    return resolvedTag
+}
+
 node('worker') {
     // Ensure workspace is clean so we don't archive any old failed pipeline artifacts
     println '[INFO] Cleaning up controller worker workspace prior to running pipelines..'
