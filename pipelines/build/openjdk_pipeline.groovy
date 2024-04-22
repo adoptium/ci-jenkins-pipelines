@@ -22,7 +22,7 @@ def buildConfigurations = null
 Map<String, ?> DEFAULTS_JSON = null
 
 // Find the testenv ga commit SHA specified by the jdkBranch
-// Returns a Tuple of "repository", "gaCommitSHA"
+// Returns a Tuple2 of "repository", "gaCommitSHA"
 def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
     def openjdkRepo = repo
 
@@ -52,7 +52,7 @@ def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
     }
 
     if (gaCommitSHA != "") {
-        return new Tuple(openjdkRepo, gaCommitSHA)
+        return new Tuple2(openjdkRepo, gaCommitSHA)
     } else {
         return null
     }
