@@ -28,6 +28,9 @@ def resolveGaTag(String jdkVersion, String jdkBranch) {
     def resolvedTag = jdkBranch // Default to as-is
     
     def openjdkRepo = "https://github.com/openjdk/jdk${jdkVersion}.git"
+    if (jdkBranch.contains("jdk8u") && jdkBranch.contains("aarch32")) {
+        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
+    }
                       
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     if (gaCommitSHA == "") {
