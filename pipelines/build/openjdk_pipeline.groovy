@@ -21,38 +21,55 @@ Closure configureBuild = null
 def buildConfigurations = null
 Map<String, ?> DEFAULTS_JSON = null
 
+// Find the testenv ga commit SHA specified by the jdkBranch
+def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
+    def openjdkRepo = repo
+
+    def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| -v grep '\\^{}'")
+
+    def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    if (gaCommitSHA == "") {
+        // Try "updates" repo..
+        openjdkRepo = "https://github.com/openjdk/jdk${jdkVersion}u.git"
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
+    if (gaCommitSHA == "") {
+        // Maybe an Adoptium "dryrun" try Adoptium mirror repo..
+        openjdkRepo = "https://github.com/adoptium/jdk${jdkVersion}.git"
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
+    if (gaCommitSHA == "") {
+        // Maybe an Adoptium "dryrun" try Adoptium mirror "updates" repo..
+        openjdkRepo = "https://github.com/adoptium/jdk${jdkVersion}u.git"
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
+
+    return gaCommitSHA
+}
 
 // Resolve a "-ga" tag to the actual upstream openjdk build tag of the same commit
 // Also check adoptium mirror for "dryrun" tags
 def resolveGaTag(String jdkVersion, String jdkBranch) {
     def resolvedTag = jdkBranch // Default to as-is
-    
+
     def openjdkRepo = "https://github.com/openjdk/jdk${jdkVersion}.git"
     if (jdkBranch.contains("jdk8u") && jdkBranch.contains("aarch32")) {
         openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
     }
-                      
-    def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+
+    Boolean annotatedTag = true
+    gaCommitSHA = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
     if (gaCommitSHA == "") {
-        // Try "updates" repo..
-        openjdkRepo = "https://github.com/openjdk/jdk${jdkVersion}u.git"
-        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
-    }
-    if (gaCommitSHA == "") {
-        // Maybe an Adoptium "dryrun" try Adoptium mirror repo..
-        openjdkRepo = "https://github.com/adoptium/jdk${jdkVersion}.git"
-        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
-    }
-    if (gaCommitSHA == "") {
-        // Maybe an Adoptium "dryrun" try Adoptium mirror "updates" repo..
-        openjdkRepo = "https://github.com/adoptium/jdk${jdkVersion}u.git"
-        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+        // Try searching for a lightweight tag
+        annotatedTag = false
+        gaCommitSHA = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
     }
 
     if (gaCommitSHA == "") {
         println "[ERROR] Unable to resolve ${jdkBranch} upstream commit, will try to match tag as-is"
     } else {
-        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCommitSHA}\" | grep -v \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
+        def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| -v grep '\\^{}'")
+        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${gaCommitSHA}\" | grep -v \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
         if (upstreamTag != "") {
             println "[INFO] Resolved ${jdkBranch} to upstream build tag ${upstreamTag}"
             resolvedTag = upstreamTag
