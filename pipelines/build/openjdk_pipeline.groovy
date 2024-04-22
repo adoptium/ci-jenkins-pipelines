@@ -22,6 +22,7 @@ def buildConfigurations = null
 Map<String, ?> DEFAULTS_JSON = null
 
 // Find the testenv ga commit SHA specified by the jdkBranch
+// Returns a Tuple of "repository", "gaCommitSHA"
 def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
     def openjdkRepo = repo
 
@@ -50,7 +51,11 @@ def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
         gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     }
 
-    return gaCommitSHA
+    if (gaCommitSHA != "") {
+        return new Tuple(openjdkRepo, gaCommitSHA)
+    } else {
+        return null
+    }
 }
 
 // Resolve a "-ga" tag to the actual upstream openjdk build tag of the same commit
@@ -64,18 +69,20 @@ def resolveGaTag(String jdkVersion, String jdkBranch) {
     }
 
     Boolean annotatedTag = true
-    gaCommitSHA = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
-    if (gaCommitSHA == "") {
+    def resolveGaCommit = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
+    if (resolveGaCommit == null) {
         // Try searching for a lightweight tag
         annotatedTag = false
-        gaCommitSHA = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
+        resolveGaCommit = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
     }
 
-    if (gaCommitSHA == "") {
+    if (resolveGaCommit == null) {
         println "[ERROR] Unable to resolve ${jdkBranch} upstream commit, will try to match tag as-is"
     } else {
         def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| grep -v '\\^{}'")
-        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${gaCommitSHA}\" | grep -v \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
+        def foundRepo = resolveGaCommit.get(0)
+        def foundSHA  = resolveGaCommit.get(1)
+        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${foundRepo} ${annotatedTagFilter} | grep \"${foundSHA}\" | grep -v \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
         if (upstreamTag != "") {
             println "[INFO] Resolved ${jdkBranch} to upstream build tag ${upstreamTag}"
             resolvedTag = upstreamTag
