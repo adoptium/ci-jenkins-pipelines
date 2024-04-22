@@ -103,7 +103,7 @@ node('worker') {
             jdkBranch = resolveGaTag("${params.jdkVersion}", jdkBranch)
         }
 
-        if (jdkBranch == buildTag) {
+        if (jdkBranch == buildTag || jdkBranch == params.scmReference) {
             println "[INFO] scmReference=${buildTag} matches with JDK${params.jdkVersion}_BRANCH=${jdkBranch} in ${propertyFile} in aqa-tests release branch."
         } else if (jdkOpenj9Branch == buildTag) {
             println "[INFO] scmReference=${buildTag} matches with JDK${params.jdkVersion}_OPENJ9_BRANCH=${jdkOpenj9Branch} in ${propertyFile} in aqa-tests release branch."
