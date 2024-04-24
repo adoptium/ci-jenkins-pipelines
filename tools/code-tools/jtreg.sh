@@ -94,7 +94,7 @@ buildJTReg()
     git checkout master
   fi
 
-  export PATH=$PATH:$JAVA_HOME/bin
+  export PATH="$JAVA_HOME/bin:$ORIGINAL_PATH"
 
   echo ""
   echo "***********************************************"
@@ -145,6 +145,8 @@ createChecksum()
 
   sha256sum "${ARCHIVE_FULL_PATH}" > "${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
 }
+
+readonly ORIGINAL_PATH="${PATH}"
 
 checkJdks
 checkWorkspaceVar
