@@ -18,6 +18,11 @@ readonly JTREG_7_2='jtreg-7.2+1'
 readonly JTREG_7_3='jtreg-7.3+1'
 readonly JTREG_7_3_1='jtreg-7.3.1+1'
 
+function checkJdks() {
+  jvm_dir="/usr/lib/jvm/"
+  find "${jvm_dir}" -maxdepth 1 | sort
+}
+
 function checkWorkspaceVar()
 {
   echo 'Checking WORKSPACE variable...'
@@ -50,53 +55,53 @@ buildJTReg()
     if [ "$1" == "$JTREG_5" ]; then
       export BUILD_NUMBER="b01"
       export BUILD_VERSION="5.1"
+      export JAVA_HOME=/usr/lib/jvm/java-1.8.0
     elif [ "$1" == "$JTREG_6" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="6"
+      export JAVA_HOME=/usr/lib/jvm/java-1.8.0
     elif [ "$1" == "$JTREG_6_1" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="6.1"
+      export JAVA_HOME=/usr/lib/jvm/java-1.8.0
     elif [ "$1" == "$JTREG_7" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7"
       export JAVA_HOME=/usr/lib/jvm/jdk-11
-      export PATH=$PATH:$JAVA_HOME/bin
     elif [ "$1" == "$JTREG_7_1" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.1.1"
       export JAVA_HOME=/usr/lib/jvm/jdk-11
-      export PATH=$PATH:$JAVA_HOME/bin
     elif [ "$1" == "$JTREG_7_2" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.2"
       export JAVA_HOME=/usr/lib/jvm/jdk-11
-      export PATH=$PATH:$JAVA_HOME/bin
     elif [ "$1" == "$JTREG_7_3" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.3"
       export JAVA_HOME=/usr/lib/jvm/jdk-11
-      export PATH=$PATH:$JAVA_HOME/bin
     elif [ "$1" == "$JTREG_7_3_1" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.3.1"
       export JAVA_HOME=/usr/lib/jvm/jdk-11
-      export PATH=$PATH:$JAVA_HOME/bin
     fi
     git checkout $version
   else
     unset BUILD_NUMBER
     unset BUILD_VERSION
     unset JTREG_BUILD_NUMBER
-    export JAVA_HOME=/usr/lib/jvm/jdk-11
-    export PATH=$PATH:$JAVA_HOME/bin
+    export JAVA_HOME=/usr/lib/jvm/jdk-17
     git checkout master
   fi
+
+  export PATH="$JAVA_HOME/bin:$ORIGINAL_PATH"
 
   echo ""
   echo "***********************************************"
   echo "Building JTREG $version..."
   echo "***********************************************"
   (
+    echo "PATH: $PATH"
     echo "JAVA_HOME: $JAVA_HOME"
     echo "Changing into $WORKSPACE"
     cd "$WORKSPACE"
@@ -141,6 +146,9 @@ createChecksum()
   sha256sum "${ARCHIVE_FULL_PATH}" > "${DESTINATION}/${ARCHIVE_NAME}.sha256sum.txt"
 }
 
+readonly ORIGINAL_PATH="${PATH}"
+
+checkJdks
 checkWorkspaceVar
 clearWorkspace
 echo 'Starting build process...'
@@ -148,7 +156,6 @@ export WORKSPACE="$WORKSPACE/jtreg"
 cd "$WORKSPACE"
 buildJTReg "$JTREG_5"
 buildJTReg "$JTREG_6"
-buildJTReg "$JTREG_6_1"
 buildJTReg "$JTREG_6_1"
 buildJTReg "$JTREG_7"
 buildJTReg "$JTREG_7_1"
