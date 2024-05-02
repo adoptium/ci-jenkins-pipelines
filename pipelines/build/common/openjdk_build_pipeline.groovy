@@ -2009,13 +2009,13 @@ class Build {
                                                 context.docker.image(buildConfig.DOCKER_IMAGE).pull()
                                             }
                                         }
-                                        // Store the pulled docker image digest as 'buildinfo'
-                                        dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
                                     }
                                 } catch (FlowInterruptedException e) {
                                     throw new Exception("[ERROR] Controller docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
                             }
+                            // Store the pulled docker image digest as 'buildinfo'
+                            dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
 
                             // Use our dockerfile if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {
