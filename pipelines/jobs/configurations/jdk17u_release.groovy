@@ -35,7 +35,6 @@ targetConfigurations = [
         'riscv64Linux': [
                 'temurin'
         ]
-
 ]
 
 return this
