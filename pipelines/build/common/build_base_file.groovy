@@ -968,7 +968,7 @@ class Builder implements Serializable {
                                             throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
 
-                                        //Archive tap files as a single tar file
+                                        // Archive tap files as a single tar file
                                         context.sh "find . -type f -name '*.tap' -exec tar -czf AQAvitTapFiles.tar.gz {} + "
                                         try {
                                             context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
