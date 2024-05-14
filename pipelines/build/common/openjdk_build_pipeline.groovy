@@ -796,8 +796,6 @@ class Build {
     We run two jobs if we have a JRE (see https://github.com/adoptium/temurin-build/issues/1751).
     */
     private void buildWindowsInstaller(VersionInfo versionData, String filter, String category) {
-        def nodeFilter = "${buildConfig.TARGET_OS}&&wix"
-
         def buildNumber = versionData.build
 
         if (versionData.major == 8) {
@@ -813,6 +811,12 @@ class Build {
         // Get version patch number if one is present
         def patch_version = versionData.patch ?: 0
 
+        def INSTALLER_JVM = "${buildConfig.VARIANT}"
+        // if variant is temurin set param as hotpot
+        if (buildConfig.VARIANT == 'temurin') {
+            INSTALLER_JVM = 'hotspot'
+        }
+
         // Execute installer job
         def installerJob = context.build job: 'build-scripts/release/create_installer_windows',
                 propagate: true,
@@ -827,9 +831,8 @@ class Build {
                         context.string(name: 'PRODUCT_BUILD_NUMBER', value: "${buildNumber}"),
                         context.string(name: 'MSI_PRODUCT_VERSION', value: "${versionData.msi_product_version}"),
                         context.string(name: 'PRODUCT_CATEGORY', value: "${category}"),
-                        context.string(name: 'JVM', value: "${buildConfig.VARIANT}"),
+                        context.string(name: 'JVM', value: "${INSTALLER_JVM}"),
                         context.string(name: 'ARCH', value: "${INSTALLER_ARCH}"),
-                        ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
                 ]
         context.copyArtifacts(
                 projectName: 'build-scripts/release/create_installer_windows',
@@ -2009,13 +2012,13 @@ class Build {
                                                 context.docker.image(buildConfig.DOCKER_IMAGE).pull()
                                             }
                                         }
-                                        // Store the pulled docker image digest as 'buildinfo'
-                                        dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
                                     }
                                 } catch (FlowInterruptedException e) {
                                     throw new Exception("[ERROR] Controller docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
                             }
+                            // Store the pulled docker image digest as 'buildinfo'
+                            dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
 
                             // Use our dockerfile if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {

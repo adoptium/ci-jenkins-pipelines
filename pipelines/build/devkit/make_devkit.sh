@@ -59,9 +59,24 @@ if [ "${BASE_OS}" = "rhel" ]; then
   BASE_OS=Centos
 fi
 
-# Perform devkit build
+# Perform "bootstrap" devkit build
+echo "Building 'bootstrap' DevKit toolchain, to be used to build the final DevKit..."
 cd make/devkit && pwd && make TARGETS=${devkit_target} BASE_OS=${BASE_OS} BASE_OS_VERSION=${BASE_OS_VERSION}
-find ../../build/devkit -type f -print	
+
+# Move "bootstrap" devkit toolchain to a new folder and setup gcc toolchain to point at it
+cd ../..
+mv build/devkit/result/${devkit_target}-to-${devkit_target} build/bootstrap_${devkit_target}-to-${devkit_target}
+export CC=$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}/bin/gcc
+export CXX=$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}/bin/g++
+export LD_LIBRARY_PATH=$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}/lib64
+export PATH=$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}/bin:$PATH
+gcc --version
+
+# Make final "DevKit" using the bootstrap devkit
+rm -rf build/devkit
+echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in $(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}"
+cd make/devkit && pwd && make TARGETS=${devkit_target} BASE_OS=${BASE_OS} BASE_OS_VERSION=${BASE_OS_VERSION}
+
 # Back to original folder
 cd ../../..
 
