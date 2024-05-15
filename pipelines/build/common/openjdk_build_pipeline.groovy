@@ -1533,6 +1533,24 @@ class Build {
                 }
             }
 
+            // Always clean any previous "openjdk_build_dir" output, possibly from any previous aborted build..
+            try {
+                try {
+                    context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
+                        if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
+                            context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
+                            context.sh(script: 'rm -rf ' + openjdk_build_dir)
+                        } else {
+                            context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
+                        }
+                    }
+                } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Remove workspace openjdk build directory timeout (${buildTimeouts.NODE_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
+                }
+            } catch (e) {
+                context.println "[WARNING] Failed to remove workspace openjdk build directory: ${e}"
+            }
+
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: 'HOURS') {
                     if (useAdoptShellScripts) {
