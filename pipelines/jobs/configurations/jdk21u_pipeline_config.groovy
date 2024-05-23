@@ -70,7 +70,9 @@ class Config21 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system']
+                ],
                 reproducibleCompare : [
                         'temurin'   : true
                 ],
