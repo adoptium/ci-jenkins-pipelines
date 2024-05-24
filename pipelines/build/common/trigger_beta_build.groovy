@@ -68,9 +68,9 @@ def isDuringReleasePeriod() {
             releaseTuesday = day17th.with(TemporalAdjusters.previous(DayOfWeek.TUESDAY))
         }
 
-        // Release period no trigger from previous Saturday to following Sunday
+        // Release period no trigger from prior week previous Saturday to following Sunday
         def days = ChronoUnit.DAYS.between(releaseTuesday, now)
-        if (days >= -3 && days <= 5) {
+        if (days >= -10 && days <= 5) {
             releasePeriod = true
         }
     }
