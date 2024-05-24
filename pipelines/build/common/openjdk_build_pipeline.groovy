@@ -363,8 +363,6 @@ class Build {
         def vendorTestBranches = ''
         def vendorTestDirs = ''
         List testList = buildConfig.TEST_LIST
-        List dynamicList = buildConfig.DYNAMIC_LIST
-        List numMachines = buildConfig.NUM_MACHINES
         def enableTestDynamicParallel = Boolean.valueOf(buildConfig.ENABLE_TESTDYNAMICPARALLEL)
         def aqaBranch = 'master'
         def useTestEnvProperties = false
@@ -374,6 +372,14 @@ class Build {
         }
 
         def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
+        def parallel = 'None'
+        def numMachinesPerTest = ''
+        def testTime = ''
+        // Enable time based parallel. Set expected completion time to 120 mins
+        if (enableTestDynamicParallel) {
+            testTime = '120'
+            parallel = 'Dynamic'
+        }
 
         testList.each { testType ->
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
@@ -416,20 +422,6 @@ class Build {
                         }
 
                         def jobParams = getAQATestJobParams(testType)
-                        def parallel = 'None'
-                        def numMachinesPerTest = ''
-
-                        if (enableTestDynamicParallel && dynamicList.contains(testType)) {
-                            numMachinesPerTest = numMachines[(dynamicList.indexOf(testType))]
-                            if (!numMachinesPerTest) {
-                                // see build configuration in jdk*_pipeline_config.groovy
-                                // when numMachines is an array, its size should match the testLists size
-                                throw new Exception("No number of machines provided for running ${testType} tests in parallel, numMachines: ${numMachines}!")
-                            }
-                            context.println "Number of machines for running parallel tests: ${numMachinesPerTest}"
-
-                            parallel = 'Dynamic'
-                        }
 
                         def jobName = jobParams.TEST_JOB_NAME
                         String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
@@ -478,6 +470,7 @@ class Build {
                         context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
                         context.string(name: 'PARALLEL', value: parallel),
                         context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
+                        context.string(name: 'TEST_TIME', value: testTime),
                         context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
                         context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
                         context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
