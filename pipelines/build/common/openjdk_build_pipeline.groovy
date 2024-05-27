@@ -363,8 +363,6 @@ class Build {
         def vendorTestBranches = ''
         def vendorTestDirs = ''
         List testList = buildConfig.TEST_LIST
-        List dynamicList = buildConfig.DYNAMIC_LIST
-        List numMachines = buildConfig.NUM_MACHINES
         def enableTestDynamicParallel = Boolean.valueOf(buildConfig.ENABLE_TESTDYNAMICPARALLEL)
         def aqaBranch = 'master'
         def useTestEnvProperties = false
@@ -374,6 +372,14 @@ class Build {
         }
 
         def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
+        def parallel = 'None'
+        def numMachinesPerTest = ''
+        def testTime = ''
+        // Enable time based parallel. Set expected completion time to 120 mins
+        if (enableTestDynamicParallel) {
+            testTime = '120'
+            parallel = 'Dynamic'
+        }
 
         testList.each { testType ->
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
@@ -416,20 +422,6 @@ class Build {
                         }
 
                         def jobParams = getAQATestJobParams(testType)
-                        def parallel = 'None'
-                        def numMachinesPerTest = ''
-
-                        if (enableTestDynamicParallel && dynamicList.contains(testType)) {
-                            numMachinesPerTest = numMachines[(dynamicList.indexOf(testType))]
-                            if (!numMachinesPerTest) {
-                                // see build configuration in jdk*_pipeline_config.groovy
-                                // when numMachines is an array, its size should match the testLists size
-                                throw new Exception("No number of machines provided for running ${testType} tests in parallel, numMachines: ${numMachines}!")
-                            }
-                            context.println "Number of machines for running parallel tests: ${numMachinesPerTest}"
-
-                            parallel = 'Dynamic'
-                        }
 
                         def jobName = jobParams.TEST_JOB_NAME
                         String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
@@ -478,6 +470,7 @@ class Build {
                         context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
                         context.string(name: 'PARALLEL', value: parallel),
                         context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
+                        context.string(name: 'TEST_TIME', value: testTime),
                         context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
                         context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
                         context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
@@ -796,8 +789,6 @@ class Build {
     We run two jobs if we have a JRE (see https://github.com/adoptium/temurin-build/issues/1751).
     */
     private void buildWindowsInstaller(VersionInfo versionData, String filter, String category) {
-        def nodeFilter = "${buildConfig.TARGET_OS}&&wix"
-
         def buildNumber = versionData.build
 
         if (versionData.major == 8) {
@@ -813,6 +804,12 @@ class Build {
         // Get version patch number if one is present
         def patch_version = versionData.patch ?: 0
 
+        def INSTALLER_JVM = "${buildConfig.VARIANT}"
+        // if variant is temurin set param as hotpot
+        if (buildConfig.VARIANT == 'temurin') {
+            INSTALLER_JVM = 'hotspot'
+        }
+
         // Execute installer job
         def installerJob = context.build job: 'build-scripts/release/create_installer_windows',
                 propagate: true,
@@ -827,9 +824,8 @@ class Build {
                         context.string(name: 'PRODUCT_BUILD_NUMBER', value: "${buildNumber}"),
                         context.string(name: 'MSI_PRODUCT_VERSION', value: "${versionData.msi_product_version}"),
                         context.string(name: 'PRODUCT_CATEGORY', value: "${category}"),
-                        context.string(name: 'JVM', value: "${buildConfig.VARIANT}"),
+                        context.string(name: 'JVM', value: "${INSTALLER_JVM}"),
                         context.string(name: 'ARCH', value: "${INSTALLER_ARCH}"),
-                        ['$class': 'LabelParameterValue', name: 'NODE_LABEL', label: "${nodeFilter}"]
                 ]
         context.copyArtifacts(
                 projectName: 'build-scripts/release/create_installer_windows',
@@ -1530,6 +1526,24 @@ class Build {
                 }
             }
 
+            // Always clean any previous "openjdk_build_dir" output, possibly from any previous aborted build..
+            try {
+                try {
+                    context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
+                        if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
+                            context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
+                            context.sh(script: 'rm -rf ' + openjdk_build_dir)
+                        } else {
+                            context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
+                        }
+                    }
+                } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Remove workspace openjdk build directory timeout (${buildTimeouts.NODE_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
+                }
+            } catch (e) {
+                context.println "[WARNING] Failed to remove workspace openjdk build directory: ${e}"
+            }
+
             try {
                 context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: 'HOURS') {
                     if (useAdoptShellScripts) {
@@ -2009,13 +2023,13 @@ class Build {
                                                 context.docker.image(buildConfig.DOCKER_IMAGE).pull()
                                             }
                                         }
-                                        // Store the pulled docker image digest as 'buildinfo'
-                                        dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
                                     }
                                 } catch (FlowInterruptedException e) {
                                     throw new Exception("[ERROR] Controller docker image pull timeout (${buildTimeouts.DOCKER_PULL_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
                             }
+                            // Store the pulled docker image digest as 'buildinfo'
+                            dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
 
                             // Use our dockerfile if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {

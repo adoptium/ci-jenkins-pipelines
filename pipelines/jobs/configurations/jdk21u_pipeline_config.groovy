@@ -26,7 +26,7 @@ class Config21 {
                         openj9      : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
                 test: [
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional', 'dev.system']
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
                 reproducibleCompare : [
                         'temurin'   : true
@@ -70,7 +70,9 @@ class Config21 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system']
+                ],
                 reproducibleCompare : [
                         'temurin'   : true
                 ],

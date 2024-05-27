@@ -24,7 +24,7 @@ class Config23 {
                         openj9      : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
                 test: [
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'dev.openjdk', 'dev.functional', 'dev.system']
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'dev.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
                 additionalTestLabels: [
                         openj9      : '!(centos6||rhel6)',
@@ -65,7 +65,9 @@ class Config23 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system']
+                ],
                 configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22621.0/ucrt/DLLs/x64'",
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
