@@ -61,6 +61,14 @@ pipeline {
                         build('jcov')
                     }
                 }
+                stage('jmh') {
+                    agent {
+                        label NODE_LABEL
+                    }
+                    steps {
+                        build('jmh')
+                    }
+                }
                 stage('temurin-sbom') {
                     agent {
                         label NODE_LABEL
