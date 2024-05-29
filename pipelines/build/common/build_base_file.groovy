@@ -996,15 +996,19 @@ class Builder implements Serializable {
                 }
             }
             context.parallel jobs
-            context.node('worker') {
-                // Archive tap files as a single tar file
-                context.sh "find . -type f -name '*.tap' -exec tar -czf AQAvitTapFiles.tar.gz {} + "
-                try {
-                    context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                        context.archiveArtifacts artifacts: "AQAvitTapFiles.tar.gz"
+            if (enableTests) {
+                def archiveDir = "${env.JENKINS_HOME}/jobs/${env.JOB_NAME}/builds/${env.BUILD_NUMBER}/archive"
+                def tarTap = "AQAvitTapFiles.tar.gz"
+                context.node('worker') {
+                    // Archive tap files as a single tar file
+                    context.sh "find ${archiveDir} -type f -name '*.tap' -exec tar -czf ${tarTap} {} + "
+                    try {
+                        context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                            context.archiveArtifacts artifacts: "${tarTap}"
+                        }
+                    } catch (FlowInterruptedException e) {
+                        throw new Exception("[ERROR] Archive AQAvitTapFiles.tar.gz timeout Exiting...")
                     }
-                } catch (FlowInterruptedException e) {
-                    throw new Exception("[ERROR] Archive AQAvitTapFiles.tar.gz timeout Exiting...")
                 }
             }
             // publish to github if needed
