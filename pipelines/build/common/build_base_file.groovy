@@ -1006,6 +1006,34 @@ class Builder implements Serializable {
                 }
             }
             context.parallel jobs
+            if (enableTests) {
+                def tarTap = 'AQAvitTapFiles.tar.gz'
+                def tarDir = 'AQAvitTaps'
+                context.node('worker') {
+                    context.copyArtifacts(
+                        projectName: env.JOB_NAME,
+                        selector: context.specific("${env.BUILD_NUMBER}"),
+                        filter: 'target/**/*.tap',
+                        fingerprintArtifacts: true,
+                        target: "${tarDir}/",
+                        flatten: true,
+                        optional: true
+                    )
+                    // Archive tap files as a single tar file
+                    context.sh """
+                        cd ${tarDir}/
+                        tar -czf ${tarTap} *.tap
+                    """
+                    try {
+                        context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                            context.archiveArtifacts artifacts: "${tarDir}/${tarTap}"
+                        }
+                    } catch (FlowInterruptedException e) {
+                        throw new Exception("[ERROR] Archive AQAvitTapFiles.tar.gz timeout Exiting...")
+                    }
+                }
+            }
+
             // publish to github if needed
             // Don't publish release automatically
             if (publish || release) {
