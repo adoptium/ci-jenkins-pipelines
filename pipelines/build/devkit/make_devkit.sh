@@ -75,13 +75,13 @@ cd make/devkit && pwd && \
   LD_LIBRARY_PATH="${BOOTSTRAP_DEVKIT}/lib64:${BOOTSTRAP_DEVKIT}/lib" \
   PATH="${BOOTSTRAP_DEVKIT}/bin:$PATH" \
   make TARGETS=${devkit_target} BASE_OS=${BASE_OS} BASE_OS_VERSION=${BASE_OS_VERSION} \
-       TOOLS="CC=${BOOTSTRAP_DEVKIT}/bin/gcc \
-              CXX=${BOOTSTRAP_DEVKIT}/bin/g++ \
-              LD=${BOOTSTRAP_DEVKIT}/bin/ld \
-              AR=${BOOTSTRAP_DEVKIT}/bin/ar \
-              AS=${BOOTSTRAP_DEVKIT}/bin/AS \
-              RANLIB=${BOOTSTRAP_DEVKIT}/bin/ranlib \
-              OBJDUMP=${BOOTSTRAP_DEVKIT}/bin/objdump"
+       CC=${BOOTSTRAP_DEVKIT}/bin/gcc \
+       CXX=${BOOTSTRAP_DEVKIT}/bin/g++ \
+       LD=${BOOTSTRAP_DEVKIT}/bin/ld \
+       AR=${BOOTSTRAP_DEVKIT}/bin/ar \
+       AS=${BOOTSTRAP_DEVKIT}/bin/AS \
+       RANLIB=${BOOTSTRAP_DEVKIT}/bin/ranlib \
+       OBJDUMP=${BOOTSTRAP_DEVKIT}/bin/objdump
 
 # Back to original folder
 cd ../../..
