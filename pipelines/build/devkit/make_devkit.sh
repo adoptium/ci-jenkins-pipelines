@@ -70,7 +70,7 @@ mv build/devkit/result/${devkit_target}-to-${devkit_target} ${BOOTSTRAP_DEVKIT}
 
 # Make final "DevKit" using the bootstrap devkit
 rm -rf build/devkit
-echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in $(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}"
+echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in ${BOOTSTRAP_DEVKIT}"
 cd make/devkit && pwd && \
   LD_LIBRARY_PATH="${BOOTSTRAP_DEVKIT}/lib64:${BOOTSTRAP_DEVKIT}/lib" \
   PATH="${BOOTSTRAP_DEVKIT}/bin:$PATH" \
@@ -79,7 +79,7 @@ cd make/devkit && pwd && \
        CXX=${BOOTSTRAP_DEVKIT}/bin/g++ \
        LD=${BOOTSTRAP_DEVKIT}/bin/ld \
        AR=${BOOTSTRAP_DEVKIT}/bin/ar \
-       AS=${BOOTSTRAP_DEVKIT}/bin/AS \
+       AS=${BOOTSTRAP_DEVKIT}/bin/as \
        RANLIB=${BOOTSTRAP_DEVKIT}/bin/ranlib \
        OBJDUMP=${BOOTSTRAP_DEVKIT}/bin/objdump
 
