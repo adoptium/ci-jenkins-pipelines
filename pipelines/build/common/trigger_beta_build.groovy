@@ -115,9 +115,16 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
 }
 
 node('worker') {
-    def adopt_tag_search = 'grep "_adopt"'
-    if (mirrorRepo.contains("aarch32-jdk8u")) {
-        adopt_tag_search = adopt_tag_search + ' | grep "\\-aarch32\\-"'
+    def adopt_tag_search
+    if (version == 8) {
+        // eg. jdk8u422-b03_adopt
+        adopt_tag_search = 'grep "jdk8u.*_adopt"'
+        if (mirrorRepo.contains("aarch32-jdk8u")) {
+            adopt_tag_search = adopt_tag_search + ' | grep "\\-aarch32\\-"'
+        }
+    } else {
+        // eg. jdk-11.0.24+6_adopt or jdk-23+26_adopt
+        adopt_tag_search = 'grep "jdk-'+version+'[\.+].*_adopt"'
     }
 
     // Find latest _adopt tag for this version?
