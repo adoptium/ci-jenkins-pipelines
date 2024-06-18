@@ -56,22 +56,42 @@ def isGaTag(String version, String tag) {
     }
 }
 
+// Determine the upstream OpenbJDK reporistory
+def getUpstreamRepo(String version) {
+    def openjdkRepo
+
+    def versionInt = (version == "aarch32-jdk8u" || version == "alpine-jdk8u") ? 8 : version.replaceAll("u", "").replaceAll("jdk", "").toInteger()
+    def isUpdateVersion = version.endsWith("u")
+    
+    if (versionInt >= 23 && !isUpdateVersion) {
+        // jdk-23+ stabalisation versions are now branches in jdk(head) repo
+        openjdkRepo = "https://github.com/openjdk/jdk.git"
+    } else if (version == "aarch32-jdk8u") {
+        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
+    } else if (version.contains("jdk8u")) {
+        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
+    } else {
+        openjdkRepo = "https://github.com/openjdk/${version}.git"
+    }
+
+    return openjdkRepo
+}
+
 // Get the latest upstream openjdk build tag
 def getLatestOpenjdkBuildTag(String version) {
-    def openjdkRepo = "https://github.com/openjdk/${version}.git"
+    def openjdkRepo = getUpstreamRepo(version)
+    def versionInt = (version == "aarch32-jdk8u" || version == "alpine-jdk8u") ? 8 : version.replaceAll("u", "").replaceAll("jdk", "").toInteger()
+
+    def tagFilter
     if (version == "aarch32-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
-    } else if (version == "alpine-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
+        tagFilter = "| grep 'jdk8u.*-aarch32-'"
+    } else if (version.contains("jdk8u")) {
+        tagFilter = "| grep 'jdk8u'"
+    } else {
+        tagFilter = "| grep 'jdk-"+versionInt+"[\\.\\+].*'"
     }
 
-    // Need to include jdk8u to avoid picking up old tag format    
-    def jdk8Filter = (version.contains("jdk8u")) ? "| grep 'jdk8u'" : ""
-    if (version == "aarch32-jdk8u") {
-        jdk8Filter += " | grep '\\-aarch32\\-'"
-    }
-
-    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | head -1 | tr -d '\\n'")
+    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${tagFilter} | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest upstream openjdk/${version} tag = ${latestTag}"
 
     return latestTag
@@ -79,12 +99,7 @@ def getLatestOpenjdkBuildTag(String version) {
 
 // Get how long ago the given upstream tag was published?
 def getOpenjdkBuildTagAge(String version, String tag) {
-    def openjdkRepo = "https://github.com/openjdk/${version}.git"
-    if (version == "aarch32-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
-    } else if (version == "alpine-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
-    } 
+    def openjdkRepo = getUpstreamRepo(version)
 
     def date = sh(returnStdout: true, script:"(rm -rf tmpRepo; git clone ${openjdkRepo} tmpRepo; cd tmpRepo; git for-each-ref --format=\"%(refname:short) %(creatordate:format:%Y-%m-%dT%H:%M:%S%z)\" \"refs/tags/*\"; cd ..; rm -rf tmpRepo) | grep \"${tag}\" | cut -d\" \" -f2 | sed -e 's/.\\{22\\}/&:/1' | tr -d '\\n'")
 

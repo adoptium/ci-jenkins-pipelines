@@ -124,7 +124,7 @@ node('worker') {
         }
     } else {
         // eg. jdk-11.0.24+6_adopt or jdk-23+26_adopt
-        adopt_tag_search = 'grep "jdk-'+version+'[\\.+].*_adopt"'
+        adopt_tag_search = 'grep "jdk-'+version+'[\\.\\+].*_adopt"'
     }
 
     // Find latest _adopt tag for this version?
