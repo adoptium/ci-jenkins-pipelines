@@ -163,6 +163,7 @@ def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease,
 def verifyReleaseContent(String version, String release, String variant, Map status) {
     echo "Verifying ${version} assets in release: ${release}"
     status['assets'] = "Error"
+    status['missingAssets'] = []
 
     def configVersion = version
     // aarch32-jdk8u and alpine-jdk8u use "jdk8u" config
@@ -668,9 +669,7 @@ node('worker') {
 
                     // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
                     if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
-echo "AAA: "+featureRelease+" B "+status['upstreamTag']
                         def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
-echo "BBB: "+upstreamTagAge+" B "+inProgressBuildUrl+"B"
                         if (upstreamTagAge > 3 && inProgressBuildUrl == "") {
                             slackColor = 'danger'
                             health = "Unhealthy"
