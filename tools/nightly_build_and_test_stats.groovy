@@ -28,12 +28,7 @@ def isGaTag(String version, String tag) {
         return false
     }
 
-    def openjdkRepo = "https://github.com/openjdk/${version}.git"
-    if (version == "aarch32-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
-    } else if (version == "alpine-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
-    }
+    def openjdkRepo = getUpstreamRepo(version) 
 
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
 
@@ -406,7 +401,7 @@ node('worker') {
 
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             if (tipRelease != "") {
-              def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
+              def latestOpenjdkBuild = getLatestOpenjdkBuildTag(tipRelease)
               def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
               status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTag: latestOpenjdkBuild]
