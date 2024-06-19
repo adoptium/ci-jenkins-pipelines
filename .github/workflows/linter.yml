@@ -62,4 +62,5 @@ jobs:
           # Someone should investigate adding these at some point
           VALIDATE_DOCKERFILE: false
           VALIDATE_DOCKERFILE_HADOLINT: false
+          # checkov fails
           VALIDATE_CHECKOV: false
