@@ -6,7 +6,8 @@ Eclipse Adoptium makes use of these scripts to build binaries on the build farm 
 ## Repository contents
 
 This repository contains several useful scripts in order to build OpenJDK
-personally or at build farm scale.
+personally or at build farm scale via jenkins. For the Temurin project at
+Adoptium, this is done with the jenkins instance at https://ci.adotpium.net
 
 1. The `docs` folder contains images and utility scripts to produce up to date
 documentation.
@@ -14,197 +15,184 @@ documentation.
 (e.g. build | test | checksum | release).
 3. The `tools` folder contains `pipelines/` analysis scripts that deliever success/failure trends and build scripts for code-tool dependancies for the build and test process (e.g. asmtools | jcov | jtharness | jtreg | sigtest).
 
-## Configuration Files
+## Overview of pipeline types
 
-The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory contains two categories of configuration files that our jenkins pipelines use (Nicknamed [#Build Configs](#build) and [#Nightly Configs](#nightly) for short).
+The starting point on the jenkins instance from the perspective of the
+overall build pipelines is the
+[build-scripts folder](https://ci.adoptium.net/job/build-scripts/). This
+contains the top level pipelines which are used to run the different types
+of build. In the names in this document `XX` is the JDK version number e.g.
+8, 17, 21 and so on. There is one of these for each JDK version which we
+support.
 
-To ensure both configurations are not overridden in a race condition scenario by another job, the [job generators](pipelines/build/regeneration/README.md) ensure they remain in the sync with the repository.
+### openjdkXX-pipeline
 
-**Generally, any new parameters/configurations that effect the jenkins environment directly should be implemented here.** If this is not the case, it would likely be better placed in [temurin-build/platform-specific-configurations](https://github.com/adoptium/temurin-build/tree/master/build-farm/platform-specific-configurations) (for OS or `make-adopt-build-farm.sh` specific use cases) or [temurin-build/build.sh](https://github.com/adoptium/temurin-build/blob/master/sbin/build.sh) (for anyone, including end users and jenkins pipelines).
+These were historically used for regular builds of each of our release
+platforms using the current state of the master branch of the codebase -
+which is it's default behaviour - but is now run each time there is a new
+tag in the upstream openjdk codebase.  These are triggered by the
+`betaTrigger_XXea` jobs in the
+[build-scripts/utils](https://ci.adoptium.net/job/build-scripts/job/utils/)
+folder.  Note that JDK8 for, which comes from a separate codebase and
+therefore is tagged separately, is triggered via a separate
+[betaTrigger_8ea_arm32Linux](https://ci.adoptium.net/job/build-scripts/job/utils/job/betaTrigger_8ea_arm32Linux/)
+job.
 
-### Build
+The betaTrigger_XXea jobs use
+[trigger_beta_build.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/common/trigger_beta_build.groovy)
+to determine when to run a build. This contains a trap for the expected GA
+release times to prevent triggering so that machine time is not used up
+while we are performing release build and test cycles. 
 
-The build config files are the ones that follow the format `jdkxx(u)_pipeline_config.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a groovy class with a single `Map<String, Map<String, ?>>` property containing node labels, tests and other jenkins parameters/constants that are crucial for allowing different parts of the build pipeline to mesh together.
+Once complete, the openjdkXX-pipelines which will, by default, invoke the
+separate
+([refactor_openjdk_release_tool](https://ci.adoptium.net/job/build-scripts/job/release/job/refactor_openjdk_release_tool/))
+job which will publish them as an `ea-beta`-suffixed release in github  under e.g. 
+[temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true}). 
 
-Each architecture/platform has it's own entry similar to the one below (for JDK8 x64 mac builds). The pipelines use the parent map key (e.g. `x64Mac`) to retrieve the data. See [#Data Fields](#data-fields) for the currently available fields you can utilise.
+### release-openjdkXX-pipeline
 
-```groovy
-x64Mac        : [
-    os                   : 'mac',
-    arch                 : 'x64',
-    additionalNodeLabels : [
-            temurin  : 'macos10.14',
-            corretto : 'build-macstadium-macos1010-1',
-            openj9   : 'macos10.14'
-    ],
-    test                 : 'default'
-]
-```
+These are not publicly visible but are used to build the fully tested
+production binaries on a quarterly basis.  Similar to the openjdkXX-pipeline
+jobs these are automatically triggered by the releaseTrigger_jdkXX jobs in
+[build-scripts/utils](https://ci.adoptium.net/job/build-scripts/job/utils/)
+every time a new `-ga` suffixed tag is detected.
 
-### Data fields
+releaseTrigger_jdkXX runs once an hour between the 10th and 25th of release
+months (Jan, Mar, Apr, Jul, Sep, Oct) and check for a new `-ga` tag.  It runs
+[triggerReleasePipeline.sh](https://github.com/adoptium/mirror-scripts/blob/master/triggerReleasePipeline.sh)
+(from the [mirror-scripts](https://github.com/adoptium/mirror-scripts/)
+repository).  That script has a loop that checks 5 times with a ten minute
+gap between them so that the overall trigger is checked every ten minutes
+during the days when it is active based on checking for the "expected" tag
+from [releasePlan.cfg](https://github.com/adoptium/mirror-scripts/blob/master/releasePlan.cfg)
+using the readExpectedGATag function in
+[common.sh](https://github.com/adoptium/mirror-scripts/blob/master/common.sh)
 
-NOTE: When the `type` field implies a map, the `String` key of the inner map is the variant for that field. E.g:
+A couple of points to note on the release configurations:
+- [jdk8u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk8u_release.groovy),
+  [jdk11u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk11u_release.groovy)
+  and [jdk17u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk11u_release.groovy)
+  do not automatically run the win32 (`x32Windows`) builds - they get
+  triggered manually during a release cycle in order to prioritise the
+  x64Windows builds during the release cycle on the machines.
+- Similarly the [jdk8u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk8u_release.groovy)
+  does not include arm32, since that is built from a separate codebase and
+  is tagged separately so cannot generally be triggered alongside the main
+  builds.
+### evaluation-openjdkXX-pipeline
 
-```groovy
-                additionalNodeLabels : [
-                        temurin : 'xlc13&&aix710',
-                        openj9 :  'xlc13&&aix715'
-                ],
-```
+These are similar to the openjdkXX-pipeline jobs, and are triggered from the
+same betaTrigger_XXea jobs.  The evaluation pipelines are for platforms
+which the Adoptium team are looking to potentially release at some point,
+but they are not yet reliable or sufficiently tested.
+which are not in the release.
 
----
+### weekly-openjdkXX-pipeline / weekly-evaluation-openjdkXX-pipeline
 
-| Name                       | Required? | Type                                        | <div style="width:500px">Description</div> |
-| :------------------------- | :-------: | :------------------------------------------ | :----------------------------------------- |
-| os                         | &#9989;   | `String`                                    | Operating system tag that will identify the job on jenkins and determine which platforms configs to pull from temurin-build.<br>*E.g. `windows`, `solaris`* |
-| arch                       | &#9989;   | `String`                                    | Architecture tag that will identify the job on jenkins and determine which build params to use.<br>*E.g. `x64`, `sparcv9`, `x86-32`* |
-| test                       | &#10060;  | `String`<br>**OR**<br>`Map<String, List>`<br>**OR**<br>`Map<String, List or Map<String, List>>`   | Case one: Tests to run against the binary after the build has completed. A `default` tag indicates that you want to run [whatever the default test nightly/release list is](https://github.com/adoptium/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/build/common/build_base_file.groovy#L66-L88).<br><br>Case two: You can also [specify your own list for that particular platform (not variant)](https://github.com/adoptium/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/jobs/configurations/jdk16_pipeline_config.groovy#L59-L64). <br><br>Case three: Or you can even [specify the list for that particular platform per variant](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk8u_pipeline_config.groovy#L78-L81). The list could be specific one `sanity.openjdk` or `default` (similar to the first case) or a map per nightly or release (similar to case two). |
-| testDynamic                | &#10060;  | `Boolean`<br>**OR**<br>`Map<String, ?>`     | PARALLEL=Dynamic parameter setting. False : no Parallel. Or you can set the parameters with or without variant.
-| dockerImage                | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Builds the JDK inside a docker container. Should be a DockerHub identifier to pull from in case **dockerFile** is not specified.<br>*E.g. `adoptopenjdk/centos6_build_image`* |
-| dockerFile                 | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Builds the JDK inside a docker container using the locally stored image file. Used in conjunction with **dockerImage** to specify a particular variant to build or pull.<br>*E.g. `pipelines/build/dockerFiles/cuda.dockerfile`* |
-| dockerNode                 | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Specifies a specific jenkins docker node label to shift into to build the JDK.<br> *E.g. `sw.config.uid1000`* |
-| dockerRegistry             | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Used for Docker login when pulling dockerImage from a custom Docker registry. Used in conjunction with **dockerImage**. Default (blank) will be DockerHub. Must also use dockerCredential. |
-| dockerCredential           | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Used for Docker login when pulling a dockerImage. Value is the Jenkins credential ID for the username and password of the dockerRegistry. Used in conjunction with **dockerImage**. Can use with custom dockerRegistry or default DockerHub. Must use this if using a non-default registry. |
-| additionalNodeLabels       | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Appended to the default constructed jenkins node label (often used to lock variants or build configs to specific machines). Jenkins will additionally search for a node with this tag as well as the default node label.<br>*E.g. `build-macstadium-macos1010-1`, `macos10.14`* |
-| additionalTestLabels       | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Used by [aqa-tests](https://github.com/adoptium/aqa-tests/blob/2b6ee54f18021c38386cea65c552de4ea20a8d1c/buildenv/jenkins/testJobTemplate#L213) to lock specific tests to specific machine nodes (in the same manner as **additionalNodeLabels**)<br>*E.g. `!(centos6\|\|rhel6)`, `dragonwell`* |
-| configureArgs              | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Configuration arguments that will ultimately be passed to OpenJDK's `./configure`<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
-| buildArgs                  | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Build arguments that will ultimately be passed to [temurin-build's ./makejdk-any-platform.sh](https://github.com/adoptium/temurin-build#the-makejdk-any-platformsh-script) script<br>*E.g. `--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system`* |
-| additionalFileNameTag      | &#10060;  | `String`                                    | Commonly used when building [large heap versions](https://adoptopenjdk.net/faq.html#:~:text=What%20are%20the%20OpenJ9%20%22Large,XL%20in%20the%20download%20filenames) of the binary, this tag will also be included in the jenkins job name and binary filename. Include this parameter if you have an "extra" variant that requires a different tagname<br>*E.g. `linuxXL`* |
-| crossCompile               | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Used when building on a cross compiled system, informing jenkins to treat it differently when retrieving the version and producing the binary. This value is also used to create the jenkins node label alongside the **arch** (similarly to **additionalNodeLabels**)<br>*E.g. `x64`* |
-| bootJDK                    | &#10060;  | `String`                                    | JDK version number to specify to temurin-build's `make-adopt-build-farm.sh` script, informing it to utilise a [predefined location of a boot jdk](https://github.com/adoptium/temurin-build/blob/2df732492b59b1606439505316c766edbb566cc2/build-farm/make-adopt-build-farm.sh#L115-L141)<br> *E.g. `8`, `11`* |
-| platformSpecificConfigPath | &#10060;  | `String`                                    | temurin-build repository path to pull the operating system configurations from inside [temurin-build's set-platform-specific-configurations.sh](https://github.com/adoptium/temurin-build/blob/master/build-farm/set-platform-specific-configurations.sh). Do not include the repository name or branch as this is prepended automatically.<br>*E.g. `pipelines/TestLocation/platform-specific-configurations`* |
-| codebuild                  | &#10060;  | `Boolean`                                   | Setting this field will tell jenkins to spin up an Azure or [AWS cloud](https://aws.amazon.com/codebuild/) machine, allowing the build to retrieve a machine not normally available on the Jenkins server. It does this by appending a `codebuild` flag to the jenkins label. |
-| cleanWorkspaceAfterBuild   | &#10060;  | `Boolean`                                   | Setting this field will tell jenkins to clean down the workspace after the build has completed. Particularly useful for AIX where disk space can be limited. |
+These are no longer used. These were triggered over the weekend with an extended set
+of tests, but since the regular openjdkXX-pipeline jobs are now running
+approximately once a week (the usual cadence of new tags appearing in the
+upstream codebases) we are running the full AQA suite in those pipelines.
+These were triggered by timer and then invoked the openjdkXX-pipeline jobs
+with the appropriate parameters.
 
-### Nightly
+### trestle-openjdkXX-pipeline
 
-The nightly or beta/non-release config files are the ones that follow the format `jdkxx(u).groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a simple groovy script that's contents can be [loaded in](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/#load-evaluate-a-groovy-source-file-into-the-pipeline-script) and accessed by another script.
+Trestle is the name of the experimental project to allow upstream openjdk
+committers to run pipelines on our infrastructure in order to test code
+changes in openjdk on the full set of platforms which Temurin supports. They
+are triggered on demand from a subset of authorized users.
 
-### Evaluation pipeline/jobs
+### PR tester
 
-The evaluation config files are the ones that follow the format `jdkxx(u)_evaluation.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
+In addition to the main pipelines we have "PR tester" jobs that are run on
+PRs to the pipelines repository in order to ensure they do not have any
+unintended side effects before they are merged.  These are triggered when
+comments from authorized users are added into the PR comments. In that
+folder in jenkins there are separate versions of all of the
+openjdkXX-pipelines that can be used to run against PRs and will not
+"pollute" the history of the main pipelines.
 
-#### targetConfigurations
+## Subjobs of the top level pipelines
 
-A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds, evaluation builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#build).
+Each of the top level pipelines described above invoke lower level jobs to
+run the platform-specific builds.  The jenkins folders containing these
+scripts for each of the above top level pipelines are as follows:
 
-### Release pipeline/jobs
+Top level pipeline | Platform-specific pipeline folder (TODO: Name these!)
+---|---
+openjdkXX-pipeline | [jobs/jdkXX](https://ci.adoptium.net/job/build-scripts/job/jobs/)
+evaluation-openjdkXX-pipeline | [jobs/evaluation/jdkXX](https://ci.adoptium.net/job/build-scripts/job/jobs/job/evaluation/) [†]
+weekly-openjdkXX-pipeline | jobs/jdkXX (Shared with openjdkXX-pipeline)
+release-openjdkXX-pipeline | [jobs/release/jobs/jdkXX](https://ci.adoptium.net/job/build-scripts/job/jobs/job/release/job/jobs/) (Restricted access)
+PR testers | build-test/jobs/jdkXX
 
-The release config files are the ones that follow the format `jdkxx(u)_release.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
-jdkxx(u)*.groovy
+[†] - The release jobs here are restricted access.  The release folder here
+should also not be confused with the build-scripts/release folder which
+contains jobs used for the final publishing of the builds (early access or
+GA) to github
 
-```groovy
-targetConfigurations = [
-        "x64Mac"        : [
-                "temurin",
-                "openj9"
-        ],
-        "x64Linux"      : [
-                "temurin",
-                "openj9",
-                "corretto",
-                "dragonwell"
-        ],
-        "x32Windows"    : [
-                "temurin",
-                "openj9"
-        ],
-        "x64Windows"    : [
-                "temurin",
-                "openj9",
-                "dragonwell"
-        ],
-        "ppc64Aix"      : [
-                "temurin",
-                "openj9"
-        ],
-        "ppc64leLinux"  : [
-                "temurin",
-                "openj9"
-        ],
-        "s390xLinux"    : [
-                "temurin",
-                "openj9"
-        ],
-        "aarch64Linux"  : [
-                "temurin",
-                "openj9",
-                "dragonwell"
-        ],
-        "arm32Linux"  : [
-                "temurin"
-        ],
-        "sparcv9Solaris": [
-                "temurin"
-        ]
-]
-```
+*Note: jdkXX is generally related to the name of the upstream codebase, which
+will often have a `u` suffix.  At the moment we have a separate set of jobs
+for non-u and u versions when the upstream codebase changes.  TODO: Add note
+about the new branch process for jdk23+*
 
-#### disableJob
+Inside the jdkXX folders there are pipelines which perform a build of one
+variant (e.g.  Temurin) for on JDK version on one platform, for example
+[jdk21u-linux-aarch64-temurin](https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk21u/job/jdk21u-linux-aarch64-temurin/)
+which are reponsible for running the build using
+[kick_off_build.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/common/kick_off_build.groovy)
+and initiating the tests and other jobs against the completed build if
+successful.  A "Smoke Test" job such as
+[jdk21u-linux-aarch64-temurin-SmokeTests](https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk21u/job/jdk21u-linux-aarch64-temurin_SmokeTests/)
+(TODO: Links to info about what that contains) which is initiated after the
+build perfoms some basic tests against the build artefacts and acts as a
+gate to kicking off the subsequent steps.  Once complete, the
+openjdkXX-pipelines which run the early access builds will generally invoke
+the jobs to publish them as a release in github (e.g. 
+[temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true}).
 
-If this is present, the jenkins generators will still create the top-level pipeline and downstream jobs but will set them as disabled.
-jdkxx(u).groovy
+## Job generation
 
-```groovy
-disableJob = true
-```
+As you can see from the above sections, there are a lot of separate jobs in
+jenkins which are used during the build process.  These are not created
+manually, but are autogenerated using the generator pipelines.  TODO: More
+information on this is at ...
 
-#### triggerSchedule_nightly / triggerSchedule_weekly / triggerSchedule_evaluation / triggerSchedule_weekly_evaluation
+The top level
+[build-pipeline-generator](https://ci.adoptium.net/job/build-scripts/job/utils/job/build-pipeline-generator/)
+job uses
+[build_pipeline_generator.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/regeneration/build_pipeline_generator.groovy)
+to generate the pipelines.  It will generate the top level
+openjdkXX-pipeline jobs.  Similarly there are pipeline_jobs_generator_jdkXX
+jobs which use
+[build_job_generator.groovy](pipelines/build/regeneration/build_job_generator.groovy)
+to generate the subjobs for each platform/variant combination.  Both of
+these pipelines are triggered on a change (PR merge) to the
+ci-jenkins-pipelines repository
 
-All JDK versions now support "beta" EA triggered builds from the publication of upstream build tags. Eclipse Adoptium no
-longer runs scheduled nightly/weekend builds.
+Similarly there is an evaluation-pipeline-generator and
+evaluation-pipeline_jobs_generator_jdkXX for generating the evaluation jobs,
+a trestle-pipeline-generator for those jobs, plus release-pipeline-generator
+andand release_pipeline_jobs_generator_jdkXX for release jobs (the release
+generators are not triggered automatically but are re-run manually at
+certain points during each release cycle
 
-The one exception to this is Oracle managed STS versions, whose builds are managed internal to Oracle and not published
-until the GA day. For these a triggerSchedule_weekly is required to build the upstream HEAD commits on a regular basis.
+The generators make use of files in
+[pipelines/jobs/configurations](https://github.com/adoptium/ci-jenkins-pipelines/tree/master/pipelines/jobs/configurations)
+and you can see more details of the format in the README.md in that location:
+- The `jdkXX.groovy`, `jdkXX_evaluation.groovy`, `jdkXX_release.groovy` to determine which platforms to configure and generate for each version.
+- The individual platform configurations, such as jenkins labels, are defined by `jdkXX_pipeline_config.groovy` files.
 
-[Cron expression](https://crontab.guru/) that defines when (and how often) nightly/evaluation and weekly/weekly-evaluation builds will be executed
+For more details on the regeneration process overall see the
+[regeneration documentation](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/regeneration/README.md)
+and for more detail on the configuration files see this readme
 
-in jdkxx(u).groovy
+## Metadata files generated with each build
 
-```groovy
-triggerSchedule_nightly="TZ=UTC\n05 18 * * 1,3,5"
-triggerSchedule_weekly="TZ=UTC\n05 12 * * 6"
-```
-
-in jdkXX(u)_evaluation.groovy
-
-```groovy
-triggerSchedule_evaluation="TZ=UTC\n15 18 * * 1,3,5"
-triggerSchedule_weekly_evaluation="TZ=UTC\n25 12 * * 6"
-```
-
-#### weekly_release_scmReferences / weekly_evaluation_scmReferences
-
-Source control references (e.g. tags) to use in the scheduled weekly release or weekly evaluation builds
-in jdkXX(u).groovy
-Use below two ways can set the job never to run:
-
-- do not set `triggerSchedule_nightly` or `triggerSchedule_weekly` in the groovy file
-- untick `ENABLE_PIPELINE_SCHEDULE` option in the Jenkins job which calls `pipelines/build/regeneration/build_pipeline_generator.groovy`
-
-#### weekly_release_scmReferences
-
-Source control references (e.g. tags) to use in the scheduled weekly release builds
-jdkxx(u).groovy
-
-```groovy
-weekly_release_scmReferences = [
-        "temurin"        : "jdk8u282-b08"
-]
-```
-
-in jdkXX(u)_evaluation.groovy
-
-```groovy
-weekly_evaluation_scmReferences== [
-        "temurin"        : "jdk8u282-b07",
-        "openj9"         : "v0.24.0-release",
-        "corretto"       : "",
-        "dragonwell"     : ""
-]
-```
-
-## Metadata
+<details>
+<summary>Information about the metadata file generated alongside the build</summary>
 
 Alongside the built assets a metadata file will be created with info about the build. This will be a JSON document of the form:
 
@@ -400,6 +388,8 @@ pipelines/build/common/trigger_beta_build.groovy job parameters:
 - Multi-line Text: OVERRIDE_MAIN_TARGET_CONFIGURATIONS - Override targetConfigurations for FORCE_MAIN, eg: { "x64Linux": [ "temurin" ], "x64Mac": [ "temurin" ] }
 
 - Multi-line Text: OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS - Override targetConfigurations for FORCE_EVALUATION, eg: { "aarch64AlpineLinux": [ "temurin" ] }
+
+</details>
 
 ## Build status
 
