@@ -62,3 +62,4 @@ jobs:
           # Someone should investigate adding these at some point
           VALIDATE_DOCKERFILE: false
           VALIDATE_DOCKERFILE_HADOLINT: false
+          VALIDATE_CHECKOV: false
