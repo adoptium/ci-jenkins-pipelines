@@ -51,7 +51,7 @@ def isGaTag(String version, String tag) {
     }
 }
 
-// Determine the upstream OpenbJDK reporistory
+// Determine the upstream OpenJDK reporistory
 def getUpstreamRepo(String version) {
     def openjdkRepo
 
