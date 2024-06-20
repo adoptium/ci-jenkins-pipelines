@@ -28,12 +28,7 @@ def isGaTag(String version, String tag) {
         return false
     }
 
-    def openjdkRepo = "https://github.com/openjdk/${version}.git"
-    if (version == "aarch32-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
-    } else if (version == "alpine-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
-    }
+    def openjdkRepo = getUpstreamRepo(version) 
 
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
 
@@ -56,22 +51,42 @@ def isGaTag(String version, String tag) {
     }
 }
 
+// Determine the upstream OpenJDK reporistory
+def getUpstreamRepo(String version) {
+    def openjdkRepo
+
+    def versionInt = (version == "aarch32-jdk8u" || version == "alpine-jdk8u") ? 8 : version.replaceAll("[a-z]","").toInteger()
+    def isUpdateVersion = version.endsWith("u")
+    
+    if (versionInt >= 23 && !isUpdateVersion) {
+        // jdk-23+ stabalisation versions are now branches in jdk(head) repo
+        openjdkRepo = "https://github.com/openjdk/jdk.git"
+    } else if (version == "aarch32-jdk8u") {
+        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
+    } else if (version.contains("jdk8u")) {
+        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
+    } else {
+        openjdkRepo = "https://github.com/openjdk/${version}.git"
+    }
+
+    return openjdkRepo
+}
+
 // Get the latest upstream openjdk build tag
 def getLatestOpenjdkBuildTag(String version) {
-    def openjdkRepo = "https://github.com/openjdk/${version}.git"
+    def openjdkRepo = getUpstreamRepo(version)
+    def versionInt = (version == "aarch32-jdk8u" || version == "alpine-jdk8u") ? 8 : version.replaceAll("[a-z]","").toInteger()
+
+    def tagFilter
     if (version == "aarch32-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
-    } else if (version == "alpine-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
+        tagFilter = "| grep 'jdk8u.*-aarch32-'"
+    } else if (version.contains("jdk8u")) {
+        tagFilter = "| grep 'jdk8u'"
+    } else {
+        tagFilter = "| grep 'jdk-"+versionInt+"[\\.\\+]'"
     }
 
-    // Need to include jdk8u to avoid picking up old tag format    
-    def jdk8Filter = (version.contains("jdk8u")) ? "| grep 'jdk8u'" : ""
-    if (version == "aarch32-jdk8u") {
-        jdk8Filter += " | grep '\\-aarch32\\-'"
-    }
-
-    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${jdk8Filter} | sort -V -r | head -1 | tr -d '\\n'")
+    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${tagFilter} | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest upstream openjdk/${version} tag = ${latestTag}"
 
     return latestTag
@@ -79,12 +94,7 @@ def getLatestOpenjdkBuildTag(String version) {
 
 // Get how long ago the given upstream tag was published?
 def getOpenjdkBuildTagAge(String version, String tag) {
-    def openjdkRepo = "https://github.com/openjdk/${version}.git"
-    if (version == "aarch32-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
-    } else if (version == "alpine-jdk8u") {
-        openjdkRepo = "https://github.com/openjdk/jdk8u.git"
-    } 
+    def openjdkRepo = getUpstreamRepo(version)
 
     def date = sh(returnStdout: true, script:"(rm -rf tmpRepo; git clone ${openjdkRepo} tmpRepo; cd tmpRepo; git for-each-ref --format=\"%(refname:short) %(creatordate:format:%Y-%m-%dT%H:%M:%S%z)\" \"refs/tags/*\"; cd ..; rm -rf tmpRepo) | grep \"${tag}\" | cut -d\" \" -f2 | sed -e 's/.\\{22\\}/&:/1' | tr -d '\\n'")
 
@@ -109,7 +119,7 @@ def getLatestBinariesTag(String version) {
 def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
     def inProgressBuildUrl = ""
 
-    def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
+    def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
 
     def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
@@ -153,6 +163,7 @@ def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease,
 def verifyReleaseContent(String version, String release, String variant, Map status) {
     echo "Verifying ${version} assets in release: ${release}"
     status['assets'] = "Error"
+    status['missingAssets'] = []
 
     def configVersion = version
     // aarch32-jdk8u and alpine-jdk8u use "jdk8u" config
@@ -161,7 +172,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     }
 
     def escRelease = release.replaceAll("\\+", "%2B")
-    def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${escRelease}".replaceAll("_NN_", configVersion.replaceAll("u","").replaceAll("jdk",""))
+    def releaseAssetsUrl = "https://api.github.com/repos/${params.BINARIES_REPO}/releases/tags/${escRelease}".replaceAll("_NN_", configVersion.replaceAll("[a-z]",""))
 
     // Transform to browser URL for use in Slack message link
     status['assetsUrl'] = releaseAssetsUrl.replaceAll("api.github.com","github.com").replaceAll("/repos/","/").replaceAll("/tags/","/")
@@ -346,7 +357,7 @@ node('worker') {
                 allNonTipReleases.addAll(nonTagBuildReleases)
             }
             allNonTipReleases.each { featureRelease ->
-              def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
+              def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
 
               // Extra filter to find latest jdk8u port assets
               def extraFilter = ""
@@ -391,8 +402,8 @@ node('worker') {
 
             // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
             if (tipRelease != "") {
-              def latestOpenjdkBuild = getLatestOpenjdkBuildTag("jdk")
-              def tipVersion = tipRelease.replaceAll("u", "").replaceAll("jdk", "").toInteger()
+              def latestOpenjdkBuild = getLatestOpenjdkBuildTag(tipRelease)
+              def tipVersion = tipRelease.replaceAll("[a-z]","").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
               status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTag: latestOpenjdkBuild]
               verifyReleaseContent(tipRelease, releaseName, variant, status)
@@ -426,7 +437,7 @@ node('worker') {
            allReleases.addAll(nonTagBuildReleases)
         }
         allReleases.each { release ->
-           def featureReleaseStr = (release == "aarch32-jdk8u" || release == "alpine-jdk8u") ? "8" : release.replaceAll("u", "").replaceAll("jdk", "")
+           def featureReleaseStr = (release == "aarch32-jdk8u" || release == "alpine-jdk8u") ? "8" : release.replaceAll("[a-z]","")
 
            // Only interested in triggered openjdkNN-pipeline's
            if (!pipelinesOfInterest.contains(",openjdk${featureReleaseStr}-pipeline")) {
@@ -658,8 +669,7 @@ node('worker') {
 
                     // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
                     if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
-                        def upstreamRepoVersion = (featureRelease == tipRelease) ? "jdk" : featureRelease
-                        def upstreamTagAge    = getOpenjdkBuildTagAge(upstreamRepoVersion, status['upstreamTag'])
+                        def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
                         if (upstreamTagAge > 3 && inProgressBuildUrl == "") {
                             slackColor = 'danger'
                             health = "Unhealthy"
