@@ -1,3 +1,6 @@
+*Note: The contents of this file was split out from the top level README.md
+in this repository*
+
 ## Configuration Files used by the build job generators
 
 The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory contains two categories of configuration files that our jenkins pipelines use (Nicknamed [#Build Configs](#build) and [#Nightly Configs](#nightly) for short).
