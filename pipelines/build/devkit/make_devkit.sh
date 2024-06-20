@@ -65,17 +65,23 @@ cd make/devkit && pwd && make TARGETS=${devkit_target} BASE_OS=${BASE_OS} BASE_O
 
 # Move "bootstrap" devkit toolchain to a new folder and setup gcc toolchain to point at it
 cd ../..
-mv build/devkit/result/${devkit_target}-to-${devkit_target} build/bootstrap_${devkit_target}-to-${devkit_target}
-export CC=$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}/bin/gcc
-export CXX=$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}/bin/g++
-export LD_LIBRARY_PATH=$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}/lib64
-export PATH=$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}/bin:$PATH
-gcc --version
+BOOTSTRAP_DEVKIT="$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}"
+mv build/devkit/result/${devkit_target}-to-${devkit_target} ${BOOTSTRAP_DEVKIT}
 
 # Make final "DevKit" using the bootstrap devkit
 rm -rf build/devkit
-echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in $(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}"
-cd make/devkit && pwd && make TARGETS=${devkit_target} BASE_OS=${BASE_OS} BASE_OS_VERSION=${BASE_OS_VERSION}
+echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in ${BOOTSTRAP_DEVKIT}"
+cd make/devkit && pwd && \
+  LD_LIBRARY_PATH="${BOOTSTRAP_DEVKIT}/lib64:${BOOTSTRAP_DEVKIT}/lib" \
+  PATH="${BOOTSTRAP_DEVKIT}/bin:$PATH" \
+  make TARGETS=${devkit_target} BASE_OS=${BASE_OS} BASE_OS_VERSION=${BASE_OS_VERSION} \
+       CC=${BOOTSTRAP_DEVKIT}/bin/gcc \
+       CXX=${BOOTSTRAP_DEVKIT}/bin/g++ \
+       LD=${BOOTSTRAP_DEVKIT}/bin/ld \
+       AR=${BOOTSTRAP_DEVKIT}/bin/ar \
+       AS=${BOOTSTRAP_DEVKIT}/bin/as \
+       RANLIB=${BOOTSTRAP_DEVKIT}/bin/ranlib \
+       OBJDUMP=${BOOTSTRAP_DEVKIT}/bin/objdump
 
 # Back to original folder
 cd ../../..
