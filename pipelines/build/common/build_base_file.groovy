@@ -968,11 +968,16 @@ class Builder implements Serializable {
                                             throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
 
-                                        // Archive tap files as a single tar file
-                                        context.sh "find . -type f -name '*.tap' -exec tar -czf AQAvitTapFiles.tar.gz {} + "
+                                        // Archive any tap files (if any tests ran that produce them) from the build job as a single tar file
+                                        context.sh "find target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/AQAvitTaps -type f -name '*.tap' -exec tar -czf target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/AQAvitTaps/AQAvitTapFiles.tar.gz {} + "
                                         try {
-                                            context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                                                context.archiveArtifacts artifacts: "AQAvitTapFiles.tar.gz"
+                                            // Archive if any tap files were found
+                                            if (context.fileExists("target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/AQAvitTaps/AQAvitTapFiles.tar.gz")) {
+                                                context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                                                    context.archiveArtifacts artifacts: "AQAvitTapFiles.tar.gz"
+                                                }
+                                            } else {
+                                                context.println "No AQAvit tap files found to archive for target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}"
                                             }
                                         } catch (FlowInterruptedException e) {
                                             throw new Exception("[ERROR] Archive AQAvitTapFiles.tar.gz timeout Exiting...")
