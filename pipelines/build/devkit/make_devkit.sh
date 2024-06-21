@@ -43,16 +43,16 @@ patch -p1 < ../Tools.gmk.patch
 
 devkit_target="${ARCH}-linux-gnu"
 
-if [ "${BASE_OS}" = "rhel" ]; then
-  mkdir -p ../../../build/devkit/${VERSION}/build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}
-  # Downlod RPMS from RHEL (Requires machine to be attached to RHEL subscription)
+if [ "${BASE_OS}" = "rhel" ] && [ "${ARCH}" = "s390x" ]; then
+  mkdir -p build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}
+  # Download RPMS from RHEL (Requires machine to be attached to RHEL subscription)
   RPMDIR=/var/cache/yum/s390x/7Server/rhel-7-for-system-z-rpms/packages
   pwd
   for A in glibc glibc-headers glibc-devel cups-libs cups-devel libX11 libX11-devel xorg-x11-proto-devel alsa-lib alsa-lib-devel libXext libXext-devel libXtst libXtst-devel libXrender libXrender-devel libXrandr libXrandr-devel freetype freetype-devel libXt libXt-devel libSM libSM-devel libICE libICE-devel libXi libXi-devel libXdmcp libXdmcp-devel libXau libXau-devel libgcc libxcrypt zlib zlib-devel libffi libffi-devel fontconfig fontconfig-devel kernel-headers; do
     if [ ! -z "$(ls $RPMDIR/${A}-[0-9]*${ARCH}*.rpm)" ]; then
-      cp -pv ${RPMDIR}/${A}-[0-9]*${ARCH}*.rpm "../../../build/devkit/${VERSION}/build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}"
+      cp -pv ${RPMDIR}/${A}-[0-9]*${ARCH}*.rpm "build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}"
     elif [ ! -z "$(ls $RPMDIR/${A}-[0-9]*noarch.rpm)" ]; then
-      cp -pv ${RPMDIR}/${A}-[0-9]*noarch.rpm "../../../build/devkit/${VERSION}/build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}"
+      cp -pv ${RPMDIR}/${A}-[0-9]*noarch.rpm "build/devkit/download/rpms/s390x-linux-gnu-Centos${BASE_OS_VERSION}"
     fi
   done
   # Temporary fudge to use Centos logic until we adjust Tools.gmk
@@ -66,10 +66,18 @@ cd make/devkit && pwd && make TARGETS=${devkit_target} BASE_OS=${BASE_OS} BASE_O
 # Move "bootstrap" devkit toolchain to a new folder and setup gcc toolchain to point at it
 cd ../..
 BOOTSTRAP_DEVKIT="$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}"
-mv build/devkit/result/${devkit_target}-to-${devkit_target} ${BOOTSTRAP_DEVKIT}
+BOOTSTRAP_DOWNLOADED_RPMS="$(pwd)/build/bootstrap_rpms_${devkit_target}-to-${devkit_target}"
+
+mv build/devkit/result/${devkit_target}-to-${devkit_target} "${BOOTSTRAP_DEVKIT}"
+mv build/devkit/download/rpms/${ARCH}-linux-gnu-Centos${BASE_OS_VERSION} "${BOOTSTRAP_DOWNLOADED_RPMS}"
 
 # Make final "DevKit" using the bootstrap devkit
 rm -rf build/devkit
+
+# Move saved bootstrap rpm downloads to final build folder
+mkdir -p build/devkit/download/rpms
+mv ${BOOTSTRAP_DOWNLOADED_RPMS} build/devkit/download/rpms/${ARCH}-linux-gnu-Centos${BASE_OS_VERSION}
+
 echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in ${BOOTSTRAP_DEVKIT}"
 cd make/devkit && pwd && \
   LD_LIBRARY_PATH="${BOOTSTRAP_DEVKIT}/lib64:${BOOTSTRAP_DEVKIT}/lib" \
