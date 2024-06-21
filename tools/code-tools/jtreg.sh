@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ###################################################################
-# Script to build jtreg test suite harness                        #
-# currently builds tip, 5.1, 6, 6.1, 7, 7.1.1, 7.2, 7.3, 7.3.1    #
+# Script to build jtreg test suite harness
+# currently builds tip, 5.1, 6, 6.1, 7, 7.1.1, 7.2, 7.3, 7.3.1, 7.4
 ###################################################################
 
 # shellcheck disable=SC2035,SC2116
@@ -17,6 +17,7 @@ readonly JTREG_7_1='jtreg-7.1.1+1'
 readonly JTREG_7_2='jtreg-7.2+1'
 readonly JTREG_7_3='jtreg-7.3+1'
 readonly JTREG_7_3_1='jtreg-7.3.1+1'
+readonly JTREG_7_4='jtreg-7.4+1'
 
 function checkJdks() {
   jvm_dir="/usr/lib/jvm/"
@@ -83,6 +84,10 @@ buildJTReg()
     elif [ "$1" == "$JTREG_7_3_1" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.3.1"
+      export JAVA_HOME=/usr/lib/jvm/jdk-11
+    elif [ "$1" == "$JTREG_7_4" ]; then
+      export JTREG_BUILD_NUMBER="1"
+      export BUILD_VERSION="7.4"
       export JAVA_HOME=/usr/lib/jvm/jdk-11
     fi
     git checkout $version
@@ -162,5 +167,6 @@ buildJTReg "$JTREG_7_1"
 buildJTReg "$JTREG_7_2"
 buildJTReg "$JTREG_7_3"
 buildJTReg "$JTREG_7_3_1"
+buildJTReg "$JTREG_7_4"
 buildJTReg
 echo '...finished with build process.'
