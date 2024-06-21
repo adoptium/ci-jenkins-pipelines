@@ -64,3 +64,5 @@ jobs:
           VALIDATE_DOCKERFILE_HADOLINT: false
           # checkov fails
           VALIDATE_CHECKOV: false
+          # isgnore shell formatting checker
+          VALIDATE_SHELL_SHFMT: false
