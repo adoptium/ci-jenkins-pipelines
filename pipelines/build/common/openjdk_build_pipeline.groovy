@@ -223,7 +223,7 @@ class Build {
             } else if (buildConfig.VARIANT == 'temurin') {
                 // jdk(head) now contains version branched stabilisation branches, eg.dev_jdk23
                 if (getJavaVersionNumber() >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u') && buildConfig.JAVA_TO_BUILD != "jdk") {
-                    jdkBranch = 'dev_'+getJavaVersionNumber()
+                    jdkBranch = 'dev_'+buildConfig.JAVA_TO_BUILD
                 } else {
                     jdkBranch = 'dev'
                 }
