@@ -974,7 +974,7 @@ class Builder implements Serializable {
                                             // Archive if any tap files were found
                                             if (context.fileExists("target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/AQAvitTaps/AQAvitTapFiles.tar.gz")) {
                                                 context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                                                    context.archiveArtifacts artifacts: "AQAvitTapFiles.tar.gz"
+                                                    context.archiveArtifacts artifacts: "target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}/AQAvitTaps/AQAvitTapFiles.tar.gz"
                                                 }
                                             } else {
                                                 context.println "No AQAvit tap files found to archive for target/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}"
