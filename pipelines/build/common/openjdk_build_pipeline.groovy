@@ -221,7 +221,12 @@ class Build {
             } else if (buildConfig.VARIANT == 'hotspot') {
                 jdkBranch = 'master'
             } else if (buildConfig.VARIANT == 'temurin') {
-                jdkBranch = 'dev'
+                // jdk(head) now contains version branched stabilisation branches, eg.dev_jdk23
+                if (getJavaVersionNumber() >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u') && buildConfig.JAVA_TO_BUILD != "jdk") {
+                    jdkBranch = 'dev_'+buildConfig.JAVA_TO_BUILD
+                } else {
+                    jdkBranch = 'dev'
+                }
             } else if (buildConfig.VARIANT == 'dragonwell') {
                 jdkBranch = 'master'
             } else if (buildConfig.VARIANT == 'fast_startup') {
@@ -264,7 +269,12 @@ class Build {
                 } else if (buildConfig.ARCHITECTURE == 'riscv64' && buildConfig.JAVA_TO_BUILD == 'jdk11u') {
                     suffix = 'adoptium/riscv-port-jdk11u'
                 } else {
-                    suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
+                    // jdk(head) repo now contains the version branched stabilisation branches, eg.dev_jdk23
+                    if (javaNumber >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u')) {
+                        suffix = "adoptium/jdk"
+                    } else {
+                        suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
+                    }
                 }
                 break
             case 'hotspot':
@@ -273,7 +283,12 @@ class Build {
                         || buildConfig.JAVA_TO_BUILD == "jdk11u")) {
                     suffix = "openjdk/riscv-port-${buildConfig.JAVA_TO_BUILD}";
                 } else {
-                    suffix = "openjdk/${buildConfig.JAVA_TO_BUILD}"
+                    // jdk(head) repo now contains the version branched stabilisation branches, eg.jdk23
+                    if (javaNumber >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u')) {
+                        suffix = "openjdk/jdk"
+                    } else {
+                        suffix = "openjdk/${buildConfig.JAVA_TO_BUILD}"
+                    }
                 }
                 break
             case 'dragonwell':
