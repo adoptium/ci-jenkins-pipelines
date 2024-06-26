@@ -35,7 +35,7 @@ class Config23 {
                         'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b02'
+                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
                 ]
         ],
 
@@ -97,7 +97,7 @@ class Config23 {
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit s390x-on-s390x.RH7'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
                 ]
         ],
 
@@ -110,7 +110,7 @@ class Config23 {
                         'openj9'      : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b02'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
                 ]
         ],
 
@@ -121,7 +121,7 @@ class Config23 {
                 test                : 'default',
                 configureArgs : '--enable-dtrace',
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.6.1810-b02'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.6.1810-b03'
                 ]
         ],
 
