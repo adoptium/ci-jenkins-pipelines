@@ -163,7 +163,7 @@ node('worker') {
                         disableJob          : false,
                         pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
                         adoptScripts        : false,
-                        releaseType         : 'Nightly' // enable upload even it is evaluation pipeline
+                        releaseType         : 'Nightly Without Publish'
                     ]
                 
                     /* logic of creating evaluation pipeline start*/
