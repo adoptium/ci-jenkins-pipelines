@@ -37,9 +37,10 @@ openjdkRepo="https://github.com/openjdk/${VERSION}.git"
 git clone --depth 1 ${openjdkRepo} ${VERSION}
 cd ${VERSION}
 
-# Patch to support Centos7
+# Patch to support Centos7, RHEL, and uname fix
 cp ../binutils-2.39.patch make/devkit/patches/${ARCH}-binutils-2.39.patch
 patch -p1 < ../Tools.gmk.patch
+patch -p1 < ../Makefile.patch
 
 devkit_target="${ARCH}-linux-gnu"
 
