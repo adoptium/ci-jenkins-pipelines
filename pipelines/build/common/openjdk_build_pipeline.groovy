@@ -2044,7 +2044,9 @@ class Build {
                                 }
                             }
                             // Store the pulled docker image digest as 'buildinfo'
-                            dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
+                            def long_docker_image_name = context.sh(script: "docker image ls | grep ${buildConfig.DOCKER_IMAGE} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
+                            context.sh(script: "docker tag '${long_docker_image_name}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
+                            dockerImageDigest = context.sh(script: "docker inspect --format='{{index .RepoDigests 0}}' ${long_docker_image_name}", returnStdout:true)
 
                             // Use our dockerfile if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {
@@ -2078,7 +2080,6 @@ class Build {
                                     )
                                 }
                             } else {
-                                dockerImageDigest = dockerImageDigest.replaceAll("\\[", "").replaceAll("\\]", "")
                                 String dockerRunArg="-e \"BUILDIMAGESHA=$dockerImageDigest\""
 
                                 // Are we running podman in Docker CLI Emulation mode?
