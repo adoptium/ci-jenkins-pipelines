@@ -1,0 +1,13 @@
+diff --git a/make/devkit/Makefile b/make/devkit/Makefile
+index c85a7c21d29..8f69d23c325 100644
+--- a/make/devkit/Makefile
++++ b/make/devkit/Makefile
+@@ -58,7 +58,7 @@
+ COMMA := ,
+ 
+ os := $(shell uname -o)
+-cpu := $(shell uname -p)
++cpu := $(shell uname -m)
+ 
+ # Figure out what platform this is building on.
+ me := $(cpu)-$(if $(findstring Linux,$(os)),linux-gnu)
