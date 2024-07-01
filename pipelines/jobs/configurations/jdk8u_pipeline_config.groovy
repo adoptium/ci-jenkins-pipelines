@@ -29,7 +29,7 @@ class Config8 {
                         'dragonwell'  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-source-archive --create-sbom'
+                        'temurin'   : '--create-source-archive --create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -40,7 +40,7 @@ class Config8 {
                 test                : 'default',
                 configureArgs       : '--disable-headful',
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -49,9 +49,12 @@ class Config8 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--disable-headful',
+                configureArgs       : [
+                        'openj9'    : '--disable-headful',
+                        'temurin'   : '--disable-headful --with-jobs=40'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -96,7 +99,7 @@ class Config8 {
                 ],
                 dockerImage         : 'rhel7_build_image',
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -124,7 +127,7 @@ class Config8 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -135,8 +138,11 @@ class Config8 {
                 dockerImage: 'adoptopenjdk/ubuntu1604_build_image',
                 dockerArgs: '--platform linux/arm/v7',
                 test: 'default',
+                configureArgs       : [ 
+                        'temurin'   : '--with-jobs=40'
+                ],    
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -148,8 +154,11 @@ class Config8 {
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell_aarch64.dockerfile'
                 ],
                 test                 : 'default',
+                configureArgs       : [
+                        'temurin'   : '--with-jobs=40'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
   ]

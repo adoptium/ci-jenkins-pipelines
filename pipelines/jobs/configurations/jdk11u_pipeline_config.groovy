@@ -35,7 +35,7 @@ class Config11 {
                         'bisheng'     : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server --disable-warnings-as-errors'
                 ],
                 buildArgs            : [
-                        'temurin'     : '--create-source-archive --create-sbom'
+                        'temurin'     : '--create-source-archive --create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -46,7 +46,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -55,9 +55,12 @@ class Config11 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-headless-only=yes',
+                configureArgs       : [
+                        'openj9'    : '--enable-headless-only=yes',
+                        'temurin'   : '--enable-headless-only=yes --with-jobs=40'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -104,7 +107,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : '--enable-dtrace=auto',
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -128,7 +131,7 @@ class Config11 {
                         'openj9'      : '--enable-dtrace=auto'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
 
         ],
@@ -151,9 +154,12 @@ class Config11 {
                 dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
                 dockerArgs          : '--platform linux/arm/v7',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace=auto',
+                configureArgs       : [
+                        'openj9'    : '--enable-dtrace=auto',
+                        'temurin'   : '--enable-dtrace=auto --with-jobs=40'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -169,14 +175,14 @@ class Config11 {
                         dragonwell: 'armv8.2'
                 ],
                 configureArgs       : [
-                        'temurin'   : '--enable-dtrace=auto',
+                        'temurin'   : '--enable-dtrace=auto --with-jobs=40',
                         'openj9'    : '--enable-dtrace=auto',
                         'corretto'  : '--enable-dtrace=auto',
                         'dragonwell': "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
                         'bisheng'   : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
