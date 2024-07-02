@@ -64,7 +64,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-headless-only=yes',
-                        'temurin'   : '--enable-headless-only=yes --with-jobs=40'
+                        'temurin'   : '--enable-headless-only=yes --with-jobs=16'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
@@ -142,7 +142,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
-                        'temurin'   : '--enable-dtrace --with-jobs=40'
+                        'temurin'   : '--enable-dtrace --with-jobs=16'
                 ],
                 reproducibleCompare : [
                         'temurin'   : true

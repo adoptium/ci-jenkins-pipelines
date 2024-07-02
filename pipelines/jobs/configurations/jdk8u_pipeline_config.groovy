@@ -51,7 +51,7 @@ class Config8 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--disable-headful',
-                        'temurin'   : '--disable-headful --with-jobs=40'
+                        'temurin'   : '--disable-headful --with-jobs=16'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
@@ -155,7 +155,7 @@ class Config8 {
                 ],
                 test                 : 'default',
                 configureArgs       : [
-                        'temurin'   : '--with-jobs=40'
+                        'temurin'   : '--with-jobs=16'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
