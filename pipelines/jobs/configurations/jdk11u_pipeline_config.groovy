@@ -156,7 +156,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace=auto',
-                        'temurin'   : '--enable-dtrace=auto --with-jobs=40'
+                        'temurin'   : '--enable-dtrace=auto --with-jobs=4'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'

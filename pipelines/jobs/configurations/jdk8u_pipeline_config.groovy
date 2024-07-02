@@ -139,7 +139,7 @@ class Config8 {
                 dockerArgs: '--platform linux/arm/v7',
                 test: 'default',
                 configureArgs       : [ 
-                        'temurin'   : '--with-jobs=40'
+                        'temurin'   : '--with-jobs=4'
                 ],    
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'

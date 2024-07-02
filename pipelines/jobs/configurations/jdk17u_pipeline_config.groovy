@@ -176,7 +176,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
-                        'temurin'   : '--enable-dtrace --with-jobs=40'
+                        'temurin'   : '--enable-dtrace --with-jobs=4'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
