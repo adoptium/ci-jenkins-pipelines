@@ -190,14 +190,14 @@ node('worker') {
     }
 
     // Load buildConfigFilePath. This is where jdkxx_pipeline_config.groovy is located. It contains the build configurations for each platform, architecture and variant.
-    def buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
+    def buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}u_pipeline_config.groovy"
 
     // Check if pipeline is jdk11 or jdk11u
     def configPath =  "${WORKSPACE}/${buildConfigFilePath}"
     if (fileExists(configPath)) {
+        javaToBuild = (params.buildConfigFilePath) ? "${javaToBuild}" : "${javaToBuild}u"
         println "Found ${buildConfigFilePath}"
     } else {
-        javaToBuild = "${javaToBuild}u"
         buildConfigFilePath = (params.buildConfigFilePath) ?: "${DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
     }
 
@@ -212,11 +212,11 @@ node('worker') {
         javaToBuild = javaToBuild.replaceAll('u', '')
 
         // Check if pipeline is jdk11 or jdk11u
-        configPath =  "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
+        configPath =  "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}u_pipeline_config.groovy"
         if (fileExists(configPath)) {
+            javaToBuild = "${javaToBuild}u"
             buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
         } else {
-            javaToBuild = "${javaToBuild}u"
             buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
         }
         checkout scm
