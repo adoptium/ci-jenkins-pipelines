@@ -57,7 +57,7 @@ class Config22 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-headless-only=yes',
-                        'temurin'   : '--enable-headless-only=yes --with-jobs=16'
+                        'temurin'   : '--enable-headless-only=yes --with-jobs=4'
                 ],  
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
@@ -124,7 +124,7 @@ class Config22 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
-                        'temurin'   : '--enable-dtrace --with-jobs=16'
+                        'temurin'   : '--enable-dtrace --with-jobs=4'
                 ],  
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.6.1810-b03'

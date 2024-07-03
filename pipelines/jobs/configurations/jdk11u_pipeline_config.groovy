@@ -60,7 +60,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-headless-only=yes',
-                        'temurin'   : '--enable-headless-only=yes --disable-ccache --with-jobs=16'
+                        'temurin'   : '--enable-headless-only=yes --disable-ccache --with-jobs=4'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
@@ -193,7 +193,7 @@ class Config11 {
                         dragonwell: 'armv8.2'
                 ],
                 configureArgs       : [
-                        'temurin'   : '--enable-dtrace=auto --disable-ccache --with-jobs=16',
+                        'temurin'   : '--enable-dtrace=auto --disable-ccache --with-jobs=4',
                         'openj9'    : '--enable-dtrace=auto',
                         'corretto'  : '--enable-dtrace=auto',
                         'dragonwell': "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",

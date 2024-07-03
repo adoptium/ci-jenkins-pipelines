@@ -58,7 +58,7 @@ class Config8 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--disable-headful',
-                        'temurin'   : '--disable-headful --disable-ccache --with-jobs=16'
+                        'temurin'   : '--disable-headful --disable-ccache --with-jobs=4'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
@@ -183,7 +183,7 @@ class Config8 {
                 ],
                 test                 : 'default',
                 configureArgs       : [
-                        'temurin'   : '--disable-ccache --with-jobs=16'
+                        'temurin'   : '--disable-ccache --with-jobs=4'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
