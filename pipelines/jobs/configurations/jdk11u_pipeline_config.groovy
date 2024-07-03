@@ -8,7 +8,7 @@ class Config11 {
                 additionalNodeLabels: 'xcode15.0.1',
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto --with-cmake',
-                        'temurin'     : '--enable-dtrace=auto'
+                        'temurin'     : '--enable-dtrace=auto --disable-ccache'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -27,7 +27,7 @@ class Config11 {
                 ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto',
-                        'temurin'     : '--enable-dtrace=auto',
+                        'temurin'     : '--enable-dtrace=auto --disable-ccache',
                         'corretto'    : '--enable-dtrace=auto',
                         'SapMachine'  : '--enable-dtrace=auto',
                         'dragonwell'  : '--enable-dtrace=auto --enable-unlimited-crypto --with-jvm-variants=server --with-zlib=system --with-jvm-features=zgc',
@@ -44,7 +44,10 @@ class Config11 {
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-headless-only=yes',
+                configureArgs       : [
+                        'openj9'    : '--enable-headless-only=yes',
+                        'temurin'   : '--enable-headless-only=yes --disable-ccache'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
@@ -57,7 +60,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-headless-only=yes',
-                        'temurin'   : '--enable-headless-only=yes --with-jobs=16'
+                        'temurin'   : '--enable-headless-only=yes --disable-ccache --with-jobs=16'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
@@ -72,8 +75,11 @@ class Config11 {
                         openj9:     'win2012&&vs2017',
                         dragonwell: 'win2012'
                 ],
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs : [
-                        temurin : '--jvm-variant client,server --create-sbom'
+                        'temurin' : '--jvm-variant client,server --create-sbom'
                 ],
                 test                : 'default'
         ],
@@ -82,8 +88,11 @@ class Config11 {
                 os                  : 'windows',
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2022&&vs2019',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs : [
-                        temurin : '--jvm-variant client,server --create-sbom'
+                        'temurin' : '--jvm-variant client,server --create-sbom'
                 ],
                 test                : 'default'
         ],
@@ -95,6 +104,9 @@ class Config11 {
                 test                : 'default',
                 additionalTestLabels: 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -105,7 +117,10 @@ class Config11 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace=auto',
+                configureArgs       : [
+                        'openj9'    : '--enable-dtrace=auto',
+                        'temurin'   : '--enable-dtrace=auto --disable-ccache'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
@@ -115,7 +130,10 @@ class Config11 {
                 os                  : 'solaris',
                 arch                : 'sparcv9',
                 test                : false,
-                configureArgs       : '--enable-dtrace=auto',
+                configureArgs       : [
+                        'openj9'    : '--enable-dtrace=auto',
+                        'temurin'   : '--enable-dtrace=auto --disable-ccache'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -127,7 +145,7 @@ class Config11 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
-                        'temurin'     : '--enable-dtrace=auto',
+                        'temurin'     : '--enable-dtrace=auto --disable-ccache',
                         'openj9'      : '--enable-dtrace=auto'
                 ],
                 buildArgs           : [
@@ -156,7 +174,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace=auto',
-                        'temurin'   : '--enable-dtrace=auto --with-jobs=4'
+                        'temurin'   : '--enable-dtrace=auto --disable-ccache --with-jobs=4'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
@@ -175,7 +193,7 @@ class Config11 {
                         dragonwell: 'armv8.2'
                 ],
                 configureArgs       : [
-                        'temurin'   : '--enable-dtrace=auto --with-jobs=16',
+                        'temurin'   : '--enable-dtrace=auto --disable-ccache --with-jobs=16',
                         'openj9'    : '--enable-dtrace=auto',
                         'corretto'  : '--enable-dtrace=auto',
                         'dragonwell': "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
@@ -231,6 +249,9 @@ class Config11 {
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ], 
                 buildArgs       : [
                         'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile'
                 ]
