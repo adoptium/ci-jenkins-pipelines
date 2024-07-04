@@ -2081,7 +2081,7 @@ class Build {
                                 }
                             } else {
                                 dockerImageDigest = dockerImageDigest.replaceAll("\\[", "").replaceAll("\\]", "")
-                                String dockerRunArg="-e \"BUILDIMAGESHA=$dockerImageDigest\""
+                                String dockerRunArg="-e \"BUILDIMAGESHA=$dockerImageDigest\" --init"
 
                                 // Are we running podman in Docker CLI Emulation mode?
                                 def isPodman = context.sh(script: "docker --version | grep podman", returnStatus:true)
