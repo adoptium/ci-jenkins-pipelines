@@ -318,7 +318,7 @@ class Build {
     def setStageResult(String stage, String result) {
         if (result != "SUCCESS") {
             // Use catchError to issue error message and set build & stage result
-            catchError(buildResult: result, stageResult: result) {
+            context.catchError(buildResult: result, stageResult: result) {
                 context.error("${stage} not successful, setting stage result to: "+result)
             }
         } else {
