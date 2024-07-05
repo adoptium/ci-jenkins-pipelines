@@ -1862,6 +1862,8 @@ class Build {
                                     context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
                                     context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/devkit'
                                     context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
+                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/straceOutput'
+                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'

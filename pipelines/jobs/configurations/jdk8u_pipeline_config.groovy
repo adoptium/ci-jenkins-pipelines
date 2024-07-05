@@ -9,6 +9,9 @@ class Config8 {
                         openj9  : 'macos10.14'
                 ],
                 test                 : 'default',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -27,9 +30,10 @@ class Config8 {
                 ],
                 configureArgs       : [
                         'dragonwell'  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
+                        'temurin'     : '--disable-ccache'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-source-archive --create-sbom'
+                        'temurin'   : '--create-source-archive --create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -38,9 +42,12 @@ class Config8 {
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--disable-headful',
+                configureArgs       : [
+                        'openj9'    : '--disable-headful',
+                        'temurin'   : '--disable-headful --disable-ccache'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -49,9 +56,12 @@ class Config8 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--disable-headful',
+                configureArgs       : [
+                        'openj9'    : '--disable-headful',
+                        'temurin'   : '--disable-headful --disable-ccache --with-jobs=4'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -60,6 +70,9 @@ class Config8 {
                 arch                : 'x64',
                 additionalNodeLabels: 'win2022&&vs2017',
                 test                 : 'default',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -69,6 +82,9 @@ class Config8 {
                 os                  : 'windows',
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2022',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs : [
                         temurin : '--jvm-variant client,server --create-sbom'
                 ],
@@ -82,6 +98,9 @@ class Config8 {
                 test                 : 'default',
                 additionalTestLabels : 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -95,8 +114,11 @@ class Config8 {
                         openj9: 'default'
                 ],
                 dockerImage         : 'rhel7_build_image',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -104,6 +126,9 @@ class Config8 {
                 os  : 'solaris',
                 arch: 'sparcv9',
                 test: 'default',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -113,6 +138,9 @@ class Config8 {
                 os                  : 'solaris',
                 arch                : 'x64',
                 test                : 'default',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]
@@ -123,8 +151,11 @@ class Config8 {
                 arch: 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -135,8 +166,11 @@ class Config8 {
                 dockerImage: 'adoptopenjdk/ubuntu1604_build_image',
                 dockerArgs: '--platform linux/arm/v7',
                 test: 'default',
+                configureArgs       : [ 
+                        'temurin'   : '--disable-ccache --with-jobs=4'
+                ],    
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -148,8 +182,11 @@ class Config8 {
                         dragonwell: 'pipelines/build/dockerFiles/dragonwell_aarch64.dockerfile'
                 ],
                 test                 : 'default',
+                configureArgs       : [
+                        'temurin'   : '--disable-ccache --with-jobs=4'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
         ],
   ]

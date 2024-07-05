@@ -35,7 +35,7 @@ class Config24 {
                         'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
+                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
                 ]
         ],
 
@@ -46,7 +46,7 @@ class Config24 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -55,9 +55,12 @@ class Config24 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-headless-only=yes',
+                configureArgs       : [
+                        'openj9'    : '--enable-headless-only=yes',
+                        'temurin'   : '--enable-headless-only=yes --with-jobs=4'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
         ],
 
@@ -97,7 +100,7 @@ class Config24 {
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
                 ]
         ],
 
@@ -110,7 +113,7 @@ class Config24 {
                         'openj9'      : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
                 ]
         ],
 
@@ -119,9 +122,12 @@ class Config24 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                configureArgs : '--enable-dtrace',
+                configureArgs       : [
+                        'openj9'    : '--enable-dtrace',
+                        'temurin'   : '--enable-dtrace --with-jobs=4'
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-11.3.0-Centos7.6.1810-b03'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.6.1810-b03'
                 ]
         ],
 
