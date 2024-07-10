@@ -2188,7 +2188,7 @@ class Build {
                                 } else {
                                     platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
                                 }           
-                                if ( !(platform  == 'riscv64_linux' || platform =='aarch64_windows') ) {
+                                if ( !(platform =='aarch64_windows') ) {
                                     if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
                                         context.echo "Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
                                         def remoteTargets = remoteTriggerJckTests(platform, filename)
