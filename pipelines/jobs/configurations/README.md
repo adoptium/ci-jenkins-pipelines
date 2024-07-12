@@ -1,6 +1,6 @@
-## Configuration Files used by the build job generators
+# Configuration Files used by the build job generators
 
-*Note: The contents of this file was split out from the top level README.md in this repository*
+Note: The contents of this file was split out from the top level README.md in this repository
 
 The [pipelines/jobs/configurations](pipelines/jobs/configurations) directory contains two categories of configuration files that our jenkins pipelines use (Nicknamed [#Build Configs](#build) and [#Nightly Configs](#nightly) for short).
 
@@ -45,7 +45,7 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 | os                         | &#9989;   | `String`                                    | Operating system tag that will identify the job on jenkins and determine which platforms configs to pull from temurin-build.<br>*E.g. `windows`, `solaris`* |
 | arch                       | &#9989;   | `String`                                    | Architecture tag that will identify the job on jenkins and determine which build params to use.<br>*E.g. `x64`, `sparcv9`, `x86-32`* |
 | test                       | &#10060;  | `String`<br>**OR**<br>`Map<String, List>`<br>**OR**<br>`Map<String, List or Map<String, List>>`   | Case one: Tests to run against the binary after the build has completed. A `default` tag indicates that you want to run [whatever the default test nightly/release list is](https://github.com/adoptium/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/build/common/build_base_file.groovy#L66-L88).<br><br>Case two: You can also [specify your own list for that particular platform (not variant)](https://github.com/adoptium/ci-jenkins-pipelines/blob/ab947ce6ab0ecd75ebfb95eb2f75facb83e4dc13/pipelines/jobs/configurations/jdk16_pipeline_config.groovy#L59-L64). <br><br>Case three: Or you can even [specify the list for that particular platform per variant](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk8u_pipeline_config.groovy#L78-L81). The list could be specific one `sanity.openjdk` or `default` (similar to the first case) or a map per nightly or release (similar to case two). |
-| testDynamic                | &#10060;  | `Boolean`<br>**OR**<br>`Map<String, ?>`     | PARALLEL=Dynamic parameter setting. False : no Parallel. Or you can set the parameters with or without variant.
+| testDynamic                | &#10060;  | `Boolean`<br>**OR**<br>`Map<String, ?>`     | PARALLEL=Dynamic parameter setting. False : no Parallel. Or you can set the parameters with or without variant. |
 | dockerImage                | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Builds the JDK inside a docker container. Should be a DockerHub identifier to pull from in case **dockerFile** is not specified.<br>*E.g. `adoptopenjdk/centos6_build_image`* |
 | dockerFile                 | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Builds the JDK inside a docker container using the locally stored image file. Used in conjunction with **dockerImage** to specify a particular variant to build or pull.<br>*E.g. `pipelines/build/dockerFiles/cuda.dockerfile`* |
 | dockerNode                 | &#10060;  | `String`<br>**OR**<br>`Map<String, String>` | Specifies a specific jenkins docker node label to shift into to build the JDK.<br> *E.g. `sw.config.uid1000`* |
@@ -189,4 +189,3 @@ weekly_evaluation_scmReferences== [
         "dragonwell"     : ""
 ]
 ```
-
