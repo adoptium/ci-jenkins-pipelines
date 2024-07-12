@@ -7,7 +7,7 @@ Eclipse Adoptium makes use of these scripts to build binaries on the build farm 
 
 This repository contains several useful scripts in order to build OpenJDK
 personally or at build farm scale via jenkins. For the Temurin project at
-Adoptium, this is done with the jenkins instance at https://ci.adoptium.net
+Adoptium, this is done with the jenkins instance at [ci.adoptium.net](https://ci.adoptium.net)
 
 1. The `docs` folder contains images and utility scripts to produce up to date
 documentation.
@@ -49,13 +49,13 @@ The betaTrigger_XXea jobs use
 [trigger_beta_build.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/common/trigger_beta_build.groovy)
 to determine when to run a build. This contains a trap for the expected GA
 release times to prevent triggering so that machine time is not used up
-while we are performing release build and test cycles. 
+while we are performing release build and test cycles.
 
 Once complete, the openjdkXX-pipelines which will, by default, invoke the
 separate
 ([refactor_openjdk_release_tool](https://ci.adoptium.net/job/build-scripts/job/release/job/refactor_openjdk_release_tool/))
-job which will publish them as an `ea-beta`-suffixed release in github  under e.g. 
-[temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true}). 
+job which will publish them as an `ea-beta`-suffixed release in github  under e.g.
+[temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true}).
 
 ### release-openjdkXX-pipeline
 
@@ -77,6 +77,7 @@ using the readExpectedGATag function in
 [common.sh](https://github.com/adoptium/mirror-scripts/blob/master/common.sh)
 
 A couple of points to note on the release configurations:
+
 - [jdk8u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk8u_release.groovy),
   [jdk11u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk11u_release.groovy)
   and [jdk17u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk11u_release.groovy)
@@ -87,6 +88,7 @@ A couple of points to note on the release configurations:
   does not include arm32, since that is built from a separate codebase and
   is tagged separately so cannot generally be triggered alongside the main
   builds.
+
 ### evaluation-openjdkXX-pipeline
 
 These are similar to the openjdkXX-pipeline jobs, and are triggered from the
