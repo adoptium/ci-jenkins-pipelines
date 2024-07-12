@@ -169,11 +169,11 @@ pipeline {
                             }
                             if (rc != 0) {
                                 currentBuild.result = 'UNSTABLE'
-                                echo 'Differences found: two builds are not the same! Please see the archived repro_diff.out.'
+                                echo 'Differences found: two builds are not the same! Please see the archived reprotest.diff.'
                             } else {
                                 echo 'Success: two builds are the same!'
                             }
-                            archiveArtifacts artifacts: "**/repro_diff.out"
+                            archiveArtifacts artifacts: "**/reprotest.diff"
                         }
                     } catch (Exception err) {
                         echo err.getMessage()
