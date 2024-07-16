@@ -177,7 +177,7 @@ class Config11 {
                         'temurin'   : '--enable-dtrace=auto --disable-ccache --with-jobs=4'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom --enable-sbom-strace'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
