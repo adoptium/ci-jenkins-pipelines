@@ -86,7 +86,7 @@ def getLatestOpenjdkBuildTag(String version) {
         tagFilter = "| grep 'jdk-"+versionInt+"[\\.\\+]'"
     }
 
-    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\-ga' ${tagFilter} | sort -V -r | head -1 | tr -d '\\n'")
+    def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\+0' | grep -v '\\-b00' | grep -v '\\-ga' ${tagFilter} | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest upstream openjdk/${version} tag = ${latestTag}"
 
     return latestTag
