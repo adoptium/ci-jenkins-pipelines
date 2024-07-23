@@ -2056,6 +2056,8 @@ class Build {
                                                     context.docker.image(buildConfig.DOCKER_IMAGE).pull()
                                                 }
                                             }
+                                            def long_docker_image_name = context.sh(script: "docker image ls | grep ${buildConfig.DOCKER_IMAGE} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
+                                            context.sh(script: "docker tag '${long_docker_image_name}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
                                         } else {
                                             if (buildConfig.DOCKER_ARGS) {
                                                 context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
@@ -2069,8 +2071,6 @@ class Build {
                                 }
                             }
                             // Store the pulled docker image digest as 'buildinfo'
-                            def long_docker_image_name = context.sh(script: "docker image ls | grep ${buildConfig.DOCKER_IMAGE} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
-                            context.sh(script: "docker tag '${long_docker_image_name}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
                             dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
 
                             // Use our dockerfile if DOCKER_FILE is defined
