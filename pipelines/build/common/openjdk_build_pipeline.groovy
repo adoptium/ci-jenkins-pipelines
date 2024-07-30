@@ -1522,7 +1522,7 @@ class Build {
             def openjdk_build_dir
             def openjdk_build_dir_arg
 
-            # Build as default within OpenJDK src tree, necessary for Windows reproducible builds, due to relative paths
+            // Build as default within OpenJDK src tree, necessary for Windows reproducible builds, due to relative paths
             build_path = 'workspace/build/src/build'
             openjdk_build_dir =  context.WORKSPACE + '/' + build_path
             openjdk_build_dir_arg = ""
