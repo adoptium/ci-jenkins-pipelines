@@ -1522,17 +1522,10 @@ class Build {
             def openjdk_build_dir
             def openjdk_build_dir_arg
 
-            if (getJavaVersionNumber() >= 21) {
-                // For reproducible jdk-21+ builds ensure not to build within the openjdk source folder
-                // so that debug symbols can be reproducibly mapped (https://bugs.openjdk.org/browse/JDK-8326685)
-                build_path = 'workspace/build/openjdkbuild'
-                openjdk_build_dir =  context.WORKSPACE + '/' + build_path
-                openjdk_build_dir_arg = " --user-openjdk-build-root-directory ${openjdk_build_dir}"
-            } else {
-                build_path = 'workspace/build/src/build'
-                openjdk_build_dir =  context.WORKSPACE + '/' + build_path
-                openjdk_build_dir_arg = ""
-            }
+            # Build as default within OpenJDK src tree, necessary for Windows reproducible builds, due to relative paths
+            build_path = 'workspace/build/src/build'
+            openjdk_build_dir =  context.WORKSPACE + '/' + build_path
+            openjdk_build_dir_arg = ""
 
             if (cleanWorkspace) {
                 try {
