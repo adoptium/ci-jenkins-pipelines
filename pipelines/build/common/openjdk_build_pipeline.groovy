@@ -2204,7 +2204,7 @@ class Build {
 
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
-                  if (currentBuild.result != "SUCCESS") {
+                  if (currentBuild.currentResult != "SUCCESS") {
                     context.println("[ERROR] Build stages were not successful, not running AQA tests")
                   } else {
                     try {
