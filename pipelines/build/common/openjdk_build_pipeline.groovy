@@ -2170,8 +2170,43 @@ class Build {
                     }
                 }
 
+                //buildInstaller if needed
+                if (enableInstallers) {
+                    try {
+                        // Installer job timeout managed by Jenkins job config
+                        buildInstaller(versionInfo)
+                        signInstaller(versionInfo)
+                    } catch (FlowInterruptedException e) {
+                        currentBuild.result = 'FAILURE'
+                        throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
+                    }
+                }
+                if (!env.JOB_NAME.contains('pr-tester') && context.JENKINS_URL.contains('adopt')) {
+                    try {
+                        gpgSign()
+                    } catch (Exception e) {
+                        context.println(e.message)
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+
+                if (!env.JOB_NAME.contains('pr-tester')) { // pr-tester does not sign the binaries
+                    // Verify Windows and Mac Signing for Temurin
+                    if (buildConfig.VARIANT == 'temurin') {
+                        try {
+                            verifySigning()
+                        } catch (Exception e) {
+                            context.println(e.message)
+                            currentBuild.result = 'FAILURE'
+                        }
+                    }
+                }
+
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
+                  if (currentBuild.result != "SUCCESS") {
+                    context.println("[ERROR] Build stages were not successful, not running AQA tests")
+                  } else {
                     try {
                         //Only smoke tests succeed TCK and AQA tests will be triggerred.
                         if (runSmokeTests() == 'SUCCESS') {
@@ -2203,37 +2238,7 @@ class Build {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
                     }
-                }
-
-                //buildInstaller if needed
-                if (enableInstallers) {
-                    try {
-                        // Installer job timeout managed by Jenkins job config
-                        buildInstaller(versionInfo)
-                        signInstaller(versionInfo)
-                    } catch (FlowInterruptedException e) {
-                        throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
-                    }
-                }
-                if (!env.JOB_NAME.contains('pr-tester') && context.JENKINS_URL.contains('adopt')) {
-                    try {
-                        gpgSign()
-                    } catch (Exception e) {
-                        context.println(e.message)
-                        currentBuild.result = 'FAILURE'
-                    }
-                }
-
-                if (!env.JOB_NAME.contains('pr-tester')) { // pr-tester does not sign the binaries
-                    // Verify Windows and Mac Signing for Temurin
-                    if (buildConfig.VARIANT == 'temurin') {
-                        try {
-                            verifySigning()
-                        } catch (Exception e) {
-                            context.println(e.message)
-                            currentBuild.result = 'FAILURE'
-                        }
-                    }
+                  }
                 }
 
                 // Compare reproducible build if needed
