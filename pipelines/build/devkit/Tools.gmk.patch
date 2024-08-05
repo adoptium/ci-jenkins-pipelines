@@ -2,7 +2,7 @@ diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
 index 187320ca2..9f1454d5e 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
-@@ -62,6 +62,23 @@ ifeq ($(BASE_OS), OL)
+@@ -62,6 +62,19 @@ ifeq ($(BASE_OS), OL)
      BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
      LINUX_VERSION := OL6.4
    endif
@@ -12,11 +12,7 @@ index 187320ca2..9f1454d5e 100644
 +    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
 +  endif
 +  BASE_OS_MAJOR_VERSION := $(shell echo $(BASE_OS_VERSION) | cut -d'.' -f1)
-+  ifeq ($(BASE_OS_VERSION),7.9.2009)
-+     CENTOS_MIRROR := mirror.centos.org
-+  else
-+     CENTOS_MIRROR := vault.centos.org
-+  endif
++  CENTOS_MIRROR := vault.centos.org
 +  ifeq ($(ARCH), x86_64)
 +    BASE_URL := http://$(CENTOS_MIRROR)/centos/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
 +  else
@@ -34,11 +30,12 @@ index 187320ca2..9f1454d5e 100644
    LINUX_VERSION := Fedora_$(BASE_OS_VERSION)
  else
    $(error Unknown base OS $(BASE_OS))
-@@ -95,16 +113,38 @@ endif
+@@ -95,16 +113,39 @@ endif
  ##########################################################################################
  # Define external dependencies
  
 +# Centos GPG KEYS
++Centos_7_GPG_KEY_noarch := 6341AB2753D78A78A7C27BB124C6A8A7F4A80EB5  #gitleaks:allow
 +Centos_7_GPG_KEY_aarch64 := EF8F3CA66EFDF32B36CDADF76C7CB6EF305D49D6 #gitleaks:allow
 +Centos_7_GPG_KEY_x86_64 := 6341AB2753D78A78A7C27BB124C6A8A7F4A80EB5  #gitleaks:allow
 +Centos_7_GPG_KEY_ppc64le := BAFA3436FC50768E3C3C2E4EA963BBDBF533F4FA #gitleaks:allow
@@ -73,7 +70,7 @@ index 187320ca2..9f1454d5e 100644
    REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
  else ifeq ($(GCC_VER), 11.2.0)
    gcc_ver := gcc-11.2.0
-@@ -246,7 +286,13 @@ download-rpms:
+@@ -246,7 +287,17 @@ download-rpms:
          # Only run this if rpm dir is empty.
          ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
  	  cd $(DOWNLOAD_RPMS) && \
@@ -81,14 +78,18 @@ index 187320ca2..9f1454d5e 100644
 +	    wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
 +	  gpg --keyserver keyserver.ubuntu.com --recv-keys \
 +	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH))
++	  gpg --keyserver keyserver.ubuntu.com --recv-keys \
++	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_noarch)
 +	  rm -f $(DOWNLOAD_RPMS)/rpm.sig && gpg --armor --export \
 +	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH)) > $(DOWNLOAD_RPMS)/rpm.sig
++	  gpg --armor --export \
++	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_noarch) >> $(DOWNLOAD_RPMS)/rpm.sig
 +	  rpm --import $(DOWNLOAD_RPMS)/rpm.sig || true
 +	  rpm -K $(DOWNLOAD_RPMS)/*.rpm
          endif
  
  ##########################################################################################
-@@ -271,6 +317,14 @@ define Download
+@@ -271,6 +322,14 @@ define Download
  
    $$($(1)_FILE) :
  	wget -P $(DOWNLOAD) $$($(1))
@@ -103,7 +104,7 @@ index 187320ca2..9f1454d5e 100644
  endef
  
  # Download and unpack all source packages
-@@ -323,6 +377,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
+@@ -323,6 +382,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
  # have it anyway, but just to make sure...
  # Patch libc.so and libpthread.so to force linking against libraries in sysroot
  # and not the ones installed on the build machine.
@@ -113,7 +114,7 @@ index 187320ca2..9f1454d5e 100644
  $(libs) : $(rpms)
  	@echo Patching libc and pthreads
  	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-@@ -332,6 +389,7 @@ $(libs) : $(rpms)
+@@ -332,6 +394,7 @@ $(libs) : $(rpms)
  	      -e 's|/lib/||g' ) > $$f.tmp ; \
  	  mv $$f.tmp $$f ; \
  	done)
@@ -121,7 +122,7 @@ index 187320ca2..9f1454d5e 100644
  	@mkdir -p $(SYSROOT)/usr/lib
  	@touch $@
  
-@@ -440,6 +498,9 @@ endif
+@@ -440,6 +503,9 @@ endif
  
  # Makefile creation. Simply run configure in build dir.
  # Setting CFLAGS to -O2 generates a much faster ld.
@@ -131,7 +132,7 @@ index 187320ca2..9f1454d5e 100644
  $(bfdmakes) \
  $(BUILDDIR)/$(binutils_ver)/Makefile \
      : $(BINUTILS_CFG)
-@@ -454,6 +515,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
+@@ -454,6 +520,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
  	      --with-sysroot=$(SYSROOT) \
  	      --disable-nls \
  	      --program-prefix=$(TARGET)- \
