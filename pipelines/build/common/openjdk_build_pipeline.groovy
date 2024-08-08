@@ -1586,6 +1586,9 @@ class Build {
 
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
+                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                        context.sh(script: 'git config --global safe.directory $(cygpath ${WORKSPACE})')
+                    }
                     context.sh(script: 'git clean -fdx')
 
                     printGitRepoInfo()
