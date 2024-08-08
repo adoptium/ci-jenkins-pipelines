@@ -127,7 +127,13 @@ class Builder implements Serializable {
         if (additionalBuildArgs) {
             buildArgs += ' ' + additionalBuildArgs
         }
-        def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
+
+        def configEnableReproducibleCompare = false
+        if (enableReproducibleCompare) {
+            // Pipeline parameter "enableReproducibleCompare" requests reproducibleCompare if enabled for this platform
+            configEnableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
+        }
+
         def testList = getTestList(platformConfig, variant)
 
         def dynamicTestsParameters = getDynamicParams(platformConfig, variant)
@@ -154,7 +160,7 @@ class Builder implements Serializable {
             adjustedScmReference = scmReference - ('_adopt')
         }
 
-context.echo "enableReproducibleCompare = "+enableReproducibleCompare
+context.echo "enableReproducibleCompare = "+configEnableReproducibleCompare
         return new IndividualBuildConfig(
             JAVA_TO_BUILD: javaToBuild,
             ARCHITECTURE: platformConfig.arch as String,
@@ -191,7 +197,7 @@ context.echo "enableReproducibleCompare = "+enableReproducibleCompare
             WEEKLY: isWeekly,
             PUBLISH_NAME: publishName,
             ADOPT_BUILD_NUMBER: adoptBuildNumber,
-            ENABLE_REPRODUCIBLE_COMPARE: enableReproducibleCompare,
+            ENABLE_REPRODUCIBLE_COMPARE: configEnableReproducibleCompare,
             ENABLE_TESTS: enableTests,
             ENABLE_TESTDYNAMICPARALLEL: enableTestDynamicParallel,
             ENABLE_INSTALLERS: enableInstallers,
