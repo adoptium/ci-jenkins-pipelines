@@ -897,7 +897,7 @@ class Builder implements Serializable {
                         context.stage(configuration.key) {
                             // Triggering downstream job ${downstreamJobName}
 
-context.echo "config = ${config}"
+context.echo "config.enableReproducibleCompare = "+config.enableReproducibleCompare
                             def buildJobParams = config.toBuildParams()
 context.echo "buildJobParams = ${buildJobParams}"
 
