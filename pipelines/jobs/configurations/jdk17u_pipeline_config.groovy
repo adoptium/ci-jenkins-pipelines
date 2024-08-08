@@ -9,9 +9,6 @@ class Config17 {
                         openj9      : '!sw.os.osx.10_11'
                 ],
                 test                : 'default',
-                reproducibleCompare : [
-                        'temurin'   : true
-                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -30,9 +27,6 @@ class Config17 {
                 ],
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
-                ],
-                reproducibleCompare : [
-                        'temurin'   : true
                 ],
                 additionalTestLabels: [
                         openj9      : '!(centos6||rhel6)'
@@ -76,9 +70,6 @@ class Config17 {
                 arch                : 'x64',
                 additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
-                reproducibleCompare : [
-                        'temurin'   : true
-                ],
                 configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22000.0/ucrt/DLLs/x64'",
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -113,9 +104,6 @@ class Config17 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
-                reproducibleCompare : [
-                        'temurin'   : true
-                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
@@ -127,9 +115,6 @@ class Config17 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
-                reproducibleCompare : [
-                        'temurin'   : true
-                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
@@ -144,9 +129,6 @@ class Config17 {
                         'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace --with-jobs=4'
                 ],
-                reproducibleCompare : [
-                        'temurin'   : true
-                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
@@ -158,9 +140,6 @@ class Config17 {
                 arch                : 'aarch64',
                 additionalNodeLabels: 'xcode15.0.1',
                 test                : 'default',
-                reproducibleCompare : [
-                        'temurin'   : true
-                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
