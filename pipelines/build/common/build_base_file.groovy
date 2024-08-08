@@ -154,6 +154,7 @@ class Builder implements Serializable {
             adjustedScmReference = scmReference - ('_adopt')
         }
 
+context.echo "enableReproducibleCompare = "+enableReproducibleCompare
         return new IndividualBuildConfig(
             JAVA_TO_BUILD: javaToBuild,
             ARCHITECTURE: platformConfig.arch as String,
@@ -897,7 +898,6 @@ class Builder implements Serializable {
                         context.stage(configuration.key) {
                             // Triggering downstream job ${downstreamJobName}
 
-context.echo "config.enableReproducibleCompare = "+config.enableReproducibleCompare
                             def buildJobParams = config.toBuildParams()
 context.echo "buildJobParams = ${buildJobParams}"
 
