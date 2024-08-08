@@ -160,7 +160,6 @@ class Builder implements Serializable {
             adjustedScmReference = scmReference - ('_adopt')
         }
 
-context.echo "enableReproducibleCompare = "+configEnableReproducibleCompare
         return new IndividualBuildConfig(
             JAVA_TO_BUILD: javaToBuild,
             ARCHITECTURE: platformConfig.arch as String,
@@ -905,7 +904,6 @@ context.echo "enableReproducibleCompare = "+configEnableReproducibleCompare
                             // Triggering downstream job ${downstreamJobName}
 
                             def buildJobParams = config.toBuildParams()
-context.echo "buildJobParams = ${buildJobParams}"
 
                             // Pass down constructed USER_REMOTE_CONFIGS if useAdoptShellScripts is false
                             // But not for pr-tester as it generates target jobs with required remoteConfigs
