@@ -897,7 +897,9 @@ class Builder implements Serializable {
                         context.stage(configuration.key) {
                             // Triggering downstream job ${downstreamJobName}
 
+context.echo "config = ${config}"
                             def buildJobParams = config.toBuildParams()
+context.echo "buildJobParams = ${buildJobParams}"
 
                             // Pass down constructed USER_REMOTE_CONFIGS if useAdoptShellScripts is false
                             // But not for pr-tester as it generates target jobs with required remoteConfigs
