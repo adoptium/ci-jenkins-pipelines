@@ -1587,6 +1587,7 @@ class Build {
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
                     if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+
                         context.sh(script: 'git config --global safe.directory $(cygpath ${WORKSPACE})')
                     }
                     context.sh(script: 'git clean -fdx')
@@ -2067,7 +2068,11 @@ class Build {
                                 }
                             }
                             // Store the pulled docker image digest as 'buildinfo'
-                            dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
+                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                                dockerImageDigest = context.sh(script: "docker inspect --format={{.Id}} ${buildConfig.DOCKER_IMAGE} | /bin/cut -d: -f2", returnStdout:true)
+                            } else {
+                                dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
+                            }
 
                             // Use our dockerfile if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {
@@ -2102,7 +2107,7 @@ class Build {
                                 }
                             } else {
                                 dockerImageDigest = dockerImageDigest.replaceAll("\\[", "").replaceAll("\\]", "")
-                                String dockerRunArg="-e BUILDIMAGESHA=abcde --init"
+                                String dockerRunArg="-e \"BUILDIMAGESHA=$dockerImageDigest\" --init"
 
                                 // Are we running podman in Docker CLI Emulation mode?
                                 def isPodman = context.sh(script: "docker --version | grep podman", returnStatus:true)
