@@ -1587,8 +1587,7 @@ class Build {
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
                     if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-
-                        context.sh(script: 'git config --global safe.directory $(cygpath ${WORKSPACE})')
+                        context.sh(script: 'git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})')
                     }
                     context.sh(script: 'git clean -fdx')
 
@@ -2213,7 +2212,7 @@ class Build {
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
                   if (currentBuild.currentResult != "SUCCESS") {
-                    context.println("[ERROR] Build stages were not successful, not running AQA tests")
+                    context.println('[ERROR] Build stages were not successful, not running AQA tests')
                   } else {
                     try {
                         //Only smoke tests succeed TCK and AQA tests will be triggerred.
