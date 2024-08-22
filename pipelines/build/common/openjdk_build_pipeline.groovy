@@ -197,7 +197,7 @@ class Build {
 
         def arch_os = "${arch}_${buildConfig.TARGET_OS}"
         jobParams.put('ARCH_OS_LIST', arch_os)
-        jobParams.put('LIGHT_WEIGHT_CHECKOUT', false)
+        jobParams.put('LIGHT_WEIGHT_CHECKOUT', true)
         return jobParams
     }
     /*
