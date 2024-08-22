@@ -2117,10 +2117,7 @@ class Build {
                                 }
                                 if (buildConfig.TARGET_OS == 'windows') {
                                     def workspace = 'C:/workspace/openjdk-build/'
-                                    if (env.CYGWIN_WORKSPACE) {
-                                        workspace = env.CYGWIN_WORKSPACE
-                                    }
-                                    context.echo("Switched to using workspace path ${workspace}")
+                                    context.echo("Switched to using non-default workspace path ${workspace}")
                                     context.ws(workspace) {
                                         context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScripts(
@@ -2162,7 +2159,7 @@ class Build {
                                 if (env.CYGWIN_WORKSPACE) {
                                     workspace = env.CYGWIN_WORKSPACE
                                 }
-                                context.echo("Switching to using workspace path ${workspace}")
+                                context.echo("Switched to using non-default workspace path ${workspace}")
                                 context.ws(workspace) {
                                     buildScripts(
                                         cleanWorkspace,
