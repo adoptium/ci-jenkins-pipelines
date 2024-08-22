@@ -1,7 +1,7 @@
 targetConfigurations = [
-        'aarch64Windows' : [
-                'temurin'
-        ]
+        // 'aarch64Windows' : [
+        //         'temurin'
+        // ]
 ]
 
 // scmReferences to use for weekly evaluation release build
