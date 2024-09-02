@@ -2115,14 +2115,30 @@ class Build {
                                     // Add uid and gid userns mapping required for podman
                                     dockerRunArg += " --userns keep-id:uid=1002,gid=1003"
                                 }
-                                context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
-                                    buildScripts(
-                                        cleanWorkspace,
-                                        cleanWorkspaceAfter,
-                                        cleanWorkspaceBuildOutputAfter,
-                                        filename,
-                                        useAdoptShellScripts
-                                    )
+                                if (buildConfig.TARGET_OS == 'windows') {
+                                    def workspace = 'C:/workspace/openjdk-build/'
+                                    context.echo("Switched to using non-default workspace path ${workspace}")
+                                    context.ws(workspace) {
+                                        context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                            buildScripts(
+                                                cleanWorkspace,
+                                                cleanWorkspaceAfter,
+                                                cleanWorkspaceBuildOutputAfter,
+                                                filename,
+                                                useAdoptShellScripts
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                        buildScripts(
+                                            cleanWorkspace,
+                                            cleanWorkspaceAfter,
+                                            cleanWorkspaceBuildOutputAfter,
+                                            filename,
+                                            useAdoptShellScripts
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -2143,7 +2159,7 @@ class Build {
                                 if (env.CYGWIN_WORKSPACE) {
                                     workspace = env.CYGWIN_WORKSPACE
                                 }
-                                context.echo("changing ${workspace}")
+                                context.echo("Switched to using non-default workspace path ${workspace}")
                                 context.ws(workspace) {
                                     buildScripts(
                                         cleanWorkspace,
