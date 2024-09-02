@@ -900,7 +900,7 @@ class Build {
                             target: 'workspace/target/',
                             flatten: true)
                         // Check if JRE exists, if so, build another installer for it
-                        if (listArchives().any { it =~ /-jre/ } ) { buildWindowsInstaller(versionData, '**/OpenJDK*jre_*_windows*.zip', 'jre') }
+                        if (listArchives(false).any { it =~ /-jre/ } ) { buildWindowsInstaller(versionData, '**/OpenJDK*jre_*_windows*.zip', 'jre') }
                         break
                     default:
                         break
@@ -1057,18 +1057,27 @@ class Build {
     /*
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
-    List<String> listArchives() {
-        def files = context.sh(
+    List<String> listArchives(Boolean allowBat) {
+        context.println "SXA: battable and batted 1060 - windbld#273"
+
+        def files
+        if ( allowBat ) { context.println("listArchives() invoked with allowBat = true") }
+        if ( !allowBat ) { context.println("listArchives() invoked with allowBat = false") }
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE && allowBat ) {
+           // The grep here removes anything that still contains "*" because nothing matched
+           files = context.bat(
+                script: 'dir/b/s workspace\\target\\*.zip workspace\\target\\*.msi workspace\\target\\*.-sbom_* workspace\\target\\*.json',
+                returnStdout: true,
+                returnStatus: false
+           ).trim().replaceAll('\\\\','/').replaceAll('\\r','').split('\n').toList().grep( ~/^[^\*]*$/ ) // grep needed extra script approval
+        } else {
+           files = context.sh(
                 script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
                 returnStdout: true,
                 returnStatus: false
-        )
-                .trim()
-                .split('\n')
-                .toList()
-
+           ).trim().split('\n').toList()
+        }
         context.println "listArchives: ${files}"
-
         return files
     }
 
@@ -1318,7 +1327,12 @@ class Build {
 
         MetaData data = formMetadata(version, initialWrite)
         Boolean metaWrittenOut = false
-        listArchives().each({ file ->
+        /*
+         * This is causing a problem when set to false. Sometimes it seems ok
+         * with the windows one, and sometimes not e.g.
+         * windbld#473/475/476/477
+         */
+        listArchives(false).each({ file ->
             def type = 'jdk'
             if (file.contains('-jre')) {
                 type = 'jre'
@@ -1333,16 +1347,21 @@ class Build {
             } else if (file.contains('-sbom')) {
                 type = 'sbom'
             }
+            context.println "(writeMetaData) Potentially battable assuming sha256sum on windows 1340 windbld#388 - No - fails #479"
 
-            String hash = context.sh(script: """\
+            String hash
+            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
+                hash = context.sh(script: "sha256sum ${file} | cut -f1 -d' '") // .replaceAll('\n', '')
+            } else {
+                hash = context.sh(script: """\
                                               if [ -x "\$(command -v shasum)" ]; then
                                                 (shasum -a 256 | cut -f1 -d' ') <$file
                                               else
                                                 sha256sum $file | cut -f1 -d' '
                                               fi
-                                            """.stripIndent(), returnStdout: true, returnStatus: false)
+                                            """.stripIndent(), returnStdout: true, returnStatus: false).replaceAll('\n', '')
 
-            hash = hash.replaceAll('\n', '')
+            }
 
             data.binary_type = type
             data.sha256 = hash
@@ -1480,26 +1499,43 @@ class Build {
     }
 
     /*
+     * In Windows docker containers sh can be unreliable, so use context.bat
+     * in preference. https://github.com/adoptium/infrastructure/issues/3714
+     */
+    def batOrSh(command)
+    {
+        if ( context.isUnix() ) {
+            context.sh(command)
+        } else {
+            context.bat(command)
+        }
+    }
+
+    /*
      Display the current git repo information
      */
     def printGitRepoInfo() {
         context.println 'Checked out repo:'
-        context.sh(script: 'git status')
+        context.println 'batable and batted 1487 windbld #286-288'
+        batOrSh('git status')
         context.println 'Checked out HEAD commit SHA:'
-        context.sh(script: 'git rev-parse HEAD')
+        // windbld#245
+        batOrSh('git rev-parse HEAD')
     }
 
-    /*
+/*
     Executed on a build node, the function checks out the repository and executes the build via ./make-adopt-build-farm.sh
     Once the build completes, it will calculate its version output, commit the first metadata writeout, and archive the build results.
     Running in downstream job jdk-*-*-* build stage, called by build()
     */
+
     def buildScripts(
         cleanWorkspace,
         cleanWorkspaceAfter,
         cleanWorkspaceBuildOutputAfter,
         filename,
-        useAdoptShellScripts
+        useAdoptShellScripts,
+        enableSigner
     ) {
         return context.stage('build') {
             // Create the repo handler with the user's defaults to ensure a temurin-build checkout is not null
@@ -1537,6 +1573,7 @@ class Build {
                             // Issue: https://issues.jenkins.io/browse/JENKINS-64779
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
+                                context.println 'SXA: batable 1540'
                                 context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
@@ -1564,7 +1601,8 @@ class Build {
                     context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
                         if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                             context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
-                            context.sh(script: 'rm -rf ' + openjdk_build_dir)
+                            context.println 'SXA: batable and batted 1568 windbld#261,262'
+                            batOrSh('rm -rf ' + openjdk_build_dir)
                         } else {
                             context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
                         }
@@ -1587,11 +1625,11 @@ class Build {
 
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
+                    
                     if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-                        context.sh(script: 'git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})')
+                        context.bat(script: 'bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                     }
-                    context.sh(script: 'git clean -fdx')
-
+                    batOrSh('git clean -fdx')
                     printGitRepoInfo()
                 }
             } catch (FlowInterruptedException e) {
@@ -1621,12 +1659,14 @@ class Build {
                             if (env.JOB_NAME.contains('pr-tester')) {
                                 updateGithubCommitStatus('PENDING', 'Build Started')
                             }
+                            context.println "SXAEC: Before UASS"
                             if (useAdoptShellScripts) {
+                                context.println "SXAEC: UASS=true"
                                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
-                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
-                                    context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
+                                    context.println "Generating exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
                                         signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image' + openjdk_build_dir_arg
@@ -1635,11 +1675,15 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
-                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                        // Call make-adopt-build-farm.sh to do initial windows/mac build
+                                        // windbld#254
+                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.configANDtargetANDbuild.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
+                                        // context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                     def base_path = build_path
                                     if (openjdk_build_dir_arg == "") {
                                         // If not using a custom openjdk build dir, then query what autoconf created as the build sub-folder
+                                        context.println 'SXA: not batable 1648 - windbld#263'
                                         base_path = context.sh(script: "ls -d ${build_path}/* | tr -d '\\n'", returnStdout:true)
                                     }
                                     context.println "base build path for jmod signing = ${base_path}"
@@ -1650,7 +1694,10 @@ class Build {
                                             // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
 
+                                    // Should this part be under "if (enableSigner)" instead
+                                    // of it being on the earlier "if" section?
                                     context.node('eclipse-codesign') {
+                                        context.println 'SXA: batable-ish 1660'
                                         context.sh "rm -rf ${base_path}/* || true"
 
                                         repoHandler.checkoutAdoptBuild(context)
@@ -1660,6 +1707,7 @@ class Build {
                                         context.unstash 'jmods'
                                         def target_os = "${buildConfig.TARGET_OS}"
                                         context.withEnv(['base_os='+target_os, 'base_path='+base_path]) {
+                                        context.println 'SXA: not batable 1670'
                                             // groovylint-disable
                                             context.sh '''
                                                 #!/bin/bash
@@ -1730,9 +1778,11 @@ class Build {
                                             // groovylint-enable
                                         }
                                         context.stash name: 'signed_jmods', includes: "${base_path}/**/*"
-                                    }
+                                    } // context.node ("eclipse-codesign") - joe thinks it matches with something else though ...
+                                    // } // if (ENABLE_SIGN == true)
 
                                     // Remove jmod directories to be replaced with the stash saved above
+                                    context.println 'SXA: batable 1744'
                                     context.sh "rm -rf ${base_path}/hotspot/variant-server || true"
                                     context.sh "rm -rf ${base_path}/support/modules_cmds || true"
                                     context.sh "rm -rf ${base_path}/support/modules_libs || true"
@@ -1752,9 +1802,11 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + assembleBuildArgs]) {
                                         context.println 'Assembling the exploded image'
+                                        // Call make-adopt-build-farm.sh on windows/mac to create signed tarball
+                                        context.println 'SXA: probably batable 1764'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
-                                } else {
+                                } else { // Not Windows/Mac JDK11+ (i.e. doesn't require signing)
                                     def buildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
                                         buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
@@ -1762,7 +1814,12 @@ class Build {
                                         buildArgs = openjdk_build_dir_arg
                                     }
                                     context.withEnv(['BUILD_ARGS=' + buildArgs]) {
-                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                        context.println 'SXA: probably batable 1775'
+                                        // Call make-adopt-build-farm.sh to do one-step build (i.e. not signed)
+                                        // and when USEW_ADOPT_SHELL_SCRIPTS=false
+//                                      batOrSh("./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+//                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                     }
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout...'
@@ -1774,7 +1831,7 @@ class Build {
                                     repoHandler.checkoutUserPipelines(context)
                                 }
                                 printGitRepoInfo()
-                            } else {
+                            } else { // USE_ADOPT_SHELL_SCRIPTS == false
                                 context.println "[CHECKOUT] Checking out to the user's temurin-build..."
                                 repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                 repoHandler.checkoutUserBuild(context)
@@ -1786,7 +1843,10 @@ class Build {
                                     buildArgs = openjdk_build_dir_arg
                                 }
                                 context.withEnv(['BUILD_ARGS=' + buildArgs]) {
+                                    context.println 'SXA: probably batable 1783'
+                                    // Call make-adopt-build-farm.sh when USE_ADOPT_SHELL_SCRIPTS==false
                                     context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+//                                    context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
                                 repoHandler.checkoutUserPipelines(context)
@@ -1843,6 +1903,7 @@ class Build {
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 if (cleanWorkspaceAfter) {
                                     context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
+                                    context.println 'SXA: batable 1858'
                                     context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
 
                                     // Clean remaining hidden files using cleanWs
@@ -1853,14 +1914,9 @@ class Build {
                                         context.println "Failed to clean ${e}"
                                     }
                                 } else if (cleanWorkspaceBuildOutputAfter) {
+                                    context.println 'SXA: batable and batted 1869 windbld 266'
                                     context.println 'Cleaning workspace build output files: ' + openjdk_build_dir
-                                    context.sh(script: 'rm -rf ' + openjdk_build_dir)
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/target'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/devkit'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/straceOutput'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    batOrSh('rm -rf ' + openjdk_build_dir + ' ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
@@ -2024,6 +2080,10 @@ class Build {
                         context.node(label) {
                             addNodeToBuildDescription()
                             // Cannot clean workspace from inside docker container
+                            context.println 'SXA: batable and batted 2042 (rm cyclonedx-lib)'
+                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
+                                context.bat('rm -rf c:/workspace/openjdk-build/cyclonedx-lib')
+                            }
                             if (cleanWorkspace) {
                                 try {
                                     context.timeout(time: buildTimeouts.CONTROLLER_CLEAN_TIMEOUT, unit: 'HOURS') {
@@ -2102,7 +2162,8 @@ class Build {
                                         cleanWorkspaceAfter,
                                         cleanWorkspaceBuildOutputAfter,
                                         filename,
-                                        useAdoptShellScripts
+                                        useAdoptShellScripts,
+                                        enableSigner
                                     )
                                 }
                             } else {
@@ -2126,7 +2187,8 @@ class Build {
                                                 cleanWorkspaceAfter,
                                                 cleanWorkspaceBuildOutputAfter,
                                                 filename,
-                                                useAdoptShellScripts
+                                                useAdoptShellScripts,
+                                                enableSigner
                                             )
                                         }
                                     }
@@ -2199,7 +2261,9 @@ class Build {
                     try {
                         // Installer job timeout managed by Jenkins job config
                         buildInstaller(versionInfo)
-                        signInstaller(versionInfo)
+                        if ( enableSigner) {
+                            signInstaller(versionInfo)
+                        }
                     } catch (FlowInterruptedException e) {
                         currentBuild.result = 'FAILURE'
                         throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
@@ -2216,7 +2280,7 @@ class Build {
 
                 if (!env.JOB_NAME.contains('pr-tester')) { // pr-tester does not sign the binaries
                     // Verify Windows and Mac Signing for Temurin
-                    if (buildConfig.VARIANT == 'temurin') {
+                    if (buildConfig.VARIANT == 'temurin' && enableSigner) {
                         try {
                             verifySigning()
                         } catch (Exception e) {
