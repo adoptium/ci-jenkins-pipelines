@@ -1485,7 +1485,8 @@ class Build {
         context.println 'Checked out repo:'
         context.sh(script: 'git status')
         context.println 'Checked out HEAD commit SHA:'
-        context.sh(script: 'git rev-parse HEAD')
+        // windbld#245
+        context.bat(script: 'git rev-parse HEAD')
     }
 
     /*
@@ -1536,6 +1537,7 @@ class Build {
                             // Issue: https://issues.jenkins.io/browse/JENKINS-64779
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
+                                context.println 'SXA: batable 1540'
                                 context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
@@ -1563,7 +1565,8 @@ class Build {
                     context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
                         if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                             context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
-                            context.sh(script: 'rm -rf ' + openjdk_build_dir)
+                                context.println 'SXA: batable and batted 1568 windbld#261,262'
+                            context.bat(script: 'rm -rf ' + openjdk_build_dir)
                         } else {
                             context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
                         }
@@ -1587,8 +1590,10 @@ class Build {
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
                     if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                        context.println 'SXA: batable 1593'
                         context.sh(script: 'git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})')
                     }
+                    context.println 'SXA: batable 1596'
                     context.sh(script: 'git clean -fdx')
 
                     printGitRepoInfo()
@@ -1634,11 +1639,13 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
-                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                        // windbld#254
+                                        context.bat(script: "bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                     def base_path = build_path
                                     if (openjdk_build_dir_arg == "") {
                                         // If not using a custom openjdk build dir, then query what autoconf created as the build sub-folder
+                                        context.println 'SXA: not batable 1648'
                                         base_path = context.sh(script: "ls -d ${build_path}/* | tr -d '\\n'", returnStdout:true)
                                     }
                                     context.println "base build path for jmod signing = ${base_path}"
@@ -1650,6 +1657,7 @@ class Build {
                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
 
                                     context.node('eclipse-codesign') {
+                                        context.println 'SXA: batable-ish 1660'
                                         context.sh "rm -rf ${base_path}/* || true"
 
                                         repoHandler.checkoutAdoptBuild(context)
@@ -1659,6 +1667,7 @@ class Build {
                                         context.unstash 'jmods'
                                         def target_os = "${buildConfig.TARGET_OS}"
                                         context.withEnv(['base_os='+target_os, 'base_path='+base_path]) {
+                                        context.println 'SXA: not batable 1670'
                                             // groovylint-disable
                                             context.sh '''
                                                 #!/bin/bash
@@ -1732,6 +1741,7 @@ class Build {
                                     }
 
                                     // Remove jmod directories to be replaced with the stash saved above
+                                    context.println 'SXA: batable 1744'
                                     context.sh "rm -rf ${base_path}/hotspot/variant-server || true"
                                     context.sh "rm -rf ${base_path}/support/modules_cmds || true"
                                     context.sh "rm -rf ${base_path}/support/modules_libs || true"
@@ -1751,6 +1761,7 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + assembleBuildArgs]) {
                                         context.println 'Assembling the exploded image'
+                                        context.println 'SXA: probably batable 1764'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                 } else {
@@ -1761,6 +1772,7 @@ class Build {
                                         buildArgs = openjdk_build_dir_arg
                                     }
                                     context.withEnv(['BUILD_ARGS=' + buildArgs]) {
+                                        context.println 'SXA: probably batable 1775'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                 }
@@ -1785,6 +1797,7 @@ class Build {
                                     buildArgs = openjdk_build_dir_arg
                                 }
                                 context.withEnv(['BUILD_ARGS=' + buildArgs]) {
+                                    context.println 'SXA: probably batable 1775'
                                     context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
@@ -1842,6 +1855,7 @@ class Build {
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 if (cleanWorkspaceAfter) {
                                     context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
+                                    context.println 'SXA: batable 1858'
                                     context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
 
                                     // Clean remaining hidden files using cleanWs
@@ -1852,6 +1866,7 @@ class Build {
                                         context.println "Failed to clean ${e}"
                                     }
                                 } else if (cleanWorkspaceBuildOutputAfter) {
+                                    context.println 'SXA: batable 1869'
                                     context.println 'Cleaning workspace build output files: ' + openjdk_build_dir
                                     context.sh(script: 'rm -rf ' + openjdk_build_dir)
                                     context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/target'
@@ -2023,6 +2038,9 @@ class Build {
                         context.node(label) {
                             addNodeToBuildDescription()
                             // Cannot clean workspace from inside docker container
+                            
+                            context.println 'SXA: batable and batted 2042 (rm cyclonedx-lib)'
+                            context.bat('rm -rf c:/workspace/openjdk-build/cyclonedx-lib')
                             if (cleanWorkspace) {
                                 try {
                                     context.timeout(time: buildTimeouts.CONTROLLER_CLEAN_TIMEOUT, unit: 'HOURS') {
