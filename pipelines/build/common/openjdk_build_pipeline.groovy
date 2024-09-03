@@ -1057,9 +1057,9 @@ class Build {
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
     List<String> listArchives() {
-        context.println 'SXA: not easily batable 1060 - windbld#273'
-        def files = context.sh(
-                script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
+        context.println 'SXA: try battable 1060 - windbld#273'
+        def files = context.bat(
+                script: '''sh -c "find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$'" ''',
                 returnStdout: true,
                 returnStatus: false
         )
@@ -1591,7 +1591,7 @@ class Build {
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
                     if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-                        context.println 'SXA: batable 1593 and batted for 269-272'
+                        context.println 'SXA: batable 1593 and batted for 269-272 - bat+bash for 278 (HOME wrong)'
                         context.bat(script: 'set & bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                     }
                     context.println 'SXA: batable 1596'
