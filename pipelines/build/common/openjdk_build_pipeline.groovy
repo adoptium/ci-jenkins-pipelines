@@ -1057,6 +1057,7 @@ class Build {
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
     List<String> listArchives() {
+        context.println 'SXA: not easily batable 1060 - windbld#273'
         def files = context.sh(
                 script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
                 returnStdout: true,
@@ -1590,8 +1591,8 @@ class Build {
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
                     if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-                        context.println 'SXA: batable 1593'
-                        context.sh(script: 'git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})')
+                        context.println 'SXA: batable 1593 and batted for 269-272'
+                        context.bat(script: 'set & bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                     }
                     context.println 'SXA: batable 1596'
                     context.sh(script: 'git clean -fdx')
@@ -1645,7 +1646,7 @@ class Build {
                                     def base_path = build_path
                                     if (openjdk_build_dir_arg == "") {
                                         // If not using a custom openjdk build dir, then query what autoconf created as the build sub-folder
-                                        context.println 'SXA: not batable 1648'
+                                        context.println 'SXA: not batable 1648 - windbld#263'
                                         base_path = context.sh(script: "ls -d ${build_path}/* | tr -d '\\n'", returnStdout:true)
                                     }
                                     context.println "base build path for jmod signing = ${base_path}"
@@ -1866,15 +1867,15 @@ class Build {
                                         context.println "Failed to clean ${e}"
                                     }
                                 } else if (cleanWorkspaceBuildOutputAfter) {
-                                    context.println 'SXA: batable 1869'
+                                    context.println 'SXA: batable and batted 1869 windbld 266'
                                     context.println 'Cleaning workspace build output files: ' + openjdk_build_dir
-                                    context.sh(script: 'rm -rf ' + openjdk_build_dir)
+                                    context.bat(script: 'rm -rf ' + openjdk_build_dir)
                                     context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/target'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
+                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
                                     context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/devkit'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/straceOutput'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
+                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/straceOutput - windbld#266'
+                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
