@@ -1058,8 +1058,10 @@ class Build {
     */
     List<String> listArchives() {
         // context.println 'SXA: try battable 1060 - windbld#273'
-        def files = context.bat(
-                script: '''sh -c "find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$'" ''',
+//        def files = context.bat(
+//                script: '''sh -c "find workspace/target/ | grep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$'" ''',
+        def files = context.sh(
+                script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
                 returnStdout: true,
                 returnStatus: false
         )
@@ -1484,7 +1486,8 @@ class Build {
      */
     def printGitRepoInfo() {
         context.println 'Checked out repo:'
-        context.sh(script: 'git status')
+        context.println 'batable and batted 1487 windbld #286-288'
+        context.bat(script: 'git status')
         context.println 'Checked out HEAD commit SHA:'
         // windbld#245
         context.bat(script: 'git rev-parse HEAD')
@@ -1630,7 +1633,7 @@ class Build {
                                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
-                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && buildConfig.ENABLE_SIGNER == "true") {
                                     context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
@@ -1641,7 +1644,10 @@ class Build {
                                     context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
                                         // windbld#254
-                                        context.bat(script: "bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+//                                        context.bat(script: "bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                        context.bat(script: "mkdir c:\\workspace\\openjdk-build\\workspace\\target")
+                                        context.bat(script: "touch /cygdrive/c/workspace/openjdk-build/workspace/target/openjdk.tar.gz")
+                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                     }
                                     def base_path = build_path
                                     if (openjdk_build_dir_arg == "") {
@@ -1657,6 +1663,7 @@ class Build {
                                             // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
 
+// if (ENABLE_SIGNER == "true") {
                                     context.node('eclipse-codesign') {
                                         context.println 'SXA: batable-ish 1660'
                                         context.sh "rm -rf ${base_path}/* || true"
@@ -1739,7 +1746,8 @@ class Build {
                                             // groovylint-enable
                                         }
                                         context.stash name: 'signed_jmods', includes: "${base_path}/**/*"
-                                    }
+                                    } // context.node ("eclipse-codesign") - joe thinks it matches with something else though ...
+                                    // } // if (ENABLE_SIGN == true)
 
                                     // Remove jmod directories to be replaced with the stash saved above
                                     context.println 'SXA: batable 1744'
@@ -1774,7 +1782,10 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                         context.println 'SXA: probably batable 1775'
-                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+//                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                        context.bat(script: "mkdir c:\\workspace\\openjdk-build\\workspace\\target")
+                                        context.bat(script: "touch /cygdrive/c/workspace/openjdk-build/workspace/target/openjdk.tar.gz")
+                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                     }
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout...'
@@ -1786,7 +1797,7 @@ class Build {
                                     repoHandler.checkoutUserPipelines(context)
                                 }
                                 printGitRepoInfo()
-                            } else {
+                            } else { // USE_ADOPT_SHELL_SCRIPTS == false
                                 context.println "[CHECKOUT] Checking out to the user's temurin-build..."
                                 repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                 repoHandler.checkoutUserBuild(context)
@@ -1798,8 +1809,11 @@ class Build {
                                     buildArgs = openjdk_build_dir_arg
                                 }
                                 context.withEnv(['BUILD_ARGS=' + buildArgs]) {
-                                    context.println 'SXA: probably batable 1775'
-                                    context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    context.println 'SXA: probably batable 1783'
+                                     context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+//                                        context.bat(script: "mkdir c:\\workspace\\openjdk-build\\workspace\\target")
+//                                        context.bat(script: "touch /cygdrive/c/workspace/openjdk-build/workspace/target/openjdk.tar.gz")
+//                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
                                 repoHandler.checkoutUserPipelines(context)
