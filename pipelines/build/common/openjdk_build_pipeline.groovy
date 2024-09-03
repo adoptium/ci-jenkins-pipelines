@@ -1057,7 +1057,7 @@ class Build {
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
     List<String> listArchives() {
-        context.println 'SXA: try battable 1060 - windbld#273'
+        // context.println 'SXA: try battable 1060 - windbld#273'
         def files = context.bat(
                 script: '''sh -c "find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$'" ''',
                 returnStdout: true,
@@ -1566,7 +1566,7 @@ class Build {
                     context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
                         if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                             context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
-                                context.println 'SXA: batable and batted 1568 windbld#261,262'
+                            context.println 'SXA: batable and batted 1568 windbld#261,262'
                             context.bat(script: 'rm -rf ' + openjdk_build_dir)
                         } else {
                             context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
@@ -1594,8 +1594,8 @@ class Build {
                         context.println 'SXA: batable 1593 and batted for 269-272 - bat+bash for 278 (HOME wrong)'
                         context.bat(script: 'set & bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                     }
-                    context.println 'SXA: batable 1596'
-                    context.sh(script: 'git clean -fdx')
+                    context.println 'SXA: batable 1596 windbld#280'
+                    context.bat(script: 'git clean -fdx')
 
                     printGitRepoInfo()
                 }
