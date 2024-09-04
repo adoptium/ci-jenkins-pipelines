@@ -127,7 +127,12 @@ class Builder implements Serializable {
         if (additionalBuildArgs) {
             buildArgs += ' ' + additionalBuildArgs
         }
-        def enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
+
+        if (enableReproducibleCompare) {
+            // Pipeline parameter "enableReproducibleCompare" requests reproducibleCompare if enabled for this platform
+            enableReproducibleCompare = isEnableReproducibleCompare(platformConfig, variant)
+        }
+
         def testList = getTestList(platformConfig, variant)
 
         def dynamicTestsParameters = getDynamicParams(platformConfig, variant)
