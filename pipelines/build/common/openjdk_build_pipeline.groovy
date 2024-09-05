@@ -1645,7 +1645,9 @@ class Build {
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
                                 context.println "SXAEC: ${buildConfig.ENABLE_SIGNER}"
-                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' ) {
+                                // No idea why but despite the above showing as true if I add that to the if statement it doesn't go into this section so leaving it as-is for now
+//                              // if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && buildConfig.ENABLE_SIGNER == 'true') {
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
                                     context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
