@@ -1638,11 +1638,14 @@ class Build {
                             if (env.JOB_NAME.contains('pr-tester')) {
                                 updateGithubCommitStatus('PENDING', 'Build Started')
                             }
+                            context.println "SXAEC: Before UASS"
                             if (useAdoptShellScripts) {
+                                context.println "SXAEC: UASS=true"
                                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
-                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && buildConfig.ENABLE_SIGNER == "true") {
+                                context.println "SXAEC: ${buildConfig.ENABLE_SIGNER}"
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' ) {
                                     context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
@@ -1779,7 +1782,7 @@ class Build {
                                         context.println 'SXA: probably batable 1764'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
-                                } else {
+                                } else { // Not Windows/Mac JDK11+ (i.e. doesn't require signing)
                                     def buildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
                                         buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
