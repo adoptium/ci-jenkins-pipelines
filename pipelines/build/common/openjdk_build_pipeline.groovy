@@ -1658,7 +1658,8 @@ class Build {
                                     context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
                                         // windbld#254
-                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
+                                        // context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                     def base_path = build_path
                                     if (openjdk_build_dir_arg == "") {
