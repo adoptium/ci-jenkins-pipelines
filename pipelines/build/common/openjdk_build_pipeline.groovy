@@ -870,7 +870,7 @@ class Build {
     }
 
     /*
-    Build installer master functionS. This builds the downstream installer jobs on completion of the sign and test jobs.
+    Build installer master function. This builds the downstream installer jobs on completion of the sign and test jobs.
     The installers create our rpm, msi and pkg files that allow for an easier installation of the jdk binaries over a compressed archive.
     For Mac, we also clean up pkgs on master node from previous runs, if needed (Ref openjdk-build#2350).
     */
@@ -1057,9 +1057,7 @@ class Build {
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
     List<String> listArchives() {
-        // context.println 'SXA: try battable 1060 - windbld#273'
-//        def files = context.bat(
-//                script: '''sh -c "find workspace/target/ | grep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$'" ''',
+        context.println 'SXA: not trivially battable 1060 - windbld#273'
         def files = context.sh(
                 script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
                 returnStdout: true,
@@ -1606,16 +1604,11 @@ class Build {
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
                     if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-                        context.println 'SXA: batable 1593 and batted for 269-272 - bat+bash for 278 (HOME wrong)'
-                        context.bat(script: 'set & bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
-                    }
-                    context.println 'SXA: batable 1596 windbld#280'
-                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                        context.bat(script: 'bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                         context.bat(script: 'git clean -fdx')
                     } else {
                         context.sh(script: 'git clean -fdx')
                     }
-
                     printGitRepoInfo()
                 }
             } catch (FlowInterruptedException e) {
@@ -1660,12 +1653,6 @@ class Build {
                                     context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
                                         // windbld#254
-//                                        context.bat(script: "bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                        context.bat(script: "bash --version")
-                                        context.sh(script: "set")
-                                        
-                                        context.bat(script: "mkdir c:\\workspace\\openjdk-build\\workspace\\target")
-                                        context.bat(script: "touch /cygdrive/c/workspace/openjdk-build/workspace/target/openjdk.tar.gz")
                                         context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                     }
                                     def base_path = build_path
@@ -1802,10 +1789,6 @@ class Build {
                                     context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                         context.println 'SXA: probably batable 1775'
 //                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-//                                        context.bat(script: "bash --version")
-//                                        context.sh(script: "set")
-//                                        context.bat(script: "mkdir c:\\workspace\\openjdk-build\\workspace\\target")
-//                                        context.bat(script: "touch /cygdrive/c/workspace/openjdk-build/workspace/target/openjdk.tar.gz")
                                         context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                     }
                                 }
@@ -1831,9 +1814,7 @@ class Build {
                                 }
                                 context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                     context.println 'SXA: probably batable 1783'
-                                     context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-//                                        context.bat(script: "mkdir c:\\workspace\\openjdk-build\\workspace\\target")
-//                                        context.bat(script: "touch /cygdrive/c/workspace/openjdk-build/workspace/target/openjdk.tar.gz")
+                                    context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
 //                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
@@ -1909,14 +1890,6 @@ class Build {
                                     } else {
                                          context.sh(script: 'rm -rf ' + openjdk_build_dir + ' ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                     }
-
-//                                    context.bat(script: 'rm -rf ' + openjdk_build_dir)
-//                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/target'
-//                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
-//                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/devkit'
-//                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
-//                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/straceOutput - windbld#266'
-//                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
