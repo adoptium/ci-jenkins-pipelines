@@ -1794,8 +1794,8 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                         context.println 'SXA: probably batable 1775'
-//                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
+                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+//                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                     }
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout...'
@@ -1821,7 +1821,7 @@ class Build {
                                 context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                     context.println 'SXA: probably batable 1783'
                                     context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-//                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
+//                                    context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
                                 repoHandler.checkoutUserPipelines(context)
