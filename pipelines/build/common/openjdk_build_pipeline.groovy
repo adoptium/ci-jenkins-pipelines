@@ -870,7 +870,7 @@ class Build {
     }
 
     /*
-    Build installer master function. This builds the downstream installer jobs on completion of the sign and test jobs.
+    Build installer master functionS. This builds the downstream installer jobs on completion of the sign and test jobs.
     The installers create our rpm, msi and pkg files that allow for an easier installation of the jdk binaries over a compressed archive.
     For Mac, we also clean up pkgs on master node from previous runs, if needed (Ref openjdk-build#2350).
     */
@@ -1487,10 +1487,18 @@ class Build {
     def printGitRepoInfo() {
         context.println 'Checked out repo:'
         context.println 'batable and batted 1487 windbld #286-288'
-        context.bat(script: 'git status')
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+           context.bat(script: 'git status')
+        } else {
+           context.sh(script: 'git status')
+        }
         context.println 'Checked out HEAD commit SHA:'
         // windbld#245
-        context.bat(script: 'git rev-parse HEAD')
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+           context.bat(script: 'git rev-parse HEAD')
+        } else {
+           context.sh(script: 'git rev-parse HEAD')
+        }
     }
 
     /*
@@ -1570,7 +1578,11 @@ class Build {
                         if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                             context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
                             context.println 'SXA: batable and batted 1568 windbld#261,262'
-                            context.bat(script: 'rm -rf ' + openjdk_build_dir)
+                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                                 context.bat(script: 'rm -rf ' + openjdk_build_dir)
+                            } else {
+                                 context.sh(script: 'rm -rf ' + openjdk_build_dir)
+                            }
                         } else {
                             context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
                         }
@@ -1598,7 +1610,11 @@ class Build {
                         context.bat(script: 'set & bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                     }
                     context.println 'SXA: batable 1596 windbld#280'
-                    context.bat(script: 'git clean -fdx')
+                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                        context.bat(script: 'git clean -fdx')
+                    } else {
+                        context.sh(script: 'git clean -fdx')
+                    }
 
                     printGitRepoInfo()
                 }
@@ -1888,13 +1904,19 @@ class Build {
                                 } else if (cleanWorkspaceBuildOutputAfter) {
                                     context.println 'SXA: batable and batted 1869 windbld 266'
                                     context.println 'Cleaning workspace build output files: ' + openjdk_build_dir
-                                    context.bat(script: 'rm -rf ' + openjdk_build_dir)
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/target'
-                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/devkit'
-                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/straceOutput - windbld#266'
-                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                                         context.bat(script: 'rm -rf ' + openjdk_build_dir + ' ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    } else {
+                                         context.sh(script: 'rm -rf ' + openjdk_build_dir + ' ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    }
+
+//                                    context.bat(script: 'rm -rf ' + openjdk_build_dir)
+//                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/target'
+//                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
+//                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/devkit'
+//                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
+//                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/straceOutput - windbld#266'
+//                                    context.bat(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
@@ -2060,7 +2082,9 @@ class Build {
                             // Cannot clean workspace from inside docker container
                             
                             context.println 'SXA: batable and batted 2042 (rm cyclonedx-lib)'
-                            context.bat('rm -rf c:/workspace/openjdk-build/cyclonedx-lib')
+                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                                context.bat('rm -rf c:/workspace/openjdk-build/cyclonedx-lib')
+                            }
                             if (cleanWorkspace) {
                                 try {
                                     context.timeout(time: buildTimeouts.CONTROLLER_CLEAN_TIMEOUT, unit: 'HOURS') {
