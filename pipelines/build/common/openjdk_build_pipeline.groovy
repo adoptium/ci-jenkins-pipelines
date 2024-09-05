@@ -1645,6 +1645,9 @@ class Build {
                                         context.println 'Building an exploded image for signing'
                                         // windbld#254
 //                                        context.bat(script: "bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                        context.bat(script: "bash --version")
+                                        context.sh(script: "set")
+                                        
                                         context.bat(script: "mkdir c:\\workspace\\openjdk-build\\workspace\\target")
                                         context.bat(script: "touch /cygdrive/c/workspace/openjdk-build/workspace/target/openjdk.tar.gz")
                                         context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
@@ -1783,8 +1786,10 @@ class Build {
                                     context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                         context.println 'SXA: probably batable 1775'
 //                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                        context.bat(script: "mkdir c:\\workspace\\openjdk-build\\workspace\\target")
-                                        context.bat(script: "touch /cygdrive/c/workspace/openjdk-build/workspace/target/openjdk.tar.gz")
+//                                        context.bat(script: "bash --version")
+//                                        context.sh(script: "set")
+//                                        context.bat(script: "mkdir c:\\workspace\\openjdk-build\\workspace\\target")
+//                                        context.bat(script: "touch /cygdrive/c/workspace/openjdk-build/workspace/target/openjdk.tar.gz")
                                         context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                     }
                                 }
