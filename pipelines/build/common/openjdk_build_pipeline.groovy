@@ -1057,19 +1057,25 @@ class Build {
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
     List<String> listArchives() {
-        context.println 'SXA: not trivially battable 1060 - windbld#273'
-        def files = context.sh(
+        context.println 'SXA: battable and batted 1060 - windbld#273'
+
+        def files
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+           files = context.sh(
                 script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
                 returnStdout: true,
                 returnStatus: false
-        )
-                .trim()
-                .split('\n')
-                .toList()
-
+           )
+        } else {
+           files = context.bat(
+                script: 'dir/b/s workspace\\target\\*.zip workspace\target\\*.msi workspace\\target\\*.-sbom_* workspace\\target\\*.json',
+                returnStdout: true,
+                returnStatus: false
+           )
+        }
+        files = files.trim().split('\n').toList()
         context.println "listArchives: ${files}"
-
-        return files
+        return files.trim().split('\n').toList()
     }
 
     /*
@@ -1658,8 +1664,8 @@ class Build {
                                     context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
                                         // windbld#254
-                                        // context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
-                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
+                                        // context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                     def base_path = build_path
                                     if (openjdk_build_dir_arg == "") {
