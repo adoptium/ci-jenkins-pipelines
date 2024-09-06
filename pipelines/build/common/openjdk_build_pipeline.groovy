@@ -899,7 +899,7 @@ class Build {
                             target: 'workspace/target/',
                             flatten: true)
                         // Check if JRE exists, if so, build another installer for it
-                        if (listArchives().any { it =~ /-jre/ } ) { buildWindowsInstaller(versionData, '**/OpenJDK*jre_*_windows*.zip', 'jre') }
+                        if (listArchives(false).any { it =~ /-jre/ } ) { buildWindowsInstaller(versionData, '**/OpenJDK*jre_*_windows*.zip', 'jre') }
                         break
                     default:
                         break
@@ -1056,26 +1056,36 @@ class Build {
     /*
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
-    List<String> listArchives() {
-        context.println 'SXA: battable and batted 1060 - windbld#273'
+    List<String> listArchives(forceShell) {
+        context.println "SXA: battable and batted 1060 - windbld#273 - forceShell = ${forceShell}"
 
         def files
-        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE && !forceShell ) { 
+           // The grep here removes anything that still contains "*" because nothing matched
+           files = context.bat(
+                script: 'dir/b/s workspace\\target\\*.zip workspace\\target\\*.msi workspace\\target\\*.-sbom_* workspace\\target\\*.json',
+                returnStdout: true,
+                returnStatus: false
+//           ).trim().split('\n').toList().grep( ~/^[^\*]*$/ ) // grep needed extra script approval
+           ).trim().replaceAll('\\\\','/').replaceAll('\\r','').split('\n').toList().grep( ~/^[^\*]*$/ ) // grep needed extra script approval
+        } else {
            files = context.sh(
                 script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
                 returnStdout: true,
                 returnStatus: false
-           )
-        } else {
-           files = context.bat(
-                script: 'dir/b/s workspace\\target\\*.zip workspace\target\\*.msi workspace\\target\\*.-sbom_* workspace\\target\\*.json',
+           ).trim().split('\n').toList()
+        }
+        context.println "listArchives: ${files}"
+        return files
+    }
+    List<String> listArchivesNoWin() {
+        def files=context.sh(
+                script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
                 returnStdout: true,
                 returnStatus: false
-           )
-        }
-        files = files.trim().split('\n').toList()
+           ).trim().split('\n').toList()
         context.println "listArchives: ${files}"
-        return files.trim().split('\n').toList()
+        return files
     }
 
     /*
@@ -1324,7 +1334,7 @@ class Build {
 
         MetaData data = formMetadata(version, initialWrite)
         Boolean metaWrittenOut = false
-        listArchives().each({ file ->
+        listArchives(true).each({ file ->
             def type = 'jdk'
             if (file.contains('-jre')) {
                 type = 'jre'
@@ -1339,16 +1349,22 @@ class Build {
             } else if (file.contains('-sbom')) {
                 type = 'sbom'
             }
+            context.println "(writeMetaData) Potentially battable assuming sha256sum on windows 1340 windbld#388"
 
-            String hash = context.sh(script: """\
+            String hash
+            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                hash = context.sh(script: "sha256sum ${file} | cut -f1 -d' '") // .replaceAll('\n', '')
+            } else { 
+                hash = context.sh(script: """\
                                               if [ -x "\$(command -v shasum)" ]; then
                                                 (shasum -a 256 | cut -f1 -d' ') <$file
                                               else
                                                 sha256sum $file | cut -f1 -d' '
                                               fi
-                                            """.stripIndent(), returnStdout: true, returnStatus: false)
+                                            """.stripIndent(), returnStdout: true, returnStatus: false).replaceAll('\n', '')
 
-            hash = hash.replaceAll('\n', '')
+            }
+//            hash = hash.replaceAll('\n', '')
 
             data.binary_type = type
             data.sha256 = hash
@@ -1486,30 +1502,36 @@ class Build {
     }
 
     /*
+     * In Windows docker containers sh can be unreliable, so use context.bat
+     * in preference. https://github.com/adoptium/infrastructure/issues/3714
+     */
+    def batOrSh(command)
+    {
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+            context.bat(command)
+        } else {
+            context.sh(command)
+        }
+    }
+
+    /*
      Display the current git repo information
      */
     def printGitRepoInfo() {
         context.println 'Checked out repo:'
         context.println 'batable and batted 1487 windbld #286-288'
-        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-           context.bat(script: 'git status')
-        } else {
-           context.sh(script: 'git status')
-        }
+        batOrSh('git status')
         context.println 'Checked out HEAD commit SHA:'
         // windbld#245
-        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-           context.bat(script: 'git rev-parse HEAD')
-        } else {
-           context.sh(script: 'git rev-parse HEAD')
-        }
+        batOrSh('git rev-parse HEAD')
     }
 
-    /*
+/*
     Executed on a build node, the function checks out the repository and executes the build via ./make-adopt-build-farm.sh
     Once the build completes, it will calculate its version output, commit the first metadata writeout, and archive the build results.
     Running in downstream job jdk-*-*-* build stage, called by build()
     */
+
     def buildScripts(
         cleanWorkspace,
         cleanWorkspaceAfter,
@@ -1582,11 +1604,7 @@ class Build {
                         if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                             context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
                             context.println 'SXA: batable and batted 1568 windbld#261,262'
-                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-                                 context.bat(script: 'rm -rf ' + openjdk_build_dir)
-                            } else {
-                                 context.sh(script: 'rm -rf ' + openjdk_build_dir)
-                            }
+                            batOrSh('rm -rf ' + openjdk_build_dir)
                         } else {
                             context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
                         }
@@ -1609,12 +1627,11 @@ class Build {
 
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
+                    
                     if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
                         context.bat(script: 'bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
-                        context.bat(script: 'git clean -fdx')
-                    } else {
-                        context.sh(script: 'git clean -fdx')
                     }
+                    batOrSh('git clean -fdx')
                     printGitRepoInfo()
                 }
             } catch (FlowInterruptedException e) {
@@ -1653,6 +1670,16 @@ class Build {
                                 context.println "SXAEC: ${buildConfig.ENABLE_SIGNER}"
                                 // No idea why but despite the above showing as true if I add that to the if statement it doesn't go into this section so leaving it as-is for now
 //                              // if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && buildConfig.ENABLE_SIGNER == 'true') {
+// SXAEC: if block ends at 1796
+
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && buildConfig.ENABLE_SIGNER == 'true') {
+                                   context.println("SXAEC1: Matched") } else { context.println("SXAEC1: Not matched") }
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && (buildConfig.JAVA_TO_BUILD != 'jdk8u') && (buildConfig.ENABLE_SIGNER == 'true')) {
+                                   context.println("SXAEC2: Matched") } else { context.println("SXAEC2: Not matched") }
+                                if (buildConfig.ENABLE_SIGNER == 'true') {
+                                   context.println("SXAEC3: Matched") } else { context.println("SXAEC3: Not matched") }
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
+                                   context.println("SXAEC4: Matched") } else { context.println("SXAEC4: Not matched") }
                                 if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
                                     context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
@@ -1800,8 +1827,9 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                         context.println 'SXA: probably batable 1775'
-                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-//                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
+//                                      batOrSh("./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+//                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                     }
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout...'
@@ -1897,11 +1925,7 @@ class Build {
                                 } else if (cleanWorkspaceBuildOutputAfter) {
                                     context.println 'SXA: batable and batted 1869 windbld 266'
                                     context.println 'Cleaning workspace build output files: ' + openjdk_build_dir
-                                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-                                         context.bat(script: 'rm -rf ' + openjdk_build_dir + ' ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
-                                    } else {
-                                         context.sh(script: 'rm -rf ' + openjdk_build_dir + ' ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
-                                    }
+                                    batOrSh('rm -rf ' + openjdk_build_dir + ' ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
