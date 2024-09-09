@@ -899,7 +899,7 @@ class Build {
                             target: 'workspace/target/',
                             flatten: true)
                         // Check if JRE exists, if so, build another installer for it
-                        if (listArchives(true).any { it =~ /-jre/ } ) { buildWindowsInstaller(versionData, '**/OpenJDK*jre_*_windows*.zip', 'jre') }
+                        if (listArchives(false).any { it =~ /-jre/ } ) { buildWindowsInstaller(versionData, '**/OpenJDK*jre_*_windows*.zip', 'jre') }
                         break
                     default:
                         break
@@ -1056,13 +1056,13 @@ class Build {
     /*
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
-    List<String> listArchives(Boolean forceShell) {
-        context.println "SXA: battable and batted 1060 - windbld#273 - forceShell = ${forceShell}"
+    List<String> listArchives(Boolean allowBat) {
+        context.println "SXA: battable and batted 1060 - windbld#273"
 
         def files
-        if ( forceShell ) { context.println("listArchives() invoked with forceShell = true") }
-        if ( !forceShell ) { context.println("listArchives() invoked with forceShell = false") }
-        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE && !forceShell ) {
+        if ( allowBat ) { context.println("listArchives() invoked with allowBat = true") }
+        if ( !allowBat ) { context.println("listArchives() invoked with allowBat = false") }
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE && allowBat ) {
            // The grep here removes anything that still contains "*" because nothing matched
            files = context.bat(
                 script: 'dir/b/s workspace\\target\\*.zip workspace\\target\\*.msi workspace\\target\\*.-sbom_* workspace\\target\\*.json',
@@ -1326,6 +1326,11 @@ class Build {
 
         MetaData data = formMetadata(version, initialWrite)
         Boolean metaWrittenOut = false
+        /*
+         * This is causing a problem when set to false. Sometimes it seems ok
+         * with the windows one, and sometimes not e.g.
+         * windbld#473/475/476/477
+         */
         listArchives(false).each({ file ->
             def type = 'jdk'
             if (file.contains('-jre')) {
@@ -1341,7 +1346,7 @@ class Build {
             } else if (file.contains('-sbom')) {
                 type = 'sbom'
             }
-            context.println "(writeMetaData) Potentially battable assuming sha256sum on windows 1340 windbld#388"
+            context.println "(writeMetaData) Potentially battable assuming sha256sum on windows 1340 windbld#388 - No - fails #479"
 
             String hash
             if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
@@ -1660,7 +1665,7 @@ class Build {
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
                                 if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
-                                    context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
+                                    context.println "Generating exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
                                         signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image' + openjdk_build_dir_arg
@@ -1689,7 +1694,7 @@ class Build {
                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
 
                                     // Should this part be under "if (enableSigner)" instead
-                                    //  of it being on the earlier "if" section?
+                                    // of it being on the earlier "if" section?
                                     context.node('eclipse-codesign') {
                                         context.println 'SXA: batable-ish 1660'
                                         context.sh "rm -rf ${base_path}/* || true"
@@ -2255,7 +2260,9 @@ class Build {
                     try {
                         // Installer job timeout managed by Jenkins job config
                         buildInstaller(versionInfo)
-                        signInstaller(versionInfo)
+                        if ( enableSigner) {
+                            signInstaller(versionInfo)
+                        }
                     } catch (FlowInterruptedException e) {
                         currentBuild.result = 'FAILURE'
                         throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
