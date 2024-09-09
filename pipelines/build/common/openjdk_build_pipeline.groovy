@@ -899,7 +899,7 @@ class Build {
                             target: 'workspace/target/',
                             flatten: true)
                         // Check if JRE exists, if so, build another installer for it
-                        if (listArchives(false).any { it =~ /-jre/ } ) { buildWindowsInstaller(versionData, '**/OpenJDK*jre_*_windows*.zip', 'jre') }
+                        if (listArchives(true).any { it =~ /-jre/ } ) { buildWindowsInstaller(versionData, '**/OpenJDK*jre_*_windows*.zip', 'jre') }
                         break
                     default:
                         break
@@ -1056,17 +1056,18 @@ class Build {
     /*
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
-    List<String> listArchives(forceShell) {
+    List<String> listArchives(Boolean forceShell) {
         context.println "SXA: battable and batted 1060 - windbld#273 - forceShell = ${forceShell}"
 
         def files
-        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE && !forceShell ) { 
+        if ( forceShell ) { context.println("listArchives() invoked with forceShell = true") }
+        if ( !forceShell ) { context.println("listArchives() invoked with forceShell = false") }
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE && !forceShell ) {
            // The grep here removes anything that still contains "*" because nothing matched
            files = context.bat(
                 script: 'dir/b/s workspace\\target\\*.zip workspace\\target\\*.msi workspace\\target\\*.-sbom_* workspace\\target\\*.json',
                 returnStdout: true,
                 returnStatus: false
-//           ).trim().split('\n').toList().grep( ~/^[^\*]*$/ ) // grep needed extra script approval
            ).trim().replaceAll('\\\\','/').replaceAll('\\r','').split('\n').toList().grep( ~/^[^\*]*$/ ) // grep needed extra script approval
         } else {
            files = context.sh(
@@ -1075,15 +1076,6 @@ class Build {
                 returnStatus: false
            ).trim().split('\n').toList()
         }
-        context.println "listArchives: ${files}"
-        return files
-    }
-    List<String> listArchivesNoWin() {
-        def files=context.sh(
-                script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
-                returnStdout: true,
-                returnStatus: false
-           ).trim().split('\n').toList()
         context.println "listArchives: ${files}"
         return files
     }
@@ -1334,7 +1326,7 @@ class Build {
 
         MetaData data = formMetadata(version, initialWrite)
         Boolean metaWrittenOut = false
-        listArchives(true).each({ file ->
+        listArchives(false).each({ file ->
             def type = 'jdk'
             if (file.contains('-jre')) {
                 type = 'jre'
@@ -1352,9 +1344,9 @@ class Build {
             context.println "(writeMetaData) Potentially battable assuming sha256sum on windows 1340 windbld#388"
 
             String hash
-            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
                 hash = context.sh(script: "sha256sum ${file} | cut -f1 -d' '") // .replaceAll('\n', '')
-            } else { 
+            } else {
                 hash = context.sh(script: """\
                                               if [ -x "\$(command -v shasum)" ]; then
                                                 (shasum -a 256 | cut -f1 -d' ') <$file
@@ -1364,7 +1356,6 @@ class Build {
                                             """.stripIndent(), returnStdout: true, returnStatus: false).replaceAll('\n', '')
 
             }
-//            hash = hash.replaceAll('\n', '')
 
             data.binary_type = type
             data.sha256 = hash
@@ -1537,7 +1528,8 @@ class Build {
         cleanWorkspaceAfter,
         cleanWorkspaceBuildOutputAfter,
         filename,
-        useAdoptShellScripts
+        useAdoptShellScripts,
+        enableSigner
     ) {
         return context.stage('build') {
             // Create the repo handler with the user's defaults to ensure a temurin-build checkout is not null
@@ -1667,20 +1659,7 @@ class Build {
                                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
-                                context.println "SXAEC: ${buildConfig.ENABLE_SIGNER}"
-                                // No idea why but despite the above showing as true if I add that to the if statement it doesn't go into this section so leaving it as-is for now
-//                              // if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && buildConfig.ENABLE_SIGNER == 'true') {
-// SXAEC: if block ends at 1796
-
-                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && buildConfig.ENABLE_SIGNER == 'true') {
-                                   context.println("SXAEC1: Matched") } else { context.println("SXAEC1: Not matched") }
-                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && (buildConfig.JAVA_TO_BUILD != 'jdk8u') && (buildConfig.ENABLE_SIGNER == 'true')) {
-                                   context.println("SXAEC2: Matched") } else { context.println("SXAEC2: Not matched") }
-                                if (buildConfig.ENABLE_SIGNER == 'true') {
-                                   context.println("SXAEC3: Matched") } else { context.println("SXAEC3: Not matched") }
                                 if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
-                                   context.println("SXAEC4: Matched") } else { context.println("SXAEC4: Not matched") }
-                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
                                     context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
@@ -1690,8 +1669,9 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
+                                        // Call make-adopt-build-farm.sh to do initial windows/mac build
                                         // windbld#254
-                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
+                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.configANDtargetANDbuild.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                         // context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                     def base_path = build_path
@@ -1708,7 +1688,8 @@ class Build {
                                             // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
 
-// if (ENABLE_SIGNER == "true") {
+                                    // Should this part be under "if (enableSigner)" instead
+                                    //  of it being on the earlier "if" section?
                                     context.node('eclipse-codesign') {
                                         context.println 'SXA: batable-ish 1660'
                                         context.sh "rm -rf ${base_path}/* || true"
@@ -1815,6 +1796,7 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + assembleBuildArgs]) {
                                         context.println 'Assembling the exploded image'
+                                        // Call make-adopt-build-farm.sh on windows/mac to create signed tarball
                                         context.println 'SXA: probably batable 1764'
                                         context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
@@ -1827,6 +1809,8 @@ class Build {
                                     }
                                     context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                         context.println 'SXA: probably batable 1775'
+                                        // Call make-adopt-build-farm.sh to do one-step build (i.e. not signed)
+                                        // and when USEW_ADOPT_SHELL_SCRIPTS=false
 //                                      batOrSh("./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
 //                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                         context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
@@ -1854,6 +1838,7 @@ class Build {
                                 }
                                 context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                     context.println 'SXA: probably batable 1783'
+                                    // Call make-adopt-build-farm.sh when USE_ADOPT_SHELL_SCRIPTS==false
                                     context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
 //                                    context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                 }
@@ -2089,9 +2074,8 @@ class Build {
                         context.node(label) {
                             addNodeToBuildDescription()
                             // Cannot clean workspace from inside docker container
-                            
                             context.println 'SXA: batable and batted 2042 (rm cyclonedx-lib)'
-                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
                                 context.bat('rm -rf c:/workspace/openjdk-build/cyclonedx-lib')
                             }
                             if (cleanWorkspace) {
@@ -2172,7 +2156,8 @@ class Build {
                                         cleanWorkspaceAfter,
                                         cleanWorkspaceBuildOutputAfter,
                                         filename,
-                                        useAdoptShellScripts
+                                        useAdoptShellScripts,
+                                        enableSigner
                                     )
                                 }
                             } else {
@@ -2196,7 +2181,8 @@ class Build {
                                                 cleanWorkspaceAfter,
                                                 cleanWorkspaceBuildOutputAfter,
                                                 filename,
-                                                useAdoptShellScripts
+                                                useAdoptShellScripts,
+                                                enableSigner
                                             )
                                         }
                                     }
@@ -2286,7 +2272,7 @@ class Build {
 
                 if (!env.JOB_NAME.contains('pr-tester')) { // pr-tester does not sign the binaries
                     // Verify Windows and Mac Signing for Temurin
-                    if (buildConfig.VARIANT == 'temurin') {
+                    if (buildConfig.VARIANT == 'temurin' && enableSigner) {
                         try {
                             verifySigning()
                         } catch (Exception e) {
