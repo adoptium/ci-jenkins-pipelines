@@ -327,10 +327,9 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 
 // For the given pipeline, return three strings: the reproducibility percentage average, 
 def getReproducibilityPercentage(String featureRelease, String pipelineIdForTRSS, Map reproducibleBuilds) {
-    if (pipelineIdForTRSS == "") {
-      return
+    if (pipelineIdForTRSS != "") {
+      reproducibleBuilds[featureRelease][1].eachWithIndex{key, value -> reproducibleBuilds[featureRelease][1][key] = "99%"}
     }
-    reproducibleBuilds[featureRelease][1].eachWithIndex{key, value -> reproducibleBuilds[featureRelease][1][key] = "99%"}
 }
 
 node('worker') {
