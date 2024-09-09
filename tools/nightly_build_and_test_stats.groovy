@@ -51,7 +51,7 @@ def isGaTag(String version, String tag) {
     }
 }
 
-// Determine the upstream OpenJDK reporistory
+// Determine the upstream OpenJDK repository
 def getUpstreamRepo(String version) {
     def openjdkRepo
 
@@ -92,7 +92,7 @@ def getLatestOpenjdkBuildTag(String version) {
     return latestTag
 }
 
-// Get how long ago the given upstream tag was published?
+// How long ago was the given upstream tag published?
 def getOpenjdkBuildTagAge(String version, String tag) {
     def openjdkRepo = getUpstreamRepo(version)
 
@@ -115,9 +115,9 @@ def getLatestBinariesTag(String version) {
     return latestTag    
 }
 
-// Make a best guess that the specified build of a given beta EA pipeline build is inprogress? if so return the buildUrl
-def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
-    def inProgressBuildUrl = ""
+// Return our best guess at the url that generated a specific build.
+getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
+    def functionBuildUrl = ""
 
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
@@ -143,20 +143,20 @@ def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease,
             }
 
             // Is job for the required tag and currently inprogress?
-            if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && job.status.equals('Streaming')) {
+            if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
-                        inProgressBuildUrl = job.buildUrl
+                        functionBuildUrl = [job.buildUrl, rootBuildId, job.status]
                     }
                 } else {
-                    inProgressBuildUrl = job.buildUrl
+                    functionBuildUrl = [job.buildUrl, rootBuildId , job.status]
                 }
             }
         }
     }
 
-    return inProgressBuildUrl
+    return functionBuildUrl
 }
 
 // Verify the given release contains all the expected assets
@@ -325,6 +325,14 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     }
 }
 
+// For the given pipeline, return three strings: the reproducibility percentage average, 
+def getReproducibilityPercentage(String featureRelease, String pipelineIdForTRSS, Map reproducibleBuilds) {
+    if (pipelineIdForTRSS == "") {
+      return
+    }
+    reproducibleBuilds[featureRelease][1].eachWithIndex{key, value -> reproducibleBuilds[featureRelease][1][key] = "99%"}
+}
+
 node('worker') {
   try{
     def variant = "${params.VARIANT}"
@@ -340,6 +348,11 @@ node('worker') {
 
     def healthStatus = [:]
     def testStats = []
+
+    // Specifies what JDK versions and platforms are expected to be reproducible.
+    // The "?" symbols will soon be replaced by reproducibility percentages.
+    // Layout: [jdkVersion: [Overall-reproducibility, [By-platform reproducibility breakdown]]]
+    def reproducibleBuilds = ["21": [ "?" ["x64Linux": "?", "aarch64Linux": "?", "ppc64leLinux": "?", "x64Windows": "?", "x64Mac": "?", "aarch64Mac": "?"]]]
 
     stage('getPipelineStatus') {
         def apiVariant = variant
@@ -647,7 +660,9 @@ node('worker') {
                 def errorMsg = ""
                 def releaseName = status['releaseName']
                 def lastPublishedMsg = ""
-                def inProgressBuildUrl = ""
+                def probableBuildUrl = ""
+                def probableBuildStatus = ""
+                def probableBuildIdForTRSS = ""
 
                 // Is it a non-tag triggered build? eg.Oracle STS version
                 if (nonTagBuildReleases.contains(featureRelease)) {
@@ -665,20 +680,31 @@ node('worker') {
                     }
                 } else {
                     // Check if build in-progress
-                    inProgressBuildUrl = getInProgressBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
+                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
 
                     // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
                     if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
                         def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
-                        if (upstreamTagAge > 3 && inProgressBuildUrl == "") {
+                        if (upstreamTagAge > 3 && probableBuildStatus == "Done") {
                             slackColor = 'danger'
                             health = "Unhealthy"
                             errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *No build is in progress*."
                         } else {
-                            if (inProgressBuildUrl != "") {
-                                errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. <" + inProgressBuildUrl + "|Build is in progress>."
+                            if (probableBuildStatus == "Streaming") {
+                                errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. <" + probableBuildUrl + "|Build is in progress>."
                             } else {
                                 errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *Build is awaiting 'trigger'*."
+                            }
+                        }
+                    }
+                    if (reproducibleBuilds.containsKey(featureRelease)) {
+                        getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, featureRelease, reproducibleBuilds)
+                        if ( reproducibleBuilds[featureRelease][0] != "100%") {
+                            slackColor = 'danger'
+                            health = "Unhealthy"
+                            errorMsg += "\nBuild reproducibility breakdown:"
+                            for (reproPlatform in reproducibleBuilds[featureRelease][1]) {
+                                errorMsg += "\n    "+reproPlatform+": "+reproducibleBuilds[featureRelease][1][reproPlatform]
                             }
                         }
                     }
@@ -693,14 +719,14 @@ node('worker') {
                         slackColor = 'danger'
                         health = "Unhealthy"
                         errorMsg += "\nArtifact status: "+status['assets']
-                        if (inProgressBuildUrl != "") {
-                            errorMsg += ", <" + inProgressBuildUrl + "|Build is in progress>"
+                        if (probableBuildStatus == "Streaming") {
+                            errorMsg += ", <" + probableBuildUrl + "|Build is in progress>"
                         } else {
                             errorMsg += ", *No build is in progress*"
                         }
                         missingAssets = status['missingAssets']
                     }
-                 
+
                     // Print out formatted missing artifacts if any missing
                     if (missingAssets.size() > 0) {
                         missingMsg += " :"
@@ -719,7 +745,7 @@ node('worker') {
                                 missingFiles = missingFile[1]+missingFile[2]
                             } else {
                                missingFiles += ", "+missingFile[1]+missingFile[2]
-                            }                        
+                            }
                         } 
                         if (missingFiles != "") {
                             missingMsg += "\n    *${archName}*: ${missingFiles}"
@@ -728,8 +754,13 @@ node('worker') {
                     }
                 }
 
+                def reproducibilityText = "Reproducibility: N/A"
+                if (reproducibleBuilds.containsKey(featureRelease)) {
+                    reproducibilityText = "Reproducibility: "+reproducibleBuilds[featureRelease][0]
+                }
+
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
+                def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*. ${reproducibilityText} Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
                 slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
