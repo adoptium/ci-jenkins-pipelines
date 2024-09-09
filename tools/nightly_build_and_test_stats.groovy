@@ -117,7 +117,7 @@ def getLatestBinariesTag(String version) {
 
 // Return our best guess at the url that generated a specific build.
 getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
-    def functionBuildUrl = ""
+    def functionBuildUrl = ["", "", ""]
 
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
