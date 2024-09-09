@@ -326,13 +326,13 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 }
 
 // For the given pipeline, return three strings: the reproducibility percentage average, 
-def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) {
-    if (trssId != "") {
-        results[jdkVersion][1].eachWithIndex{key, value -> 
-            results[jdkVersion][1][key] = "99%"
-        }
-    }
-}
+//def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) {
+//    if (trssId != "") {
+//        results[jdkVersion][1].eachWithIndex{key, value -> 
+//            results[jdkVersion][1][key] = "99%"
+//        }
+//    }
+//}
 
 node('worker') {
   try{
@@ -699,7 +699,7 @@ node('worker') {
                         }
                     }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
-                        getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, featureRelease, reproducibleBuilds)
+                        //getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, featureRelease, reproducibleBuilds)
                         if ( reproducibleBuilds[featureRelease][0] != "100%") {
                             slackColor = 'danger'
                             health = "Unhealthy"
