@@ -1503,10 +1503,10 @@ class Build {
      */
     def batOrSh(command)
     {
-        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-            context.bat(command)
-        } else {
+        if ( context.isUnix() ) {
             context.sh(command)
+        } else {
+            context.bat(command)
         }
     }
 
