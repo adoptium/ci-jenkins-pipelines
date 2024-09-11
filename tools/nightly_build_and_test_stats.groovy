@@ -144,8 +144,9 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
 
 // Delete before merge.
 def tempPublishname="jdk-21.0.5+6-ea"
+def tempScmref="jdk-21.0.5+6_adopt"
             // Is there a job for the required tag?
-            if (containsVariant && overridePublishName == tempPublishname && buildScmRef == scmRef && job.status != null) {
+            if (containsVariant && overridePublishName == tempPublishname && buildScmRef == tempScmref && job.status != null) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
@@ -341,7 +342,11 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) 
     // https://trss.adoptium.net/api/getAllChildBuilds?parentId=66dae4ead24e1b006e7fa4af&buildNameRegex=^jdk21u\-.*temurin$
     // get _id for each platform we want.
     // https://trss.adoptium.net/api/getAllChildBuilds?parentId=66d8b173d24e1b006e755860&buildNameRegex=^Test_openjdk21_hs_special.system_x86-64_linux$
-    // get buildUrl+"/consoleText"
+    // Are there any testlist subjobs? These should come up with a search of the above plus _testList.*
+    // If yes; add their outpuyt together and grep it for the percentage we need.
+    // If no; grep the single test job.
+    // Also, did we run the test at all?
+    // 
     
 }
 
