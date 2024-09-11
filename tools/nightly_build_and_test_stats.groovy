@@ -333,6 +333,8 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) 
         }
     }
     results[jdkVersion][0] = "98%"
+    
+    
 }
 
 node('worker') {
@@ -700,7 +702,7 @@ node('worker') {
                         }
                     }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
-                        getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, featureRelease, reproducibleBuilds)
+                        getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, reproducibleBuilds)
                         if ( reproducibleBuilds[featureRelease][0] != "100%") {
                             slackColor = 'danger'
                             health = "Unhealthy"
