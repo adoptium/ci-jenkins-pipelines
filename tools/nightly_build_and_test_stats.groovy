@@ -333,7 +333,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) {
     echo "Called repro method with trssID:"+trssId
     if (trssId != "") {
-        results[jdkVersion][1].eachWithIndex{key, value -> 
+        results[jdkVersion][1].each{key, value -> 
             results[jdkVersion][1][key] = "99%"
         }
     }
@@ -720,7 +720,7 @@ node('worker') {
                             slackColor = 'danger'
                             health = "Unhealthy"
                             errorMsg += "\nBuild reproducibility breakdown:"
-                            reproducibleBuilds[featureRelease][1].eachWithIndex{key, value -> 
+                            reproducibleBuilds[featureRelease][1].each{key, value -> 
                                 errorMsg += "\n    "+key+": "+value
                             }
                         }
