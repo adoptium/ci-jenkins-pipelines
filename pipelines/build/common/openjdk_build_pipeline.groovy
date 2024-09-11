@@ -628,6 +628,7 @@ class Build {
                             job: 'AQA_Test_Pipeline',
                             parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
                                                                     context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
+                                                                    context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
                                                                     context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                     context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
                                                                     context.MapParameter(name: 'PARALLEL', value: parallel),
