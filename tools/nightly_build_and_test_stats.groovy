@@ -715,8 +715,8 @@ node('worker') {
                             slackColor = 'danger'
                             health = "Unhealthy"
                             errorMsg += "\nBuild reproducibility breakdown:"
-                            for (reproPlatform in reproducibleBuilds[featureRelease][1]) {
-                                errorMsg += "\n    "+reproPlatform+": "+reproducibleBuilds[featureRelease][1][reproPlatform]
+                            reproducibleBuilds[featureRelease][1].eachWithIndex{key, value -> 
+                                errorMsg += "\n    "+key+": "+value
                             }
                         }
                     }
