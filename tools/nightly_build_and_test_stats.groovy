@@ -147,10 +147,11 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
-                        functionBuildUrl = [job.buildUrl, job.rootBuildId, job.status]
+                        functionBuildUrl = [job.buildUrl, job._id, job.status]
                     }
                 } else {
-                    functionBuildUrl = [job.buildUrl, job.rootBuildId , job.status]
+                    functionBuildUrl = [job.buildUrl, job._id, job.status]
+                    echo "Found "+featureRelease+" pipeline with this ID: "+job._id
                 }
             }
         }
