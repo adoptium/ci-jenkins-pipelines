@@ -23,8 +23,22 @@ Map<String, ?> DEFAULTS_JSON = null
 
 // Find the testenv ga commit SHA specified by the jdkBranch
 // Returns a Tuple2 of "repository", "gaCommitSHA"
-def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
-    def openjdkRepo = repo
+def findGaCommitSHA(String jdkVersion, String jdkBranch, Boolean annotatedTag) {
+    // Determine OpenJDK and Adoptium mirror repository
+    def repo
+    if (jdkVersion.toInteger() >= 23) {
+        // jdk-23+ first release is a branch within the jdk(head) repository
+        repo = "jdk"
+    } else {
+        if (jdkBranch.contains("jdk8u") && jdkBranch.contains("aarch32")) {
+            repo = "aarch32-port-jdk8u"
+        } else {
+            repo = "jdk${jdkVersion}"
+        }
+    }
+
+    def openjdkRepo  = "https://github.com/openjdk/${repo}"
+    def adoptiumRepo = "https://github.com/adoptium/${repo}"
 
     if (annotatedTag) {
         println "Searching for Annotated git tag with name '${jdkBranch}' using repo base: ${openjdkRepo}"
@@ -35,25 +49,26 @@ def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
     // Annotated tags are refs with suffix ^{}
     def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| grep -v '\\^{}'")
 
-    def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    def searchRepo = "${openjdkRepo}"
+    def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${searchRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     if (gaCommitSHA == "") {
         // Try "updates" repo..
-        openjdkRepo = "https://github.com/openjdk/jdk${jdkVersion}u.git"
-        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+        searchRepo = "${openjdkRepo}u"
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${searchRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     }
     if (gaCommitSHA == "") {
         // Maybe an Adoptium "dryrun" try Adoptium mirror repo..
-        openjdkRepo = "https://github.com/adoptium/jdk${jdkVersion}.git"
-        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+        searchRepo = "${adoptiumRepo}"
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${searchRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     }
     if (gaCommitSHA == "") {
         // Maybe an Adoptium "dryrun" try Adoptium mirror "updates" repo..
-        openjdkRepo = "https://github.com/adoptium/jdk${jdkVersion}u.git"
-        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+        searchRepo = "${adoptiumRepo}u"
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${searchRepo} ${annotatedTagFilter} | grep \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     }
 
     if (gaCommitSHA != "") {
-        return new Tuple2(openjdkRepo, gaCommitSHA)
+        return new Tuple2(searchRepo, gaCommitSHA)
     } else {
         return null
     }
@@ -64,17 +79,12 @@ def findGaCommitSHA(String repo, String jdkBranch, Boolean annotatedTag) {
 def resolveGaTag(String jdkVersion, String jdkBranch) {
     def resolvedTag = jdkBranch // Default to as-is
 
-    def openjdkRepo = "https://github.com/openjdk/jdk${jdkVersion}.git"
-    if (jdkBranch.contains("jdk8u") && jdkBranch.contains("aarch32")) {
-        openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
-    }
-
     Boolean annotatedTag = true
-    def resolveGaCommit = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
+    def resolveGaCommit = findGaCommitSHA(jdkVersion, jdkBranch, annotatedTag)
     if (resolveGaCommit == null) {
         // Try searching for a lightweight tag
         annotatedTag = false
-        resolveGaCommit = findGaCommitSHA(openjdkRepo, jdkBranch, annotatedTag)
+        resolveGaCommit = findGaCommitSHA(jdkVersion, jdkBranch, annotatedTag)
     }
 
     if (resolveGaCommit == null) {
