@@ -700,7 +700,7 @@ node('worker') {
                         }
                     }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
-                        //getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, featureRelease, reproducibleBuilds)
+                        getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, featureRelease, reproducibleBuilds)
                         if ( reproducibleBuilds[featureRelease][0] != "100%") {
                             slackColor = 'danger'
                             health = "Unhealthy"
