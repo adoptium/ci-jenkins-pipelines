@@ -142,6 +142,13 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
                 }
             }
 
+echo "DEBUG 123"
+echo "cv: "+containsVariant 
+echo "opn: "+overridePublishName 
+echo "pn: "+publishName
+echo "bsr: "+buildScmRef 
+echo "sr: "+scmRef
+echo "s: "+job.status
             // Is job for the required tag and currently inprogress?
             if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null) {
                 if (featureReleaseInt == 8) {
@@ -359,7 +366,7 @@ node('worker') {
     // Specifies what JDK versions and platforms are expected to be reproducible.
     // The "?" symbols will soon be replaced by reproducibility percentages.
     // Layout: [jdkVersion: [Overall-reproducibility, [By-platform reproducibility breakdown]]]
-    def reproducibleBuilds = ["jdk21u": [ "?", ["x64Linux": "?", "aarch64Linux": "?", "ppc64leLinux": "?", "x64Windows": "?", "x64Mac": "?", "aarch64Mac": "?"]]]
+    def reproducibleBuilds = ["jdk21u": [ "?", ["x86-64_linux": "?", "aarch64_linux": "?", "ppc64le_linux": "?", "x86-64_windows": "?", "x86-64_mac": "?", "aarch64_mac": "?"]]]
 
     stage('getPipelineStatus') {
         def apiVariant = variant
