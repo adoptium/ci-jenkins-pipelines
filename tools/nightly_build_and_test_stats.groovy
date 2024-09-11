@@ -147,10 +147,10 @@ getBuildUrl(String trssUrl, String variant, String featureRelease, String publis
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
-                        functionBuildUrl = [job.buildUrl, rootBuildId, job.status]
+                        functionBuildUrl = [job.buildUrl, job.rootBuildId, job.status]
                     }
                 } else {
-                    functionBuildUrl = [job.buildUrl, rootBuildId , job.status]
+                    functionBuildUrl = [job.buildUrl, job.rootBuildId , job.status]
                 }
             }
         }
@@ -326,13 +326,13 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 }
 
 // For the given pipeline, return three strings: the reproducibility percentage average, 
-//def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) {
-//    if (trssId != "") {
-//        results[jdkVersion][1].eachWithIndex{key, value -> 
-//            results[jdkVersion][1][key] = "99%"
-//        }
-//    }
-//}
+def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) {
+    if (trssId != "") {
+        results[jdkVersion][1].eachWithIndex{key, value -> 
+            results[jdkVersion][1][key] = "99%"
+        }
+    }
+}
 
 node('worker') {
   try{
