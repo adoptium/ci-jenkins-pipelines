@@ -327,6 +327,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 
 // For the given pipeline, return three strings: the reproducibility percentage average, 
 def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) {
+    echo "Called repro method with trssID:"+trssId
     if (trssId != "") {
         results[jdkVersion][1].eachWithIndex{key, value -> 
             results[jdkVersion][1][key] = "99%"
@@ -334,6 +335,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) 
     }
     results[jdkVersion][0] = "98%"
     
+    // https://trss.adoptium.net/api/getAllChildBuilds?parentId=66dae4ead24e1b006e7fa4af&buildNameRegex=^jdk21u\-.*temurin$
     
 }
 
