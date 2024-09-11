@@ -353,7 +353,7 @@ node('worker') {
     // Specifies what JDK versions and platforms are expected to be reproducible.
     // The "?" symbols will soon be replaced by reproducibility percentages.
     // Layout: [jdkVersion: [Overall-reproducibility, [By-platform reproducibility breakdown]]]
-    def reproducibleBuilds = ["jdk21u": [ "?" ["x64Linux": "?", "aarch64Linux": "?", "ppc64leLinux": "?", "x64Windows": "?", "x64Mac": "?", "aarch64Mac": "?"]]]
+    def reproducibleBuilds = ["jdk21u": [ "?", ["x64Linux": "?", "aarch64Linux": "?", "ppc64leLinux": "?", "x64Windows": "?", "x64Mac": "?", "aarch64Mac": "?"]]]
 
     stage('getPipelineStatus') {
         def apiVariant = variant
