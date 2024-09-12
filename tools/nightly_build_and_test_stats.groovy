@@ -21,6 +21,24 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
+// A map to convert from a standard platform format to the variants used by build and test job names on Jenkins.
+def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux"],
+                             x64Windows:         ["windows-x64", "x86-64_windows"],
+                             x64Mac:             ["mac-x64", "x86-64_mac"],
+                             x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux"],
+                             ppc64Aix:           ["aix-ppc64", "ppc64_aix"],
+                             ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux"],
+                             s390xLinux:         ["linux-s390x", "s390x_linux"],
+                             aarch64Linux:       ["linux-aarch64"], "aarch64_linux"],
+                             aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux"],
+                             aarch64Mac:         ["mac-aarch64", "aarch64_mac"],
+                             arm32Linux:         ["linux-arm", "arm_linux"],
+                             x32Windows:         ["windows-x86-32", "x86-32_windows"],
+                             x64Solaris:         ["solaris-x64", "x64_solaris"],
+                             sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris"],
+                             riscv64Linux:       ["linux-riscv64", "riscv64_linux"]
+                            ]
+
 // Check if the given tag is a -ga tag ?
 def isGaTag(String version, String tag) {
     if (version == "${params.TIP_RELEASE}".trim()) {
@@ -330,24 +348,67 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 }
 
 // For the given pipeline, return three strings: the reproducibility percentage average, 
-def getReproducibilityPercentage(String jdkVersion, String trssId, Map results) {
+def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results) {
     echo "Called repro method with trssID:"+trssId
-    if (trssId != "") {
-        results[jdkVersion][1].each{key, value -> 
-            results[jdkVersion][1][key] = "99%"
+
+    // We are only looking for reproducible percentages for the relevant jdk versions...
+    if (trssId != "" && results.containsKey(jdkVersion)) {
+        def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
+echo "Debug 1"
+        // ...and platforms.
+        results[jdkVersion][1].each { onePlatform, valueNotUsed ->
+            def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"&buildNameRegex=^"+jdkVersion+"\-"+platformConversionMap[onePlatform][0]+"\-temurin$"
+            def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
+            def platformResult = "???% - Build not found. <" + pipelineLink + "|Pipeline Link.>"
+echo "Debug 2"
+            // Does this platform have a build in this pipeline?
+            if (trssBuildJobNames.length() > 10) {
+                platformResult = "???% - Build found, but no tests. <" + pipelineLink + "|Pipeline Link.>"
+                def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
+
+echo "Debug 3"
+                // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
+                buildJobNamesJson.each { buildJob ->
+                    def testPlatform = platformConversionMap[onePlatform][1]
+                    def testJobTitle="Test_openjdk${jdkVersionInt}_hs_special.system_${testPlatform}.*"
+                    def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}&buildNameRegex=^${testJobTitle}$")
+echo "Debug 4"
+                    // Did this build have tests?
+                    if (trssTestJobNames.length() > 10) {
+                        platformResult = "???% - Found tests, but did not find Rebuild_Same_JDK_Reproducibility_Test_0. <" + buildJob.buildUrl + "|Build Link.>"
+                        def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
+echo "Debug 5"
+                        // For each special.sanity job (including testList subjobs), we now search for the reproducibility test.
+                        testJobNamesJson.each { testJob ->
+                            def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
+echo "Debug 6"
+                            // If we can find it, then we look for the anticipated percentage.
+                            if testOutput.contains("Running test Rebuild_Same_JDK_Reproducibility_Test_0") {
+                                platformResult = "???% - Rebuild_Same_JDK_Reproducibility_Test_0 ran but failed to produce a percentage. <" + testJob.buildUrl + "|Test Link.>"
+                                // Now we know the test ran, 
+                                def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
+                                if ( matcherObject.size() > 0 ) {
+                                    platformResult = matcherObject[0] =~ /[0-9]+ %/
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            results[jdkVersion][1][onePlatform] = platformResult
         }
+
+        // Now we have the percentages for each platform, we canculate the jdkVersion-specific average.
+        def overallAverage = 0
+        results[featureRelease][1].each{key, value ->
+            if ( (value =~ /^[0-9]+ %/).size() > 0 ) {
+                overallAverage += (value =~ /^[0-9]+/)[0] as Integer
+            }
+            // else do nothing, as we presume non-integer values are 0.
+        }
+        overallAverage = overallAverage == 0 ? 0 : overallAverage.intdiv(results[featureRelease][1].size())
+        results[featureRelease][0] = overallAverage+" %"
     }
-    results[jdkVersion][0] = "98%"
-    
-    // https://trss.adoptium.net/api/getAllChildBuilds?parentId=66dae4ead24e1b006e7fa4af&buildNameRegex=^jdk21u\-.*temurin$
-    // get _id for each platform we want.
-    // https://trss.adoptium.net/api/getAllChildBuilds?parentId=66d8b173d24e1b006e755860&buildNameRegex=^Test_openjdk21_hs_special.system_x86-64_linux$
-    // Are there any testlist subjobs? These should come up with a search of the above plus _testList.*
-    // If yes; add their outpuyt together and grep it for the percentage we need.
-    // If no; grep the single test job.
-    // Also, did we run the test at all?
-    // 
-    
 }
 
 node('worker') {
@@ -369,7 +430,7 @@ node('worker') {
     // Specifies what JDK versions and platforms are expected to be reproducible.
     // The "?" symbols will soon be replaced by reproducibility percentages.
     // Layout: [jdkVersion: [Overall-reproducibility, [By-platform reproducibility breakdown]]]
-    def reproducibleBuilds = ["jdk21u": [ "?", ["x86-64_linux": "?", "aarch64_linux": "?", "ppc64le_linux": "?", "x86-64_windows": "?", "x86-64_mac": "?", "aarch64_mac": "?"]]]
+    def reproducibleBuilds = ["jdk21u": [ "?", ["x64linux": "?", "aarch64linux": "?", "ppc64lelinux": "?", "x64windows": "?", "x64mac": "?", "aarch64mac": "?"]]]
 
     stage('getPipelineStatus') {
         def apiVariant = variant
@@ -714,15 +775,25 @@ node('worker') {
                             }
                         }
                     }
+                    
+                    def testsShouldHaveRun = false
+                    if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${probableBuildUrl}").count("\"enableTests\": true") == 2 ) {
+                        def testsShouldHaveRun = true
+                    }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
-                        getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, reproducibleBuilds)
-                        if ( reproducibleBuilds[featureRelease][0] != "100%") {
-                            slackColor = 'danger'
-                            health = "Unhealthy"
-                            errorMsg += "\nBuild reproducibility breakdown:"
-                            reproducibleBuilds[featureRelease][1].each{key, value -> 
-                                errorMsg += "\n    "+key+": "+value
+                        if (testsShouldHaveRun) {
+                            getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, trssUrl, reproducibleBuilds)
+                            if ( reproducibleBuilds[featureRelease][0] != "100%") {
+                                slackColor = 'danger'
+                                health = "Unhealthy"
+                                errorMsg += "\nBuild reproducibility breakdown:"
+                                reproducibleBuilds[featureRelease][1].each{key, value -> 
+                                    errorMsg += "\n    "+key+": "+value
+                                }
                             }
+                        } else {
+                            Ignore test results if the tests for this pipeline were intentionally disabled.
+                            reproducibleBuilds[featureRelease][0] = "N/A - No Tests"
                         }
                     }
                 }
