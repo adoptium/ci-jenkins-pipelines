@@ -383,7 +383,7 @@ echo "Debug 5"
                             def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
 echo "Debug 6"
                             // If we can find it, then we look for the anticipated percentage.
-                            if ( testOutput.contains("Running test Rebuild_Same_JDK_Reproducibility_Test_0") {
+                            if ( testOutput.contains("Running test Rebuild_Same_JDK_Reproducibility_Test_0") ) {
                                 platformResult = "???% - Rebuild_Same_JDK_Reproducibility_Test_0 ran but failed to produce a percentage. <" + testJob.buildUrl + "|Test Link.>"
                                 // Now we know the test ran, 
                                 def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
