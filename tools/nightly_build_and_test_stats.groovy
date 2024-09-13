@@ -777,7 +777,7 @@ node('worker') {
                     }
                     
                     def testsShouldHaveRun = false
-echo "Debug 1.1"
+echo "Debug 1.1 plus "+probableBuildUrl
 def debugx = sh(returnStdout: true, script: "wget -q -O - ${probableBuildUrl}")
 echo "Debug 1.1.1"
 def debugy = debugx.count("\"enableTests\": true")
