@@ -792,7 +792,7 @@ node('worker') {
                                 }
                             }
                         } else {
-                            Ignore test results if the tests for this pipeline were intentionally disabled.
+                            // Ignore test results if the tests for this pipeline were intentionally disabled.
                             reproducibleBuilds[featureRelease][0] = "N/A - No Tests"
                         }
                     }
