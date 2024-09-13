@@ -352,7 +352,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
     echo "Called repro method with trssID:"+trssId
 
     // We are only looking for reproducible percentages for the relevant jdk versions...
-    if (trssId != "" && results.containsKey(jdkVersion)) {
+    if ( trssId != "" && results.containsKey(jdkVersion) ) {
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 echo "Debug 1"
         // ...and platforms.
@@ -362,7 +362,7 @@ echo "Debug 1"
             def platformResult = "???% - Build not found. <" + pipelineLink + "|Pipeline Link.>"
 echo "Debug 2"
             // Does this platform have a build in this pipeline?
-            if (trssBuildJobNames.length() > 10) {
+            if ( trssBuildJobNames.length() > 10 ) {
                 platformResult = "???% - Build found, but no tests. <" + pipelineLink + "|Pipeline Link.>"
                 def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
 
@@ -374,7 +374,7 @@ echo "Debug 3"
                     def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}&buildNameRegex=^${testJobTitle}\$")
 echo "Debug 4"
                     // Did this build have tests?
-                    if (trssTestJobNames.length() > 10) {
+                    if ( trssTestJobNames.length() > 10 ) {
                         platformResult = "???% - Found tests, but did not find Rebuild_Same_JDK_Reproducibility_Test_0. <" + buildJob.buildUrl + "|Build Link.>"
                         def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
 echo "Debug 5"
@@ -383,7 +383,7 @@ echo "Debug 5"
                             def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
 echo "Debug 6"
                             // If we can find it, then we look for the anticipated percentage.
-                            if testOutput.contains("Running test Rebuild_Same_JDK_Reproducibility_Test_0") {
+                            if ( testOutput.contains("Running test Rebuild_Same_JDK_Reproducibility_Test_0") {
                                 platformResult = "???% - Rebuild_Same_JDK_Reproducibility_Test_0 ran but failed to produce a percentage. <" + testJob.buildUrl + "|Test Link.>"
                                 // Now we know the test ran, 
                                 def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
