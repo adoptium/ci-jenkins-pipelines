@@ -21,23 +21,26 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
-// A map to convert from a standard platform format to the variants used by build and test job names on Jenkins.
-def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux"],
-                             x64Windows:         ["windows-x64", "x86-64_windows"],
-                             x64Mac:             ["mac-x64", "x86-64_mac"],
-                             x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux"],
-                             ppc64Aix:           ["aix-ppc64", "ppc64_aix"],
-                             ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux"],
-                             s390xLinux:         ["linux-s390x", "s390x_linux"],
-                             aarch64Linux:       ["linux-aarch64", "aarch64_linux"],
-                             aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux"],
-                             aarch64Mac:         ["mac-aarch64", "aarch64_mac"],
-                             arm32Linux:         ["linux-arm", "arm_linux"],
-                             x32Windows:         ["windows-x86-32", "x86-32_windows"],
-                             x64Solaris:         ["solaris-x64", "x64_solaris"],
-                             sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris"],
-                             riscv64Linux:       ["linux-riscv64", "riscv64_linux"]
-                            ]
+def getPlatformConversionMap() {
+    // A map to convert from a standard platform format to the variants used by build and test job names on Jenkins.
+    def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux"],
+                                 x64Windows:         ["windows-x64", "x86-64_windows"],
+                                 x64Mac:             ["mac-x64", "x86-64_mac"],
+                                 x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux"],
+                                 ppc64Aix:           ["aix-ppc64", "ppc64_aix"],
+                                 ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux"],
+                                 s390xLinux:         ["linux-s390x", "s390x_linux"],
+                                 aarch64Linux:       ["linux-aarch64", "aarch64_linux"],
+                                 aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux"],
+                                 aarch64Mac:         ["mac-aarch64", "aarch64_mac"],
+                                 arm32Linux:         ["linux-arm", "arm_linux"],
+                                 x32Windows:         ["windows-x86-32", "x86-32_windows"],
+                                 x64Solaris:         ["solaris-x64", "x64_solaris"],
+                                 sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris"],
+                                 riscv64Linux:       ["linux-riscv64", "riscv64_linux"]
+                                ]
+    return platformConversionMap
+}
 
 // Check if the given tag is a -ga tag ?
 def isGaTag(String version, String tag) {
@@ -350,6 +353,8 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 // For the given pipeline, return three strings: the reproducibility percentage average, 
 def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results) {
     echo "Called repro method with trssID:"+trssId
+
+    def platformConversionMap = getPlatformConversionMap()
 
     // We are only looking for reproducible percentages for the relevant jdk versions...
     if ( trssId != "" && results.containsKey(jdkVersion) ) {
