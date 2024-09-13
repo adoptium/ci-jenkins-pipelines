@@ -777,11 +777,15 @@ node('worker') {
                     }
                     
                     def testsShouldHaveRun = false
+echo "Debug 1.1"
                     if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${probableBuildUrl}").count("\"enableTests\": true") == 2 ) {
+echo "Debug 1.2"
                         testsShouldHaveRun = true
                     }
+echo "Debug 1.3"
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         if (testsShouldHaveRun) {
+echo "Debug 1.4"
                             getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, trssUrl, reproducibleBuilds)
                             if ( reproducibleBuilds[featureRelease][0] != "100%") {
                                 slackColor = 'danger'
@@ -795,6 +799,7 @@ node('worker') {
                             // Ignore test results if the tests for this pipeline were intentionally disabled.
                             reproducibleBuilds[featureRelease][0] = "N/A - No Tests"
                         }
+echo "Debug 1.5"
                     }
                 }
 
