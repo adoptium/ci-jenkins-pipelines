@@ -778,7 +778,7 @@ node('worker') {
                     
                     def testsShouldHaveRun = false
                     if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${probableBuildUrl}").count("\"enableTests\": true") == 2 ) {
-                        def testsShouldHaveRun = true
+                        testsShouldHaveRun = true
                     }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         if (testsShouldHaveRun) {
