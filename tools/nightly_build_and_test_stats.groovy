@@ -778,6 +778,10 @@ node('worker') {
                     
                     def testsShouldHaveRun = false
 echo "Debug 1.1"
+def debugx = sh(returnStdout: true, script: "wget -q -O - ${probableBuildUrl}")
+echo "Debug 1.1.1"
+def debugy = debugx.count("\"enableTests\": true")
+echo "Debug 1.1.2"
                     if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${probableBuildUrl}").count("\"enableTests\": true") == 2 ) {
 echo "Debug 1.2"
                         testsShouldHaveRun = true
