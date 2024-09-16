@@ -405,14 +405,14 @@ echo "Debug 6"
 
         // Now we have the percentages for each platform, we canculate the jdkVersion-specific average.
         def overallAverage = 0
-        results[featureRelease][1].each{key, value ->
+        results[jdkVersion][1].each{key, value ->
             if ( (value ==~ /^[0-9]+ %/) ) {
                 overallAverage += (value =~ /^[0-9]+/)[0] as Integer
             }
             // else do nothing, as we presume non-integer values are 0.
         }
-        overallAverage = overallAverage == 0 ? 0 : overallAverage.intdiv(results[featureRelease][1].size())
-        results[featureRelease][0] = overallAverage+" %"
+        overallAverage = overallAverage == 0 ? 0 : overallAverage.intdiv(results[jdkVersion][1].size())
+        results[jdkVersion][0] = overallAverage+" %"
     }
 }
 
