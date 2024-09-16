@@ -42,6 +42,18 @@ def getPlatformConversionMap() {
     return platformConversionMap
 }
 
+def getPlatformReproTestMap() {
+    // A map to return the test bucket and test name for the repducibile platforms
+    def platformReproTestMap = [x64Linux:           ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
+                                x64Windows:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
+                                x64Mac:             ["NA", ""],
+                                ppc64leLinux:       ["NA", ""],
+                                aarch64Linux:       ["NA", ""],
+                                aarch64Mac:         ["NA", ""]
+                               ]
+    return platformReproTestMap
+}
+
 // Check if the given tag is a -ga tag ?
 def isGaTag(String version, String tag) {
     if (version == "${params.TIP_RELEASE}".trim()) {
@@ -164,8 +176,8 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
             }
 
 // Delete before merge.
-def tempPublishname="jdk-21.0.5+6-ea"
-def tempScmref="jdk-21.0.5+6_adopt"
+// def tempPublishname="jdk-21.0.5+6-ea"
+// def tempScmref="jdk-21.0.5+6_adopt"
             // Is there a job for the required tag?
             if (containsVariant && overridePublishName == tempPublishname && buildScmRef == tempScmref && job.status != null) {
                 if (featureReleaseInt == 8) {
@@ -355,41 +367,50 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
     echo "Called repro method with trssID:"+trssId
 
     def platformConversionMap = getPlatformConversionMap()
+    def platformReproTestMap = getPlatformReproTestMap() {
 
     // We are only looking for reproducible percentages for the relevant jdk versions...
     if ( trssId != "" && results.containsKey(jdkVersion) ) {
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
-echo "Debug 1"
+
         // ...and platforms.
         results[jdkVersion][1].each { onePlatform, valueNotUsed ->
+            // If this platform doesn't have a reproducibility test yet, skip it.
+            if (platformReproTestMap[onePlatform][0].equals("NA")) {
+                results[jdkVersion][1][onePlatform] = "NA"
+                // Then we exit this lambda and skip to the next platform.
+                return
+            }
+            
             def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"\\&buildNameRegex=^"+jdkVersion+"\\-"+platformConversionMap[onePlatform][0]+"\\-temurin\$"
             def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
             def platformResult = "???% - Build not found. <" + pipelineLink + "|Pipeline Link.>"
-echo "Debug 2"
+
             // Does this platform have a build in this pipeline?
             if ( trssBuildJobNames.length() > 10 ) {
-                platformResult = "???% - Build found, but no tests. <" + pipelineLink + "|Pipeline Link.>"
                 def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
 
-echo "Debug 3"
                 // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
                 buildJobNamesJson.each { buildJob ->
+                    platformResult = "???% - Build found, but no reproducibility tests. <" + buildJob.buildUrl + "|Build Link.>"
                     def testPlatform = platformConversionMap[onePlatform][1]
-                    def testJobTitle="Test_openjdk${jdkVersionInt}_hs_special.system_${testPlatform}.*"
+                    def reproTestName=platformReproTestMap[onePlatform][1]
+                    def reproTestBucket=platformReproTestMap[onePlatform][0]
+                    def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
                     def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
-echo "Debug 4"
+
                     // Did this build have tests?
                     if ( trssTestJobNames.length() > 10 ) {
-                        platformResult = "???% - Found tests, but did not find Rebuild_Same_JDK_Reproducibility_Test_0. <" + buildJob.buildUrl + "|Build Link.>"
+                        platformResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. <" + buildJob.buildUrl + "|Build Link.>"
                         def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
-echo "Debug 5"
-                        // For each special.sanity job (including testList subjobs), we now search for the reproducibility test.
+
+                        // For each test job (including testList subjobs), we now search for the reproducibility test.
                         testJobNamesJson.each { testJob ->
                             def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
-echo "Debug 6"
+
                             // If we can find it, then we look for the anticipated percentage.
-                            if ( testOutput.contains("Running test Rebuild_Same_JDK_Reproducibility_Test_0") ) {
-                                platformResult = "???% - Rebuild_Same_JDK_Reproducibility_Test_0 ran but failed to produce a percentage. <" + testJob.buildUrl + "|Test Link.>"
+                            if ( testOutput.contains("Running test "+reproTestName) ) {
+                                platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. <" + testJob.buildUrl + "|Test Link.>"
                                 // Now we know the test ran, 
                                 def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
                                 if ( matcherObject ) {
@@ -405,13 +426,17 @@ echo "Debug 6"
 
         // Now we have the percentages for each platform, we canculate the jdkVersion-specific average.
         def overallAverage = 0
+        // Ignoring the platforms where the test is not available yet.
+        def naCount = 0
         results[jdkVersion][1].each{key, value ->
-            if ( (value ==~ /^[0-9]+ %/) ) {
+            if (value.equals("NA")) {
+                naCount++
+            } else if ( (value ==~ /^[0-9]+ %/) ) {
                 overallAverage += (value =~ /^[0-9]+/)[0] as Integer
             }
-            // else do nothing, as we presume non-integer values are 0.
+            // else do nothing, as we presume non-integer and non-NA values are 0.
         }
-        overallAverage = overallAverage == 0 ? 0 : overallAverage.intdiv(results[jdkVersion][1].size())
+        overallAverage = overallAverage == 0 ? 0 : overallAverage.intdiv(results[jdkVersion][1].size() - naCount)
         results[jdkVersion][0] = overallAverage+" %"
     }
 }
@@ -780,31 +805,43 @@ node('worker') {
                             }
                         }
                     }
-                    
+
                     def testsShouldHaveRun = false
-echo "Debug 1.1 "
                     if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${probableBuildUrl}").count("\\\"enableTests\\\": true") == 2 ) {
-echo "Debug 1.2"
                         testsShouldHaveRun = true
                     }
-echo "Debug 1.3"
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         if (testsShouldHaveRun) {
-echo "Debug 1.4"
                             getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, trssUrl, reproducibleBuilds)
                             if ( reproducibleBuilds[featureRelease][0] != "100%") {
                                 slackColor = 'danger'
                                 health = "Unhealthy"
-                                errorMsg += "\nBuild reproducibility breakdown:"
+                                def summaryOfRepros=[" Good=", " Bad=", " NA="]
+                                echo "Reproducible builds for " + featureRelease + " did not add up to 100%. Breakdown: "
                                 reproducibleBuilds[featureRelease][1].each{key, value -> 
-                                    errorMsg += "\n    "+key+": "+value
+                                    echo key+": "+value
+                                    if (value.equals("100 %")) {
+                                        summaryOfRepros[0]+=key+","
+                                    } else if (value.equals("NA")) {
+                                        summaryOfRepros[2]+=key+","
+                                    } else {
+                                        def summaryOfRepros[1]+=key+","
+                                    }
                                 }
+                                //Plus some quick tidy-up formatting
+                                summaryOfRepros.eachWithIndex{ reproEntry, idx ->
+                                    if ( reproEntry.endsWith(",") ) {
+                                        summaryOfRepros[idx] = summaryOfRepros[idx].toList().init().join()
+                                    } else {
+                                        summaryOfRepros[idx] = summaryOfRepros[idx]+"none"
+                                    }
+                                }
+                                errorMsg += "\nBuild repro summary: "+summaryOfRepros[0]+summaryOfRepros[1]+summaryOfRepros[2]
                             }
                         } else {
                             // Ignore test results if the tests for this pipeline were intentionally disabled.
                             reproducibleBuilds[featureRelease][0] = "N/A - No Tests"
                         }
-echo "Debug 1.5"
                     }
                 }
 
