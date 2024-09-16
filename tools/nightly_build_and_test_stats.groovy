@@ -362,7 +362,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 echo "Debug 1"
         // ...and platforms.
         results[jdkVersion][1].each { onePlatform, valueNotUsed ->
-            def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"\&buildNameRegex=^"+jdkVersion+"\\-"+platformConversionMap[onePlatform][0]+"\\-temurin\$"
+            def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"\\&buildNameRegex=^"+jdkVersion+"\\-"+platformConversionMap[onePlatform][0]+"\\-temurin\$"
             def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
             def platformResult = "???% - Build not found. <" + pipelineLink + "|Pipeline Link.>"
 echo "Debug 2"
