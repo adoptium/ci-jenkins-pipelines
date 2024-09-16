@@ -176,8 +176,8 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
             }
 
 // Delete before merge.
-// def tempPublishname="jdk-21.0.5+6-ea"
-// def tempScmref="jdk-21.0.5+6_adopt"
+def tempPublishname="jdk-21.0.5+6-ea"
+def tempScmref="jdk-21.0.5+6_adopt"
             // Is there a job for the required tag?
             if (containsVariant && overridePublishName == tempPublishname && buildScmRef == tempScmref && job.status != null) {
                 if (featureReleaseInt == 8) {
