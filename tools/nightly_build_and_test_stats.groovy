@@ -816,31 +816,29 @@ node('worker') {
                             if ( reproducibleBuilds[featureRelease][0] != "100%") {
                                 slackColor = 'danger'
                                 health = "Unhealthy"
-                                def summaryOfRepros=[" Good=", " Bad=", " NA="]
-                                echo "Reproducible builds for " + featureRelease + " did not add up to 100%. Breakdown: "
+                                def summaryOfRepros = ""
+                                echo "Build reproducibility percentages for " + featureRelease + " did not add up to 100%. Breakdown: "
                                 reproducibleBuilds[featureRelease][1].each{ key, value -> 
-                                    echo key+": "+value
-                                    if (value.equals("100 %")) {
-                                        summaryOfRepros[0]+=key+","
-                                    } else if (value.equals("NA")) {
-                                        summaryOfRepros[2]+=key+","
+                                    if (!value.equals("NA")) {
+                                        echo key+": "+value
+                                        if(value ==~ /[0-9]+ %/) {
+                                            summaryOfRepros+=" "+key+"("+value+"),"
+                                        } else {
+                                            summaryOfRepros+=" "+key+"(?),"
+                                        }
                                     } else {
-                                        summaryOfRepros[1]+=key+","
+                                        echo key+": NA - Reproducibility testing has not yet been implimented for this presumed reproducible build."
                                     }
                                 }
-                                //Plus some quick tidy-up formatting
-                                summaryOfRepros.eachWithIndex{ reproEntry, idx ->
-                                    if ( reproEntry.endsWith(",") ) {
-                                        summaryOfRepros[idx] = summaryOfRepros[idx].substring(0, summaryOfRepros[idx].length() - 1);
-                                    } else {
-                                        summaryOfRepros[idx] = summaryOfRepros[idx]+"none"
-                                    }
-                                }
-                                errorMsg += "\nBuild repro summary: "+summaryOfRepros[0]+summaryOfRepros[1]+summaryOfRepros[2]
+
+                                //Remove trailing comma.
+                                summaryOfRepros = summaryOfRepros.substring(0, summaryOfRepros.length() - 1);
+
+                                errorMsg += "\nBuild repro summary: "+summaryOfRepros
                             }
                         } else {
                             // Ignore test results if the tests for this pipeline were intentionally disabled.
-                            reproducibleBuilds[featureRelease][0] = "N/A - No Tests"
+                            reproducibleBuilds[featureRelease][0] = "N/A - Tests disabled"
                         }
                     }
                 }
