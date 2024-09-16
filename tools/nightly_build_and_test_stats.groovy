@@ -825,7 +825,7 @@ node('worker') {
                                     } else if (value.equals("NA")) {
                                         summaryOfRepros[2]+=key+","
                                     } else {
-                                        def summaryOfRepros[1]+=key+","
+                                        summaryOfRepros[1]+=key+","
                                     }
                                 }
                                 //Plus some quick tidy-up formatting
