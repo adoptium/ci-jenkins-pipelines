@@ -831,7 +831,7 @@ node('worker') {
                                 //Plus some quick tidy-up formatting
                                 summaryOfRepros.eachWithIndex{ reproEntry, idx ->
                                     if ( reproEntry.endsWith(",") ) {
-                                        summaryOfRepros[idx] = summaryOfRepros[idx].toList().init().join()
+                                        summaryOfRepros[idx] = summaryOfRepros[idx].substring(0, summaryOfRepros[idx].length() - 1);
                                     } else {
                                         summaryOfRepros[idx] = summaryOfRepros[idx]+"none"
                                     }
