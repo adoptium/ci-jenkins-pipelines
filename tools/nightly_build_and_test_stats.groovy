@@ -367,7 +367,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
     echo "Called repro method with trssID:"+trssId
 
     def platformConversionMap = getPlatformConversionMap()
-    def platformReproTestMap = getPlatformReproTestMap() {
+    def platformReproTestMap = getPlatformReproTestMap()
 
     // We are only looking for reproducible percentages for the relevant jdk versions...
     if ( trssId != "" && results.containsKey(jdkVersion) ) {
@@ -381,7 +381,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 // Then we exit this lambda and skip to the next platform.
                 return
             }
-            
+
             def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"\\&buildNameRegex=^"+jdkVersion+"\\-"+platformConversionMap[onePlatform][0]+"\\-temurin\$"
             def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
             def platformResult = "???% - Build not found. <" + pipelineLink + "|Pipeline Link.>"
@@ -818,7 +818,7 @@ node('worker') {
                                 health = "Unhealthy"
                                 def summaryOfRepros=[" Good=", " Bad=", " NA="]
                                 echo "Reproducible builds for " + featureRelease + " did not add up to 100%. Breakdown: "
-                                reproducibleBuilds[featureRelease][1].each{key, value -> 
+                                reproducibleBuilds[featureRelease][1].each{ key, value -> 
                                     echo key+": "+value
                                     if (value.equals("100 %")) {
                                         summaryOfRepros[0]+=key+","
