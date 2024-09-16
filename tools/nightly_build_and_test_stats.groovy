@@ -376,7 +376,7 @@ echo "Debug 3"
                 buildJobNamesJson.each { buildJob ->
                     def testPlatform = platformConversionMap[onePlatform][1]
                     def testJobTitle="Test_openjdk${jdkVersionInt}_hs_special.system_${testPlatform}.*"
-                    def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}&buildNameRegex=^${testJobTitle}\$")
+                    def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
 echo "Debug 4"
                     // Did this build have tests?
                     if ( trssTestJobNames.length() > 10 ) {
