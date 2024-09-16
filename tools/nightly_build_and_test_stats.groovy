@@ -392,7 +392,7 @@ echo "Debug 6"
                                 platformResult = "???% - Rebuild_Same_JDK_Reproducibility_Test_0 ran but failed to produce a percentage. <" + testJob.buildUrl + "|Test Link.>"
                                 // Now we know the test ran, 
                                 def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
-                                if ( matcherObject.size() > 0 ) {
+                                if ( matcherObject[0].length() > 0 ) {
                                     platformResult = matcherObject[0] =~ /[0-9]+ %/
                                 }
                             }
