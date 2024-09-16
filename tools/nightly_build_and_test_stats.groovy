@@ -175,11 +175,8 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
                 }
             }
 
-// Delete before merge.
-def tempPublishname="jdk-21.0.5+6-ea"
-def tempScmref="jdk-21.0.5+6_adopt"
             // Is there a job for the required tag?
-            if (containsVariant && overridePublishName == tempPublishname && buildScmRef == tempScmref && job.status != null) {
+            if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
@@ -362,7 +359,8 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     }
 }
 
-// For the given pipeline, return three strings: the reproducibility percentage average, 
+// For a given pipeline, tell us how reproducible the builds were.
+// Note: Will limit itself to jdk versions and platforms in the results Map.
 def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results) {
     echo "Called repro method with trssID:"+trssId
 
@@ -384,7 +382,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 
             def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"\\&buildNameRegex=^"+jdkVersion+"\\-"+platformConversionMap[onePlatform][0]+"\\-temurin\$"
             def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
-            def platformResult = "???% - Build not found. <" + pipelineLink + "|Pipeline Link.>"
+            def platformResult = "???% - Build not found. Pipeline link: " + pipelineLink
 
             // Does this platform have a build in this pipeline?
             if ( trssBuildJobNames.length() > 10 ) {
@@ -392,7 +390,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 
                 // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
                 buildJobNamesJson.each { buildJob ->
-                    platformResult = "???% - Build found, but no reproducibility tests. <" + buildJob.buildUrl + "|Build Link.>"
+                    platformResult = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
                     def testPlatform = platformConversionMap[onePlatform][1]
                     def reproTestName=platformReproTestMap[onePlatform][1]
                     def reproTestBucket=platformReproTestMap[onePlatform][0]
@@ -401,7 +399,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 
                     // Did this build have tests?
                     if ( trssTestJobNames.length() > 10 ) {
-                        platformResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. <" + buildJob.buildUrl + "|Build Link.>"
+                        platformResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
                         def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
 
                         // For each test job (including testList subjobs), we now search for the reproducibility test.
@@ -410,7 +408,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 
                             // If we can find it, then we look for the anticipated percentage.
                             if ( testOutput.contains("Running test "+reproTestName) ) {
-                                platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. <" + testJob.buildUrl + "|Test Link.>"
+                                platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
                                 // Now we know the test ran, 
                                 def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
                                 if ( matcherObject ) {
