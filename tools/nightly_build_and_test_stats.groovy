@@ -824,7 +824,7 @@ node('worker') {
                                         if(value ==~ /[0-9]+ %/) {
                                             summaryOfRepros+=" "+key+"("+value+"),"
                                         } else {
-                                            summaryOfRepros+=" "+key+"(?),"
+                                            summaryOfRepros+=" "+key+"(?%),"
                                         }
                                     } else {
                                         echo key+": NA - Reproducibility testing has not yet been implimented for this presumed reproducible build."
