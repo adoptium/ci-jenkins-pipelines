@@ -392,7 +392,7 @@ echo "Debug 6"
                                 platformResult = "???% - Rebuild_Same_JDK_Reproducibility_Test_0 ran but failed to produce a percentage. <" + testJob.buildUrl + "|Test Link.>"
                                 // Now we know the test ran, 
                                 def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
-                                if ( matcherObject[0].length() > 0 ) {
+                                if ( matcherObject ) {
                                     platformResult = matcherObject[0] =~ /[0-9]+ %/
                                 }
                             }
@@ -406,7 +406,7 @@ echo "Debug 6"
         // Now we have the percentages for each platform, we canculate the jdkVersion-specific average.
         def overallAverage = 0
         results[featureRelease][1].each{key, value ->
-            if ( (value =~ /^[0-9]+ %/).size() > 0 ) {
+            if ( (value ==~ /^[0-9]+ %/) ) {
                 overallAverage += (value =~ /^[0-9]+/)[0] as Integer
             }
             // else do nothing, as we presume non-integer values are 0.
