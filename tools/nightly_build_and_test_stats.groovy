@@ -805,7 +805,7 @@ node('worker') {
                     }
 
                     def testsShouldHaveRun = false
-                    if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${probableBuildUrl}").count("\\\"enableTests\\\": true") == 2 ) {
+                    if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${probableBuildUrl}").count("\\\"enableTests\\\",\\\"value\\\": true") == 1 ) {
                         testsShouldHaveRun = true
                     }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
