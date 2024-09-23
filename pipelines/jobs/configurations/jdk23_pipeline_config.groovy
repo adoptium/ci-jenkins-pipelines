@@ -108,7 +108,9 @@ class Config23 {
                 os                  : 'linux',
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'special.system']
+                ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace'
                 ],
@@ -121,7 +123,9 @@ class Config23 {
                 os                  : 'linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'special.system']
+                ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace --with-jobs=4'
