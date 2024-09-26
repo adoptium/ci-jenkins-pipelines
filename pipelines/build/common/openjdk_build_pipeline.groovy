@@ -1632,8 +1632,8 @@ class Build {
 
 def buildScriptsAssemble(
     cleanWorkspaceAfter,
-    filename,
-    useAdoptShellScripts
+    useAdoptShellScripts,
+    buildConfigEnvVars
 ) {
     def build_path
     def openjdk_build_dir
@@ -1660,19 +1660,8 @@ def buildScriptsAssemble(
         // Restore signed JMODs
         context.unstash 'signed_jmods'
         // Convert IndividualBuildConfig to jenkins env variables
-        List<String> envVars = buildConfig.toEnvVars()
-        envVars.add("FILENAME=${filename}" as String)
-        // Use BUILD_REF override if specified
-        def adoptBranch = buildConfig.BUILD_REF ?: ADOPT_DEFAULTS_JSON['repository']['build_branch']
-        // Add platform config path so it can be used if the user doesn't have one
-        def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
-        // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
-        String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
-        // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
-        envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${adoptBranch}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
         // SXAEC: temporary fudge as the container doesn't have ant in the path
-//        envVars.add("PATH=c:\\SXAEC;c:\\cygwin64\\bin;c:\\Windows\\System32;c:\\windows;c:\\Windows\\System32\\WindowsPowershell\\v1.0;c:\\Program Files\\Git\\bin;c:\\apache-ant\\apache-ant-1.10.5\\bin" as String)
-        context.withEnv(envVars) {
+        context.withEnv(buildConfigEnvVars) {
           if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
             context.println "SXAEC: Adding " + env.BUILD_ARGS + " before starting secondary env context"
             assembleBuildArgs = env.BUILD_ARGS + ' --assemble-exploded-image' + openjdk_build_dir_arg
@@ -1710,7 +1699,7 @@ def buildScriptsAssemble(
                 throw new Exception("[ERROR] Build JDK timeout (${buildTimeouts.BUILD_JDK_TIMEOUT} HOURS) has been reached. Exiting...")
             }
           } // context.withEnv(buildargs)
-        } // context.withEnv(envVars)
+        } // context.withEnv(buildConfigEnvVars)
         String versionOut
         if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
             context.println "[WARNING] Don't read faked version.txt on cross compiled build! Archiving early and running downstream job to retrieve java version..."
@@ -1752,9 +1741,9 @@ def buildScriptsAssemble(
         cleanWorkspace,
         cleanWorkspaceAfter,
         cleanWorkspaceBuildOutputAfter,
-        filename,
         useAdoptShellScripts,
-        enableSigner
+        enableSigner,
+        buildConfigEnvVars
     ) {
         return context.stage('build') {
             // Create the repo handler with the user's defaults to ensure a temurin-build checkout is not null
@@ -1792,7 +1781,6 @@ def buildScriptsAssemble(
                             // Issue: https://issues.jenkins.io/browse/JENKINS-64779
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
-                                context.println 'SXA: batable 1540'
                                 batOrSh(script: 'rm -rf ' + context.WORKSPACE + '/*')
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
@@ -1821,10 +1809,8 @@ def buildScriptsAssemble(
                         if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                             context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
                             batOrSh('rm -rf ' + openjdk_build_dir)
-            batOrSh('ls -l ' + context.WORKSPACE + '/workspace/target || true')
-            context.println 'SXAEC: Clearing output artefacts to avoid duplicates being passed to the installer #680'
-            // SXAEC: This was to handle using none of the clean options when extracting tarballs ...
-            batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/target/*')
+                            // SXAEC: This handles when none of the clean options are used when extracting cached tarballs ...
+                            batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/target/*')
                         } else {
                             context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
                         }
@@ -1860,21 +1846,8 @@ def buildScriptsAssemble(
 
             try {
                 // Convert IndividualBuildConfig to jenkins env variables
-                List<String> envVars = buildConfig.toEnvVars()
-                envVars.add("FILENAME=${filename}" as String)
-
-                // Use BUILD_REF override if specified
-                def adoptBranch = buildConfig.BUILD_REF ?: ADOPT_DEFAULTS_JSON['repository']['build_branch']
-
-                // Add platform config path so it can be used if the user doesn't have one
-                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
-                // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
-                String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
-                // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
-                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${adoptBranch}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
-
                 // Execute build
-                context.withEnv(envVars) {
+                context.withEnv(buildConfigEnvVars) {
                     try {
                         context.timeout(time: buildTimeouts.BUILD_JDK_TIMEOUT, unit: 'HOURS') {
                             // Set Github Commit Status
@@ -1885,7 +1858,6 @@ def buildScriptsAssemble(
                                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
-// START
                                 if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
                                     context.println "Generating exploded build" // , sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs // Build args for make-adopt-build-farm.sh
@@ -1901,7 +1873,6 @@ def buildScriptsAssemble(
                                         context.println "openjdk_build_pipeline: Calling MABF on win/mac to build exploded image"
 //                                        batOrSh("bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                         // Use cached version from an attempt at the first phase only
-                                        batOrSh("ant --version")
                                         context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace-phase1+8.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xzf -'")
                                     }
                                     def base_path = build_path
@@ -1974,11 +1945,9 @@ def buildScriptsAssemble(
                         }
                         throw new Exception("[ERROR] Build JDK timeout (${buildTimeouts.BUILD_JDK_TIMEOUT} HOURS) has been reached. Exiting...")
                     }
-context.println "SXAEC: Likely problem section"
                     if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
                         context.println "Signing phase required - skipping metadata reading"
                     } else {
-context.println "SXAEC: Definite problem section :-)"
                         // Run a downstream job on riscv machine that returns the java version. Otherwise, just read the version.txt
                         String versionOut
                         if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
@@ -2172,6 +2141,18 @@ context.println "SXAEC: Definite problem section :-)"
                 def helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
                 def nonDockerNodeName = ''
 
+                // Convert IndividualBuildConfig to jenkins env variables
+                List<String> envVars = buildConfig.toEnvVars()
+                envVars.add("FILENAME=${filename}" as String)
+                // Use BUILD_REF override if specified
+                def adoptBranch = buildConfig.BUILD_REF ?: ADOPT_DEFAULTS_JSON['repository']['build_branch']
+                // Add platform config path so it can be used if the user doesn't have one
+                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
+                // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
+                String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
+                // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
+                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${adoptBranch}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
+
                 context.stage('queue') {
                     /* This loads the library containing two Helper classes, and causes them to be
                     imported/updated from their repo. Without the library being imported here, runTests method will fail to execute the post-build test jobs for reasons unknown.*/
@@ -2286,9 +2267,9 @@ context.println "SXAEC: Definite problem section :-)"
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
                                         cleanWorkspaceBuildOutputAfter,
-                                        filename,
                                         useAdoptShellScripts,
-                                        enableSigner
+                                        enableSigner,
+                                        envVars
                                     )
                                 }
                             } else {
@@ -2312,9 +2293,9 @@ context.println "SXAEC: Definite problem section :-)"
                                                 cleanWorkspace,
                                                 cleanWorkspaceAfter,
                                                 cleanWorkspaceBuildOutputAfter,
-                                                filename,
                                                 useAdoptShellScripts,
-                                                enableSigner
+                                                enableSigner,
+                                                envVars
                                             )
                                         }
                                     }
@@ -2325,8 +2306,8 @@ context.println "SXAEC: Definite problem section :-)"
                                             cleanWorkspace,
                                             cleanWorkspaceAfter,
                                             cleanWorkspaceBuildOutputAfter,
-                                            filename,
-                                            useAdoptShellScripts
+                                            useAdoptShellScripts,
+                                            envVars
                                         )
                                     }
                                 }
@@ -2340,8 +2321,8 @@ context.println "SXAEC: Definite problem section :-)"
                                         context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScriptsAssemble(
                                                 cleanWorkspaceAfter,
-                                                filename,
-                                                useAdoptShellScripts
+                                                useAdoptShellScripts,
+                                                envVars
                                             )
                                         }
                                     }
@@ -2372,16 +2353,16 @@ context.println "SXAEC: Definite problem section :-)"
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
                                         cleanWorkspaceBuildOutputAfter,
-                                        filename,
-                                        useAdoptShellScripts
+                                        useAdoptShellScripts,
+                                        envVars
                                     )
                                     if ( enableSigner ) {
                                         buildScriptsEclipseSigner()
                                         context.println "openjdk_build_pipeline: running assemble phase (invocation 2)"
                                         buildScriptsAssemble(
                                             cleanWorkspaceAfter,
-                                            filename,
-                                            useAdoptShellScripts
+                                            useAdoptShellScripts,
+                                            envVars
                                         )
                                     }
                                 }
@@ -2390,16 +2371,16 @@ context.println "SXAEC: Definite problem section :-)"
                                     cleanWorkspace,
                                     cleanWorkspaceAfter,
                                     cleanWorkspaceBuildOutputAfter,
-                                    filename,
-                                    useAdoptShellScripts
+                                    useAdoptShellScripts,
+                                    envVars
                                 )
                                 if ( enableSigner ) {
                                     buildScriptsEclipseSigner()
                                     context.println "openjdk_build_pipeline: running assemble phase (invocation 3)"
                                     buildScriptsAssemble(
                                         cleanWorkspaceAfter,
-                                        filename,
-                                        useAdoptShellScripts
+                                        useAdoptShellScripts,
+                                        envVars
                                     )
                                 }
                             }
