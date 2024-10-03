@@ -215,9 +215,11 @@ node('worker') {
             if (!config) {
                 def error =  "Empty evaluationTargetConfigurations"
                 echo "${error}"
-                throw new Exception("${error}")
+                // Evaluation config can be empty if none for this version
+                triggerEvaluationBuild = false
+            } else {
+                evaluationTargetConfigurations = JsonOutput.toJson(config) 
             }
-            evaluationTargetConfigurations = JsonOutput.toJson(config) 
         }
     }
 } // End: node('worker')
