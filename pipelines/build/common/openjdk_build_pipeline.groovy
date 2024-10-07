@@ -1641,12 +1641,13 @@ def buildScriptsAssemble(
         batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
     }
     context.stage('assemble') {
-        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
+        if ( buildConfig.TARGET_OS == 'windows' ) {
             // SXAEC: Still TBC on this to determine if something fails without it
             // Ref https://github.com/adoptium/infrastructure/issues/3723
             // Fails to unstash even in non-docker case without the chmod e.g. windbld#840
             context.bat('c:\\cygwin64\\bin\\find /cygdrive/c/workspace -name public_suffix_list.dat -ls')
             context.bat('chmod -R a+rwX /cygdrive/c/workspace/openjdk-build/workspace/build/src/build & echo Done & exit 0')
+            context.bat('c:\\cygwin64\\bin\\find /cygdrive/c/workspace -name public_suffix_list.dat -ls')
         }
         // Restore signed JMODs
         context.unstash 'signed_jmods'
