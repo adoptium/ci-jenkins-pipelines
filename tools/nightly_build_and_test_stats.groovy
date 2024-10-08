@@ -385,7 +385,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             def platformResult = "???% - Build not found. Pipeline link: " + pipelineLink
 
             // Does this platform have a build in this pipeline?
-            if ( trssBuildJobNames.length() > 10 ) {
+            if ( trssBuildJobNames.length() > 2 ) {
                 def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
 
                 // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
@@ -398,7 +398,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                     def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
 
                     // Did this build have tests?
-                    if ( trssTestJobNames.length() > 10 ) {
+                    if ( trssTestJobNames.length() > 2 ) {
                         platformResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
                         def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
 
