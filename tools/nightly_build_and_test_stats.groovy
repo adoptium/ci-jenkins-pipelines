@@ -885,13 +885,13 @@ node('worker') {
                     }
                 }
 
-                def reproducibilityText = "Reproducibility: N/A"
+                def reproducibilityText = ""
                 if (reproducibleBuilds.containsKey(featureRelease)) {
-                    reproducibilityText = "Reproducibility: "+reproducibleBuilds[featureRelease][0]
+                    reproducibilityText = " Reproducibility: "+reproducibleBuilds[featureRelease][0]
                 }
 
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*. ${reproducibilityText} Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
+                def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*.${reproducibilityText} Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
                 slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
