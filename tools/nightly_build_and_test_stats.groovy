@@ -214,6 +214,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
             // Map of config architecture to artifact name
             def archToAsset = [x64Linux:       "x64_linux",
                                x64Windows:     "x64_windows",
+                               aarch64Windows: "aarch64_windows",
                                x64Mac:         "x64_mac",
                                x64AlpineLinux: "x64_alpine-linux",
                                ppc64Aix:       "ppc64_aix",
