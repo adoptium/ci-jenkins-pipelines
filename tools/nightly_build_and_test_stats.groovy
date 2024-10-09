@@ -39,7 +39,7 @@ def getPlatformConversionMap() {
                                  x64Solaris:         ["solaris-x64", "x64_solaris"],
                                  sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris"],
                                  riscv64Linux:       ["linux-riscv64", "riscv64_linux"]
-                                ]aarch64Windows: "aarch64_windows
+                                ]
     return platformConversionMap
 }
 
