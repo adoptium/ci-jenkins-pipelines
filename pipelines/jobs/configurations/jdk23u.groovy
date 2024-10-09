@@ -14,6 +14,9 @@ targetConfigurations = [
         'x64Windows'  : [
                 'temurin'
         ],
+        'aarch64Windows' : [
+                'temurin'
+        ],
         'ppc64Aix'    : [
                 'temurin'
         ],
@@ -34,6 +37,9 @@ targetConfigurations = [
                 'temurin'
         ]
 ]
+
+// 12:05 Sat - Weekend schedule for Oracle managed jdk23u.groovy version that has no published tags
+triggerSchedule_weekly  = 'TZ=UTC\n05 12 * * 6'
 
 // scmReferences to use for weekly release build
 weekly_release_scmReferences = [
