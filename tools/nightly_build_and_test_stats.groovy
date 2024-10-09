@@ -33,12 +33,13 @@ def getPlatformConversionMap() {
                                  aarch64Linux:       ["linux-aarch64", "aarch64_linux"],
                                  aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux"],
                                  aarch64Mac:         ["mac-aarch64", "aarch64_mac"],
+                                 aarch64Windows:     ["windows-aarch64", "aarch64_windows"],
                                  arm32Linux:         ["linux-arm", "arm_linux"],
                                  x32Windows:         ["windows-x86-32", "x86-32_windows"],
                                  x64Solaris:         ["solaris-x64", "x64_solaris"],
                                  sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris"],
                                  riscv64Linux:       ["linux-riscv64", "riscv64_linux"]
-                                ]
+                                ]aarch64Windows: "aarch64_windows
     return platformConversionMap
 }
 
