@@ -21,6 +21,40 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
+def getPlatformConversionMap() {
+    // A map to convert from a standard platform format to the variants used by build and test job names on Jenkins.
+    def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux"],
+                                 x64Windows:         ["windows-x64", "x86-64_windows"],
+                                 x64Mac:             ["mac-x64", "x86-64_mac"],
+                                 x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux"],
+                                 ppc64Aix:           ["aix-ppc64", "ppc64_aix"],
+                                 ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux"],
+                                 s390xLinux:         ["linux-s390x", "s390x_linux"],
+                                 aarch64Linux:       ["linux-aarch64", "aarch64_linux"],
+                                 aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux"],
+                                 aarch64Mac:         ["mac-aarch64", "aarch64_mac"],
+                                 aarch64Windows:     ["windows-aarch64", "aarch64_windows"],
+                                 arm32Linux:         ["linux-arm", "arm_linux"],
+                                 x32Windows:         ["windows-x86-32", "x86-32_windows"],
+                                 x64Solaris:         ["solaris-x64", "x64_solaris"],
+                                 sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris"],
+                                 riscv64Linux:       ["linux-riscv64", "riscv64_linux"]
+                                ]
+    return platformConversionMap
+}
+
+def getPlatformReproTestMap() {
+    // A map to return the test bucket and test name for the repducibile platforms
+    def platformReproTestMap = [x64Linux:           ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
+                                x64Windows:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
+                                x64Mac:             ["NA", ""],
+                                ppc64leLinux:       ["NA", ""],
+                                aarch64Linux:       ["NA", ""],
+                                aarch64Mac:         ["NA", ""]
+                               ]
+    return platformReproTestMap
+}
+
 // Check if the given tag is a -ga tag ?
 def isGaTag(String version, String tag) {
     if (version == "${params.TIP_RELEASE}".trim()) {
@@ -51,7 +85,7 @@ def isGaTag(String version, String tag) {
     }
 }
 
-// Determine the upstream OpenJDK reporistory
+// Determine the upstream OpenJDK repository
 def getUpstreamRepo(String version) {
     def openjdkRepo
 
@@ -92,7 +126,7 @@ def getLatestOpenjdkBuildTag(String version) {
     return latestTag
 }
 
-// Get how long ago the given upstream tag was published?
+// How long ago was the given upstream tag published?
 def getOpenjdkBuildTagAge(String version, String tag) {
     def openjdkRepo = getUpstreamRepo(version)
 
@@ -115,9 +149,9 @@ def getLatestBinariesTag(String version) {
     return latestTag    
 }
 
-// Make a best guess that the specified build of a given beta EA pipeline build is inprogress? if so return the buildUrl
-def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
-    def inProgressBuildUrl = ""
+// Return our best guess at the url that generated a specific build.
+def getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
+    def functionBuildUrl = ["", "", ""]
 
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
@@ -142,21 +176,22 @@ def getInProgressBuildUrl(String trssUrl, String variant, String featureRelease,
                 }
             }
 
-            // Is job for the required tag and currently inprogress?
-            if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && job.status.equals('Streaming')) {
+            // Is there a job for the required tag?
+            if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
-                        inProgressBuildUrl = job.buildUrl
+                        functionBuildUrl = [job.buildUrl, job._id, job.status]
                     }
                 } else {
-                    inProgressBuildUrl = job.buildUrl
+                    functionBuildUrl = [job.buildUrl, job._id, job.status]
+                    echo "Found "+featureRelease+" pipeline with this ID: "+job._id
                 }
             }
         }
     }
 
-    return inProgressBuildUrl
+    return functionBuildUrl
 }
 
 // Verify the given release contains all the expected assets
@@ -326,6 +361,86 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     }
 }
 
+// For a given pipeline, tell us how reproducible the builds were.
+// Note: Will limit itself to jdk versions and platforms in the results Map.
+def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results) {
+    echo "Called repro method with trssID:"+trssId
+
+    def platformConversionMap = getPlatformConversionMap()
+    def platformReproTestMap = getPlatformReproTestMap()
+
+    // We are only looking for reproducible percentages for the relevant jdk versions...
+    if ( trssId != "" && results.containsKey(jdkVersion) ) {
+        def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
+
+        // ...and platforms.
+        results[jdkVersion][1].each { onePlatform, valueNotUsed ->
+            // If this platform doesn't have a reproducibility test yet, skip it.
+            if (platformReproTestMap[onePlatform][0].equals("NA")) {
+                results[jdkVersion][1][onePlatform] = "NA"
+                // Then we exit this lambda and skip to the next platform.
+                return
+            }
+
+            def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"\\&buildNameRegex=^"+jdkVersion+"\\-"+platformConversionMap[onePlatform][0]+"\\-temurin\$"
+            def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
+            def platformResult = "???% - Build not found. Pipeline link: " + pipelineLink
+
+            // Does this platform have a build in this pipeline?
+            if ( trssBuildJobNames.length() > 2 ) {
+                def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
+
+                // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
+                buildJobNamesJson.each { buildJob ->
+                    platformResult = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
+                    def testPlatform = platformConversionMap[onePlatform][1]
+                    def reproTestName=platformReproTestMap[onePlatform][1]
+                    def reproTestBucket=platformReproTestMap[onePlatform][0]
+                    def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
+                    def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
+
+                    // Did this build have tests?
+                    if ( trssTestJobNames.length() > 2 ) {
+                        platformResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
+                        def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
+
+                        // For each test job (including testList subjobs), we now search for the reproducibility test.
+                        testJobNamesJson.each { testJob ->
+                            def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
+
+                            // If we can find it, then we look for the anticipated percentage.
+                            if ( testOutput.contains("Running test "+reproTestName) ) {
+                                platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
+                                // Now we know the test ran, 
+                                def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
+                                if ( matcherObject ) {
+                                    platformResult = matcherObject[0] =~ /[0-9]+ %/
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            results[jdkVersion][1][onePlatform] = platformResult
+        }
+
+        // Now we have the percentages for each platform, we canculate the jdkVersion-specific average.
+        def overallAverage = 0
+        // Ignoring the platforms where the test is not available yet.
+        def naCount = 0
+        results[jdkVersion][1].each{key, value ->
+            if (value.equals("NA")) {
+                naCount++
+            } else if ( (value ==~ /^[0-9]+ %/) ) {
+                overallAverage += (value =~ /^[0-9]+/)[0] as Integer
+            }
+            // else do nothing, as we presume non-integer and non-NA values are 0.
+        }
+        overallAverage = overallAverage == 0 ? 0 : overallAverage.intdiv(results[jdkVersion][1].size() - naCount)
+        results[jdkVersion][0] = overallAverage+" %"
+    }
+}
+
 node('worker') {
   try{
     def variant = "${params.VARIANT}"
@@ -341,6 +456,11 @@ node('worker') {
 
     def healthStatus = [:]
     def testStats = []
+
+    // Specifies what JDK versions and platforms are expected to be reproducible.
+    // The "?" symbols will soon be replaced by reproducibility percentages.
+    // Layout: [jdkVersion: [Overall-reproducibility, [By-platform reproducibility breakdown]]]
+    def reproducibleBuilds = ["jdk21u": [ "?", ["x64Linux": "?", "aarch64Linux": "?", "ppc64leLinux": "?", "x64Windows": "?", "x64Mac": "?", "aarch64Mac": "?"]]]
 
     stage('getPipelineStatus') {
         def apiVariant = variant
@@ -648,7 +768,9 @@ node('worker') {
                 def errorMsg = ""
                 def releaseName = status['releaseName']
                 def lastPublishedMsg = ""
-                def inProgressBuildUrl = ""
+                def probableBuildUrl = ""
+                def probableBuildStatus = ""
+                def probableBuildIdForTRSS = ""
 
                 // Is it a non-tag triggered build? eg.Oracle STS version
                 if (nonTagBuildReleases.contains(featureRelease)) {
@@ -666,21 +788,57 @@ node('worker') {
                     }
                 } else {
                     // Check if build in-progress
-                    inProgressBuildUrl = getInProgressBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
+                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
 
                     // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
                     if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
                         def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
-                        if (upstreamTagAge > 3 && inProgressBuildUrl == "") {
+                        if (upstreamTagAge > 3 && probableBuildStatus == "Done") {
                             slackColor = 'danger'
                             health = "Unhealthy"
                             errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *No build is in progress*."
                         } else {
-                            if (inProgressBuildUrl != "") {
-                                errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. <" + inProgressBuildUrl + "|Build is in progress>."
+                            if (probableBuildStatus == "Streaming") {
+                                errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. <" + probableBuildUrl + "|Build is in progress>."
                             } else {
                                 errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *Build is awaiting 'trigger'*."
                             }
+                        }
+                    }
+
+                    def testsShouldHaveRun = false
+                    if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${probableBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
+                        testsShouldHaveRun = true
+                    }
+                    if (reproducibleBuilds.containsKey(featureRelease)) {
+                        if (testsShouldHaveRun) {
+                            getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, trssUrl, reproducibleBuilds)
+                            if ( reproducibleBuilds[featureRelease][0] != "100%") {
+                                slackColor = 'danger'
+                                health = "Unhealthy"
+                                def summaryOfRepros = ""
+                                echo "Build reproducibility percentages for " + featureRelease + " did not add up to 100%. Breakdown: "
+                                reproducibleBuilds[featureRelease][1].each{ key, value -> 
+                                    if (!value.equals("NA")) {
+                                        echo key+": "+value
+                                        if(value ==~ /[0-9]+ %/) {
+                                            summaryOfRepros+=" "+key+"("+value+"),"
+                                        } else {
+                                            summaryOfRepros+=" "+key+"(?%),"
+                                        }
+                                    } else {
+                                        echo key+": NA - Reproducibility testing has not yet been implimented for this presumed reproducible build."
+                                    }
+                                }
+
+                                //Remove trailing comma.
+                                summaryOfRepros = summaryOfRepros.substring(0, summaryOfRepros.length() - 1);
+
+                                errorMsg += "\nBuild repro summary: "+summaryOfRepros
+                            }
+                        } else {
+                            // Ignore test results if the tests for this pipeline were intentionally disabled.
+                            reproducibleBuilds[featureRelease][0] = "N/A - Tests disabled"
                         }
                     }
                 }
@@ -694,14 +852,14 @@ node('worker') {
                         slackColor = 'danger'
                         health = "Unhealthy"
                         errorMsg += "\nArtifact status: "+status['assets']
-                        if (inProgressBuildUrl != "") {
-                            errorMsg += ", <" + inProgressBuildUrl + "|Build is in progress>"
+                        if (probableBuildStatus == "Streaming") {
+                            errorMsg += ", <" + probableBuildUrl + "|Build is in progress>"
                         } else {
                             errorMsg += ", *No build is in progress*"
                         }
                         missingAssets = status['missingAssets']
                     }
-                 
+
                     // Print out formatted missing artifacts if any missing
                     if (missingAssets.size() > 0) {
                         missingMsg += " :"
@@ -720,7 +878,7 @@ node('worker') {
                                 missingFiles = missingFile[1]+missingFile[2]
                             } else {
                                missingFiles += ", "+missingFile[1]+missingFile[2]
-                            }                        
+                            }
                         } 
                         if (missingFiles != "") {
                             missingMsg += "\n    *${archName}*: ${missingFiles}"
@@ -729,8 +887,13 @@ node('worker') {
                     }
                 }
 
+                def reproducibilityText = ""
+                if (reproducibleBuilds.containsKey(featureRelease)) {
+                    reproducibilityText = " Reproducibility: "+reproducibleBuilds[featureRelease][0]
+                }
+
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*. Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
+                def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*.${reproducibilityText} Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
                 slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
