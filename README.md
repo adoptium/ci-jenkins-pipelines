@@ -41,6 +41,12 @@ x64Mac        : [
 ]
 ```
 
+If dependencies are updated then the lock file and verification data must be updated:
+
+```shell
+./gradlew dependencies --write-locks; ./gradlew --write-verification-metadata sha256
+```
+
 ### Data fields
 
 NOTE: When the `type` field implies a map, the `String` key of the inner map is the variant for that field. E.g:
