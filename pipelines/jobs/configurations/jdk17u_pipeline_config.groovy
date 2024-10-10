@@ -70,9 +70,8 @@ class Config17 {
                 arch                : 'x64',
                 additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
-                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22000.0/ucrt/DLLs/x64'",
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
                 ]
         ],
 
@@ -81,9 +80,8 @@ class Config17 {
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
-                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22000.0/ucrt/DLLs/x86'",
                 buildArgs           : [
-                        'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom'
+                        'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
                 ]
         ],
 
@@ -182,7 +180,7 @@ class Config17 {
                 additionalNodeLabels: 'win2022&&vs2019',
                 test                : 'default',
                 buildArgs       : [
-                        'temurin'   : '--create-jre-image --create-sbom --cross-compile'
+                        'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
                 ]
         ]
   ]

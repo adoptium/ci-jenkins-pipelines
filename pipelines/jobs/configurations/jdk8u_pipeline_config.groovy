@@ -74,7 +74,7 @@ class Config8 {
                         'temurin'   : '--disable-ccache'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom'
+                        'temurin'   : '--create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
                 ]
         ],
 
@@ -86,7 +86,7 @@ class Config8 {
                         'temurin'   : '--disable-ccache'
                 ],
                 buildArgs : [
-                        temurin : '--jvm-variant client,server --create-sbom'
+                        temurin : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
                 ],
                 test                 : 'default'
         ],
