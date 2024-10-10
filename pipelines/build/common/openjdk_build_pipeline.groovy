@@ -1625,7 +1625,49 @@ class Build {
         } // context.stage
 }
 
+def postBuildWSclean(
+    cleanWorkspaceAfter,
+    cleanWorkspaceBuildOutputAfter
+) {
+                // post-build workspace clean:
+                if (cleanWorkspaceAfter || cleanWorkspaceBuildOutputAfter) {
+                    try {
+                        context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
+                            // Note: Underlying org.apache DirectoryScanner used by cleanWs has a bug scanning where it misses files containing ".." so use rm -rf instead
+                            // Issue: https://issues.jenkins.io/browse/JENKINS-64779
+                            if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
+                                if (cleanWorkspaceAfter) {
+                                    context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
+                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
+
+                                    // Clean remaining hidden files using cleanWs
+                                    try {
+                                        context.println 'Cleaning workspace hidden files using cleanWs: ' + context.WORKSPACE
+                                        context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
+                                    } catch (e) {
+                                        context.println "Failed to clean ${e}"
+                                    }
+                                } else if (cleanWorkspaceBuildOutputAfter) {
+                                    context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
+                                    batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                }
+                            } else {
+                                context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
+                            }
+                        }
+                    } catch (FlowInterruptedException e) {
+                        // Set Github Commit Status
+                        if (env.JOB_NAME.contains('pr-tester')) {
+                            updateGithubCommitStatus('FAILED', 'Build FAILED')
+                        }
+                        throw new Exception("[ERROR] AIX clean workspace timeout (${buildTimeouts.AIX_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
+                    }
+                }
+}
+
 def buildScriptsAssemble(
+    cleanWorkspaceAfter,
+    cleanWorkspaceBuildOutputAfter,
     buildConfigEnvVars
 ) {
     def build_path
@@ -1645,9 +1687,7 @@ def buildScriptsAssemble(
             // SXAEC: Still TBC on this to determine if something fails without it
             // Ref https://github.com/adoptium/infrastructure/issues/3723
             // Fails to unstash even in non-docker case without the chmod e.g. windbld#840
-            context.bat('c:\\cygwin64\\bin\\find /cygdrive/c/workspace -name public_suffix_list.dat -ls')
-            context.bat('chmod -R a+rwX /cygdrive/c/workspace/openjdk-build/workspace/build/src/build & echo Done & exit 0')
-            context.bat('c:\\cygwin64\\bin\\find /cygdrive/c/workspace -name public_suffix_list.dat -ls')
+            context.bat('chmod -R a+rwX ' + '/cygdrive/c/workspace/openjdk-build/workspace/build/src/build/windows-x86_64-server-release')
         }
         // Restore signed JMODs
         context.unstash 'signed_jmods'
@@ -1714,6 +1754,7 @@ def buildScriptsAssemble(
             }
             throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
         }
+        postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
     } // context.stage('assemble')
 } // End of buildScriptsAssemble() 1643-1765
 
@@ -1725,6 +1766,8 @@ def buildScriptsAssemble(
 
     def buildScripts(
         cleanWorkspace,
+        cleanWorkspaceAfter,
+        cleanWorkspaceOutputAfter,
         useAdoptShellScripts,
         enableSigner,
         buildConfigEnvVars
@@ -1968,7 +2011,9 @@ def buildScriptsAssemble(
                     }
                     throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
                 }
-
+                if ( !enableSigner ) { // Don't clean if we need the workspace for the later assemble phase
+                    postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
+                }
                 // Set Github Commit Status
                 if (env.JOB_NAME.contains('pr-tester')) {
                     updateGithubCommitStatus('SUCCESS', 'Build PASSED')
@@ -2056,7 +2101,6 @@ def buildScriptsAssemble(
         def tmpDesc = (context.currentBuild.description) ? context.currentBuild.description + '<br>' : ''
         context.currentBuild.description = tmpDesc + "<a href=${context.JENKINS_URL}computer/${context.NODE_NAME}>${context.NODE_NAME}</a>"
     }
-
 
     /*
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
@@ -2208,8 +2252,10 @@ def buildScriptsAssemble(
                                 }
 
                                 context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
-                                        buildScripts(
+                                    buildScripts(
                                         cleanWorkspace,
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
                                         useAdoptShellScripts,
                                         enableSigner,
                                         envVars
@@ -2234,6 +2280,8 @@ def buildScriptsAssemble(
                                         context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScripts(
                                                 cleanWorkspace,
+                                                cleanWorkspaceAfter,
+                                                cleanWorkspaceBuildOutputAfter,
                                                 useAdoptShellScripts,
                                                 enableSigner,
                                                 envVars
@@ -2245,6 +2293,8 @@ def buildScriptsAssemble(
                                     context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                         buildScripts(
                                             cleanWorkspace,
+                                            cleanWorkspaceAfter,
+                                            cleanWorkspaceBuildOutputAfter,
                                             useAdoptShellScripts,
                                             enableSigner,
                                             envVars
@@ -2258,8 +2308,10 @@ def buildScriptsAssemble(
                                     context.ws(workspace) {
                                         context.println "Signing with non-default workspace location ${workspace}"
                                         context.println "openjdk_build_pipeline: running assemble phase (invocation 1)"
-                                        context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                            context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScriptsAssemble(
+                                                cleanWorkspaceAfter,
+                                                cleanWorkspaceBuildOutputAfter,
                                                 envVars
                                             )
                                         }
@@ -2289,6 +2341,8 @@ def buildScriptsAssemble(
                                 context.ws(workspace) {
                                     buildScripts(
                                         cleanWorkspace,
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
                                         useAdoptShellScripts,
                                         enableSigner,
                                         envVars
@@ -2297,6 +2351,8 @@ def buildScriptsAssemble(
                                         buildScriptsEclipseSigner()
                                         context.println "openjdk_build_pipeline: running assemble phase (invocation 2)"
                                         buildScriptsAssemble(
+                                            cleanWorkspaceAfter,
+                                            cleanWorkspaceBuildOutputAfter,
                                             envVars
                                         )
                                     }
@@ -2304,6 +2360,8 @@ def buildScriptsAssemble(
                             } else { // Non-windows, non-docker
                                 buildScripts(
                                     cleanWorkspace,
+                                    cleanWorkspaceAfter,
+                                    cleanWorkspaceBuildOutputAfter,
                                     useAdoptShellScripts,
                                     enableSigner,
                                     envVars
@@ -2312,6 +2370,8 @@ def buildScriptsAssemble(
                                     buildScriptsEclipseSigner()
                                     context.println "openjdk_build_pipeline: running assemble phase (invocation 3)"
                                     buildScriptsAssemble(
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
                                         envVars
                                     )
                                 }
@@ -2320,46 +2380,6 @@ def buildScriptsAssemble(
                         context.println "[NODE SHIFT] OUT OF JENKINS NODE (LABELNAME ${buildConfig.NODE_LABEL}!)"
                     }
                 }
-
-                // post-build workspace clean:
-                context.node(label) {
-                  if (cleanWorkspaceAfter || cleanWorkspaceBuildOutputAfter) {
-                    try {
-                        context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
-                            // Note: Underlying org.apache DirectoryScanner used by cleanWs has a bug scanning where it misses files containing ".." so use rm -rf instead
-                            // Issue: https://issues.jenkins.io/browse/JENKINS-64779
-                            if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
-                                if (cleanWorkspaceAfter) {
-                                    context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
-
-                                    // Clean remaining hidden files using cleanWs
-                                    try {
-                                        context.println 'Cleaning workspace hidden files using cleanWs: ' + context.WORKSPACE
-                                        context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
-                                    } catch (e) {
-                                        context.println "Failed to clean ${e}"
-                                    }
-                                } else if (cleanWorkspaceBuildOutputAfter) {
-                                    if ( enableSigner ) {
-                                        context.println 'ERROR? ENABLE_SIGNER and CLEAN_WORKSPACE_AFTER_BUILD both set'
-                                    }
-                                    context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
-                                    batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
-                                }
-                            } else {
-                                context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
-                            }
-                        }
-                    } catch (FlowInterruptedException e) {
-                        // Set Github Commit Status
-                        if (env.JOB_NAME.contains('pr-tester')) {
-                            updateGithubCommitStatus('FAILED', 'Build FAILED')
-                        }
-                        throw new Exception("[ERROR] AIX clean workspace timeout (${buildTimeouts.AIX_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
-                    }
-                }
-              }
 
                 // Sign and archive jobs if needed
                 if (enableSigner) {
