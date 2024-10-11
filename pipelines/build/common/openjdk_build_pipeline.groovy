@@ -1687,7 +1687,7 @@ def buildScriptsAssemble(
             // SXAEC: Still TBC on this to determine if something fails without it
             // Ref https://github.com/adoptium/infrastructure/issues/3723
             // Fails to unstash even in non-docker case without the chmod e.g. windbld#840
-            context.bat('chmod -R a+rwX ' + '/cygdrive/c/workspace/openjdk-build/workspace/build/src/build/windows-x86_64-server-release')
+            context.bat('chmod -R a+rwX ' + '/cygdrive/c/workspace/openjdk-build/workspace/build/src/build/*')
         }
         // Restore signed JMODs
         context.unstash 'signed_jmods'
@@ -1905,11 +1905,9 @@ def buildScriptsAssemble(
                                     if (openjdk_build_dir_arg == "") {
                                         // If not using a custom openjdk build dir, then query what autoconf created as the build sub-folder
                                         if ( context.isUnix() ) {
-                                            context.println "Setting base path via sh"
-                                            base_path = context.sh(script: "ls -d ${build_path}/* | tr -d '\\n'", returnStdout:true)
+                                            base_path = context.sh(script: "ls -d ${build_path}/*", returnStdout:true)
                                         } else {
-                                            context.println "Setting fixed base_path for now on Windows"
-                                            base_path = "workspace/build/src/build/windows-x86_64-server-release"
+                                            base_path = context.bat(script: "@ls -d ${build_path}/*", returnStdout:true).trim()
                                         }
                                     }
                                     context.println "base build path for jmod signing = ${base_path}"
