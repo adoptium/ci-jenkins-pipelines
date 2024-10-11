@@ -139,7 +139,9 @@ class Config24 {
                 os                  : 'mac',
                 arch                : 'aarch64',
                 additionalNodeLabels: 'xcode15.0.1',
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system']
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
