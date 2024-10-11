@@ -70,9 +70,8 @@ class Config21 {
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system']
                 ],
-                configureArgs       : "--with-ucrt-dll-dir='C:/progra~2/wi3cf2~1/10/Redist/10.0.22621.0/ucrt/DLLs/x64'",
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
                 ]
         ],
 
@@ -166,7 +165,7 @@ class Config21 {
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 buildArgs       : [
-                        'temurin'   : '--create-jre-image --create-sbom --cross-compile'
+                        'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
                 ]
         ]
   ]
