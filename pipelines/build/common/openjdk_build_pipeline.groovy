@@ -2305,7 +2305,8 @@ def buildScriptsAssemble(
                                         )
                                     }
                                 }
-                                if ( enableSigner ) {
+                                // Is thre potential for not enabling the signer on jdk8u instead of having this clause?
+                                if ( enableSigner && buildConfig.JAVA_TO_BUILD != 'jdk8u' ) {
                                     context.println "openjdk_build_pipeline: running eclipse signing phase"
                                     buildScriptsEclipseSigner()
                                     def workspace = 'C:/workspace/openjdk-build/'
