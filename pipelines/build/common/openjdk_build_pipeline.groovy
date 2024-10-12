@@ -1683,7 +1683,7 @@ def buildScriptsAssemble(
         batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
     }
     context.stage('assemble') {
-        if ( buildConfig.TARGET_OS == 'windows' ) {
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE) {
             // SXAEC: Still TBC on this to determine if something fails without it
             // Ref https://github.com/adoptium/infrastructure/issues/3723
             // Fails to unstash even in non-docker case without the chmod e.g. windbld#840
@@ -1767,7 +1767,7 @@ def buildScriptsAssemble(
     def buildScripts(
         cleanWorkspace,
         cleanWorkspaceAfter,
-        cleanWorkspaceOutputAfter,
+        cleanWorkspaceBuildOutputAfter,
         useAdoptShellScripts,
         enableSigner,
         buildConfigEnvVars
@@ -1912,9 +1912,15 @@ def buildScriptsAssemble(
                                     }
                                     context.println "base build path for jmod signing = ${base_path}"
                                     context.stash name: 'jmods',
-                                        includes: "${base_path}/hotspot/variant-server/**/*," +
-                                            "${base_path}/support/modules_cmds/**/*," +
-                                            "${base_path}/support/modules_libs/**/*," +
+                                        includes: "${base_path}/hotspot/variant-server/**/*.exe," +
+                                            "${base_path}/hotspot/variant-server/**/*.dll," +
+                                            "${base_path}/hotspot/variant-server/**/*.dylib," +
+                                            "${base_path}/support/modules_cmds/**/*.exe," +
+                                            "${base_path}/support/modules_cmds/**/*.dll," +
+                                            "${base_path}/support/modules_cmds/**/*.dylib," +
+                                            "${base_path}/support/modules_libs/**/*.exe," +
+                                            "${base_path}/support/modules_libs/**/*.dll," +
+                                            "${base_path}/support/modules_libs/**/*.dylib," +
                                             // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
 
