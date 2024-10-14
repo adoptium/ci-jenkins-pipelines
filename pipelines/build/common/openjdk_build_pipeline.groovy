@@ -1322,11 +1322,6 @@ class Build {
 
         MetaData data = formMetadata(version, initialWrite)
         Boolean metaWrittenOut = false
-        /*
-         * This is causing a problem when set to false. Sometimes it seems ok
-         * with the windows one, and sometimes not e.g.
-         * windbld#473/475/476/477
-         */
         listArchives().each({ file ->
             def type = 'jdk'
             if (file.contains('-jre')) {
@@ -1342,11 +1337,11 @@ class Build {
             } else if (file.contains('-sbom')) {
                 type = 'sbom'
             }
-            context.println "(writeMetaData for " + file + ") Batable and batted assuming sha256sum on windows 1340 windbld#388 - No - fails #479"
+            context.println "writeMetaData for " + file
 
             String hash
             if ( context.isUnix() ) {
-                context.println "Non-windows non-docker detected - running sh"
+                context.println "Non-windows non-docker detected - running sh to generate SHA256 sums in writeMetadata"
                 hash = context.sh(script: """\
                                               if [ -x "\$(command -v shasum)" ]; then
                                                 (shasum -a 256 | cut -f1 -d' ') <$file
@@ -1355,7 +1350,7 @@ class Build {
                                               fi
                                             """.stripIndent(), returnStdout: true, returnStatus: false).replaceAll('\n', '')
             } else {
-                context.println "Windows detected - running bat"
+                context.println "Windows detected - running bat to generate SHA256 sums in writeMetadata"
                 hash = context.bat(script: "sha256sum ${file} | cut -f1 -d' '") // .replaceAll('\n', '')
             }
 
@@ -1514,26 +1509,14 @@ class Build {
         context.println 'Checked out repo:'
         batOrSh('git status')
         context.println 'Checked out HEAD commit SHA:'
-        // windbld#245
         batOrSh('git rev-parse HEAD')
     }
 
     def buildScriptsEclipseSigner() {
         def build_path
-// openjdk_build_dir_arg unused after https://github.com/adoptium/ci-jenkins-pipelines/pull/1084
-// Ref https://adoptium.slack.com/archives/C09NW3L2J/p1725957286184479?thread_ts=1725900849.766449&cid=C09NW3L2J
-//        def openjdk_build_dir_arg
-
         build_path = 'workspace/build/src/build'
-//        openjdk_build_dir_arg = ""
-        // SXA: This did not seem to set correctly with 'def base_path = build_path"
         def base_path
         base_path = build_path
-//        if (openjdk_build_dir_arg == "") {
-//            // If not using a custom openjdk build dir, then query what autoconf created as the build sub-folder
-//            context.println 'SXA: not batable 1648 - windbld#263'
-//            base_path = context.sh(script: "ls -d ${build_path}/* | tr -d '\\n'", returnStdout:true)
-//        }
         def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS, ADOPT_DEFAULTS_JSON, buildConfig.CI_REF, buildConfig.BUILD_REF)
         context.stage('internal sign') {
             context.node('eclipse-codesign') {
@@ -1548,6 +1531,7 @@ class Build {
                 // Copy pre assembled binary ready for JMODs to be codesigned
                 context.unstash 'jmods'
                 def target_os = "${buildConfig.TARGET_OS}"
+                // TODO: Split this out into a separate script at some point
                 context.withEnv(['base_os='+target_os, 'base_path='+base_path]) {
                                             // groovylint-disable
                                             context.sh '''
@@ -1682,10 +1666,8 @@ def buildScriptsAssemble(
         batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
     }
     context.stage('assemble') {
+        // This would ideally not be required but it's due to lack of UID mapping in windows containers
         if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE) {
-            // SXAEC: Still TBC on this to determine if something fails without it
-            // Ref https://github.com/adoptium/infrastructure/issues/3723
-            // Fails to unstash even in non-docker case without the chmod e.g. windbld#840
             context.bat('chmod -R a+rwX ' + '/cygdrive/c/workspace/openjdk-build/workspace/build/src/build/*')
         }
         // Restore signed JMODs
@@ -1711,8 +1693,8 @@ def buildScriptsAssemble(
                     context.timeout(time: buildTimeouts.BUILD_JDK_TIMEOUT, unit: 'HOURS') {
                         context.println "openjdk_build_pipeline: calling MABF to assemble on win/mac JDK11+"
                         if ( !context.isUnix() && buildConfig.DOCKER_IMAGE ) {
-                            // SXAEC: Running ls -l here generates the shortname links required
-                            // by the build and create paths referenced in the config.status file 
+                            // Running ls -l here generates the shortname links required by the
+                            // build and create paths referenced in the config.status file
                             context.bat(script: 'ls -l /cygdrive/c "/cygdrive/c/Program Files (x86)" "/cygdrive/c/Program Files (x86)/Microsoft Visual Studio/2022" "/cygdrive/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Redist/MSVC" "/cygdrive/c/Program Files (x86)/Windows Kits/10/bin" "/cygdrive/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC" "/cygdrive/c/Program Files (x86)/Windows Kits/10/include" "/cygdrive/c/Program Files (x86)/Windows Kits/10/lib"')
                         }
                         batOrSh("bash ${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']} --assemble-exploded-image")
@@ -1834,8 +1816,6 @@ def buildScriptsAssemble(
                         if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                             context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
                             batOrSh('rm -rf ' + openjdk_build_dir)
-                            // SXAEC: This handles when none of the clean options are used when extracting cached tarballs ...
-                            batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/target/*')
                         } else {
                             context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
                         }
@@ -1894,11 +1874,8 @@ def buildScriptsAssemble(
                                     context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
                                         context.println 'Building an exploded image for signing'
                                         // Call make-adopt-build-farm.sh to do initial windows/mac build
-                                        // windbld#254
                                         context.println "openjdk_build_pipeline: Calling MABF on win/mac to build exploded image"
                                         batOrSh("bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                        // Use cached version from an attempt at the first phase only
-//                                        context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace-phase1+8.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xzf -'")
                                     }
                                     def base_path = build_path
                                     if (openjdk_build_dir_arg == "") {
@@ -1923,7 +1900,8 @@ def buildScriptsAssemble(
                                             // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
 
-                                    // SXAEC: eclipse-codesign and assemble sections were previously inlined here
+                                    // eclipse-codesign and assemble sections were inlined here before 
+                                    // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
 
                                 } else { // Not Windows/Mac JDK11+ (i.e. doesn't require internal signing)
                                     def buildArgs
@@ -1960,7 +1938,6 @@ def buildScriptsAssemble(
                                 context.withEnv(['BUILD_ARGS=' + buildArgs]) {
                                     context.println "openjdk_build_pipeline: calling MABF to do single pass build when USE_ADOPT_SHELL_SCRIPTS is false"
                                     batOrSh("bash ./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-//                                    context.bat(script: "bash -c 'curl https://ci.adoptium.net/userContent/windows/openjdk-cached-workspace.tar.gz | tar -C /cygdrive/c/workspace/openjdk-build -xpzf -'")
                                 }
                                 context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
                                 repoHandler.checkoutUserPipelines(context)
@@ -1974,12 +1951,14 @@ def buildScriptsAssemble(
                         }
                         throw new Exception("[ERROR] Build JDK timeout (${buildTimeouts.BUILD_JDK_TIMEOUT} HOURS) has been reached. Exiting...")
                     }
+                    // TODO: Make the "internal signing/assembly" part independent of
+                    // ENABLE_SIGNER so that this platform-specific logic is not required
                     if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
-                        context.println "Signing phase required - skipping metadata reading"
+                        context.println "openjdk_build_pipeline: Internal signing phase required - skipping metadata reading"
                     } else {
-                        // Run a downstream job on riscv machine that returns the java version. Otherwise, just read the version.txt
+                    // Run a downstream job on riscv machine that returns the java version. Otherwise, just read the version.txt
                         String versionOut
-                        if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
+                            if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
                             context.println "[WARNING] Don't read faked version.txt on cross compiled build! Archiving early and running downstream job to retrieve java version..."
                             versionOut = readCrossCompiledVersionString()
                         } else {
@@ -1991,7 +1970,7 @@ def buildScriptsAssemble(
                 if (!((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner)) {
                     writeMetadata(versionInfo, true)
                 } else {
-                    context.println "SXAEC: Skipping writing incomplete metadata - needs to be added to second phase"
+                    context.println "Skipping writing incomplete metadata for now - will be done in the assemble phase instead"
                 }
                     
             } finally {
@@ -2109,7 +2088,6 @@ def buildScriptsAssemble(
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
     Running in downstream build job jdk-*-*-* called by kick_off_build.groovy
     */
-//SXAEC//    @SuppressWarnings('unused')
     def build() {
         context.timestamps {
             try {
@@ -2254,6 +2232,7 @@ def buildScriptsAssemble(
                                     throw new Exception("[ERROR] Controller docker file scm checkout timeout (${buildTimeouts.DOCKER_CHECKOUT_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
 
+                                context.println "openjdk_build_pipeline: building in docker image from docker file " + buildConfig.DOCKER_FILE
                                 context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
                                     buildScripts(
                                         cleanWorkspace,
@@ -2279,6 +2258,7 @@ def buildScriptsAssemble(
                                     context.println "openjdk_build_pipeline: running exploded build in docker on Windows"
                                     def workspace = 'C:/workspace/openjdk-build/'
                                     context.echo("Switched to using non-default workspace path ${workspace}")
+                                    context.println "openjdk_build_pipeline: building in windows docker image " + buildConfig.DOCKER_IMAGE
                                     context.ws(workspace) {
                                         context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScripts(
@@ -2292,7 +2272,7 @@ def buildScriptsAssemble(
                                         }
                                     }
                                 } else {
-                                    context.println "openjdk_build_pipeline: running initial build in docker on non-windows"
+                                    context.println "openjdk_build_pipeline: running initial build in docker on non-windows with image " + buildConfig.DOCKER_IMAGE
                                     context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                         buildScripts(
                                             cleanWorkspace,
@@ -2342,6 +2322,7 @@ def buildScriptsAssemble(
                                     workspace = env.CYGWIN_WORKSPACE
                                 }
                                 context.echo("Switched to using non-default workspace path ${workspace}")
+                                context.println "openjdk_build_pipeline: running build without docker on windows"
                                 context.ws(workspace) {
                                     buildScripts(
                                         cleanWorkspace,
@@ -2362,6 +2343,7 @@ def buildScriptsAssemble(
                                     }
                                 }
                             } else { // Non-windows, non-docker
+                                context.println "openjdk_build_pipeline: running build without docker on non-windows platform"
                                 buildScripts(
                                     cleanWorkspace,
                                     cleanWorkspaceAfter,
