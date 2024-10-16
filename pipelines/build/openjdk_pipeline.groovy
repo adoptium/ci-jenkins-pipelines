@@ -27,7 +27,7 @@ def findGaCommitSHA(String jdkVersion, String jdkBranch, Boolean annotatedTag) {
     // Determine OpenJDK and Adoptium mirror repository
     def repo
     // Is it a jdk-23+ stablizationjdk branch version? ie.jdk-23, jdk-24, ... 
-    if (jdkVersion.toInteger() >= 23 && !jdkBranch.contains("\.0")) {
+    if (jdkVersion.toInteger() >= 23 && !jdkBranch.contains(".0")) {
         // jdk-23+ first release is a branch within the jdk(head) repository
         repo = "jdk"
     } else {
