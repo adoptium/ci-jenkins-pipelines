@@ -2434,12 +2434,10 @@ def buildScriptsAssemble(
                                 } else {
                                     platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
                                 }           
-                                if ( !(platform =='aarch64_windows') ) {
-                                    if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                        context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                        def remoteTargets = remoteTriggerJckTests(platform, filename)
-                                        context.parallel remoteTargets
-                                    }
+                                if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
+                                    context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
+                                    def remoteTargets = remoteTriggerJckTests(platform, filename)
+                                    context.parallel remoteTargets
                                 }
                             }
 
