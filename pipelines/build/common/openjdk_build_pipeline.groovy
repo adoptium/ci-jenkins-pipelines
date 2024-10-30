@@ -1054,6 +1054,44 @@ class Build {
             }
         }
     }
+
+    // Kick off the sign_temurin_jsf job to sign the SBOM
+    private void jsfSignSBOM() {
+        context.stage('SBOM Sign') {
+            context.println "RUNNING sign_temurin_jsf for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
+
+            def params = [
+                  context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                  context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                  context.string(name: 'UPSTREAM_DIR', value: 'workspace')
+           ]
+
+            def signSHAsJob = context.build job: 'build-scripts/release/sign_temurin_jsf',
+               propagate: true,
+               parameters: params
+
+            context.node('worker') {
+                // Remove any previous workspace artifacts
+                context.sh 'rm -rf workspace/target/* || true'
+                context.copyArtifacts(
+                    projectName: 'build-scripts/release/sign_temurin_jsf',
+                    selector: context.specific("${signSHAsJob.getNumber()}"),
+                    filter: '**/*.sig',
+                    fingerprintArtifacts: true,
+                    target: 'workspace/target/',
+                    flatten: true)
+
+                // Archive SBOM signatures in Jenkins
+                try {
+                    context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                        context.archiveArtifacts artifacts: 'workspace/target/*.sig'
+                    }
+               } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
+                }
+            }
+        }
+    }
     /*
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
@@ -1824,6 +1862,8 @@ class Build {
                             context.archiveArtifacts artifacts: 'workspace/target/*.json'
                         } else {
                             context.archiveArtifacts artifacts: 'workspace/target/*'
+                            // Archive cyclone dx jars
+                            context.archiveArtifacts artifacts: "workspace/build-scripts/jobs/${buildConfig.JAVA_TO_BUILD}-${buildConfig.TARGET_OS}-${buildConfig.ARCHITECTURE}-temurin/cyclonedx-lib/**/*.jar"
                         }
                     }
                 } catch (FlowInterruptedException e) {
@@ -2208,6 +2248,7 @@ class Build {
                 if (!env.JOB_NAME.contains('pr-tester') && context.JENKINS_URL.contains('adopt')) {
                     try {
                         gpgSign()
+                        jsfSignSBOM()
                     } catch (Exception e) {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
