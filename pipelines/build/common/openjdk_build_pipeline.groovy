@@ -2436,7 +2436,7 @@ def buildScriptsAssemble(
                                 }
                                 if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
                                     context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                    def remoteTargets = remoteTriggerJckTests(platform, filename)
+                                   def remoteTargets = remoteTriggerJckTests(platform, filename)
                                     context.parallel remoteTargets
                                 }
                             }
