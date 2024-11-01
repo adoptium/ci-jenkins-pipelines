@@ -412,9 +412,9 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                             if ( testOutput.contains("Running test "+reproTestName) ) {
                                 platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
                                 // Now we know the test ran, 
-                                def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+\.?[0-9]* %/
+                                def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
                                 if ( matcherObject ) {
-                                    platformResult = matcherObject[0] =~ /[0-9]+\.?[0-9]* %/
+                                    println((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
                                 }
                             }
                         }
