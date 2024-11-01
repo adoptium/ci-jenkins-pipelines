@@ -424,7 +424,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             results[jdkVersion][1][onePlatform] = platformResult
         }
 
-        // Now we have the percentages for each platform, we canculate the jdkVersion-specific average.
+        // Now we have the percentages for each platform, we calculate the jdkVersion-specific average.
         def overallAverage = 0
         // Ignoring the platforms where the test is not available yet.
         def naCount = 0
