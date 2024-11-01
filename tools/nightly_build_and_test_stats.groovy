@@ -412,9 +412,9 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                             if ( testOutput.contains("Running test "+reproTestName) ) {
                                 platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
                                 // Now we know the test ran, 
-                                def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
+                                def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+\.?[0-9]* %/
                                 if ( matcherObject ) {
-                                    platformResult = matcherObject[0] =~ /[0-9]+ %/
+                                    platformResult = matcherObject[0] =~ /[0-9]+\.?[0-9]* %/
                                 }
                             }
                         }
@@ -431,12 +431,13 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         results[jdkVersion][1].each{key, value ->
             if (value.equals("NA")) {
                 naCount++
-            } else if ( (value ==~ /^[0-9]+ %/) ) {
-                overallAverage += (value =~ /^[0-9]+/)[0] as Integer
+            } else if ( (value ==~ /^[0-9]+\.?[0-9]* %/) ) {
+                overallAverage += (value =~ /^[0-9]+\.?[0-9]*/)[0] as Double
             }
             // else do nothing, as we presume non-integer and non-NA values are 0.
         }
-        overallAverage = overallAverage == 0 ? 0 : overallAverage.intdiv(results[jdkVersion][1].size() - naCount)
+        overallAverage = overallAverage == 0 ? 0 : overallAverage / (results[jdkVersion][1].size() - naCount)
+        overallAverage = 0 ? 0 : Math.round(overallAverage * 100) / 100
         results[jdkVersion][0] = overallAverage+" %"
     }
 }
