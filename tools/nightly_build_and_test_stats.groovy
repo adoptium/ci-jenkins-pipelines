@@ -822,7 +822,7 @@ node('worker') {
                                 reproducibleBuilds[featureRelease][1].each{ key, value -> 
                                     if (!value.equals("NA")) {
                                         echo key+": "+value
-                                        if(value ==~ /[0-9]+ %/) {
+                                        if(value ==~ /[0-9]+\.?[0=9]* %/) {
                                             summaryOfRepros+=" "+key+"("+value+"),"
                                         } else {
                                             summaryOfRepros+=" "+key+"(?%),"
