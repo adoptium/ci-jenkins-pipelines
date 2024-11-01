@@ -48,9 +48,9 @@ def getPlatformReproTestMap() {
     def platformReproTestMap = [x64Linux:           ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 x64Windows:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
                                 x64Mac:             ["NA", ""],
-                                ppc64leLinux:       ["NA", ""],
-                                aarch64Linux:       ["NA", ""],
-                                aarch64Mac:         ["NA", ""]
+                                ppc64leLinux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
+                                aarch64Linux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
+                                aarch64Mac:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
                                ]
     return platformReproTestMap
 }
