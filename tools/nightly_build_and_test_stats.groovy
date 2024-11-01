@@ -414,7 +414,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                                 // Now we know the test ran, 
                                 def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
                                 if ( matcherObject ) {
-                                    println((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
+                                    platformResult = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
                                 }
                             }
                         }
@@ -431,7 +431,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         results[jdkVersion][1].each{key, value ->
             if (value.equals("NA")) {
                 naCount++
-            } else if ( (value ==~ /^[0-9]+\.?[0-9]* %/) ) {
+            } else if ( value ==~ /^[0-9]+\.?[0-9]* %/ ) {
                 overallAverage += (value =~ /^[0-9]+\.?[0-9]*/)[0] as Double
             }
             // else do nothing, as we presume non-integer and non-NA values are 0.
