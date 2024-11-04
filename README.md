@@ -25,12 +25,15 @@ instance, see
 ## Overview of pipeline types
 
 The starting point on the jenkins instance from the perspective of the
-overall build pipelines is the
-[build-scripts folder](https://ci.adoptium.net/job/build-scripts/). This
-contains the top level pipelines which are used to run the different types
-of build. In the names in this document `XX` is the JDK version number e.g.
-8, 17, 21 and so on. There is one of these for each JDK version which we
-support.
+overall build pipelines is the [build-scripts
+folder](https://ci.adoptium.net/job/build-scripts/).  This contains the high
+level pipelines which are used to run the different types of build.  In the
+names in this document `XX` is the JDK version number e.g.  8, 17, 21 and so
+on.  There is one of these for each JDK version which we support.
+
+When talking about the different types of pipelines, the ones named
+"*openjdkXX-pipeline" are referred to as the "top level versioned pipelines"
+and the subjobs later on are the "platform specific pipelines"
 
 ### openjdkXX-pipeline
 
@@ -57,7 +60,7 @@ separate
 job which will publish them as an `ea-beta`-suffixed release in github  under e.g.
 [temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true}).
 
-### release-openjdkXX-pipeline
+### release-openjdkXX-pipeline 
 
 These are not publicly visible but are used to build the fully tested
 production binaries on a quarterly basis.  Similar to the openjdkXX-pipeline
@@ -127,13 +130,14 @@ openjdkXX-pipelines that can be used to run against PRs and will not
 More documentation on the PR tester process can be found in
 [the prTester documentation](pipelines/build/prTester).
 
-## Subjobs of the top level pipelines
+## Subjobs of the top level versioned pipelines (i.e. "platform specific pipelines")
 
-Each of the top level pipelines described above invoke lower level jobs to
-run the platform-specific builds.  The jenkins folders containing these
-scripts for each of the above top level pipelines are as follows:
+Each of the top level versioned pipelines described above invoke lower level
+jobs to run the platform-specific builds.  The jenkins folders containing
+these scripts for each of the above top level versioned pipelines are as
+follows:
 
-Top level pipeline | Platform-specific pipeline folder (TODO: Name these!)
+Top level versioned pipeline | Platform-specific pipeline folder (TODO: Name these!)
 ---|---
 openjdkXX-pipeline | [jobs/jdkXX](https://ci.adoptium.net/job/build-scripts/job/jobs/)
 evaluation-openjdkXX-pipeline | [jobs/evaluation/jdkXX](https://ci.adoptium.net/job/build-scripts/job/jobs/job/evaluation/) [†]
@@ -179,7 +183,7 @@ The top level
 [build-pipeline-generator](https://ci.adoptium.net/job/build-scripts/job/utils/job/build-pipeline-generator/)
 job uses
 [build_pipeline_generator.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/regeneration/build_pipeline_generator.groovy)
-to generate the pipelines.  It will generate the top level
+to generate the pipelines.  It will generate the top level versioned
 openjdkXX-pipeline jobs.  Similarly there are pipeline_jobs_generator_jdkXX
 jobs which use
 [build_job_generator.groovy](pipelines/build/regeneration/build_job_generator.groovy)
