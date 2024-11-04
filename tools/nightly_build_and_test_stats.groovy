@@ -15,6 +15,7 @@ limitations under the License.
 /* groovylint-disable NestedBlockDepth */
 
 import groovy.json.JsonSlurper
+import java.math.MathContext;
 import java.time.LocalDateTime
 import java.time.Instant
 import java.time.ZoneId
@@ -425,19 +426,21 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         }
 
         // Now we have the percentages for each platform, we calculate the jdkVersion-specific average.
-        Double overallAverage = 0.0
+        BigDecimal overallAverage = 0.0
         // Ignoring the platforms where the test is not available yet.
         def naCount = 0
         results[jdkVersion][1].each{key, value ->
             if (value.equals("NA")) {
                 naCount++
             } else if ( value ==~ /^[0-9]+\.?[0-9]* %/ ) {
-                overallAverage += (value =~ /^[0-9]+\.?[0-9]*/)[0] as Double
+                overallAverage += (value =~ /^[0-9]+\.?[0-9]*/)[0] as BigDecimal
             }
             // else do nothing, as we presume non-integer and non-NA values are 0.
         }
-        overallAverage = overallAverage == 0 ? 0 : overallAverage / (results[jdkVersion][1].size() - naCount)
-        overallAverage = 0 ? 0 : Math.round(overallAverage * 100) / 100
+        if (overallAverage != 0) {
+            overallAverage = overallAverage / (results[jdkVersion][1].size() - naCount)
+        }
+        overallAverage.round(new MathContext(3))
         results[jdkVersion][0] = overallAverage+" %"
     }
 }
