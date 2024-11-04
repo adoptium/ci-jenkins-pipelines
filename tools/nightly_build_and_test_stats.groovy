@@ -15,6 +15,7 @@ limitations under the License.
 /* groovylint-disable NestedBlockDepth */
 
 import groovy.json.JsonSlurper
+import java.math.MathContext;
 import java.time.LocalDateTime
 import java.time.Instant
 import java.time.ZoneId
@@ -48,9 +49,9 @@ def getPlatformReproTestMap() {
     def platformReproTestMap = [x64Linux:           ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 x64Windows:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
                                 x64Mac:             ["NA", ""],
-                                ppc64leLinux:       ["NA", ""],
-                                aarch64Linux:       ["NA", ""],
-                                aarch64Mac:         ["NA", ""]
+                                ppc64leLinux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
+                                aarch64Linux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
+                                aarch64Mac:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
                                ]
     return platformReproTestMap
 }
@@ -412,9 +413,9 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                             if ( testOutput.contains("Running test "+reproTestName) ) {
                                 platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
                                 // Now we know the test ran, 
-                                def matcherObject = testOutput =~ /ReproduciblePercent = [0-9]+ %/
+                                def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
                                 if ( matcherObject ) {
-                                    platformResult = matcherObject[0] =~ /[0-9]+ %/
+                                    platformResult = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
                                 }
                             }
                         }
@@ -424,20 +425,23 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             results[jdkVersion][1][onePlatform] = platformResult
         }
 
-        // Now we have the percentages for each platform, we canculate the jdkVersion-specific average.
-        def overallAverage = 0
+        // Now we have the percentages for each platform, we calculate the jdkVersion-specific average.
+        BigDecimal overallAverage = 0.0
         // Ignoring the platforms where the test is not available yet.
         def naCount = 0
         results[jdkVersion][1].each{key, value ->
             if (value.equals("NA")) {
                 naCount++
-            } else if ( (value ==~ /^[0-9]+ %/) ) {
-                overallAverage += (value =~ /^[0-9]+/)[0] as Integer
+            } else if ( value ==~ /^[0-9]+\.?[0-9]* %/ ) {
+                overallAverage += (value =~ /^[0-9]+\.?[0-9]*/)[0] as BigDecimal
             }
             // else do nothing, as we presume non-integer and non-NA values are 0.
         }
-        overallAverage = overallAverage == 0 ? 0 : overallAverage.intdiv(results[jdkVersion][1].size() - naCount)
-        results[jdkVersion][0] = overallAverage+" %"
+        if (overallAverage != 0) {
+            overallAverage = overallAverage / (results[jdkVersion][1].size() - naCount)
+        }
+        // This reduces the output to 2 decimal places.
+        results[jdkVersion][0] = ((overallAverage.toString()) =~ /[0-9]+\.?[0-9]?[0-9]?/)[0]+" %"
     }
 }
 
@@ -821,7 +825,7 @@ node('worker') {
                                 reproducibleBuilds[featureRelease][1].each{ key, value -> 
                                     if (!value.equals("NA")) {
                                         echo key+": "+value
-                                        if(value ==~ /[0-9]+ %/) {
+                                        if(value ==~ /[0-9]+\.?[0-9]* %/) {
                                             summaryOfRepros+=" "+key+"("+value+"),"
                                         } else {
                                             summaryOfRepros+=" "+key+"(?%),"
