@@ -440,8 +440,8 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         if (overallAverage != 0) {
             overallAverage = overallAverage / (results[jdkVersion][1].size() - naCount)
         }
-        overallAverage = (overallAverage * 100).toBigInteger() / 100
-        results[jdkVersion][0] = overallAverage+" %"
+        // This reduces the output to 2 decimal places.
+        results[jdkVersion][0] = ((overallAverage.stripTrailingZeros().toString() + "00") =~ /[0-9]+\.?[0-9]?[0-9]?/)[0]+" %"
     }
 }
 
