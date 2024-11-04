@@ -8,7 +8,7 @@ To ensure both configurations are not overridden in a race condition scenario by
 
 **Generally, any new parameters/configurations that effect the jenkins environment directly should be implemented here.** If this is not the case, it would likely be better placed in [temurin-build/platform-specific-configurations](https://github.com/adoptium/temurin-build/tree/master/build-farm/platform-specific-configurations) (for OS or `make-adopt-build-farm.sh` specific use cases) or [temurin-build/build.sh](https://github.com/adoptium/temurin-build/blob/master/sbin/build.sh) (for anyone, including end users and jenkins pipelines).
 
-### Build
+## Build
 
 The build config files are the ones that follow the format `jdkxx(u)_pipeline_config.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a groovy class with a single `Map<String, Map<String, ?>>` property containing node labels, tests and other jenkins parameters/constants that are crucial for allowing different parts of the build pipeline to mesh together.
 
@@ -27,7 +27,7 @@ x64Mac        : [
 ]
 ```
 
-### Data fields
+## Data fields
 
 NOTE: When the `type` field implies a map, the `String` key of the inner map is the variant for that field. E.g:
 
@@ -62,19 +62,19 @@ NOTE: When the `type` field implies a map, the `String` key of the inner map is 
 | codebuild                  | &#10060;  | `Boolean`                                   | Setting this field will tell jenkins to spin up an Azure or [AWS cloud](https://aws.amazon.com/codebuild/) machine, allowing the build to retrieve a machine not normally available on the Jenkins server. It does this by appending a `codebuild` flag to the jenkins label. |
 | cleanWorkspaceAfterBuild   | &#10060;  | `Boolean`                                   | Setting this field will tell jenkins to clean down the workspace after the build has completed. Particularly useful for AIX where disk space can be limited. |
 
-### Nightly
+## Nightly
 
 The nightly or beta/non-release config files are the ones that follow the format `jdkxx(u).groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository. Each is a simple groovy script that's contents can be [loaded in](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/#load-evaluate-a-groovy-source-file-into-the-pipeline-script) and accessed by another script.
 
-### Evaluation pipeline/jobs
+## Evaluation pipeline/jobs
 
 The evaluation config files are the ones that follow the format `jdkxx(u)_evaluation.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
 
-#### targetConfigurations
+### targetConfigurations
 
 A single `Map<String, Map<String, String>>` variable containing what platforms and variants will be run in the nightly builds, evaluation builds and releases (by default, this can be altered in jenkins parameters before executing a user build). If you are [creating your own](docs/UsingOurScripts.md) nightly config, you will need to ensure the key values of the upper map are the same as the key values in the corresponding [build config file](#build).
 
-### Release pipeline/jobs
+## Release pipeline/jobs
 
 The release config files are the ones that follow the format `jdkxx(u)_release.groovy` with `xx` being the version number and an optional `u` if the Java source code is pulled from an update repository.
 jdkxx(u)*.groovy
@@ -126,7 +126,7 @@ targetConfigurations = [
 ]
 ```
 
-#### disableJob
+### disableJob
 
 If this is present, the jenkins generators will still create the top-level pipeline and downstream jobs but will set them as disabled.
 jdkxx(u).groovy
@@ -135,7 +135,7 @@ jdkxx(u).groovy
 disableJob = true
 ```
 
-#### triggerSchedule_nightly / triggerSchedule_weekly / triggerSchedule_evaluation / triggerSchedule_weekly_evaluation
+### triggerSchedule_nightly / triggerSchedule_weekly / triggerSchedule_evaluation / triggerSchedule_weekly_evaluation
 
 All JDK versions now support "beta" EA triggered builds from the publication of upstream build tags. Eclipse Adoptium no
 longer runs scheduled nightly/weekend builds.
@@ -159,7 +159,7 @@ triggerSchedule_evaluation="TZ=UTC\n15 18 * * 1,3,5"
 triggerSchedule_weekly_evaluation="TZ=UTC\n25 12 * * 6"
 ```
 
-#### weekly_release_scmReferences / weekly_evaluation_scmReferences
+### weekly_release_scmReferences / weekly_evaluation_scmReferences
 
 Source control references (e.g. tags) to use in the scheduled weekly release or weekly evaluation builds
 in jdkXX(u).groovy
@@ -168,7 +168,7 @@ Use below two ways can set the job never to run:
 - do not set `triggerSchedule_nightly` or `triggerSchedule_weekly` in the groovy file
 - untick `ENABLE_PIPELINE_SCHEDULE` option in the Jenkins job which calls `pipelines/build/regeneration/build_pipeline_generator.groovy`
 
-#### weekly_release_scmReferences
+### weekly_release_scmReferences
 
 Source control references (e.g. tags) to use in the scheduled weekly release builds
 jdkxx(u).groovy

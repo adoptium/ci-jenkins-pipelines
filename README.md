@@ -165,7 +165,7 @@ which is initiated after the
 build perfoms some basic tests against the build artefacts and acts as a
 gate to kicking off the subsequent steps.  Once complete, the
 openjdkXX-pipelines which run the early access builds will generally invoke
-the jobs to publish them as a release in github (e.g. 
+the jobs to publish them as a release in github (e.g.
 [temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true}).
 
 ## Job generation
