@@ -788,7 +788,7 @@ class Builder implements Serializable {
         def osArch = 'all available OS&ARCHs'
         def artifactsToCopy = '**/temurin/*.tar.gz,**/temurin/*.zip,**/temurin/*.sha256.txt,**/temurin/*.msi,**/temurin/*.pkg,**/temurin/*.json,**/temurin/*.sig'
         def dryRun = false 
-        def String releaseToolUrl = "${context.HUDSON_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
+        String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
         if ( config != null ) {
             def prefixOfArtifactsToCopy = "**/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}"             
             artifactsToCopy = "${prefixOfArtifactsToCopy}/*.tar.gz,${prefixOfArtifactsToCopy}/*.zip,${prefixOfArtifactsToCopy}/*.sha256.txt,${prefixOfArtifactsToCopy}/*.msi,${prefixOfArtifactsToCopy}/*.pkg,${prefixOfArtifactsToCopy}/*.json,${prefixOfArtifactsToCopy}/*.sig"
@@ -1034,13 +1034,13 @@ class Builder implements Serializable {
             if (publish || release) {
                 if (release) {
                     context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
-                    if (context.HUDSON_URL.contains('adoptium')) {
+                    if (context.JENKINS_URL.contains('adoptium')) {
                         releaseSummary.appendText('</ul>', false)
                         releaseSummary.appendText("<b>TAPs COLLECTION and REALEASE:</b><ul>")
                         def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
-                        def tapCollectionUrl = "${context.HUDSON_URL}job/TAP_Collection/parambuild?Release_PipelineJob_Name=${urlJobName}"
+                        def tapCollectionUrl = "${context.JENKINS_URL}job/TAP_Collection/parambuild?Release_PipelineJob_Name=${urlJobName}"
                         releaseSummary.appendText("<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
-                        def String releaseToolUrl = "${context.HUDSON_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
+                        String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
                         def tag = publishName
                         tag = URLEncoder.encode(tag, 'UTF-8')
                         def artifactsToCopy = '**/AQAvitTapFiles.tar.gz'
