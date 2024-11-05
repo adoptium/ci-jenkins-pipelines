@@ -60,7 +60,7 @@ separate
 job which will publish them as an `ea-beta`-suffixed release in github  under e.g.
 [temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true}).
 
-### release-openjdkXX-pipeline 
+### release-openjdkXX-pipeline
 
 These are not publicly visible but are used to build the fully tested
 production binaries on a quarterly basis.  Similar to the openjdkXX-pipeline
