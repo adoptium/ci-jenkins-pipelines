@@ -418,6 +418,8 @@ class Build {
                 testStages["${testType}"] = {
                     context.println "Running test: ${testType}"
                     context.stage("${testType}") {
+                        def jobParams = getAQATestJobParams(testType)
+                        def jobName = jobParams.TEST_JOB_NAME
                         def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
                         def rerunIterations = '1'
                         if ("${testType}".contains('dev') || "${testType}".contains('external')) {
@@ -433,7 +435,7 @@ class Build {
                             DYNAMIC_COMPILE = true
                         }
                         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-                        if (testType  == 'dev.openjdk' || testType  == 'special.system') {
+                        if (testType  == 'dev.openjdk' || (testType  == 'special.system' && jobName.contains('linux'))) {
                             context.println "${testType} need extra label sw.tool.docker"
                             if (additionalTestLabel == '') {
                                 additionalTestLabel = 'sw.tool.docker'
@@ -452,9 +454,7 @@ class Build {
                             vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
                         }
 
-                        def jobParams = getAQATestJobParams(testType)
 
-                        def jobName = jobParams.TEST_JOB_NAME
                         String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
                         def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
 
