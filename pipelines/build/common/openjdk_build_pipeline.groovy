@@ -746,7 +746,7 @@ class Build {
         if (
             buildConfig.TARGET_OS == 'windows' || (buildConfig.TARGET_OS == 'mac')
         ) {
-            context.stage('sign') {
+            context.stage('sign zip/tgz') {
                 def filter = ''
 
                 def nodeFilter = 'eclipse-codesign'
@@ -785,7 +785,6 @@ class Build {
                             flatten: true)
 
                     context.sh 'for file in $(ls workspace/target/*.tar.gz workspace/target/*.zip); do sha256sum "$file" > $file.sha256.txt ; done'
-
                     writeMetadata(versionInfo, false)
                     context.archiveArtifacts artifacts: 'workspace/target/*'
                 }
@@ -1059,17 +1058,23 @@ class Build {
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
     List<String> listArchives() {
-        def files = context.sh(
+
+        def files
+        if ( context.isUnix() ) {
+           files = context.sh(
                 script: '''find workspace/target/ | egrep -e '(\\.tar\\.gz|\\.zip|\\.msi|\\.pkg|\\.deb|\\.rpm|-sbom_.*\\.json)$' ''',
                 returnStdout: true,
                 returnStatus: false
-        )
-                .trim()
-                .split('\n')
-                .toList()
-
+           ).trim().split('\n').toList()
+        } else {
+           // The grep here removes anything that still contains "*" because nothing matched
+           files = context.bat(
+                script: 'dir/b/s workspace\\target\\*.zip workspace\\target\\*.msi workspace\\target\\*.-sbom_* workspace\\target\\*.json',
+                returnStdout: true,
+                returnStatus: false
+           ).trim().replaceAll('\\\\','/').replaceAll('\\r','').split('\n').toList().grep( ~/^[^\*]*$/ ) // grep needed extra script approval
+        }
         context.println "listArchives: ${files}"
-
         return files
     }
 
@@ -1334,16 +1339,22 @@ class Build {
             } else if (file.contains('-sbom')) {
                 type = 'sbom'
             }
+            context.println "writeMetaData for " + file
 
-            String hash = context.sh(script: """\
+            String hash
+            if ( context.isUnix() ) {
+                context.println "Non-windows non-docker detected - running sh to generate SHA256 sums in writeMetadata"
+                hash = context.sh(script: """\
                                               if [ -x "\$(command -v shasum)" ]; then
                                                 (shasum -a 256 | cut -f1 -d' ') <$file
                                               else
                                                 sha256sum $file | cut -f1 -d' '
                                               fi
-                                            """.stripIndent(), returnStdout: true, returnStatus: false)
-
-            hash = hash.replaceAll('\n', '')
+                                            """.stripIndent(), returnStdout: true, returnStatus: false).replaceAll('\n', '')
+            } else {
+                context.println "Windows detected - running bat to generate SHA256 sums in writeMetadata"
+                hash = context.bat(script: "sha256sum ${file} | cut -f1 -d' '") // .replaceAll('\n', '')
+            }
 
             data.binary_type = type
             data.sha256 = hash
@@ -1481,186 +1492,49 @@ class Build {
     }
 
     /*
+     * In Windows docker containers sh can be unreliable, so use context.bat
+     * in preference. https://github.com/adoptium/infrastructure/issues/3714
+     */
+    def batOrSh(command)
+    {
+        if ( context.isUnix() ) {
+            context.sh(command)
+        } else {
+            context.bat(command)
+        }
+    }
+
+    /*
      Display the current git repo information
      */
     def printGitRepoInfo() {
         context.println 'Checked out repo:'
-        context.sh(script: 'git status')
+        batOrSh('git status')
         context.println 'Checked out HEAD commit SHA:'
-        context.sh(script: 'git rev-parse HEAD')
+        batOrSh('git rev-parse HEAD')
     }
 
-    /*
-    Executed on a build node, the function checks out the repository and executes the build via ./make-adopt-build-farm.sh
-    Once the build completes, it will calculate its version output, commit the first metadata writeout, and archive the build results.
-    Running in downstream job jdk-*-*-* build stage, called by build()
-    */
-    def buildScripts(
-        cleanWorkspace,
-        cleanWorkspaceAfter,
-        cleanWorkspaceBuildOutputAfter,
-        filename,
-        useAdoptShellScripts
-    ) {
-        return context.stage('build') {
-            // Create the repo handler with the user's defaults to ensure a temurin-build checkout is not null
-            // Pass actual ADOPT_DEFAULTS_JSON, and optional buildConfig CI and BUILD branch/tag overrides,
-            // so that RepoHandler checks out the desired repo correctly
-            def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS, ADOPT_DEFAULTS_JSON, buildConfig.CI_REF, buildConfig.BUILD_REF)
-            repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
-
-            context.println 'USER_REMOTE_CONFIGS: '
-            context.println JsonOutput.toJson(USER_REMOTE_CONFIGS)
-            context.println 'DEFAULTS_JSON: '
-            context.println JsonOutput.toJson(DEFAULTS_JSON)
-            context.println 'ADOPT_DEFAULTS_JSON: '
-            context.println JsonOutput.toJson(ADOPT_DEFAULTS_JSON)
-            context.println 'Optional branch/tag/commitSHA overrides:'
-            context.println '    buildConfig.CI_REF: ' + buildConfig.CI_REF
-            context.println '    buildConfig.BUILD_REF: ' + buildConfig.BUILD_REF
-            context.println '    buildConfig.HELPER_REF: ' + buildConfig.HELPER_REF
-
-            def build_path
-            def openjdk_build_dir
-            def openjdk_build_dir_arg
-
-            // Build as default within OpenJDK src tree, necessary for Windows reproducible builds, due to relative paths
-            build_path = 'workspace/build/src/build'
-            openjdk_build_dir =  context.WORKSPACE + '/' + build_path
-            openjdk_build_dir_arg = ""
-
-            if (cleanWorkspace) {
-                try {
-                    try {
-                        context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
-                            // Clean non-hidden files first
-                            // Note: Underlying org.apache DirectoryScanner used by cleanWs has a bug scanning where it misses files containing ".." so use rm -rf instead
-                            // Issue: https://issues.jenkins.io/browse/JENKINS-64779
-                            if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
-                                context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
-                                context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
-                            } else {
-                                context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
-                            }
-
-                            // Clean remaining hidden files using cleanWs
-                            try {
-                                context.println 'Cleaning workspace hidden files using cleanWs: ' + context.WORKSPACE
-                                context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
-                            } catch (e) {
-                                context.println "Failed to clean ${e}"
-                            }
-                        }
-                    } catch (FlowInterruptedException e) {
-                        throw new Exception("[ERROR] Node Clean workspace timeout (${buildTimeouts.NODE_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
-                    }
-                } catch (e) {
-                    context.println "[WARNING] Failed to clean workspace: ${e}"
+    def buildScriptsEclipseSigner() {
+        def build_path
+        build_path = 'workspace/build/src/build'
+        def base_path
+        base_path = build_path
+        def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS, ADOPT_DEFAULTS_JSON, buildConfig.CI_REF, buildConfig.BUILD_REF)
+        context.stage('internal sign') {
+            context.node('eclipse-codesign') {
+                // Safety first!
+                if (base_path != null && !base_path.isEmpty()) {
+                    context.sh "rm -rf ${base_path}/* || true"
                 }
-            }
 
-            // Always clean any previous "openjdk_build_dir" output, possibly from any previous aborted build..
-            try {
-                try {
-                    context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
-                        if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
-                            context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
-                            context.sh(script: 'rm -rf ' + openjdk_build_dir)
-                        } else {
-                            context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
-                        }
-                    }
-                } catch (FlowInterruptedException e) {
-                    throw new Exception("[ERROR] Remove workspace openjdk build directory timeout (${buildTimeouts.NODE_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
-                }
-            } catch (e) {
-                context.println "[WARNING] Failed to remove workspace openjdk build directory: ${e}"
-            }
+                repoHandler.checkoutAdoptBuild(context)
+                printGitRepoInfo()
 
-            try {
-                context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: 'HOURS') {
-                    if (useAdoptShellScripts) {
-                        repoHandler.checkoutAdoptPipelines(context)
-                    } else {
-                        repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
-                        repoHandler.checkoutUserPipelines(context)
-                    }
-
-                    // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
-                    // https://github.com/adoptium/infrastucture/issues/1553
-                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-                        context.sh(script: 'git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})')
-                    }
-                    context.sh(script: 'git clean -fdx')
-
-                    printGitRepoInfo()
-                }
-            } catch (FlowInterruptedException e) {
-                throw new Exception("[ERROR] Node checkout workspace timeout (${buildTimeouts.NODE_CHECKOUT_TIMEOUT} HOURS) has been reached. Exiting...")
-            }
-
-            try {
-                // Convert IndividualBuildConfig to jenkins env variables
-                List<String> envVars = buildConfig.toEnvVars()
-                envVars.add("FILENAME=${filename}" as String)
-
-                // Use BUILD_REF override if specified
-                def adoptBranch = buildConfig.BUILD_REF ?: ADOPT_DEFAULTS_JSON['repository']['build_branch']
-
-                // Add platform config path so it can be used if the user doesn't have one
-                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
-                // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
-                String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
-                // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
-                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${adoptBranch}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
-
-                // Execute build
-                context.withEnv(envVars) {
-                    try {
-                        context.timeout(time: buildTimeouts.BUILD_JDK_TIMEOUT, unit: 'HOURS') {
-                            // Set Github Commit Status
-                            if (env.JOB_NAME.contains('pr-tester')) {
-                                updateGithubCommitStatus('PENDING', 'Build Started')
-                            }
-                            if (useAdoptShellScripts) {
-                                context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
-                                repoHandler.checkoutAdoptBuild(context)
-                                printGitRepoInfo()
-                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u') {
-                                    context.println "Processing exploded build, sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
-                                    def signBuildArgs
-                                    if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                        signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image' + openjdk_build_dir_arg
-                                    } else {
-                                        signBuildArgs = '--make-exploded-image' + openjdk_build_dir_arg
-                                    }
-                                    context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
-                                        context.println 'Building an exploded image for signing'
-                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                    }
-                                    def base_path = build_path
-                                    if (openjdk_build_dir_arg == "") {
-                                        // If not using a custom openjdk build dir, then query what autoconf created as the build sub-folder
-                                        base_path = context.sh(script: "ls -d ${build_path}/* | tr -d '\\n'", returnStdout:true)
-                                    }
-                                    context.println "base build path for jmod signing = ${base_path}"
-                                    context.stash name: 'jmods',
-                                        includes: "${base_path}/hotspot/variant-server/**/*," +
-                                            "${base_path}/support/modules_cmds/**/*," +
-                                            "${base_path}/support/modules_libs/**/*," +
-                                            // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
-                                            "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
-
-                                    context.node('eclipse-codesign') {
-                                        context.sh "rm -rf ${base_path}/* || true"
-
-                                        repoHandler.checkoutAdoptBuild(context)
-                                        printGitRepoInfo()
-
-                                        // Copy pre assembled binary ready for JMODs to be codesigned
-                                        context.unstash 'jmods'
-                                        def target_os = "${buildConfig.TARGET_OS}"
-                                        context.withEnv(['base_os='+target_os, 'base_path='+base_path]) {
+                // Copy pre assembled binary ready for JMODs to be codesigned
+                context.unstash 'jmods'
+                def target_os = "${buildConfig.TARGET_OS}"
+                // TODO: Split this out into a separate script at some point
+                context.withEnv(['base_os='+target_os, 'base_path='+base_path]) {
                                             // groovylint-disable
                                             context.sh '''
                                                 #!/bin/bash
@@ -1729,112 +1603,17 @@ class Build {
                                                 done
                                             '''
                                             // groovylint-enable
-                                        }
-                                        context.stash name: 'signed_jmods', includes: "${base_path}/**/*"
-                                    }
-
-                                    // Remove jmod directories to be replaced with the stash saved above
-                                    context.sh "rm -rf ${base_path}/hotspot/variant-server || true"
-                                    context.sh "rm -rf ${base_path}/support/modules_cmds || true"
-                                    context.sh "rm -rf ${base_path}/support/modules_libs || true"
-                                    // JDK 16 + jpackage executables need to be signed as well
-                                    if (buildConfig.JAVA_TO_BUILD != 'jdk11u') {
-                                        context.sh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/* || true"
-                                    }
-
-                                    // Restore signed JMODs
-                                    context.unstash 'signed_jmods'
-
-                                    def assembleBuildArgs
-                                    if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                        assembleBuildArgs = env.BUILD_ARGS + ' --assemble-exploded-image' + openjdk_build_dir_arg
-                                    } else {
-                                        assembleBuildArgs = '--assemble-exploded-image' + openjdk_build_dir_arg
-                                    }
-                                    context.withEnv(['BUILD_ARGS=' + assembleBuildArgs]) {
-                                        context.println 'Assembling the exploded image'
-                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                    }
-                                } else {
-                                    def buildArgs
-                                    if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                        buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
-                                    } else {
-                                        buildArgs = openjdk_build_dir_arg
-                                    }
-                                    context.withEnv(['BUILD_ARGS=' + buildArgs]) {
-                                        context.sh(script: "./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                    }
-                                }
-                                context.println '[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout...'
-                                // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
-                                if (env.JOB_NAME.contains('pr-tester')) {
-                                    context.checkout context.scm
-                                } else {
-                                    repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
-                                    repoHandler.checkoutUserPipelines(context)
-                                }
-                                printGitRepoInfo()
-                            } else {
-                                context.println "[CHECKOUT] Checking out to the user's temurin-build..."
-                                repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
-                                repoHandler.checkoutUserBuild(context)
-                                printGitRepoInfo()
-                                def buildArgs
-                                if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
-                                    buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
-                                } else {
-                                    buildArgs = openjdk_build_dir_arg
-                                }
-                                context.withEnv(['BUILD_ARGS=' + buildArgs]) {
-                                    context.sh(script: "./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
-                                }
-                                context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
-                                repoHandler.checkoutUserPipelines(context)
-                                printGitRepoInfo()
-                            }
-                        }
-                    } catch (FlowInterruptedException e) {
-                        // Set Github Commit Status
-                        if (env.JOB_NAME.contains('pr-tester')) {
-                            updateGithubCommitStatus('FAILED', 'Build FAILED')
-                        }
-                        throw new Exception("[ERROR] Build JDK timeout (${buildTimeouts.BUILD_JDK_TIMEOUT} HOURS) has been reached. Exiting...")
-                    }
-
-                    // Run a downstream job on riscv machine that returns the java version. Otherwise, just read the version.txt
-                    String versionOut
-                    if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
-                        context.println "[WARNING] Don't read faked version.txt on cross compiled build! Archiving early and running downstream job to retrieve java version..."
-                        versionOut = readCrossCompiledVersionString()
-                    } else {
-                        versionOut = context.readFile('workspace/target/metadata/version.txt')
-                    }
-
-                    versionInfo = parseVersionOutput(versionOut)
                 }
+                context.sh(script: "ls -l ${base_path}/**/*")
+                context.stash name: 'signed_jmods', includes: "${base_path}/**/*"
+            } // context.node ("eclipse-codesign") - joe thinks it matches with something else though ...
+        } // context.stage
+}
 
-                writeMetadata(versionInfo, true)
-            } finally {
-                // Always archive any artifacts including failed make logs..
-                try {
-                    context.timeout(time: buildTimeouts.BUILD_ARCHIVE_TIMEOUT, unit: 'HOURS') {
-                        // We have already archived cross compiled artifacts, so only archive the metadata files
-                        if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
-                            context.println '[INFO] Archiving JSON Files...'
-                            context.archiveArtifacts artifacts: 'workspace/target/*.json'
-                        } else {
-                            context.archiveArtifacts artifacts: 'workspace/target/*'
-                        }
-                    }
-                } catch (FlowInterruptedException e) {
-                    // Set Github Commit Status
-                    if (env.JOB_NAME.contains('pr-tester')) {
-                        updateGithubCommitStatus('FAILED', 'Build FAILED')
-                    }
-                    throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
-                }
-
+def postBuildWSclean(
+    cleanWorkspaceAfter,
+    cleanWorkspaceBuildOutputAfter
+) {
                 // post-build workspace clean:
                 if (cleanWorkspaceAfter || cleanWorkspaceBuildOutputAfter) {
                     try {
@@ -1854,14 +1633,8 @@ class Build {
                                         context.println "Failed to clean ${e}"
                                     }
                                 } else if (cleanWorkspaceBuildOutputAfter) {
-                                    context.println 'Cleaning workspace build output files: ' + openjdk_build_dir
-                                    context.sh(script: 'rm -rf ' + openjdk_build_dir)
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/target'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/target')
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/devkit'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/devkit')
-                                    context.println 'Cleaning workspace build output files: ' + context.WORKSPACE + '/workspace/build/straceOutput'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
+                                    batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
@@ -1874,6 +1647,356 @@ class Build {
                         }
                         throw new Exception("[ERROR] AIX clean workspace timeout (${buildTimeouts.AIX_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
                     }
+                }
+}
+
+def buildScriptsAssemble(
+    cleanWorkspaceAfter,
+    cleanWorkspaceBuildOutputAfter,
+    buildConfigEnvVars
+) {
+    def build_path
+
+    build_path = 'workspace/build/src/build'
+    def base_path
+    base_path = build_path
+    def assembleBuildArgs
+    // Remove jmod directories to be replaced with the stash saved above
+    batOrSh "rm -rf ${base_path}/hotspot/variant-server ${base_path}/support/modules_cmds ${base_path}/support/modules_libs"
+    // JDK 16 + jpackage executables need to be signed as well
+    if (buildConfig.JAVA_TO_BUILD != 'jdk11u') {
+        batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
+    }
+    context.stage('assemble') {
+        // This would ideally not be required but it's due to lack of UID mapping in windows containers
+        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE) {
+            context.bat('chmod -R a+rwX ' + '/cygdrive/c/workspace/openjdk-build/workspace/build/src/build/*')
+        }
+        // Restore signed JMODs
+        context.unstash 'signed_jmods'
+        // Convert IndividualBuildConfig to jenkins env variables
+        context.withEnv(buildConfigEnvVars) {
+            if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+              assembleBuildArgs = env.BUILD_ARGS + ' --assemble-exploded-image'
+            } else {
+              assembleBuildArgs = '--assemble-exploded-image'
+            }
+            context.withEnv(['BUILD_ARGS=' + assembleBuildArgs]) {
+                context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
+                def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS, ADOPT_DEFAULTS_JSON, buildConfig.CI_REF, buildConfig.BUILD_REF)
+                repoHandler.checkoutAdoptBuild(context)
+                if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                    context.bat(script: 'bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
+                }
+                printGitRepoInfo()
+                context.println 'openjdk_build_pipeline.groovy: Assembling the exploded image'
+                // Call make-adopt-build-farm.sh on windows/mac to create signed tarball
+                try {
+                    context.timeout(time: buildTimeouts.BUILD_JDK_TIMEOUT, unit: 'HOURS') {
+                        context.println "openjdk_build_pipeline: calling MABF to assemble on win/mac JDK11+"
+                        if ( !context.isUnix() && buildConfig.DOCKER_IMAGE ) {
+                            // Running ls -l here generates the shortname links required by the
+                            // build and create paths referenced in the config.status file
+                            context.bat(script: 'ls -l /cygdrive/c "/cygdrive/c/Program Files (x86)" "/cygdrive/c/Program Files (x86)/Microsoft Visual Studio/2022" "/cygdrive/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Redist/MSVC" "/cygdrive/c/Program Files (x86)/Windows Kits/10/bin" "/cygdrive/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC" "/cygdrive/c/Program Files (x86)/Windows Kits/10/include" "/cygdrive/c/Program Files (x86)/Windows Kits/10/lib"')
+                        }
+                        batOrSh("bash ${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']} --assemble-exploded-image")
+                    }
+                } catch (FlowInterruptedException e) {
+                    // Set Github Commit Status
+                    if (env.JOB_NAME.contains('pr-tester')) {
+                        updateGithubCommitStatus('FAILED', 'Build FAILED')
+                    }
+                    throw new Exception("[ERROR] Build JDK timeout (${buildTimeouts.BUILD_JDK_TIMEOUT} HOURS) has been reached. Exiting...")
+                }
+            } // context.withEnv(assembleBuildargs)
+        } // context.withEnv(buildConfigEnvVars)
+        String versionOut
+        if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
+            context.println "[WARNING] Don't read faked version.txt on cross compiled build! Archiving early and running downstream job to retrieve java version..."
+            versionOut = readCrossCompiledVersionString()
+        } else {
+            versionOut = context.readFile('workspace/target/metadata/version.txt')
+        }
+        versionInfo = parseVersionOutput(versionOut)
+        writeMetadata(versionInfo, true)
+        // Always archive any artifacts including failed make logs..
+        try {
+            context.timeout(time: buildTimeouts.BUILD_ARCHIVE_TIMEOUT, unit: 'HOURS') {
+                // We have already archived cross compiled artifacts, so only archive the metadata files
+                if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
+                    context.println '[INFO] Archiving JSON Files...'
+                    context.archiveArtifacts artifacts: 'workspace/target/*.json'
+                } else {
+                    context.archiveArtifacts artifacts: 'workspace/target/*'
+                }
+            }
+        } catch (FlowInterruptedException e) {
+            // Set Github Commit Status
+            if (env.JOB_NAME.contains('pr-tester')) {
+                updateGithubCommitStatus('FAILED', 'Build FAILED')
+            }
+            throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
+        }
+        postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
+    } // context.stage('assemble')
+} // End of buildScriptsAssemble() 1643-1765
+
+/*
+    Executed on a build node, the function checks out the repository and executes the build via ./make-adopt-build-farm.sh
+    Once the build completes, it will calculate its version output, commit the first metadata writeout, and archive the build results.
+    Running in downstream job jdk-*-*-* build stage, called by build()
+    */
+
+    def buildScripts(
+        cleanWorkspace,
+        cleanWorkspaceAfter,
+        cleanWorkspaceBuildOutputAfter,
+        useAdoptShellScripts,
+        enableSigner,
+        buildConfigEnvVars
+    ) {
+        // Create the repo handler with the user's defaults to ensure a temurin-build checkout is not null
+        // Pass actual ADOPT_DEFAULTS_JSON, and optional buildConfig CI and BUILD branch/tag overrides,
+        // so that RepoHandler checks out the desired repo correctly
+        def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS, ADOPT_DEFAULTS_JSON, buildConfig.CI_REF, buildConfig.BUILD_REF)
+        repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
+        return context.stage('build') {
+            context.println 'USER_REMOTE_CONFIGS: '
+            context.println JsonOutput.toJson(USER_REMOTE_CONFIGS)
+            context.println 'DEFAULTS_JSON: '
+            context.println JsonOutput.toJson(DEFAULTS_JSON)
+            context.println 'ADOPT_DEFAULTS_JSON: '
+            context.println JsonOutput.toJson(ADOPT_DEFAULTS_JSON)
+            context.println 'Optional branch/tag/commitSHA overrides:'
+            context.println '    buildConfig.CI_REF: ' + buildConfig.CI_REF
+            context.println '    buildConfig.BUILD_REF: ' + buildConfig.BUILD_REF
+            context.println '    buildConfig.HELPER_REF: ' + buildConfig.HELPER_REF
+
+            def build_path
+            def openjdk_build_dir
+            def openjdk_build_dir_arg
+
+            // Build as default within OpenJDK src tree, necessary for Windows reproducible builds, due to relative paths
+            build_path = 'workspace/build/src/build'
+            openjdk_build_dir =  context.WORKSPACE + '/' + build_path
+            openjdk_build_dir_arg = ""
+
+            if (cleanWorkspace) {
+                try {
+                    try {
+                        context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
+                            // Clean non-hidden files first
+                            // Note: Underlying org.apache DirectoryScanner used by cleanWs has a bug scanning where it misses files containing ".." so use rm -rf instead
+                            // Issue: https://issues.jenkins.io/browse/JENKINS-64779
+                            if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
+                                context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
+                                batOrSh(script: 'rm -rf ' + context.WORKSPACE + '/*')
+                            } else {
+                                context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
+                            }
+
+                            // Clean remaining hidden files using cleanWs
+                            try {
+                                context.println 'Cleaning workspace hidden files using cleanWs: ' + context.WORKSPACE
+                                context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
+                            } catch (e) {
+                                context.println "Failed to clean ${e}"
+                            }
+                        }
+                    } catch (FlowInterruptedException e) {
+                        throw new Exception("[ERROR] Node Clean workspace timeout (${buildTimeouts.NODE_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
+                    }
+                } catch (e) {
+                    context.println "[WARNING] Failed to clean workspace: ${e}"
+                }
+            }
+
+            // Always clean any previous "openjdk_build_dir" output, possibly from any previous aborted build..
+            try {
+                try {
+                    context.timeout(time: buildTimeouts.NODE_CLEAN_TIMEOUT, unit: 'HOURS') {
+                        if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
+                            context.println 'Removing workspace openjdk build directory: ' + openjdk_build_dir
+                            batOrSh('rm -rf ' + openjdk_build_dir)
+                        } else {
+                            context.println 'Warning: Unable to remove workspace openjdk build directory as context.WORKSPACE is null/empty'
+                        }
+                    }
+                } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Remove workspace openjdk build directory timeout (${buildTimeouts.NODE_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
+                }
+            } catch (e) {
+                context.println "[WARNING] Failed to remove workspace openjdk build directory: ${e}"
+            }
+
+            try {
+                context.timeout(time: buildTimeouts.NODE_CHECKOUT_TIMEOUT, unit: 'HOURS') {
+                    if (useAdoptShellScripts) {
+                        repoHandler.checkoutAdoptPipelines(context)
+                    } else {
+                        repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
+                        repoHandler.checkoutUserPipelines(context)
+                    }
+
+                    // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
+                    // https://github.com/adoptium/infrastucture/issues/1553
+                    
+                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                        context.bat(script: 'bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
+                    }
+                    batOrSh('git clean -fdx')
+                    printGitRepoInfo()
+                }
+            } catch (FlowInterruptedException e) {
+                throw new Exception("[ERROR] Node checkout workspace timeout (${buildTimeouts.NODE_CHECKOUT_TIMEOUT} HOURS) has been reached. Exiting...")
+            }
+
+            try {
+                // Convert IndividualBuildConfig to jenkins env variables
+                // Execute build
+                context.withEnv(buildConfigEnvVars) {
+                    try {
+                        context.timeout(time: buildTimeouts.BUILD_JDK_TIMEOUT, unit: 'HOURS') {
+                            // Set Github Commit Status
+                            if (env.JOB_NAME.contains('pr-tester')) {
+                                updateGithubCommitStatus('PENDING', 'Build Started')
+                            }
+                            if (useAdoptShellScripts) {
+                                context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
+                                repoHandler.checkoutAdoptBuild(context)
+                                printGitRepoInfo()
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
+                                    context.println "Generating exploded build" // , sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
+                                    def signBuildArgs // Build args for make-adopt-build-farm.sh
+                                    if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+                                        signBuildArgs = env.BUILD_ARGS + ' --make-exploded-image' + openjdk_build_dir_arg
+                                    } else {
+                                        signBuildArgs = '--make-exploded-image' + openjdk_build_dir_arg
+                                    }
+                                    context.withEnv(['BUILD_ARGS=' + signBuildArgs]) {
+                                        context.println 'Building an exploded image for signing'
+                                        // Call make-adopt-build-farm.sh to do initial windows/mac build
+                                        context.println "openjdk_build_pipeline: Calling MABF on win/mac to build exploded image"
+                                        batOrSh("bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
+                                    def base_path = build_path
+                                    if (openjdk_build_dir_arg == "") {
+                                        // If not using a custom openjdk build dir, then query what autoconf created as the build sub-folder
+                                        if ( context.isUnix() ) {
+                                            base_path = context.sh(script: "ls -d ${build_path}/*", returnStdout:true)
+                                        } else {
+                                            base_path = context.bat(script: "@ls -d ${build_path}/*", returnStdout:true).trim()
+                                        }
+                                    }
+                                    context.println "base build path for jmod signing = ${base_path}"
+                                    context.stash name: 'jmods',
+                                        includes: "${base_path}/hotspot/variant-server/**/*.exe," +
+                                            "${base_path}/hotspot/variant-server/**/*.dll," +
+                                            "${base_path}/hotspot/variant-server/**/*.dylib," +
+                                            "${base_path}/support/modules_cmds/**/*.exe," +
+                                            "${base_path}/support/modules_cmds/**/*.dll," +
+                                            "${base_path}/support/modules_cmds/**/*.dylib," +
+                                            "${base_path}/support/modules_libs/**/*.exe," +
+                                            "${base_path}/support/modules_libs/**/*.dll," +
+                                            "${base_path}/support/modules_libs/**/*.dylib," +
+                                            // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
+                                            "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
+
+                                    // eclipse-codesign and assemble sections were inlined here before 
+                                    // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
+
+                                } else { // Not Windows/Mac JDK11+ (i.e. doesn't require internal signing)
+                                    def buildArgs
+                                    if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+                                        buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
+                                    } else {
+                                        buildArgs = openjdk_build_dir_arg
+                                    }
+                                    context.withEnv(['BUILD_ARGS=' + buildArgs]) {
+                                        context.println "openjdk_build_pipeline: Calling MABF when not win/mac JDK11+ to do single-pass build and UASS=false"
+                                        batOrSh("bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                    }
+                                }
+                                context.println '[CHECKOUT] Reverting pre-build adoptium/temurin-build checkout...'
+                                // Special case for the pr tester as checking out to the user's pipelines doesn't play nicely
+                                if (env.JOB_NAME.contains('pr-tester')) {
+                                    context.checkout context.scm
+                                } else {
+                                    repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
+                                    repoHandler.checkoutUserPipelines(context)
+                                }
+                                printGitRepoInfo()
+                            } else { // USE_ADOPT_SHELL_SCRIPTS == false
+                                context.println "[CHECKOUT] Checking out to the user's temurin-build..."
+                                repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
+                                repoHandler.checkoutUserBuild(context)
+                                printGitRepoInfo()
+                                def buildArgs
+                                if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
+                                    buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
+                                } else {
+                                    buildArgs = openjdk_build_dir_arg
+                                }
+                                context.withEnv(['BUILD_ARGS=' + buildArgs]) {
+                                    context.println "openjdk_build_pipeline: calling MABF to do single pass build when USE_ADOPT_SHELL_SCRIPTS is false"
+                                    batOrSh("bash ./${DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
+                                }
+                                context.println '[CHECKOUT] Reverting pre-build user temurin-build checkout...'
+                                repoHandler.checkoutUserPipelines(context)
+                                printGitRepoInfo()
+                            }
+                        }
+                    } catch (FlowInterruptedException e) {
+                        // Set Github Commit Status
+                        if (env.JOB_NAME.contains('pr-tester')) {
+                            updateGithubCommitStatus('FAILED', 'Build FAILED')
+                        }
+                        throw new Exception("[ERROR] Build JDK timeout (${buildTimeouts.BUILD_JDK_TIMEOUT} HOURS) has been reached. Exiting...")
+                    }
+                    // TODO: Make the "internal signing/assembly" part independent of
+                    // ENABLE_SIGNER so that this platform-specific logic is not required
+                    if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
+                        context.println "openjdk_build_pipeline: Internal signing phase required - skipping metadata reading"
+                    } else {
+                    // Run a downstream job on riscv machine that returns the java version. Otherwise, just read the version.txt
+                        String versionOut
+                            if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
+                            context.println "[WARNING] Don't read faked version.txt on cross compiled build! Archiving early and running downstream job to retrieve java version..."
+                            versionOut = readCrossCompiledVersionString()
+                        } else {
+                            versionOut = context.readFile('workspace/target/metadata/version.txt')
+                        }
+                        versionInfo = parseVersionOutput(versionOut)
+                    }
+                }
+                if (!((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner)) {
+                    writeMetadata(versionInfo, true)
+                } else {
+                    context.println "Skipping writing incomplete metadata for now - will be done in the assemble phase instead"
+                }
+                    
+            } finally {
+            
+                // Always archive any artifacts including failed make logs..
+                try {
+                    context.timeout(time: buildTimeouts.BUILD_ARCHIVE_TIMEOUT, unit: 'HOURS') {
+                        // We have already archived cross compiled artifacts, so only archive the metadata files
+                        if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
+                            context.println '[INFO] Archiving JSON Files...'
+                            context.archiveArtifacts artifacts: 'workspace/target/*.json'
+                        } else {
+                            context.archiveArtifacts artifacts: 'workspace/target/*'
+                        }
+                    }
+                } catch (FlowInterruptedException e) {
+                    // Set Github Commit Status
+                    if (env.JOB_NAME.contains('pr-tester')) {
+                        updateGithubCommitStatus('FAILED', 'Build FAILED')
+                    }
+                    throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
+                }
+                if ( !enableSigner ) { // Don't clean if we need the workspace for the later assemble phase
+                    postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
                 }
                 // Set Github Commit Status
                 if (env.JOB_NAME.contains('pr-tester')) {
@@ -1967,7 +2090,6 @@ class Build {
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
     Running in downstream build job jdk-*-*-* called by kick_off_build.groovy
     */
-    @SuppressWarnings('unused')
     def build() {
         context.timestamps {
             try {
@@ -1993,6 +2115,18 @@ class Build {
                 def helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
                 def nonDockerNodeName = ''
 
+                // Convert IndividualBuildConfig to jenkins env variables
+                List<String> envVars = buildConfig.toEnvVars()
+                envVars.add("FILENAME=${filename}" as String)
+                // Use BUILD_REF override if specified
+                def adoptBranch = buildConfig.BUILD_REF ?: ADOPT_DEFAULTS_JSON['repository']['build_branch']
+                // Add platform config path so it can be used if the user doesn't have one
+                def splitAdoptUrl = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git').split('/')
+                // e.g. https://github.com/adoptium/temurin-build.git will produce adoptium/temurin-build
+                String userOrgRepo = "${splitAdoptUrl[splitAdoptUrl.size() - 2]}/${splitAdoptUrl[splitAdoptUrl.size() - 1]}"
+                // e.g. adoptium/temurin-build/master/build-farm/platform-specific-configurations
+                envVars.add("ADOPT_PLATFORM_CONFIG_LOCATION=${userOrgRepo}/${adoptBranch}/${ADOPT_DEFAULTS_JSON['configDirectories']['platform']}" as String)
+
                 context.stage('queue') {
                     /* This loads the library containing two Helper classes, and causes them to be
                     imported/updated from their repo. Without the library being imported here, runTests method will fail to execute the post-build test jobs for reasons unknown.*/
@@ -2004,8 +2138,12 @@ class Build {
                             updateGithubCommitStatus('PENDING', 'Pending')
                         }
                     }
-
+                    def workspace
+                    if (buildConfig.TARGET_OS == 'windows') {
+                       workspace = 'C:/workspace/openjdk-build/'
+                    }
                     if (buildConfig.DOCKER_IMAGE) {
+                        context.println "openjdk_build_pipeline: preparing to use docker image"
                         // Docker build environment
                         def label = buildConfig.NODE_LABEL + '&&dockerBuild'
                         if (buildConfig.DOCKER_NODE) {
@@ -2025,6 +2163,12 @@ class Build {
                         context.node(label) {
                             addNodeToBuildDescription()
                             // Cannot clean workspace from inside docker container
+                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
+                                context.ws(workspace) {
+                                    context.bat("rm -rf " + context.WORKSPACE + "/cyclonedx-lib " +
+                                                            context.WORKSPACE + "/security")
+                                }
+                            }
                             if (cleanWorkspace) {
                                 try {
                                     context.timeout(time: buildTimeouts.CONTROLLER_CLEAN_TIMEOUT, unit: 'HOURS') {
@@ -2097,13 +2241,15 @@ class Build {
                                     throw new Exception("[ERROR] Controller docker file scm checkout timeout (${buildTimeouts.DOCKER_CHECKOUT_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
 
+                                context.println "openjdk_build_pipeline: building in docker image from docker file " + buildConfig.DOCKER_FILE
                                 context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
                                     buildScripts(
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
                                         cleanWorkspaceBuildOutputAfter,
-                                        filename,
-                                        useAdoptShellScripts
+                                        useAdoptShellScripts,
+                                        enableSigner,
+                                        envVars
                                     )
                                 }
                             } else {
@@ -2118,28 +2264,48 @@ class Build {
                                     dockerRunArg += " --userns keep-id:uid=1002,gid=1003"
                                 }
                                 if (buildConfig.TARGET_OS == 'windows') {
-                                    def workspace = 'C:/workspace/openjdk-build/'
+                                    context.println "openjdk_build_pipeline: running exploded build in docker on Windows"
                                     context.echo("Switched to using non-default workspace path ${workspace}")
+                                    context.println "openjdk_build_pipeline: building in windows docker image " + buildConfig.DOCKER_IMAGE
                                     context.ws(workspace) {
                                         context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScripts(
                                                 cleanWorkspace,
                                                 cleanWorkspaceAfter,
                                                 cleanWorkspaceBuildOutputAfter,
-                                                filename,
-                                                useAdoptShellScripts
+                                                useAdoptShellScripts,
+                                                enableSigner,
+                                                envVars
                                             )
                                         }
                                     }
                                 } else {
+                                    context.println "openjdk_build_pipeline: running initial build in docker on non-windows with image " + buildConfig.DOCKER_IMAGE
                                     context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                         buildScripts(
                                             cleanWorkspace,
                                             cleanWorkspaceAfter,
                                             cleanWorkspaceBuildOutputAfter,
-                                            filename,
-                                            useAdoptShellScripts
+                                            useAdoptShellScripts,
+                                            enableSigner,
+                                            envVars
                                         )
+                                    }
+                                }
+                                // Is thre potential for not enabling the signer on jdk8u instead of having this clause?
+                                if ( enableSigner && buildConfig.JAVA_TO_BUILD != 'jdk8u' ) {
+                                    context.println "openjdk_build_pipeline: running eclipse signing phase"
+                                    buildScriptsEclipseSigner()
+                                    context.ws(workspace) {
+                                        context.println "Signing with non-default workspace location ${workspace}"
+                                        context.println "openjdk_build_pipeline: running assemble phase (invocation 1)"
+                                            context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                            buildScriptsAssemble(
+                                                cleanWorkspaceAfter,
+                                                cleanWorkspaceBuildOutputAfter,
+                                                envVars
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -2148,8 +2314,9 @@ class Build {
 
                     // Build the jdk outside of docker container...
                     } else {
+                        context.println "openjdk_build_pipeline: running build without docker"
                         waitForANodeToBecomeActive(buildConfig.NODE_LABEL)
-                        context.println "[NODE SHIFT] MOVING INTO JENKINS NODE MATCHING LABELNAME ${buildConfig.NODE_LABEL}..."
+                        context.println "openjdk_build_pipeline: [NODE SHIFT] MOVING INTO NON-DOCKER JENKINS NODE MATCHING LABELNAME ${buildConfig.NODE_LABEL}..."
                         context.node(buildConfig.NODE_LABEL) {
                             addNodeToBuildDescription()
                             nonDockerNodeName = context.NODE_NAME
@@ -2157,28 +2324,49 @@ class Build {
                             context.echo("checking ${buildConfig.TARGET_OS}")
                             if (buildConfig.TARGET_OS == 'windows') {
                                 // See https://github.com/adoptium/infrastucture/issues/1284#issuecomment-621909378 for justification of the below path
-                                def workspace = 'C:/workspace/openjdk-build/'
                                 if (env.CYGWIN_WORKSPACE) {
                                     workspace = env.CYGWIN_WORKSPACE
                                 }
                                 context.echo("Switched to using non-default workspace path ${workspace}")
+                                context.println "openjdk_build_pipeline: running build without docker on windows"
                                 context.ws(workspace) {
                                     buildScripts(
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
                                         cleanWorkspaceBuildOutputAfter,
-                                        filename,
-                                        useAdoptShellScripts
+                                        useAdoptShellScripts,
+                                        enableSigner,
+                                        envVars
                                     )
+                                    if ( enableSigner ) {
+                                        buildScriptsEclipseSigner()
+                                        context.println "openjdk_build_pipeline: running assemble phase (invocation 2)"
+                                        buildScriptsAssemble(
+                                            cleanWorkspaceAfter,
+                                            cleanWorkspaceBuildOutputAfter,
+                                            envVars
+                                        )
+                                    }
                                 }
-                            } else {
+                            } else { // Non-windows, non-docker
+                                context.println "openjdk_build_pipeline: running build without docker on non-windows platform"
                                 buildScripts(
                                     cleanWorkspace,
                                     cleanWorkspaceAfter,
                                     cleanWorkspaceBuildOutputAfter,
-                                    filename,
-                                    useAdoptShellScripts
+                                    useAdoptShellScripts,
+                                    enableSigner,
+                                    envVars
                                 )
+                                if ( enableSigner ) {
+                                    buildScriptsEclipseSigner()
+                                    context.println "openjdk_build_pipeline: running assemble phase (invocation 3)"
+                                    buildScriptsAssemble(
+                                        cleanWorkspaceAfter,
+                                        cleanWorkspaceBuildOutputAfter,
+                                        envVars
+                                    )
+                                }
                             }
                         }
                         context.println "[NODE SHIFT] OUT OF JENKINS NODE (LABELNAME ${buildConfig.NODE_LABEL}!)"
@@ -2189,6 +2377,7 @@ class Build {
                 if (enableSigner) {
                     try {
                         // Sign job timeout managed by Jenkins job config
+                        context.println "openjdk_build_pipeline: executing signing phase"
                         sign(versionInfo)
                     } catch (FlowInterruptedException e) {
                         throw new Exception("[ERROR] Sign job timeout (${buildTimeouts.SIGN_JOB_TIMEOUT} HOURS) has been reached OR the downstream sign job failed. Exiting...")
@@ -2199,8 +2388,11 @@ class Build {
                 if (enableInstallers) {
                     try {
                         // Installer job timeout managed by Jenkins job config
+                        context.println "openjdk_build_pipeline: building installers"
                         buildInstaller(versionInfo)
-                        signInstaller(versionInfo)
+                        if ( enableSigner) {
+                            signInstaller(versionInfo)
+                        }
                     } catch (FlowInterruptedException e) {
                         currentBuild.result = 'FAILURE'
                         throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
@@ -2208,6 +2400,7 @@ class Build {
                 }
                 if (!env.JOB_NAME.contains('pr-tester') && context.JENKINS_URL.contains('adopt')) {
                     try {
+                        context.println "openjdk_build_pipeline: Running GPG signing process"
                         gpgSign()
                     } catch (Exception e) {
                         context.println(e.message)
@@ -2217,8 +2410,9 @@ class Build {
 
                 if (!env.JOB_NAME.contains('pr-tester')) { // pr-tester does not sign the binaries
                     // Verify Windows and Mac Signing for Temurin
-                    if (buildConfig.VARIANT == 'temurin') {
+                    if (buildConfig.VARIANT == 'temurin' && enableSigner) {
                         try {
+                            context.println "openjdk_build_pipeline: Verifying signing"
                             verifySigning()
                         } catch (Exception e) {
                             context.println(e.message)
@@ -2234,7 +2428,9 @@ class Build {
                   } else {
                     try {
                         //Only smoke tests succeed TCK and AQA tests will be triggerred.
+                        context.println "openjdk_build_pipeline: running smoke tests"
                         if (runSmokeTests() == 'SUCCESS') {
+                            context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
                             // Remote trigger Eclipse Temurin JCK tests
                             if (buildConfig.VARIANT == 'temurin' && enableTCK) {
                                 def platform = ''
@@ -2244,7 +2440,7 @@ class Build {
                                     platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
                                 }
                                 if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                    context.echo "Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
+                                    context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
                                     def remoteTargets = remoteTriggerJckTests(platform, filename)
                                     context.parallel remoteTargets
                                 }
@@ -2280,7 +2476,6 @@ class Build {
             }
         }
     }
-
 }
 
 return {
