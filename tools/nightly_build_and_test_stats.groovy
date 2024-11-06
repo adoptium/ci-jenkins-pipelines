@@ -901,7 +901,7 @@ node('worker') {
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         def (reproBuildUrl, reproBuildTrss, ignorethisvariable) = getBuildUrl(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt")
 
-                        if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${reproBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
+                        if ( reproBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${reproBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
                             echo "This pipeline has testing enabled: ${reproBuildUrl}"
 
                             getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
