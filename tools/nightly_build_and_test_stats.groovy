@@ -15,7 +15,6 @@ limitations under the License.
 /* groovylint-disable NestedBlockDepth */
 
 import groovy.json.JsonSlurper
-import java.math.MathContext;
 import java.time.LocalDateTime
 import java.time.Instant
 import java.time.ZoneId
@@ -150,7 +149,79 @@ def getLatestBinariesTag(String version) {
     return latestTag    
 }
 
-// Return our best guess at the url that generated a specific build.
+// Return our best guess at the build TRSS IDs for the latest successful build+publish of a specific set of platforms for a specific build tag.
+// Takes a jdk major version, a tag, and an array of platform names (standard platform format).
+def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map platformsList) {
+    // First we gather a list of the latest pipelines for this jdkVersion.
+    def pipelineName = "openjdk${jdkVersion}-pipeline"
+    def pipelines = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+    def pipelineJson = new JsonSlurper().parseText(pipelines)
+    if (pipelineJson.size() == 0) {
+        return
+    }
+
+    def platformConversionMap = getPlatformConversionMap()
+
+    // Then we iterate over the list of pipelines, seeking a pipeline that contains one of our platforms.
+    pipelineJson.each { onePipeline ->
+        def pipelineBuilds = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}")
+        def pipelineBuildsJson = new JsonSlurper().parseText(pipelineBuilds)
+        if ((pipelineBuildsJson.size() == 0) || (!onePipeline.toString().contains(srcTag))) {
+            continue
+        }
+
+        boolean pipelinePublishBool = false
+
+        // For each build within a given pipeline:
+        pipelineBuildsJson.each { onePipelineBuild ->
+            // - Is this platform in our platform list?
+            def onePipelinePlatformsMap = [:]
+            platformsList.each( onePlatformKey, onePlatformValue ->
+                if (!onePlatformValue.isEmpty()) {
+                    continue
+                }
+
+                if (onePipelineBuild.buildName.contains(platformConversionMap[onePlatformKey][0])) {
+                    // - Does the build job for one of our listed platforms contain a successful build job?
+                    if (onePipelineBuild.status.equals("Done") && (onePipelineBuild.buildResult.equals("UNSTABLE") || onePipelineBuild.buildResult.equals("SUCCESS"))) {
+                        onePipelinePlatformsMap[onePlatformKey] = onePipelineBuild._id
+                    }
+                }
+
+                // Also, check if the pipeline published any successful builds overall.
+                if (onePipelineBuild.buildName.contains("refactor_openjdk_release_tool") && onePipelineBuild.status.contains("Done")) {
+                    def publishOutput = sh(returnStdout: true, script: "wget -q -O - ${onePipelineBuild.url}/job/refactor_openjdk_release_tool/${onePipelineBuild.buildNum}/consoleText")
+                    if (publishOutput.contains("Finished: SUCCESS")) {
+                        pipelinePublishBool = true
+                    }
+                }
+            }
+        }
+
+        // If this pipeline successfully published, then we put the relevant TRSS ids into the platformsList Map.
+        if (pipelinePublishBool) {
+            def platformsWithAValue = 0
+            platformsList.each( onePlatformKey, onePlatformValue ->
+                if (platformsList[onePipelinePlatformKey].isEmpty()) {
+                    if (onePipelinePlatformsMap.contains(onePlatformKey)) {
+                        platformsList[onePipelinePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
+                        platformsWithAValue++
+                    }
+                } else {
+                    platformsWithAValue++
+                }
+            }
+
+            // If we have all the entries we need, we exit the lambda and end this method.
+            if (platformsWithAValue == platformsList.size()) {
+                return
+            }
+        }
+    }
+}
+
+// Return our best guess at the url for the first pipeline that generated builds from a specific tag.
+// This pipeline is expected to have attempted to build JDKs for all supported platforms.
 def getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
     def functionBuildUrl = ["", "", ""]
 
@@ -364,7 +435,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 
 // For a given pipeline, tell us how reproducible the builds were.
 // Note: Will limit itself to jdk versions and platforms in the results Map.
-def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results) {
+def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, String srcTag, Map results) {
     echo "Called repro method with trssID:"+trssId
 
     def platformConversionMap = getPlatformConversionMap()
@@ -372,6 +443,14 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 
     // We are only looking for reproducible percentages for the relevant jdk versions...
     if ( trssId != "" && results.containsKey(jdkVersion) ) {
+
+        // See if we can find a more recent build ID for each platform.
+        def mapOfMoreRecentBuildIDs = [:]
+        results[jdkVersion][1].each { onePlatform, valueNotUsed ->
+            mapOfMoreRecentBuildIDs[onePlatform] = ""
+        }
+        getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs)
+
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
         // ...and platforms.
@@ -383,46 +462,55 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 return
             }
 
-            def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"\\&buildNameRegex=^"+jdkVersion+"\\-"+platformConversionMap[onePlatform][0]+"\\-temurin\$"
+            def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
+            if (mapOfMoreRecentBuildIDs.contains(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("")) {
+                pipelineLink = trssURL+"/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
+                echo "Overriding the TRSS build ID for JDK${jdkVersion}, platform ${onePlatform}, with: ${pipelineLink}"
+            }
             def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
-            def platformResult = "???% - Build not found. Pipeline link: " + pipelineLink
+            results[jdkVersion][1][onePlatform] = "???% - Build not found. Pipeline link: " + pipelineLink
 
-            // Does this platform have a build in this pipeline?
-            if ( trssBuildJobNames.length() > 2 ) {
-                def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
+            // Does this platform have a build in this pipeline? If not, skip to next platform.
+            if ( trssBuildJobNames.length() <= 2 ) {
+                return
+            }
 
-                // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
-                buildJobNamesJson.each { buildJob ->
-                    platformResult = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
-                    def testPlatform = platformConversionMap[onePlatform][1]
-                    def reproTestName=platformReproTestMap[onePlatform][1]
-                    def reproTestBucket=platformReproTestMap[onePlatform][0]
-                    def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
-                    def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
+            def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
 
-                    // Did this build have tests?
-                    if ( trssTestJobNames.length() > 2 ) {
-                        platformResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
-                        def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
+            // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
+            buildJobNamesJson.each { buildJob ->
+                results[jdkVersion][1][onePlatform] = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
+                def testPlatform = platformConversionMap[onePlatform][1]
+                def reproTestName=platformReproTestMap[onePlatform][1]
+                def reproTestBucket=platformReproTestMap[onePlatform][0]
+                def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
+                def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
 
-                        // For each test job (including testList subjobs), we now search for the reproducibility test.
-                        testJobNamesJson.each { testJob ->
-                            def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
+                // Did this build have tests? If not, skip to next build job.
+                if ( trssTestJobNames.length() <= 2 ) {
+                    return
+                }
 
-                            // If we can find it, then we look for the anticipated percentage.
-                            if ( testOutput.contains("Running test "+reproTestName) ) {
-                                platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
-                                // Now we know the test ran, 
-                                def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
-                                if ( matcherObject ) {
-                                    platformResult = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
-                                }
-                            }
-                        }
+                results[jdkVersion][1][onePlatform] = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
+                def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
+
+                // For each test job (including testList subjobs), we now search for the reproducibility test.
+                testJobNamesJson.each { testJob ->
+                    def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
+
+                    // If we can find it, then we look for the anticipated percentage.
+                    if ( !testOutput.contains("Running test "+reproTestName) ) {
+                        return
+                    }
+
+                    results[jdkVersion][1][onePlatform] = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
+                    // Now we know the test ran, 
+                    def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
+                    if ( matcherObject ) {
+                        results[jdkVersion][1][onePlatform] = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
                     }
                 }
             }
-            results[jdkVersion][1][onePlatform] = platformResult
         }
 
         // Now we have the percentages for each platform, we calculate the jdkVersion-specific average.
@@ -816,9 +904,11 @@ node('worker') {
                     }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         if (testsShouldHaveRun) {
-                            getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, trssUrl, reproducibleBuilds)
+                            getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, trssUrl, releaseName, reproducibleBuilds)
                             if ( reproducibleBuilds[featureRelease][0] != "100%") {
-                                slackColor = 'danger'
+                                if (!slackColor.equals('danger')) {
+                                    slackColor = 'warning'
+                                }
                                 health = "Unhealthy"
                                 def summaryOfRepros = ""
                                 echo "Build reproducibility percentages for " + featureRelease + " did not add up to 100%. Breakdown: "
