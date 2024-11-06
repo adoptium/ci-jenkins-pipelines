@@ -1036,7 +1036,7 @@ class Builder implements Serializable {
                     context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
                     if (context.JENKINS_URL.contains('adoptium')) {
                         releaseSummary.appendText('</ul>', false)
-                        releaseSummary.appendText("<b>TAPs COLLECTION and REALEASE:</b><ul>")
+                        releaseSummary.appendText("<b>TAP files COLLECTION and RELEASE:</b><ul>")
                         def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
                         def tapCollectionUrl = "${context.JENKINS_URL}job/TAP_Collection/parambuild?Release_PipelineJob_Name=${urlJobName}"
                         releaseSummary.appendText("<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
