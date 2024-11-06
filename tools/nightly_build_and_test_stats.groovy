@@ -906,7 +906,7 @@ node('worker') {
 
                             getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
 
-                            if ( reproducibleBuilds[featureRelease][0] != "100%") {
+                            if ( reproducibleBuilds[featureRelease][0].startsWith("100") ) {
                                 if (!slackColor.equals('danger')) {
                                     slackColor = 'warning'
                                 }
