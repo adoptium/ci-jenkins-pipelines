@@ -901,6 +901,9 @@ node('worker') {
                     def testsShouldHaveRun = false
                     if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${probableBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
                         testsShouldHaveRun = true
+                        echo "This pipeline has testing enabled: ${probableBuildUrl}"
+                    } else {
+                        echo "This pipeline is either a blank string, or does not have testing enabled: ${probableBuildUrl}"
                     }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         if (testsShouldHaveRun) {
