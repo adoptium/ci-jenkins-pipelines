@@ -167,7 +167,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
         def pipelineBuilds = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}")
         def pipelineBuildsJson = new JsonSlurper().parseText(pipelineBuilds)
         if ((pipelineBuildsJson.size() == 0) || (!onePipeline.toString().contains(srcTag))) {
-            continue
+            return
         }
 
         boolean pipelinePublishBool = false
@@ -178,7 +178,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
             def onePipelinePlatformsMap = [:]
             platformsList.each { onePlatformKey, onePlatformValue ->
                 if (!onePlatformValue.isEmpty()) {
-                    continue
+                    return
                 }
 
                 if (onePipelineBuild.buildName.contains(platformConversionMap[onePlatformKey][0])) {
