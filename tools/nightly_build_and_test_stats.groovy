@@ -203,7 +203,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
             def platformsWithAValue = 0
             platformsList.each{ onePlatformKey, onePlatformValue ->
                 if (platformsList[onePipelinePlatformKey].isEmpty()) {
-                    if (onePipelinePlatformsMap.contains(onePlatformKey)) {
+                    if (onePipelinePlatformsMap.containsKey(onePlatformKey)) {
                         platformsList[onePipelinePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
                         platformsWithAValue++
                     }
@@ -463,7 +463,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             }
 
             def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
-            if (mapOfMoreRecentBuildIDs.contains(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("")) {
+            if (mapOfMoreRecentBuildIDs.containsKey(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("")) {
                 pipelineLink = trssURL+"/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
                 echo "Overriding the TRSS build ID for JDK${jdkVersion}, platform ${onePlatform}, with: ${pipelineLink}"
             }
