@@ -176,7 +176,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
         pipelineBuildsJson.each { onePipelineBuild ->
             // - Is this platform in our platform list?
             def onePipelinePlatformsMap = [:]
-            platformsList.each( onePlatformKey, onePlatformValue ->
+            platformsList.each { onePlatformKey, onePlatformValue ->
                 if (!onePlatformValue.isEmpty()) {
                     continue
                 }
@@ -201,7 +201,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
         // If this pipeline successfully published, then we put the relevant TRSS ids into the platformsList Map.
         if (pipelinePublishBool) {
             def platformsWithAValue = 0
-            platformsList.each( onePlatformKey, onePlatformValue ->
+            platformsList.each{ onePlatformKey, onePlatformValue ->
                 if (platformsList[onePipelinePlatformKey].isEmpty()) {
                     if (onePipelinePlatformsMap.contains(onePlatformKey)) {
                         platformsList[onePipelinePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
