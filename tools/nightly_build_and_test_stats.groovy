@@ -898,16 +898,21 @@ node('worker') {
                         }
                     }
 
+echo "DEBUG: expectedReleaseName - ${status['expectedReleaseName']}"
+echo "DEBUG: upstreamTag - ${status['upstreamTag']}"
+echo "DEBUG: releaseName - ${releaseName}"
+
+                    def (reproBuildUrl, reproBuildTrss, ignorethisvariable) = getBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
                     def testsShouldHaveRun = false
-                    if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${probableBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
+                    if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${reproBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
                         testsShouldHaveRun = true
-                        echo "This pipeline has testing enabled: ${probableBuildUrl}"
+                        echo "This pipeline has testing enabled: ${reproBuildUrl}"
                     } else {
-                        echo "This pipeline is either a blank string, or does not have testing enabled: ${probableBuildUrl}"
+                        echo "This pipeline is either a blank string, or does not have testing enabled: ${reproBuildUrl}"
                     }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         if (testsShouldHaveRun) {
-                            getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, trssUrl, releaseName, reproducibleBuilds)
+                            getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
                             if ( reproducibleBuilds[featureRelease][0] != "100%") {
                                 if (!slackColor.equals('danger')) {
                                     slackColor = 'warning'
