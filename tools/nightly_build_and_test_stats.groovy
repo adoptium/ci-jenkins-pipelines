@@ -491,7 +491,6 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                     return
                 }
 
-<<<<<<< HEAD
                 results[jdkVersion][1][onePlatform] = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
                 def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
 
@@ -509,18 +508,6 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                     def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
                     if ( matcherObject ) {
                         results[jdkVersion][1][onePlatform] = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
-=======
-                            // If we can find it, then we look for the anticipated percentage.
-                            if ( testOutput.contains("Running test "+reproTestName) ) {
-                                platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
-                                // Now we know the test ran, 
-                                def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
-                                if ( matcherObject ) {
-                                    platformResult = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
-                                }
-                            }
-                        }
->>>>>>> refs/heads/master
                     }
                 }
             }
@@ -912,7 +899,7 @@ node('worker') {
                     }
 
                     if (reproducibleBuilds.containsKey(featureRelease)) {
-                        def (reproBuildUrl, reproBuildTrss, ignorethisvariable) = getBuildUrl(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseNamereplaceAll("-beta", "").replaceAll("-ea", "")+"_adopt")
+                        def (reproBuildUrl, reproBuildTrss, ignorethisvariable) = getBuildUrl(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt")
 
                         if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${reproBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
                             echo "This pipeline has testing enabled: ${reproBuildUrl}"
