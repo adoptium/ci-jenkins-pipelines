@@ -435,7 +435,8 @@ class Build {
                             DYNAMIC_COMPILE = true
                         }
                         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-                        if (testType  == 'dev.openjdk' || (testType  == 'special.system' && jobName.contains('linux'))) {
+                        // Eclipse Adoptium Temurin label speciall requirements for special.system on linux
+                        if (testType  == 'dev.openjdk' || (testType  == 'special.system' && jobName.contains('linux') && buildConfig.VARIANT == 'temurin')) {
                             context.println "${testType} need extra label sw.tool.docker"
                             if (additionalTestLabel == '') {
                                 additionalTestLabel = 'sw.tool.docker'
