@@ -157,27 +157,33 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
     def pipelineName = "openjdk${jdkVersion}-pipeline"
     def pipelines = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
     def pipelineJson = new JsonSlurper().parseText(pipelines)
+echo "D1"
     if (pipelineJson.size() == 0) {
         return
+echo "D2"
     }
 
     def platformConversionMap = getPlatformConversionMap()
 
     // Then we iterate over the list of pipelines, seeking a pipeline that contains one of our platforms.
     pipelineJson.each { onePipeline ->
+echo "D3"
         def pipelineBuilds = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}")
         def pipelineBuildsJson = new JsonSlurper().parseText(pipelineBuilds)
         if ((pipelineBuildsJson.size() == 0) || (!onePipeline.toString().contains(srcTag))) {
             return
+echo "D4"
         }
 
         boolean pipelinePublishBool = false
 
         // For each build within a given pipeline:
         pipelineBuildsJson.each { onePipelineBuild ->
+echo "D5"
             // - Is this platform in our platform list?
             def onePipelinePlatformsMap = [:]
             platformsList.each { onePlatformKey, onePlatformValue ->
+echo "D6"
                 if (!onePlatformValue.isEmpty()) {
                     return
                 }
@@ -186,6 +192,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
                     // - Does the build job for one of our listed platforms contain a successful build job?
                     if (onePipelineBuild.status.equals("Done") && (onePipelineBuild.buildResult.equals("UNSTABLE") || onePipelineBuild.buildResult.equals("SUCCESS"))) {
                         onePipelinePlatformsMap[onePlatformKey] = onePipelineBuild._id
+echo "D7"
                     }
                 }
 
@@ -194,32 +201,39 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
                     def publishOutput = sh(returnStdout: true, script: "wget -q -O - ${onePipelineBuild.url}/job/refactor_openjdk_release_tool/${onePipelineBuild.buildNum}/consoleText")
                     if (publishOutput.contains("Finished: SUCCESS")) {
                         pipelinePublishBool = true
+echo "D8"
                     }
                 }
             }
         }
 
         // If this pipeline successfully published, then we put the relevant TRSS ids into the platformsList Map.
+echo "D9"
         if (pipelinePublishBool) {
+echo "D10"
             def platformsWithAValue = 0
             platformsList.each{ onePlatformKey, onePlatformValue ->
                 if (platformsList[onePipelinePlatformKey].isEmpty()) {
                     if (onePipelinePlatformsMap.containsKey(onePlatformKey)) {
+echo "D11"
                         platformsList[onePipelinePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
                         platformsWithAValue++
                         echo "Found new build ID for platform ${onePlatformKey}."
                     }
                 } else {
                     platformsWithAValue++
+echo "D12"
                 }
             }
 
             // If we have all the entries we need, we exit the lambda and end this method.
             if (platformsWithAValue == platformsList.size()) {
+echo "D13"
                 return
             }
         }
     }
+echo "D14"
     echo "Finished getting build IDs by platform."
 }
 
