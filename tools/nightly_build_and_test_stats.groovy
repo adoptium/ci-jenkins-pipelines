@@ -169,10 +169,16 @@ echo "D1"
     // Then we iterate over the list of pipelines, seeking a pipeline that contains one of our platforms.
     for (def onePipeline : pipelineJson) {
 echo "D3"
+        if (!onePipeline.toString().contains(srcTag.replaceAll("-beta",""))) {
+echo "D4: ${srcTag}"
+            continue
+        }
+echo "D4.5"
         def pipelineBuilds = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}")
         def pipelineBuildsJson = new JsonSlurper().parseText(pipelineBuilds)
-        if ((pipelineBuildsJson.size() == 0) || (!onePipeline.toString().contains(srcTag.replaceAll("-beta","")))) {
-echo "D4: ${srcTag}"
+
+        if (pipelineBuildsJson.size() == 0) {
+echo "D4.6"
             continue
         }
 
