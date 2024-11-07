@@ -189,6 +189,7 @@ echo "D4.6"
 
         // For each build within a given pipeline:
         assert pipelineBuildsJson instanceof List
+echo "DEBUGGING: ${pipelineBuildsJson.toString()}"
         for (Map onePipelineBuild : pipelineBuildsJson) {
 echo "D5"
             // - Is this platform in our platform list?
