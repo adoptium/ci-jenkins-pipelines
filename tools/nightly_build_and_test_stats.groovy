@@ -184,14 +184,17 @@ echo "D5"
             // - Is this platform in our platform list?
             def onePipelinePlatformsMap = [:]
             platformsList.each { onePlatformKey, onePlatformValue ->
-echo "D6"
+echo "D6: ${onePlatformKey} and ${onePlatformValue} end"
                 if (!onePlatformValue.isEmpty()) {
+echo "D6.1"
                     return
                 }
-
+echo "D6.2"
                 if (onePipelineBuild.buildName.contains(platformConversionMap[onePlatformKey][0])) {
+echo "D6.2"
                     // - Does the build job for one of our listed platforms contain a successful build job?
                     if (onePipelineBuild.status.equals("Done") && (onePipelineBuild.buildResult.equals("UNSTABLE") || onePipelineBuild.buildResult.equals("SUCCESS"))) {
+echo "D6.1"
                         onePipelinePlatformsMap[onePlatformKey] = onePipelineBuild._id
 echo "D7"
                     }
