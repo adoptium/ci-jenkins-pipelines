@@ -167,7 +167,9 @@ echo "D1"
     def platformConversionMap = getPlatformConversionMap()
 
     // Then we iterate over the list of pipelines, seeking a pipeline that contains one of our platforms.
-    for (def onePipeline : pipelineJson) {
+    assert pipelineJson instanceof List
+
+    for (Map onePipeline : pipelineJson) {
 echo "D3"
         if (!onePipeline.toString().contains(srcTag.replaceAll("-beta",""))) {
 echo "D4: ${srcTag}"
@@ -186,7 +188,8 @@ echo "D4.6"
         def onePipelinePlatformsMap = [:]
 
         // For each build within a given pipeline:
-        for (def onePipelineBuild : pipelineBuildsJson) {
+        assert pipelineBuildsJson instanceof List
+        for (Map onePipelineBuild : pipelineBuildsJson) {
 echo "D5"
             // - Is this platform in our platform list?
             Set platformKeys = platformsList.keySet()
