@@ -169,7 +169,8 @@ echo "D1"
     // Then we iterate over the list of pipelines, seeking a pipeline that contains one of our platforms.
     assert pipelineJson instanceof List
 
-    for (Map onePipeline : pipelineJson) {
+    for (int i = 0 ; i < pipelineJson.size() ; i++ ) {
+        Map onePipeline = pipelineJson[i]
 echo "D3"
         if (!onePipeline.toString().contains(srcTag.replaceAll("-beta",""))) {
 echo "D4: ${srcTag}"
@@ -193,10 +194,13 @@ echo "DEBUGGING: ${pipelineBuildsJson[0].buildName}"
 echo "DEBUGGING: ${pipelineBuildsJson[1].buildName}"
 echo "DEBUGGING: ${pipelineBuildsJson[2].buildName}"
         for (Map onePipelineBuild : pipelineBuildsJson) {
+        for (int j = 0 ; j < pipelineBuildsJson.size() ; j++ ) {
+            Map onePipelineBuild = pipelineBuildsJson[j]
 echo "D5"
             // - Is this platform in our platform list?
             Set platformKeys = platformsList.keySet()
-            for (String onePlatformKey : platformKeys) {
+            for (int k = 0 ; k < platformKeys.size() ; k++ ) {
+                String onePlatformKey = platformKeys[k]
                 String onePlatformValue = platformsList[onePlatformKey]
 echo "D6: ${onePlatformKey} and ${onePlatformValue} end"
                 if (!onePlatformValue.isEmpty()) {
@@ -230,7 +234,8 @@ echo "D9"
         if (pipelinePublishBool) {
 echo "D10"
             def platformsWithAValue = 0
-            for (String onePlatformKey : platformKeys) {
+            for (int m = 0 ; m < platformKeys.size() ; m++ ) {
+                String onePlatformKey = platformKeys[m]
                 if (platformsList[onePlatformKey].isEmpty()) {
                     if (onePipelinePlatformsMap.containsKey(onePlatformKey)) {
 echo "D11"
