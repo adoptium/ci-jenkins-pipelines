@@ -153,6 +153,7 @@ def getLatestBinariesTag(String version) {
 // Takes a jdk major version, a tag, and an array of platform names (standard platform format).
 def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map platformsList) {
     // First we gather a list of the latest pipelines for this jdkVersion.
+    echo "Gathering Build IDs by platform."
     def pipelineName = "openjdk${jdkVersion}-pipeline"
     def pipelines = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
     def pipelineJson = new JsonSlurper().parseText(pipelines)
@@ -206,6 +207,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
                     if (onePipelinePlatformsMap.containsKey(onePlatformKey)) {
                         platformsList[onePipelinePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
                         platformsWithAValue++
+                        echo "Found new build ID for platform ${onePlatformKey}."
                     }
                 } else {
                     platformsWithAValue++
@@ -218,6 +220,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
             }
         }
     }
+    echo "Finished getting build IDs by platform."
 }
 
 // Return our best guess at the url for the first pipeline that generated builds from a specific tag.
