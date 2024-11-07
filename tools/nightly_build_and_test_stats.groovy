@@ -154,13 +154,14 @@ def getLatestBinariesTag(String version) {
 def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map platformsList) {
     // First we gather a list of the latest pipelines for this jdkVersion.
     echo "Gathering Build IDs by platform."
-    def pipelineName = "openjdk${jdkVersion}-pipeline"
+    def jdkVersionMinusTheU = jdkVersion.endsWith("u") ? jdkVersion.substring(0, jdkVersion.length() - 1) : jdkVersion
+    def pipelineName = "open${jdkVersionMinusTheU}-pipeline"
     def pipelines = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
     def pipelineJson = new JsonSlurper().parseText(pipelines)
 echo "D1"
     if (pipelineJson.size() == 0) {
+        echo "WARNING: Cannot find pipelines for per-platform build job identification."
         return
-echo "D2"
     }
 
     def platformConversionMap = getPlatformConversionMap()
