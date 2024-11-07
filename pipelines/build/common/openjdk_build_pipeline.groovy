@@ -411,6 +411,7 @@ class Build {
             testTime = '120'
             parallel = 'Dynamic'
         }
+        def testLabel = ''
 
         testList.each { testType ->
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
@@ -445,6 +446,10 @@ class Build {
                             }
                         }
 
+                        // Eclipse Adoptium Temurin reproducible comparing on x64 mac required to run on aarch64 mac
+                        if (testType  == 'special.system' && jobName.contains('x86-64_mac') && buildConfig.VARIANT == 'temurin') {
+                            testLabel = 'ci.role.test&&hw.arch.aarch64&&(sw.os.osx||sw.os.mac)'
+                        }
                         if (testType  == 'special.system' || testType  == 'dev.system') {
                             def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
                             vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
@@ -498,6 +503,7 @@ class Build {
                         context.string(name: 'JDK_REPO', value: jdkRepo),
                         context.string(name: 'JDK_BRANCH', value: jdkBranch),
                         context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
+                        context.string(name: 'LABEL', value:  testLabel),
                         context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
                         context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
                         context.string(name: 'PARALLEL', value: parallel),
