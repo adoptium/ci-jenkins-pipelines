@@ -551,7 +551,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
     }
 }
 
-node('build-linux-x64-ee1bc0') {
+node('x64&&linux') {
   try{
     def variant = "${params.VARIANT}"
     def trssUrl    = "${params.TRSS_URL}"
