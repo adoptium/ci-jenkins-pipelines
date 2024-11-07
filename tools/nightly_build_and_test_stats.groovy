@@ -189,7 +189,9 @@ echo "D4.6"
 
         // For each build within a given pipeline:
         assert pipelineBuildsJson instanceof List
-echo "DEBUGGING: ${pipelineBuildsJson.toString()}"
+echo "DEBUGGING: ${pipelineBuildsJson[0].buildName}"
+echo "DEBUGGING: ${pipelineBuildsJson[1].buildName}"
+echo "DEBUGGING: ${pipelineBuildsJson[2].buildName}"
         for (Map onePipelineBuild : pipelineBuildsJson) {
 echo "D5"
             // - Is this platform in our platform list?
