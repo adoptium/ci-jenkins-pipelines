@@ -172,8 +172,8 @@ echo "D3"
         def pipelineBuilds = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}")
         def pipelineBuildsJson = new JsonSlurper().parseText(pipelineBuilds)
         if ((pipelineBuildsJson.size() == 0) || (!onePipeline.toString().contains(srcTag))) {
+echo "D4: ${srcTag}"
             return
-echo "D4"
         }
 
         boolean pipelinePublishBool = false
