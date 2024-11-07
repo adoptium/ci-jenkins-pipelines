@@ -204,7 +204,7 @@ echo "D6.1"
                     continue
                 }
 echo "D6.2: ${onePipelineBuild.buildName} and ${platformConversionMap[onePlatformKey][0]}"
-                if (onePipelineBuild.buildName.contains("${jdkVersion}-${platformConversionMap[onePlatformKey][0]})") {
+                if (onePipelineBuild.buildName.contains("${jdkVersion}-${platformConversionMap[onePlatformKey][0]}")) {
 echo "D6.3"
                     // - Does the build job for one of our listed platforms contain a successful build job?
                     if (onePipelineBuild.status.equals("Done") && (onePipelineBuild.buildResult.equals("UNSTABLE") || onePipelineBuild.buildResult.equals("SUCCESS"))) {
