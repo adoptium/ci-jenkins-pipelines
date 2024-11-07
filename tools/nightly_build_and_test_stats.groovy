@@ -167,27 +167,29 @@ echo "D1"
     def platformConversionMap = getPlatformConversionMap()
 
     // Then we iterate over the list of pipelines, seeking a pipeline that contains one of our platforms.
-    pipelineJson.each { onePipeline ->
+    for (def onePipeline : pipelineJson) {
 echo "D3"
         def pipelineBuilds = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}")
         def pipelineBuildsJson = new JsonSlurper().parseText(pipelineBuilds)
         if ((pipelineBuildsJson.size() == 0) || (!onePipeline.toString().contains(srcTag.replaceAll("-beta","")))) {
 echo "D4: ${srcTag}"
-            return
+            continue
         }
 
         boolean pipelinePublishBool = false
+        def onePipelinePlatformsMap = [:]
 
         // For each build within a given pipeline:
         pipelineBuildsJson.each { onePipelineBuild ->
 echo "D5"
             // - Is this platform in our platform list?
-            def onePipelinePlatformsMap = [:]
-            platformsList.each { onePlatformKey, onePlatformValue ->
+            Set platformKeys = platformsList.keySet()
+            for (String onePlatformKey : platformKeys) {
+                String onePlatformValue = platformsList[onePlatformKey]
 echo "D6: ${onePlatformKey} and ${onePlatformValue} end"
                 if (!onePlatformValue.isEmpty()) {
 echo "D6.1"
-                    return
+                    continue
                 }
 echo "D6.2"
                 if (onePipelineBuild.buildName.contains(platformConversionMap[onePlatformKey][0])) {
@@ -216,11 +218,11 @@ echo "D9"
         if (pipelinePublishBool) {
 echo "D10"
             def platformsWithAValue = 0
-            platformsList.each{ onePlatformKey, onePlatformValue ->
-                if (platformsList[onePipelinePlatformKey].isEmpty()) {
+            for (String onePlatformKey : platformKeys) {
+                if (platformsList[onePlatformKey].isEmpty()) {
                     if (onePipelinePlatformsMap.containsKey(onePlatformKey)) {
 echo "D11"
-                        platformsList[onePipelinePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
+                        platformsList[onePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
                         platformsWithAValue++
                         echo "Found new build ID for platform ${onePlatformKey}."
                     }
@@ -230,9 +232,10 @@ echo "D12"
                 }
             }
 
-            // If we have all the entries we need, we exit the lambda and end this method.
+            // If we have all the entries we need, we exit the loop and end this method.
             if (platformsWithAValue == platformsList.size()) {
 echo "D13"
+                echo "Finished getting build IDs by platform."
                 return
             }
         }
