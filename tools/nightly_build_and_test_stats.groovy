@@ -180,7 +180,7 @@ echo "D4: ${srcTag}"
         def onePipelinePlatformsMap = [:]
 
         // For each build within a given pipeline:
-        pipelineBuildsJson.each { onePipelineBuild ->
+        for (def onePipelineBuild : pipelineBuildsJson) {
 echo "D5"
             // - Is this platform in our platform list?
             Set platformKeys = platformsList.keySet()
