@@ -190,10 +190,6 @@ echo "D4.6"
 
         // For each build within a given pipeline:
         assert pipelineBuildsJson instanceof List
-echo "DEBUGGING: ${pipelineBuildsJson[0].buildName}"
-echo "DEBUGGING: ${pipelineBuildsJson[1].buildName}"
-echo "DEBUGGING: ${pipelineBuildsJson[2].buildName}"
-        for (Map onePipelineBuild : pipelineBuildsJson) {
         for (int j = 0 ; j < pipelineBuildsJson.size() ; j++ ) {
             Map onePipelineBuild = pipelineBuildsJson[j]
 echo "D5"
