@@ -209,11 +209,10 @@ echo "D6.3"
                     // - Does the build job for one of our listed platforms contain a successful build job?
                     if (onePipelineBuild.status.equals("Done") && (onePipelineBuild.buildResult.equals("UNSTABLE") || onePipelineBuild.buildResult.equals("SUCCESS"))) {
 echo "D6.4"
-                        if (onePipelineBuild.buildParams.toString() ==~ /ENABLE_TESTS..?\:.?true/)
+                        if (onePipelineBuild.buildParams.toString() ==~ /ENABLE_TESTS..?\:.?true/) {
 echo "D6.5"
                             onePipelinePlatformsMap[onePlatformKey] = onePipelineBuild._id
                         }
-                        
 echo "D7"
                     }
                 }
