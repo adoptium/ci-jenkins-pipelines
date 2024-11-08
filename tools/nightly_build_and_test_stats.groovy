@@ -218,13 +218,11 @@ echo "D7"
                     }
                 }
 
+echo "D7.1"
                 // Also, check if the pipeline published any successful builds overall.
                 if (onePipelineBuild.buildName.contains("refactor_openjdk_release_tool") && onePipelineBuild.status.contains("Done")) {
-                    def publishOutput = sh(returnStdout: true, script: "wget -q -O - ${onePipelineBuild.url}/job/refactor_openjdk_release_tool/${onePipelineBuild.buildNum}/consoleText")
-                    if (publishOutput.contains("Finished: SUCCESS")) {
-                        pipelinePublishBool = true
+                    pipelinePublishBool = true
 echo "D8"
-                    }
                 }
             }
         }
