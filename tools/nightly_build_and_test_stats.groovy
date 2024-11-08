@@ -165,6 +165,7 @@ echo "D1"
     }
 
     def platformConversionMap = getPlatformConversionMap()
+    Set platformKeys = platformsList.keySet()
 
     // Then we iterate over the list of pipelines, seeking a pipeline that contains one of our platforms.
     assert pipelineJson instanceof List
@@ -194,7 +195,6 @@ echo "D4.6"
             Map onePipelineBuild = pipelineBuildsJson[j]
 echo "D5"
             // - Is this platform in our platform list?
-            Set platformKeys = platformsList.keySet()
             for (int k = 0 ; k < platformKeys.size() ; k++ ) {
                 String onePlatformKey = platformKeys[k]
                 String onePlatformValue = platformsList[onePlatformKey]
