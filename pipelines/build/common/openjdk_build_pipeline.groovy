@@ -568,6 +568,7 @@ class Build {
         context.echo "sdkUrl is ${sdkUrl}"
         def remoteTargets = [:]
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
+        def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
         def setupJCKRun = false
         if (buildConfig.SCM_REF && buildConfig.AQA_REF && sdkUrl.contains("release")) {
             setupJCKRun = true
@@ -645,6 +646,7 @@ class Build {
                                                                     context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
                                                                     context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                                                     context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
+                                                                    context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
                                                                     context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
                             remoteJenkinsName: 'temurin-compliance',
                             shouldNotFailBuild: true,
