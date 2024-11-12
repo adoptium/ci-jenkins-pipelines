@@ -1900,17 +1900,12 @@ def buildScriptsAssemble(
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
                                     context.stash name: 'jmods',
-                                        includes: "${base_path}/hotspot/variant-server/**/*.exe," +
-                                            "${base_path}/hotspot/variant-server/**/*.dll," +
-                                            "${base_path}/hotspot/variant-server/**/*.dylib," +
-                                            "${base_path}/support/modules_cmds/**/*.exe," +
-                                            "${base_path}/support/modules_cmds/**/*.dll," +
-                                            "${base_path}/support/modules_cmds/**/*.dylib," +
-                                            "${base_path}/support/modules_libs/**/*.exe," +
-                                            "${base_path}/support/modules_libs/**/*.dll," +
-                                            "${base_path}/support/modules_libs/**/*.dylib," +
-                                            // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
-                                            "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
+                                         includes: "${base_path}/hotspot/variant-server/**/*," +
+                                             "${base_path}/support/modules_cmds/**/*," +
+                                             "${base_path}/support/modules_libs/**/*," +
+                                              // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
+                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
+                                         excludes: "**/*.dat,**/*bfc"
 
                                     // eclipse-codesign and assemble sections were inlined here before 
                                     // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
