@@ -173,8 +173,9 @@ echo "D1"
     for (int i = 0 ; i < pipelineJson.size() ; i++ ) {
         Map onePipeline = pipelineJson[i]
 echo "D3"
+echo "D4: Checking if pipeline matches ${srcTag}"
         if (!onePipeline.toString().contains(srcTag.replaceAll("-beta",""))) {
-echo "D4: ${srcTag}"
+echo "D4.1: Skipping ${srcTag}"
             continue
         }
 echo "D4.5"
@@ -198,7 +199,7 @@ echo "D5"
             for (int k = 0 ; k < platformKeys.size() ; k++ ) {
                 String onePlatformKey = platformKeys[k]
                 String onePlatformValue = platformsList[onePlatformKey]
-echo "D6: ${onePlatformKey} and ${onePlatformValue} end"
+echo "D6: Key: ${onePlatformKey} temp_value: ${onePlatformValue} stored_value: ${onePipelinePlatformsMap[onePlatformKey]} end"
                 if (!onePlatformValue.isEmpty()) {
 echo "D6.1"
                     continue
@@ -483,7 +484,8 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         results[jdkVersion][1].each { onePlatform, valueNotUsed ->
             mapOfMoreRecentBuildIDs[onePlatform] = ""
         }
-        getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs)
+echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
+        getBuildIDsByPlatform(trssURL, jdkVersion, "jdk-21.0.5+9-ea-beta", mapOfMoreRecentBuildIDs)
 
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
