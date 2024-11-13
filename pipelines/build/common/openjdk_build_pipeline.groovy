@@ -1981,32 +1981,35 @@ def buildScriptsAssemble(
                 }
                     
             } finally {
-            
-                // Always archive any artifacts including failed make logs..
-                try {
-                    context.timeout(time: buildTimeouts.BUILD_ARCHIVE_TIMEOUT, unit: 'HOURS') {
-                        // We have already archived cross compiled artifacts, so only archive the metadata files
-                        if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
-                            context.println '[INFO] Archiving JSON Files...'
-                            context.archiveArtifacts artifacts: 'workspace/target/*.json'
-                        } else {
-                            context.archiveArtifacts artifacts: 'workspace/target/*'
-                        }
-                    }
-                } catch (FlowInterruptedException e) {
-                    // Set Github Commit Status
-                    if (env.JOB_NAME.contains('pr-tester')) {
-                        updateGithubCommitStatus('FAILED', 'Build FAILED')
-                    }
-                    throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
-                }
-                if ( !enableSigner ) { // Don't clean if we need the workspace for the later assemble phase
-                    postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
-                }
-                // Set Github Commit Status
-                if (env.JOB_NAME.contains('pr-tester')) {
-                    updateGithubCommitStatus('SUCCESS', 'Build PASSED')
-                }
+                // Archive any artifacts including failed make logs, unless doing internal
+                // signing where we will perform this step after the assemble phase
+                if (!((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner)) {
+                   try {
+                       context.timeout(time: buildTimeouts.BUILD_ARCHIVE_TIMEOUT, unit: 'HOURS') {
+                          // We have already archived cross compiled artifacts, so only archive the metadata files
+                          if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
+                              context.println '[INFO] Archiving JSON Files...'
+                              context.archiveArtifacts artifacts: 'workspace/target/*.json'
+                          } else {
+                              context.archiveArtifacts artifacts: 'workspace/target/*'
+                          }
+                       }
+                   } catch (FlowInterruptedException e) {
+                       // Set Github Commit Status
+                       if (env.JOB_NAME.contains('pr-tester')) {
+                           updateGithubCommitStatus('FAILED', 'Build FAILED')
+                       }
+                       throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
+                   }
+                   // With the exclusion above this is no longer strictly required
+                   if ( !enableSigner ) { // Don't clean if we need the workspace for the later assemble phase
+                       postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
+                   }
+                   // Set Github Commit Status
+                   if (env.JOB_NAME.contains('pr-tester')) {
+                       updateGithubCommitStatus('SUCCESS', 'Build PASSED')
+                   }
+               }
             }
         }
     }
@@ -2344,7 +2347,7 @@ def buildScriptsAssemble(
                                         enableSigner,
                                         envVars
                                     )
-                                    if ( enableSigner && internalSigningRequired ) {
+                                    if ( enableSigner && internalSigningRequired && buildConfig.JAVA_TO_BUILD != 'jdk8u' ) {
                                         buildScriptsEclipseSigner()
                                         context.println "openjdk_build_pipeline: running assemble phase (invocation 2)"
                                         buildScriptsAssemble(
@@ -2364,7 +2367,7 @@ def buildScriptsAssemble(
                                     enableSigner,
                                     envVars
                                 )
-                                if ( enableSigner && internalSigningRequired ) {
+                                if ( enableSigner && internalSigningRequired && buildConfig.JAVA_TO_BUILD != 'jdk8u' ) {
                                     buildScriptsEclipseSigner()
                                     context.println "openjdk_build_pipeline: running assemble phase (invocation 3)"
                                     buildScriptsAssemble(
