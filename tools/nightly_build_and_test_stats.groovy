@@ -485,7 +485,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             mapOfMoreRecentBuildIDs[onePlatform] = ""
         }
 echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
-        getBuildIDsByPlatform(trssURL, jdkVersion, "jdk-21.0.5+9-ea-beta", mapOfMoreRecentBuildIDs)
+        getBuildIDsByPlatform(trssURL, jdkVersion, "jdk-21.0.5+2-ea-beta", mapOfMoreRecentBuildIDs)
 
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
