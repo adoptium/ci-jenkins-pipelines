@@ -490,12 +490,14 @@ echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
         // ...and platforms.
-        results[jdkVersion][1].each { onePlatform, valueNotUsed ->
+        def platformsForOneJDKVersion = results[jdkVersion][1]
+        assert platformsForOneJDKVersion instanceof Map
+        for ( String onePlatform in platformsForOneJDKVersion.keySet() ) {
             // If this platform doesn't have a reproducibility test yet, skip it.
             if (platformReproTestMap[onePlatform][0].equals("NA")) {
                 results[jdkVersion][1][onePlatform] = "NA"
                 // Then we exit this lambda and skip to the next platform.
-                return
+                continue
             }
 
             def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
@@ -508,13 +510,14 @@ echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
 
             // Does this platform have a build in this pipeline? If not, skip to next platform.
             if ( trssBuildJobNames.length() <= 2 ) {
-                return
+                continue
             }
 
             def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
 
             // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
-            buildJobNamesJson.each { buildJob ->
+            assert pipelineBuildsJson instanceof Map
+            for ( Map buildJob in buildJobNamesJson ) {
                 results[jdkVersion][1][onePlatform] = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
                 def testPlatform = platformConversionMap[onePlatform][1]
                 def reproTestName=platformReproTestMap[onePlatform][1]
@@ -524,19 +527,20 @@ echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
 
                 // Did this build have tests? If not, skip to next build job.
                 if ( trssTestJobNames.length() <= 2 ) {
-                    return
+                    continue
                 }
 
                 results[jdkVersion][1][onePlatform] = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
                 def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
 
                 // For each test job (including testList subjobs), we now search for the reproducibility test.
-                testJobNamesJson.each { testJob ->
-                    def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
+                assert testJobNamesJson instanceof List
+                for ( Map testJob in testJobNamesJson ) {
+                    def testOutput = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getOutputById?id=${testJob.buildOutputId}")
 
                     // If we can find it, then we look for the anticipated percentage.
                     if ( !testOutput.contains("Running test "+reproTestName) ) {
-                        return
+                        continue
                     }
 
                     results[jdkVersion][1][onePlatform] = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
