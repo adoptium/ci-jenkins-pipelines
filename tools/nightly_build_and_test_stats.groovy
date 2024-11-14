@@ -557,7 +557,8 @@ echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
         BigDecimal overallAverage = 0.0
         // Ignoring the platforms where the test is not available yet.
         def naCount = 0
-        results[jdkVersion][1].each{key, value ->
+        for (String key in results[jdkVersion][1].keySet()) {
+            def value = results[jdkVersion][1][key]
             if (value.equals("NA")) {
                 naCount++
             } else if ( value ==~ /^[0-9]+\.?[0-9]* %/ ) {
