@@ -516,7 +516,7 @@ echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
             def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
 
             // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
-            assert pipelineBuildsJson instanceof Map
+            assert buildJobNamesJson instanceof List
             for ( Map buildJob in buildJobNamesJson ) {
                 results[jdkVersion][1][onePlatform] = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
                 def testPlatform = platformConversionMap[onePlatform][1]
