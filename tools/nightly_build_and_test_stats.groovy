@@ -542,16 +542,6 @@ echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
                     }
                     def testOutput = sh(returnStdout: true, script: "wget -q -O - ${wgetCommand}")
 
-                    def commandString = "wget -q -O - https://trss.adoptium.net/api/getOutputById?id=null \& " +
-                    "abc=$!; " +
-                    "sleep 3; " +
-                    "ps -p $abc; " +
-                    "if [[ $! == 1 ]]; then " +
-                    "  echo \"Warning: TRSS id \$\{abc\} could not be found, and wget hung. Killing process and returning empty string.\";" +
-                    "  kill -9 \$\{abc\}; " +
-                    "fi;"
-                    def testOutput = sh(returnStdout: true, script: "wget -q -O - ${commandString}")
-
                     // If we can find it, then we look for the anticipated percentage.
                     if ( !testOutput.contains("Running test "+reproTestName) ) {
                         continue
