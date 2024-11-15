@@ -540,7 +540,7 @@ echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
                     if (testJob.buildOutputId == null) {
                         wgetCommand = "wget -q -O - ${testJob.buildUrl}/consoleText"
                     }
-                    def testOutput = sh(returnStdout: true, script: "wget -q -O - ${wgetCommand}")
+                    def testOutput = sh(returnStdout: true, script: "${wgetCommand}")
 
                     // If we can find it, then we look for the anticipated percentage.
                     if ( !testOutput.contains("Running test "+reproTestName) ) {
