@@ -46,11 +46,11 @@ def getPlatformConversionMap() {
 def getPlatformReproTestMap() {
     // A map to return the test bucket and test name for the repducibile platforms
     def platformReproTestMap = [x64Linux:           ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
-                                x64Windows:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
+                                x64Windows:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
                                 x64Mac:             ["NA", ""],
                                 ppc64leLinux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 aarch64Linux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
-                                aarch64Mac:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
+                                aarch64Mac:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
                                ]
     return platformReproTestMap
 }
