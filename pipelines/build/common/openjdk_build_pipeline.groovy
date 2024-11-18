@@ -1875,7 +1875,11 @@ def buildScriptsAssemble(
                                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                                 repoHandler.checkoutAdoptBuild(context)
                                 printGitRepoInfo()
-                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner) {
+                                if ((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && (buildConfig.JAVA_TO_BUILD == 'jdk11u' ||
+                                                                                                               buildConfig.JAVA_TO_BUILD == 'jdk17u' ||
+                                                                                                               buildConfig.JAVA_TO_BUILD == 'jdk21u' ||
+                                                                                                               buildConfig.JAVA_TO_BUILD == 'jdk23u')
+                                                                                                               && enableSigner) {
                                     context.println "Generating exploded build" // , sign JMODS, and assemble build, for platform ${buildConfig.TARGET_OS} version ${buildConfig.JAVA_TO_BUILD}"
                                     def signBuildArgs // Build args for make-adopt-build-farm.sh
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
@@ -1910,7 +1914,9 @@ def buildScriptsAssemble(
                                     // eclipse-codesign and assemble sections were inlined here before 
                                     // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
 
-                                } else { // Not Windows/Mac JDK11+ (i.e. doesn't require internal signing)
+                                } else {
+                                    // Not Windows/Mac JDK11+ or JDK24+ built as linkable runtime (no jmods).
+                                    // i.e. doesn't require internal signing.
                                     def buildArgs
                                     if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
                                         buildArgs = env.BUILD_ARGS + openjdk_build_dir_arg
@@ -1918,7 +1924,7 @@ def buildScriptsAssemble(
                                         buildArgs = openjdk_build_dir_arg
                                     }
                                     context.withEnv(['BUILD_ARGS=' + buildArgs]) {
-                                        context.println "openjdk_build_pipeline: Calling MABF when not win/mac JDK11+ to do single-pass build and UASS=false"
+                                        context.println "openjdk_build_pipeline: Calling MABF when not win/mac JDK11+ or JDK24+ to do single-pass build and UASS=false"
                                         batOrSh("bash ./${ADOPT_DEFAULTS_JSON['scriptDirectories']['buildfarm']}")
                                     }
                                 }
