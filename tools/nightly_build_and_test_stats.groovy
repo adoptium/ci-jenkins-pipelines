@@ -544,7 +544,7 @@ echo "Debug, hard-coding srcTag to jdk-21.0.6+2-ea-beta for testing."
                     def testOutput = sh(returnStatus : true, script: "${wgetCommand}")
 
                     // If we can find it, then we look for the anticipated percentage.
-                    if ( testOutput != 1 ) {
+                    if ( testOutput != 0 ) {
                         echo "Warning: This job's output could not be found in trss or jenkins, and is likely expired: ${testJob.buildUrl}"
                         echo "Skipping this test and moving on to the next one."
                         continue
