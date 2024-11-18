@@ -175,7 +175,7 @@ echo "D1"
 echo "D3"
 echo "D4: Checking if pipeline matches ${srcTag}"
         if (!onePipeline.toString().contains(srcTag.replaceAll("-beta",""))) {
-echo "D4.1: Skipping ${srcTag}"
+echo "D4.1: Skipping pipeline that does not match the tag."
             continue
         }
 echo "D4.5"
@@ -199,7 +199,7 @@ echo "D5"
             for (int k = 0 ; k < platformKeys.size() ; k++ ) {
                 String onePlatformKey = platformKeys[k]
                 String onePlatformValue = platformsList[onePlatformKey]
-echo "D6: Key: ${onePlatformKey} temp_value: ${onePlatformValue} stored_value: ${onePipelinePlatformsMap[onePlatformKey]} end"
+echo "D6: Key: ${onePlatformKey} temp_value: ${onePipelinePlatformsMap[onePlatformKey]} stored_value: ${onePlatformValue} end"
                 if (!onePlatformValue.isEmpty()) {
 echo "D6.1"
                     continue
@@ -503,7 +503,9 @@ echo "Debug, hard-coding srcTag to jdk-21.0.6+2-ea-beta for testing."
             def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
             if (mapOfMoreRecentBuildIDs.containsKey(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("")) {
                 pipelineLink = trssURL+"/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
-                echo "Overriding the TRSS build ID for JDK${jdkVersion}, platform ${onePlatform}, with: ${pipelineLink}"
+                echo "Overriding the oldest TRSS build ID for JDK${jdkVersion}, platform ${onePlatform}, tag ${srcTag}"
+                echo "Original TRSS pipeline link: ${pipelineLink}"
+                echo "New link: ${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
             }
             def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
             results[jdkVersion][1][onePlatform] = "???% - Build not found. Pipeline link: " + pipelineLink
