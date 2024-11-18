@@ -484,8 +484,8 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         results[jdkVersion][1].each { onePlatform, valueNotUsed ->
             mapOfMoreRecentBuildIDs[onePlatform] = ""
         }
-echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
-        getBuildIDsByPlatform(trssURL, jdkVersion, "jdk-21.0.5+2-ea-beta", mapOfMoreRecentBuildIDs)
+echo "Debug, hard-coding srcTag to jdk-21.0.6+2-ea-beta for testing."
+        getBuildIDsByPlatform(trssURL, jdkVersion, "jdk-21.0.6+2-ea-beta", mapOfMoreRecentBuildIDs)
 
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
@@ -540,7 +540,17 @@ echo "Debug, hard-coding srcTag to jdk-21.0.5+9-ea-beta for testing."
                     if (testJob.buildOutputId == null) {
                         wgetCommand = "wget -q -O - ${testJob.buildUrl}/consoleText"
                     }
-                    def testOutput = sh(returnStdout: true, script: "${wgetCommand}")
+
+                    def testOutput = sh(returnStatus : true, script: "${wgetCommand}")
+
+                    // If we can find it, then we look for the anticipated percentage.
+                    if ( testOutput != 1 ) {
+                        echo "Warning: This job's output could not be found in trss or jenkins, and is likely expired: ${testJob.buildUrl}"
+                        echo "Skipping this test and moving on to the next one."
+                        continue
+                    }
+
+                    testOutput = sh(returnStdout: true, script: "${wgetCommand}")
 
                     // If we can find it, then we look for the anticipated percentage.
                     if ( !testOutput.contains("Running test "+reproTestName) ) {
