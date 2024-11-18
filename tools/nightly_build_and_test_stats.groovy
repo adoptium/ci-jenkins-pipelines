@@ -540,8 +540,8 @@ echo "Debug, hard-coding srcTag to jdk-21.0.6+2-ea-beta for testing."
                     if (testJob.buildOutputId == null) {
                         wgetCommand = "wget -q -O - ${testJob.buildUrl}/consoleText"
                     }
-
-                    def testOutputRC = sh(returnStatus : true, returnStdout: false, script: "${wgetCommand}")
+echo "debug A-1"
+                    def testOutputRC = sh(returnStatus : true, returnStdout: false, script: "${wgetCommand} > /dev/null")
 echo "debug A0"
                     // If we can find it, then we look for the anticipated percentage.
                     if ( testOutputRC != 0 ) {
