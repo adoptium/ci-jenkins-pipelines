@@ -484,8 +484,8 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         results[jdkVersion][1].each { onePlatform, valueNotUsed ->
             mapOfMoreRecentBuildIDs[onePlatform] = ""
         }
-echo "Debug, hard-coding srcTag to jdk-21.0.6+2-ea-beta for testing."
-        getBuildIDsByPlatform(trssURL, jdkVersion, "jdk-21.0.6+2-ea-beta", mapOfMoreRecentBuildIDs)
+
+        getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs)
 
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
@@ -556,6 +556,7 @@ echo "debug A0.5"
 echo "debug A1"
                     // If we can find it, then we look for the anticipated percentage.
                     if ( !testOutput.contains("Running test "+reproTestName) ) {
+                        echo "This test does not contain ${reproTestName}. Skipping."
                         continue
                     }
 echo "debug A2"
@@ -568,26 +569,34 @@ echo "debug A2"
                 }
             }
         }
-
+echo "debug A3"
         // Now we have the percentages for each platform, we calculate the jdkVersion-specific average.
         BigDecimal overallAverage = 0.0
         // Ignoring the platforms where the test is not available yet.
         def naCount = 0
         for (String key in results[jdkVersion][1].keySet()) {
+echo "debug A3.1"
             def value = results[jdkVersion][1][key]
             if (value.equals("NA")) {
                 naCount++
             } else if ( value ==~ /^[0-9]+\.?[0-9]* %/ ) {
+echo "debug A3.2"
                 overallAverage += (value =~ /^[0-9]+\.?[0-9]*/)[0] as BigDecimal
             }
             // else do nothing, as we presume non-integer and non-NA values are 0.
         }
+echo "debug A3.3"
         if (overallAverage != 0) {
+echo "debug A3.4"
             overallAverage = overallAverage / (results[jdkVersion][1].size() - naCount)
+echo "debug A3.5"
         }
         // This reduces the output to 2 decimal places.
+echo "debug A3.6"
         results[jdkVersion][0] = ((overallAverage.toString()) =~ /[0-9]+\.?[0-9]?[0-9]?/)[0]+" %"
+echo "debug A3.7"
     }
+echo "debug A4"
 }
 
 node('worker') {
