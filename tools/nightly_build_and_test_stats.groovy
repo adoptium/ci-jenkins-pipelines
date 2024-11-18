@@ -541,22 +541,22 @@ echo "Debug, hard-coding srcTag to jdk-21.0.6+2-ea-beta for testing."
                         wgetCommand = "wget -q -O - ${testJob.buildUrl}/consoleText"
                     }
 
-                    def testOutput = sh(returnStatus : true, script: "${wgetCommand}")
+                    def testOutputRC = sh(returnStatus : true, script: "${wgetCommand}")
 
                     // If we can find it, then we look for the anticipated percentage.
-                    if ( testOutput != 0 ) {
+                    if ( testOutputRC != 0 ) {
                         echo "Warning: This job's output could not be found in trss or jenkins, and is likely expired: ${testJob.buildUrl}"
                         echo "Skipping this test and moving on to the next one."
                         continue
                     }
 
-                    testOutput = sh(returnStdout: true, script: "${wgetCommand}")
-
+                    def testOutput = sh(returnStdout: true, script: "${wgetCommand}")
+echo "debug A1"
                     // If we can find it, then we look for the anticipated percentage.
                     if ( !testOutput.contains("Running test "+reproTestName) ) {
                         continue
                     }
-
+echo "debug A2"
                     results[jdkVersion][1][onePlatform] = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
                     // Now we know the test ran, 
                     def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
