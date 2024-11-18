@@ -971,8 +971,9 @@ node('worker') {
                             echo "This pipeline has testing enabled: ${reproBuildUrl}"
 
                             getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
-
-                            if ( reproducibleBuilds[featureRelease][0].startsWith("100") ) {
+echo "debug A5"
+                            if ( ! reproducibleBuilds[featureRelease][0].startsWith("100") ) {
+echo "debug A5.1"
                                 if (!slackColor.equals('danger')) {
                                     slackColor = 'warning'
                                 }
