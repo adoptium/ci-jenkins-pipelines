@@ -541,7 +541,7 @@ echo "Debug, hard-coding srcTag to jdk-21.0.6+2-ea-beta for testing."
                         wgetCommand = "wget -q -O - ${testJob.buildUrl}/consoleText"
                     }
 
-                    def testOutputRC = sh(returnStatus : true, script: "${wgetCommand}")
+                    def testOutputRC = sh(returnStatus : true, returnStdout: false, script: "${wgetCommand}")
 
                     // If we can find it, then we look for the anticipated percentage.
                     if ( testOutputRC != 0 ) {
