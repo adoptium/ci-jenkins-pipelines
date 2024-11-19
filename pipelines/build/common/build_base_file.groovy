@@ -1026,7 +1026,7 @@ class Builder implements Serializable {
                     // Archive tap files as a single tar file if we have any
                     context.sh """
                         cd ${tarDir}/
-                        if [[ $(ls -l *.tap) ]]; then
+                        if [[ `ls -l *.tap` ]]; then
                           tar -czf ${tarTap} *.tap
                         fi
                     """
