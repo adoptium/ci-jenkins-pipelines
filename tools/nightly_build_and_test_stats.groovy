@@ -503,6 +503,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 echo "New link: ${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
                 pipelineLink = "${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
             }
+
             def trssBuildJobNames = callWgetSafely("${pipelineLink}")
             results[jdkVersion][1][onePlatform] = "???% - Build not found. Pipeline link: " + pipelineLink
 
@@ -562,28 +563,22 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         // Ignoring the platforms where the test is not available yet.
         def naCount = 0
         for (String key in results[jdkVersion][1].keySet()) {
-
             def value = results[jdkVersion][1][key]
             if (value.equals("NA")) {
                 naCount++
             } else if ( value ==~ /^[0-9]+\.?[0-9]* %/ ) {
-
                 overallAverage += (value =~ /^[0-9]+\.?[0-9]*/)[0] as BigDecimal
             }
             // else do nothing, as we presume non-integer and non-NA values are 0.
         }
 
         if (overallAverage != 0) {
-
             overallAverage = overallAverage / (results[jdkVersion][1].size() - naCount)
-
         }
+
         // This reduces the output to 2 decimal places.
-
         results[jdkVersion][0] = ((overallAverage.toString()) =~ /[0-9]+\.?[0-9]?[0-9]?/)[0]+" %"
-
     }
-
 }
 
 node('worker') {
