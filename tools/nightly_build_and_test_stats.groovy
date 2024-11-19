@@ -152,7 +152,7 @@ def getLatestBinariesTag(String version) {
 // Calls wget with the given URL and returns the output.
 // Returns an empty string if fails.
 def callWgetSafely(String url) {
-    def testOutputRC = sh(returnStatus : true, returnStdout: false, script: "wget --spider ${url} > /dev/null")
+    def testOutputRC = sh(returnStatus : true, returnStdout: false, script: "wget --spider -q ${url} 2> /dev/null")
     if ( testOutputRC != 0 ) {
         echo "Warning: This URL's data could not be found, and is likely expired: ${url}"
         return ""
