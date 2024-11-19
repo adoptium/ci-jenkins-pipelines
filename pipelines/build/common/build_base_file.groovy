@@ -1023,14 +1023,19 @@ class Builder implements Serializable {
                         flatten: true,
                         optional: true
                     )
-                    // Archive tap files as a single tar file
+                    // Archive tap files as a single tar file if we have any
                     context.sh """
                         cd ${tarDir}/
-                        tar -czf ${tarTap} *.tap
+                        if [[ $(ls -l *.tap) ]]; then
+                          tar -czf ${tarTap} *.tap
+                        fi
                     """
                     try {
-                        context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                            context.archiveArtifacts artifacts: "${tarDir}/${tarTap}"
+                        def tarTapExists = context.sh(script: "ls -l ${tarDir}/${tarTap}", returnStatus:true)
+                        if (tarTapExists == 0) {
+                            context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                                context.archiveArtifacts artifacts: "${tarDir}/${tarTap}"
+                            }
                         }
                     } catch (FlowInterruptedException e) {
                         throw new Exception("[ERROR] Archive AQAvitTapFiles.tar.gz timeout Exiting...")
