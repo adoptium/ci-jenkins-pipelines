@@ -781,11 +781,9 @@ class Builder implements Serializable {
         def javaVersion=determineReleaseToolRepoVersion()
         def stageName = 'BETA publish'
         def releaseComment = 'BETA publish'
-        def extendedLinkCommentPre = ''
-        def extendedLinkCommentPost = ''
+        def prefixLinkComment = ''
         if ( jobResult != "SUCCESS" && jobResult != "UNSTABLE" ) {
-            extendedLinkCommentPre  = '<p style="color:red;">WARNING: job result(<b>' + jobResult + '</b>) : '
-            extendedLinkCommentPost = '</p>'
+            prefixLinkComment = '<span style="color:red;">WARNING: job result(<b>' + jobResult + '</b>)</span> : '
         }
         
         def tag = "${javaToBuild}-${timestamp}"
@@ -829,8 +827,8 @@ class Builder implements Serializable {
             }
         }
 
-        // Prefix/Postfix with any extended comment
-        releaseComment = extendedLinkCommentPre + releaseComment + extendedLinkCommentPost
+        // Add any prefix comment
+        releaseComment = prefixLinkComment + releaseComment
 
         releaseToolUrl += "VERSION=${javaVersion}&RELEASE=${release}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}"
         tag = URLEncoder.encode(tag, 'UTF-8')
