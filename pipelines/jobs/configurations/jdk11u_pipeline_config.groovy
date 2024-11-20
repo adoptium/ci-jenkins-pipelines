@@ -193,14 +193,14 @@ class Config11 {
                         dragonwell: 'armv8.2'
                 ],
                 configureArgs       : [
-                        'temurin'   : '--enable-dtrace=auto --disable-ccache --with-jobs=4',
+                        'temurin'   : '--enable-dtrace=auto --disable-ccache',
                         'openj9'    : '--enable-dtrace=auto',
                         'corretto'  : '--enable-dtrace=auto',
                         'dragonwell': "--enable-dtrace=auto --with-extra-cflags=\"-march=armv8.2-a+crypto\" --with-extra-cxxflags=\"-march=armv8.2-a+crypto\"",
                         'bisheng'   : '--enable-dtrace=auto --with-extra-cflags=-fstack-protector-strong --with-extra-cxxflags=-fstack-protector-strong --with-jvm-variants=server'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom --enable-sbom-strace'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
