@@ -49,7 +49,7 @@ class Config11 {
                         'temurin'   : '--enable-headless-only=yes --disable-ccache'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom --enable-sbom-strace'
+                        'temurin'   : '--create-sbom'
                 ]
         ],
 
