@@ -783,7 +783,7 @@ class Builder implements Serializable {
         def releaseComment = 'BETA publish'
         def prefixLinkComment = ''
         if ( jobResult != "SUCCESS" && jobResult != "UNSTABLE" ) {
-            prefixLinkComment = '<span style="color:red;">WARNING: job result(<b>' + jobResult + '</b>)</span> : '
+            prefixLinkComment = '<span style="color:red;">WARNING: build result(<b>' + jobResult + '</b>)</span> : '
         }
         
         def tag = "${javaToBuild}-${timestamp}"
