@@ -986,7 +986,7 @@ class Builder implements Serializable {
 
                                         copyArtifactSuccess = true
                                         if (release) {
-                                            def (String releaseToolUrl, String releaseComment) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getUrl())
+                                            def (String releaseToolUrl, String releaseComment) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
                                             releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
                                         }
                                     }
