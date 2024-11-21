@@ -781,11 +781,11 @@ class Builder implements Serializable {
         def javaVersion=determineReleaseToolRepoVersion()
         def stageName = 'BETA publish'
         def releaseComment = 'BETA publish'
-        def prefixLinkComment = ''
+        def releaseWarning = ''
         if ( jobResult != "SUCCESS" && jobResult != "UNSTABLE" ) {
             // Build was not successful, add warning and link to build job
             def buildUrl = "${context.JENKINS_URL}${jobUrl}"
-            prefixLinkComment = '<a href=${buildUrl}><span style="color:red;">WARNING: build result(<b>' + jobResult + '</b>)</span></a> : '
+            releaseWarning = '<a href=' + buildUrl + '><span style="color:red;">WARNING: build result(<b>' + jobResult + '</b>)</span></a> : '
         }
         
         def tag = "${javaToBuild}-${timestamp}"
@@ -829,9 +829,6 @@ class Builder implements Serializable {
             }
         }
 
-        // Add any prefix comment
-        releaseComment = prefixLinkComment + releaseComment
-
         releaseToolUrl += "VERSION=${javaVersion}&RELEASE=${release}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}"
         tag = URLEncoder.encode(tag, 'UTF-8')
         artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
@@ -839,7 +836,7 @@ class Builder implements Serializable {
         releaseToolUrl += "&TAG=${tag}&UPSTREAM_JOB_NAME=${urlJobName}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
 
         context.echo "return releaseToolUrl is ${releaseToolUrl}"
-        return ["${releaseToolUrl}", "${releaseComment}"]
+        return ["${releaseToolUrl}", "${releaseComment}", "${releaseWarning}"]
     }
 
     /*
@@ -986,8 +983,8 @@ class Builder implements Serializable {
 
                                         copyArtifactSuccess = true
                                         if (release) {
-                                            def (String releaseToolUrl, String releaseComment) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
-                                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
+                                            def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
+                                            releaseSummary.appendText("<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
                                         }
                                     }
                             }
@@ -1068,8 +1065,8 @@ class Builder implements Serializable {
                 } else {
                     try {
                         context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                            def (String releaseToolUrl, String releaseComment) = publishBinary(null, currentBuild.result, "${context.JOB_URL}")
-                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
+                            def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(null, currentBuild.result, "${context.JOB_URL}")
+                            releaseSummary.appendText("<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
                         }
                     } catch (FlowInterruptedException e) {
                         throw new Exception("[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")
