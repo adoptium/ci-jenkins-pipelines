@@ -22,23 +22,23 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 def getPlatformConversionMap() {
-    // A map to convert from a standard platform format to the variants used by build and test job names on Jenkins.
-    def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux"],
-                                 x64Windows:         ["windows-x64", "x86-64_windows"],
-                                 x64Mac:             ["mac-x64", "x86-64_mac"],
-                                 x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux"],
-                                 ppc64Aix:           ["aix-ppc64", "ppc64_aix"],
-                                 ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux"],
-                                 s390xLinux:         ["linux-s390x", "s390x_linux"],
-                                 aarch64Linux:       ["linux-aarch64", "aarch64_linux"],
-                                 aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux"],
-                                 aarch64Mac:         ["mac-aarch64", "aarch64_mac"],
-                                 aarch64Windows:     ["windows-aarch64", "aarch64_windows"],
-                                 arm32Linux:         ["linux-arm", "arm_linux"],
-                                 x32Windows:         ["windows-x86-32", "x86-32_windows"],
-                                 x64Solaris:         ["solaris-x64", "x64_solaris"],
-                                 sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris"],
-                                 riscv64Linux:       ["linux-riscv64", "riscv64_linux"]
+    // A map to convert from a standard platform format to the variants used by builds, tests, and assets.
+    def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux", "x64_linux"],
+                                 x64Windows:         ["windows-x64", "x86-64_windows", "x64_windows"],
+                                 x64Mac:             ["mac-x64", "x86-64_mac", "x64_mac"],
+                                 x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux", "x64_alpine-linux"],
+                                 ppc64Aix:           ["aix-ppc64", "ppc64_aix", "ppc64_aix"],
+                                 ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux", "ppc64le_linux"],
+                                 s390xLinux:         ["linux-s390x", "s390x_linux", "s390x_linux"],
+                                 aarch64Linux:       ["linux-aarch64", "aarch64_linux", "aarch64_linux"],
+                                 aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux", "aarch64_alpine-linux"],
+                                 aarch64Mac:         ["mac-aarch64", "aarch64_mac", "aarch64_mac"],
+                                 aarch64Windows:     ["windows-aarch64", "aarch64_windows", "aarch64_windows"],
+                                 arm32Linux:         ["linux-arm", "arm_linux", "arm_linux"],
+                                 x32Windows:         ["windows-x86-32", "x86-32_windows", "x86-32_windows"],
+                                 x64Solaris:         ["solaris-x64", "x64_solaris", "x64_solaris"],
+                                 sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris", "sparcv9_solaris"],
+                                 riscv64Linux:       ["linux-riscv64", "riscv64_linux", "riscv64_linux"]
                                 ]
     return platformConversionMap
 }
@@ -169,6 +169,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
     def pipelineName = "open${jdkVersionMinusTheU}-pipeline"
     def pipelines = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
     def pipelineJson = new JsonSlurper().parseText(pipelines)
+    String srcTagLocal = srcTag.replaceAll("-beta","")
 
     if (pipelineJson.size() == 0) {
         echo "WARNING: Cannot find pipelines for per-platform build job identification."
@@ -183,8 +184,9 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
 
     for (int i = 0 ; i < pipelineJson.size() ; i++ ) {
         Map onePipeline = pipelineJson[i]
+        def jdksPublished = ""
 
-        if (!onePipeline.toString().contains(srcTag.replaceAll("-beta",""))) {
+        if (!onePipeline.toString().contains(srcTagLocal)) {
             continue
         }
 
@@ -213,13 +215,34 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
 
                 if (onePipelineBuild.buildName.contains("${jdkVersion}-${platformConversionMap[onePlatformKey][0]}")) {
                     // - Does the build job for one of our listed platforms contain a successful build job?
-                    if (onePipelineBuild.status.equals("Done") && (onePipelineBuild.buildResult.equals("UNSTABLE") || onePipelineBuild.buildResult.equals("SUCCESS"))) {
+                    if (onePipelineBuild.status.equals("Done")) {
                         onePipelinePlatformsMap[onePlatformKey] = onePipelineBuild._id
                     }
                 }
 
                 // Also, check if the pipeline published any successful builds overall.
                 if (onePipelineBuild.buildName.contains("refactor_openjdk_release_tool") && onePipelineBuild.status.contains("Done")) {
+                    def wgetUrlForReleaseTool = "${onePipelineBuild.buildUrl}/consoleText"
+                    if (onePipelineBuild.buildOutputId != null) {
+                        wgetUrlForReleaseTool = "${trssURL}/api/getOutputById?id=${onePipelineBuild.buildOutputId}"
+                    }
+
+                    def releaseToolOutput = callWgetSafely(wgetUrlForReleaseTool)
+
+                    if ((releaseToolOutput.length() <= 2) || (!releaseToolOutput.contains("Finished: SUCCESS"))) {
+                        echo "Warning: The refactor_openjdk_release_tool job in this pipeline has not completed successfully: ${wgetUrlForReleaseTool}"
+                        continue
+                    }
+
+                    // Now we identify the platforms that were successfully published.
+                    for (int n = 0 ; n < platformKeys.size() ; n++ ) {
+                        // Example: Uploading OpenJDK21U-jdk_x64_windows_hotspot_21.0.6_3-ea.zip
+                        platformUploadingString = "Uploading Open${srcTagLocal.toUpperCase}-jdk_${platformConversionMap[platformKeys[n]]}_hotspot_${srcTagLocal}"
+                        if (releaseToolOutput.contains(platformUploadingString + ".zip") || releaseToolOutput.contains(platformUploadingString + ".tar.gz")) {
+                            jdksPublished += ",${platformKeys[n]},"
+                        }
+                    }
+
                     pipelinePublishBool = true
                 }
             }
@@ -230,7 +253,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
             def platformsWithAValue = 0
             for (int m = 0 ; m < platformKeys.size() ; m++ ) {
                 String onePlatformKey = platformKeys[m]
-                if (platformsList[onePlatformKey].isEmpty()) {
+                if (platformsList[onePlatformKey].isEmpty() && jdksPublished.contains(",${onePlatformKey},")) {
                     if (onePipelinePlatformsMap.containsKey(onePlatformKey)) {
                         platformsList[onePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
                         platformsWithAValue++
@@ -350,23 +373,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 
         if (targetConfigurations) {
             // Map of config architecture to artifact name
-            def archToAsset = [x64Linux:       "x64_linux",
-                               x64Windows:     "x64_windows",
-                               aarch64Windows: "aarch64_windows",
-                               x64Mac:         "x64_mac",
-                               x64AlpineLinux: "x64_alpine-linux",
-                               ppc64Aix:       "ppc64_aix",
-                               ppc64leLinux:   "ppc64le_linux",
-                               s390xLinux:     "s390x_linux",
-                               aarch64Linux:   "aarch64_linux",
-                               aarch64AlpineLinux: "aarch64_alpine-linux",
-                               aarch64Mac:     "aarch64_mac",
-                               arm32Linux:     "arm_linux",
-                               x32Windows:     "x86-32_windows",
-                               x64Solaris:     "x64_solaris",
-                               sparcv9Solaris: "sparcv9_solaris",
-                               riscv64Linux:   "riscv64_linux"
-                              ]
+            def archToAsset = getPlatformConversionMap().collectEntries{key, value -> [key, value[2]]}
 
             def missingAssets = []
             def foundAtLeastOneAsset = false
