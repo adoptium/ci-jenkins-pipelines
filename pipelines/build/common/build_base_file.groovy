@@ -1063,7 +1063,7 @@ class Builder implements Serializable {
                 } else {
                     try {
                         context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                            def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(null, currentBuild.result, "${context.JOB_URL}")
+                            def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(null, currentBuild.result, "${context.BUILD_URL}")
                             releaseSummary.appendText("<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
                         }
                     } catch (FlowInterruptedException e) {
