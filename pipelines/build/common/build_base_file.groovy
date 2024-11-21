@@ -827,7 +827,6 @@ class Builder implements Serializable {
                 }
             }
         }
-
         releaseToolUrl += "VERSION=${javaVersion}&RELEASE=${release}&UPSTREAM_JOB_NUMBER=${currentBuild.getNumber()}"
         tag = URLEncoder.encode(tag, 'UTF-8')
         artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
