@@ -15,7 +15,6 @@ limitations under the License.
 /* groovylint-disable NestedBlockDepth */
 
 import groovy.json.JsonSlurper
-import java.math.MathContext;
 import java.time.LocalDateTime
 import java.time.Instant
 import java.time.ZoneId
@@ -23,23 +22,23 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 def getPlatformConversionMap() {
-    // A map to convert from a standard platform format to the variants used by build and test job names on Jenkins.
-    def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux"],
-                                 x64Windows:         ["windows-x64", "x86-64_windows"],
-                                 x64Mac:             ["mac-x64", "x86-64_mac"],
-                                 x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux"],
-                                 ppc64Aix:           ["aix-ppc64", "ppc64_aix"],
-                                 ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux"],
-                                 s390xLinux:         ["linux-s390x", "s390x_linux"],
-                                 aarch64Linux:       ["linux-aarch64", "aarch64_linux"],
-                                 aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux"],
-                                 aarch64Mac:         ["mac-aarch64", "aarch64_mac"],
-                                 aarch64Windows:     ["windows-aarch64", "aarch64_windows"],
-                                 arm32Linux:         ["linux-arm", "arm_linux"],
-                                 x32Windows:         ["windows-x86-32", "x86-32_windows"],
-                                 x64Solaris:         ["solaris-x64", "x64_solaris"],
-                                 sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris"],
-                                 riscv64Linux:       ["linux-riscv64", "riscv64_linux"]
+    // A map to convert from a standard platform format to the variants used by builds, tests, and assets.
+    def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux", "x64_linux"],
+                                 x64Windows:         ["windows-x64", "x86-64_windows", "x64_windows"],
+                                 x64Mac:             ["mac-x64", "x86-64_mac", "x64_mac"],
+                                 x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux", "x64_alpine-linux"],
+                                 ppc64Aix:           ["aix-ppc64", "ppc64_aix", "ppc64_aix"],
+                                 ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux", "ppc64le_linux"],
+                                 s390xLinux:         ["linux-s390x", "s390x_linux", "s390x_linux"],
+                                 aarch64Linux:       ["linux-aarch64", "aarch64_linux", "aarch64_linux"],
+                                 aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux", "aarch64_alpine-linux"],
+                                 aarch64Mac:         ["mac-aarch64", "aarch64_mac", "aarch64_mac"],
+                                 aarch64Windows:     ["windows-aarch64", "aarch64_windows", "aarch64_windows"],
+                                 arm32Linux:         ["linux-arm", "arm_linux", "arm_linux"],
+                                 x32Windows:         ["windows-x86-32", "x86-32_windows", "x86-32_windows"],
+                                 x64Solaris:         ["solaris-x64", "x64_solaris", "x64_solaris"],
+                                 sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris", "sparcv9_solaris"],
+                                 riscv64Linux:       ["linux-riscv64", "riscv64_linux", "riscv64_linux"]
                                 ]
     return platformConversionMap
 }
@@ -47,11 +46,11 @@ def getPlatformConversionMap() {
 def getPlatformReproTestMap() {
     // A map to return the test bucket and test name for the repducibile platforms
     def platformReproTestMap = [x64Linux:           ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
-                                x64Windows:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
+                                x64Windows:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
                                 x64Mac:             ["NA", ""],
                                 ppc64leLinux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 aarch64Linux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
-                                aarch64Mac:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
+                                aarch64Mac:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
                                ]
     return platformReproTestMap
 }
@@ -147,18 +146,143 @@ def getLatestBinariesTag(String version) {
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${binariesRepo} | grep '\\-ea\\-beta' | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed 's,refs/tags/,,' | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest jdk${version} binaries repo tag = ${latestTag}"
 
-    return latestTag    
+    return latestTag
 }
 
-// Return our best guess at the url that generated a specific build.
+// Calls wget with the given URL and returns the output.
+// Returns an empty string if fails.
+def callWgetSafely(String url) {
+    def testOutputRC = sh(returnStatus : true, returnStdout: false, script: "wget --spider -q ${url} 2> /dev/null")
+    if ( testOutputRC != 0 ) {
+        echo "Warning: This URL's data could not be found, and is likely expired: ${url}"
+        return ""
+    }
+    return sh(returnStdout: true, script: "wget -q -O - ${url}")
+}
+
+// Return our best guess at the build TRSS IDs for the latest successful build+publish of a specific set of platforms for a specific build tag.
+// Takes a jdk major version, a tag, and an array of platform names (standard platform format).
+def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map platformsList) {
+    // First we gather a list of the latest pipelines for this jdkVersion.
+    echo "Gathering Build IDs by platform."
+    def jdkVersionMinusTheU = jdkVersion.endsWith("u") ? jdkVersion.substring(0, jdkVersion.length() - 1) : jdkVersion
+    def pipelineName = "open${jdkVersionMinusTheU}-pipeline"
+    def pipelines = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+    def pipelineJson = new JsonSlurper().parseText(pipelines)
+    String srcTagLocal = srcTag.replaceAll("-beta","")
+
+    if (pipelineJson.size() == 0) {
+        echo "WARNING: Cannot find pipelines for per-platform build job identification."
+        return
+    }
+
+    def platformConversionMap = getPlatformConversionMap()
+    Set platformKeys = platformsList.keySet()
+
+    // Then we iterate over the list of pipelines, seeking a pipeline that contains one of our platforms.
+    assert pipelineJson instanceof List
+
+    for (int i = 0 ; i < pipelineJson.size() ; i++ ) {
+        Map onePipeline = pipelineJson[i]
+        def jdksPublished = ""
+
+        if (!onePipeline.toString().contains(srcTagLocal)) {
+            continue
+        }
+
+        def pipelineBuilds = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}")
+        def pipelineBuildsJson = new JsonSlurper().parseText(pipelineBuilds)
+
+        if (pipelineBuildsJson.size() == 0) {
+            continue
+        }
+
+        boolean pipelinePublishBool = false
+        def onePipelinePlatformsMap = [:]
+
+        // For each build within a given pipeline:
+        assert pipelineBuildsJson instanceof List
+        for (int j = 0 ; j < pipelineBuildsJson.size() ; j++ ) {
+            Map onePipelineBuild = pipelineBuildsJson[j]
+
+            // - Is this platform in our platform list?
+            for (int k = 0 ; k < platformKeys.size() ; k++ ) {
+                String onePlatformKey = platformKeys[k]
+                String onePlatformValue = platformsList[onePlatformKey]
+                if (!onePlatformValue.isEmpty()) {
+                    continue
+                }
+
+                if (onePipelineBuild.buildName.contains("${jdkVersion}-${platformConversionMap[onePlatformKey][0]}")) {
+                    // - Does the build job for one of our listed platforms contain a successful build job?
+                    if (onePipelineBuild.status.equals("Done")) {
+                        onePipelinePlatformsMap[onePlatformKey] = onePipelineBuild._id
+                    }
+                }
+
+                // Also, check if the pipeline published any successful builds overall.
+                if (onePipelineBuild.buildName.contains("refactor_openjdk_release_tool") && onePipelineBuild.status.contains("Done")) {
+                    def wgetUrlForReleaseTool = "${onePipelineBuild.buildUrl}/consoleText"
+                    if (onePipelineBuild.buildOutputId != null) {
+                        wgetUrlForReleaseTool = "${trssURL}/api/getOutputById?id=${onePipelineBuild.buildOutputId}"
+                    }
+
+                    def releaseToolOutput = callWgetSafely(wgetUrlForReleaseTool)
+
+                    if ((releaseToolOutput.length() <= 2) || (!releaseToolOutput.contains("Finished: SUCCESS"))) {
+                        echo "Warning: The refactor_openjdk_release_tool job in this pipeline has not completed successfully: ${wgetUrlForReleaseTool}"
+                        continue
+                    }
+
+                    // Now we identify the platforms that were successfully published.
+                    for (int n = 0 ; n < platformKeys.size() ; n++ ) {
+                        // Example: Uploading OpenJDK21U-jdk_x64_windows_hotspot_21.0.6_3-ea.zip
+                        platformUploadingString = "Uploading Open${srcTagLocal.toUpperCase}-jdk_${platformConversionMap[platformKeys[n]]}_hotspot_${srcTagLocal}"
+                        if (releaseToolOutput.contains(platformUploadingString + ".zip") || releaseToolOutput.contains(platformUploadingString + ".tar.gz")) {
+                            jdksPublished += ",${platformKeys[n]},"
+                        }
+                    }
+
+                    pipelinePublishBool = true
+                }
+            }
+        }
+
+        // If this pipeline successfully published, then we put the relevant TRSS ids into the platformsList Map.
+        if (pipelinePublishBool) {
+            def platformsWithAValue = 0
+            for (int m = 0 ; m < platformKeys.size() ; m++ ) {
+                String onePlatformKey = platformKeys[m]
+                if (platformsList[onePlatformKey].isEmpty() && jdksPublished.contains(",${onePlatformKey},")) {
+                    if (onePipelinePlatformsMap.containsKey(onePlatformKey)) {
+                        platformsList[onePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
+                        platformsWithAValue++
+                        echo "Found new build ID for platform ${onePlatformKey}."
+                    }
+                } else {
+                    platformsWithAValue++
+                }
+            }
+
+            // If we have all the entries we need, we exit the loop and end this method.
+            if (platformsWithAValue == platformsList.size()) {
+                echo "Finished getting build IDs by platform."
+                return
+            }
+        }
+    }
+    echo "Finished getting build IDs by platform."
+}
+
+// Return our best guess at the url for the first pipeline that generated builds from a specific tag.
+// This pipeline is expected to have attempted to build JDKs for all supported platforms.
 def getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
     def functionBuildUrl = ["", "", ""]
-
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
-
-    def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+    def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
     def pipelineJson = new JsonSlurper().parseText(pipeline)
+
     if (pipelineJson.size() > 0) {
         pipelineJson.each { job ->
             def overridePublishName = ""
@@ -219,13 +343,14 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     if (rc == 0) {
         releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
     }
+
     if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
     } else {
         def configFile = "${configVersion}.groovy"
-
         targetConfigurations = null
+
         // aarch32-jdk8u and alpine-jdk8u are single configurations
         if (version == "aarch32-jdk8u") {
             targetConfigurations = [:]
@@ -248,24 +373,8 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 
         if (targetConfigurations) {
             // Map of config architecture to artifact name
-            def archToAsset = [x64Linux:       "x64_linux",
-                               x64Windows:     "x64_windows",
-                               aarch64Windows: "aarch64_windows",
-                               x64Mac:         "x64_mac",
-                               x64AlpineLinux: "x64_alpine-linux",
-                               ppc64Aix:       "ppc64_aix",
-                               ppc64leLinux:   "ppc64le_linux",
-                               s390xLinux:     "s390x_linux",
-                               aarch64Linux:   "aarch64_linux",
-                               aarch64AlpineLinux: "aarch64_alpine-linux",
-                               aarch64Mac:     "aarch64_mac",
-                               arm32Linux:     "arm_linux",
-                               x32Windows:     "x86-32_windows",
-                               x64Solaris:     "x64_solaris",
-                               sparcv9Solaris: "sparcv9_solaris",
-                               riscv64Linux:   "riscv64_linux"
-                              ]
-                               
+            def archToAsset = getPlatformConversionMap().collectEntries{key, value -> [key, value[2]]}
+
             def missingAssets = []
             def foundAtLeastOneAsset = false
             targetConfigurations.keySet().each { osarch ->
@@ -364,7 +473,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 
 // For a given pipeline, tell us how reproducible the builds were.
 // Note: Will limit itself to jdk versions and platforms in the results Map.
-def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results) {
+def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, String srcTag, Map results) {
     echo "Called repro method with trssID:"+trssId
 
     def platformConversionMap = getPlatformConversionMap()
@@ -372,64 +481,96 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 
     // We are only looking for reproducible percentages for the relevant jdk versions...
     if ( trssId != "" && results.containsKey(jdkVersion) ) {
+
+        // See if we can find a more recent build ID for each platform.
+        def mapOfMoreRecentBuildIDs = [:]
+        results[jdkVersion][1].each { onePlatform, valueNotUsed ->
+            mapOfMoreRecentBuildIDs[onePlatform] = ""
+        }
+
+        getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs)
+
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
         // ...and platforms.
-        results[jdkVersion][1].each { onePlatform, valueNotUsed ->
+        def platformsForOneJDKVersion = results[jdkVersion][1]
+        assert platformsForOneJDKVersion instanceof Map
+        for ( String onePlatform in platformsForOneJDKVersion.keySet() ) {
             // If this platform doesn't have a reproducibility test yet, skip it.
             if (platformReproTestMap[onePlatform][0].equals("NA")) {
                 results[jdkVersion][1][onePlatform] = "NA"
                 // Then we exit this lambda and skip to the next platform.
-                return
+                continue
             }
 
-            def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"\\&buildNameRegex=^"+jdkVersion+"\\-"+platformConversionMap[onePlatform][0]+"\\-temurin\$"
-            def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
-            def platformResult = "???% - Build not found. Pipeline link: " + pipelineLink
+            def pipelineLink = "${trssURL}/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
+            if (mapOfMoreRecentBuildIDs.containsKey(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("")) {
+                echo "Overriding the TRSS build ID for ${jdkVersion}, platform ${onePlatform}, tag ${srcTag}"
+                echo "Original TRSS pipeline link: ${pipelineLink}"
+                echo "New link: ${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
+                pipelineLink = "${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
+            }
 
-            // Does this platform have a build in this pipeline?
-            if ( trssBuildJobNames.length() > 2 ) {
-                def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
+            def trssBuildJobNames = callWgetSafely("${pipelineLink}")
+            results[jdkVersion][1][onePlatform] = "???% - Build not found. Pipeline link: " + pipelineLink
 
-                // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
-                buildJobNamesJson.each { buildJob ->
-                    platformResult = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
-                    def testPlatform = platformConversionMap[onePlatform][1]
-                    def reproTestName=platformReproTestMap[onePlatform][1]
-                    def reproTestBucket=platformReproTestMap[onePlatform][0]
-                    def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
-                    def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
+            // Does this platform have a build in this pipeline? If not, skip to next platform.
+            if ( trssBuildJobNames.length() <= 2 ) {
+                continue
+            }
 
-                    // Did this build have tests?
-                    if ( trssTestJobNames.length() > 2 ) {
-                        platformResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
-                        def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
+            def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
 
-                        // For each test job (including testList subjobs), we now search for the reproducibility test.
-                        testJobNamesJson.each { testJob ->
-                            def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
+            // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
+            assert buildJobNamesJson instanceof List
+            for ( Map buildJob in buildJobNamesJson ) {
+                results[jdkVersion][1][onePlatform] = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
+                def testPlatform = platformConversionMap[onePlatform][1]
+                def reproTestName=platformReproTestMap[onePlatform][1]
+                def reproTestBucket=platformReproTestMap[onePlatform][0]
+                def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
+                def trssTestJobNames = callWgetSafely("${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
 
-                            // If we can find it, then we look for the anticipated percentage.
-                            if ( testOutput.contains("Running test "+reproTestName) ) {
-                                platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
-                                // Now we know the test ran, 
-                                def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
-                                if ( matcherObject ) {
-                                    platformResult = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
-                                }
-                            }
-                        }
+                // Did this build have tests? If not, skip to next build job.
+                if ( trssTestJobNames.length() <= 2 ) {
+                    continue
+                }
+
+                results[jdkVersion][1][onePlatform] = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
+                def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
+
+                // For each test job (including testList subjobs), we now search for the reproducibility test.
+                assert testJobNamesJson instanceof List
+                for ( Map testJob in testJobNamesJson ) {
+                    def wgetUrl = "${testJob.buildUrl}/consoleText"
+                    if (testJob.buildOutputId != null) {
+                        wgetUrl = "${trssURL}/api/getOutputById?id=${testJob.buildOutputId}"
+                    }
+
+                    def testOutput = callWgetSafely(wgetUrl)
+
+                    // If we can find it, then we look for the anticipated percentage.
+                    if ( !testOutput.contains("Running test "+reproTestName) ) {
+                        echo "The following test's output does not contain ${reproTestName}, so we are skipping it: ${wgetUrl}"
+                        continue
+                    }
+
+                    results[jdkVersion][1][onePlatform] = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
+                    // Now we know the test ran, 
+                    def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
+                    if ( matcherObject ) {
+                        results[jdkVersion][1][onePlatform] = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
                     }
                 }
             }
-            results[jdkVersion][1][onePlatform] = platformResult
         }
 
         // Now we have the percentages for each platform, we calculate the jdkVersion-specific average.
         BigDecimal overallAverage = 0.0
         // Ignoring the platforms where the test is not available yet.
         def naCount = 0
-        results[jdkVersion][1].each{key, value ->
+        for (String key in results[jdkVersion][1].keySet()) {
+            def value = results[jdkVersion][1][key]
             if (value.equals("NA")) {
                 naCount++
             } else if ( value ==~ /^[0-9]+\.?[0-9]* %/ ) {
@@ -437,9 +578,11 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             }
             // else do nothing, as we presume non-integer and non-NA values are 0.
         }
+
         if (overallAverage != 0) {
             overallAverage = overallAverage / (results[jdkVersion][1].size() - naCount)
         }
+
         // This reduces the output to 2 decimal places.
         results[jdkVersion][0] = ((overallAverage.toString()) =~ /[0-9]+\.?[0-9]?[0-9]?/)[0]+" %"
     }
@@ -492,7 +635,7 @@ node('worker') {
                   extraFilter = "architecture=x64&os=alpine-linux&"
               }
 
-              def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?${extraFilter}image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
+              def assets = callWgetSafely("'${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?${extraFilter}image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
               def assetsJson = new JsonSlurper().parseText(assets)
 
               def status = []
@@ -571,7 +714,7 @@ node('worker') {
         }
 
         // Get top level builds names
-        def trssBuildNames = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getTopLevelBuildNames?type=Test")
+        def trssBuildNames = callWgetSafely("${trssUrl}/api/getTopLevelBuildNames?type=Test")
         def buildNamesJson = new JsonSlurper().parseText(trssBuildNames)
         buildNamesJson.each { build ->
             // Is it a build Pipeline?
@@ -582,7 +725,7 @@ node('worker') {
                 // Are we interested in this pipeline?
                 if (pipelinesOfInterest.contains(pipelineName)) {
                   // Find all the "Done" pipeline builds in the last 7 days, started by "timer", or upstream project "build-scripts/utils/betaTrigger_"
-                  def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+                  def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
                   def pipelineJson = new JsonSlurper().parseText(pipeline)
                   if (pipelineJson.size() > 0) {
                     // Find first in list started by "timer", "build-scripts/utils/betaTrigger_" or "build-scripts/utils/releaseTrigger_"
@@ -625,7 +768,7 @@ node('worker') {
                             // Was job a "match"?
                             if (pipeline_id != null) {
                                 // Get all child Test jobs for this pipeline job
-                                def pipelineTestJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*")
+                                def pipelineTestJobs = callWgetSafely("${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*")
                                 def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
                                 if (pipelineTestJobsJson.size() > 0) {
                                     testJobNumber = pipelineTestJobsJson.size()
@@ -645,7 +788,7 @@ node('worker') {
                                     }
                                 }
                                 // Get all child Build jobs for this pipeline job
-                                def pipelineBuildJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
+                                def pipelineBuildJobs = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
                                 def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
                                 buildJobNumber = 0
                                 pipelineBuildJobsJson.each { buildJob ->
@@ -810,15 +953,20 @@ node('worker') {
                         }
                     }
 
-                    def testsShouldHaveRun = false
-                    if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${probableBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
-                        testsShouldHaveRun = true
-                    }
                     if (reproducibleBuilds.containsKey(featureRelease)) {
-                        if (testsShouldHaveRun) {
-                            getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, trssUrl, reproducibleBuilds)
-                            if ( reproducibleBuilds[featureRelease][0] != "100%") {
-                                slackColor = 'danger'
+                        def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt")
+
+                        if ( reproBuildUrl != "" && callWgetSafely("${trssUrl}/api/getBuildHistory?buildUrl=${reproBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
+                            echo "This pipeline has testing enabled: ${reproBuildUrl}"
+                            echo "This pipeline's current status is ${reproBuildStatus}"
+
+                            getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
+
+                            if ( ! reproducibleBuilds[featureRelease][0].startsWith("100") ) {
+
+                                if (!slackColor.equals('danger')) {
+                                    slackColor = 'warning'
+                                }
                                 health = "Unhealthy"
                                 def summaryOfRepros = ""
                                 echo "Build reproducibility percentages for " + featureRelease + " did not add up to 100%. Breakdown: "
@@ -841,8 +989,9 @@ node('worker') {
                                 errorMsg += "\nBuild repro summary: "+summaryOfRepros
                             }
                         } else {
-                            // Ignore test results if the tests for this pipeline were intentionally disabled.
+                            // Ignore test results if the tests for this pipeline were intentionally disabled, or if we cannot find a likely pipeline job.
                             reproducibleBuilds[featureRelease][0] = "N/A - Tests disabled"
+                            echo "This pipeline is either a blank string, or does not have testing enabled: ${reproBuildUrl}"
                         }
                     }
                 }
