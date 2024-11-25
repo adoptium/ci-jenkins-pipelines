@@ -784,7 +784,7 @@ class Builder implements Serializable {
         def releaseWarning = ''
         if ( jobResult != "SUCCESS" && jobResult != "UNSTABLE" ) {
             // Build was not successful, add warning and link to build job
-            releaseWarning = '<a href=' + jobUrl + '><span style="color:red;">WARNING: build result(<b>' + jobResult + '</b>)</span></a> : '
+            releaseWarning = '<a href=' + jobUrl + '><span style="color:red;">WARNING: pipeline status was <b>' + jobResult + '</b></span></a> : '
         }
         
         def tag = "${javaToBuild}-${timestamp}"
