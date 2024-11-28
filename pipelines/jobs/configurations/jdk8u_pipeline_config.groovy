@@ -68,7 +68,7 @@ class Config8 {
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2022&&vs2017',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                 : 'default',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'

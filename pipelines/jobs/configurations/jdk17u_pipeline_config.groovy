@@ -68,7 +68,7 @@ class Config17 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2022&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
@@ -78,7 +78,7 @@ class Config17 {
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2022&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
@@ -177,7 +177,7 @@ class Config17 {
                 os                  : 'windows',
                 arch                : 'aarch64',
                 crossCompile        : 'x64',
-                additionalNodeLabels: 'win2022&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 buildArgs       : [
                         'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
