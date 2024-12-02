@@ -120,12 +120,6 @@ def checkJDKAssetExistsForArch(String binariesRepo, String version, String relea
 
     echo "Verifying ${version} JDK asset for ${arch} in release: ${releaseTag}"
 
-    def publishVersion = version
-    // aarch32-jdk8u and alpine-jdk8u published as "jdk8u" tags
-    if (version == "aarch32-jdk8u" || version == "alpine-jdk8u") {
-        publishVersion = "jdk8u"
-    }
-
     def escRelease = releaseTag.replaceAll("\\+", "%2B")
     def releaseAssetsUrl = binariesRepo.replaceAll("github.com","api.github.com/repos") + "/releases/tags/${escRelease}"
 
