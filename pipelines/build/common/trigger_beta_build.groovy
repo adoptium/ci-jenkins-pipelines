@@ -115,7 +115,7 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
 }
 
 // Verify the given published release tag contains the given asset architecture
-def checkJDKAssetExistsForArch(String binariesRepo, String version, String releaseTag, String variant, String arch) {
+def checkJDKAssetExistsForArch(String binariesRepo, String version, String releaseTag, String arch) {
     def assetExists = false
 
     echo "Verifying ${version} JDK asset for ${arch} in release: ${releaseTag}"
@@ -222,7 +222,7 @@ node('worker') {
         }
 
         echo "Checking if ${binariesRepoTag} is already published for JDK asset ${jdkAssetToCheck} ?"
-        def assetExists = checkJDKAssetExistsForArch(binariesRepo, versionStr, binariesRepoTag, variant, jdkAssetToCheck)
+        def assetExists = checkJDKAssetExistsForArch(binariesRepo, versionStr, binariesRepoTag, jdkAssetToCheck)
 
         if (assetExists) {
             echo "Build tag ${binariesRepoTag} is already published - nothing to do"
