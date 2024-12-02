@@ -114,6 +114,53 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
     return targetConfigurationsForVariant
 }
 
+// Verify the given published release tag contains the given asset architecture
+def checkJDKAssetExistsForArch(String version, String release, String variant, String arch) {
+    def assetExists = false
+
+    echo "Verifying ${version} assets in release: ${release}"
+
+    def publishVersion = version
+    // aarch32-jdk8u and alpine-jdk8u published as "jdk8u" tags
+    if (version == "aarch32-jdk8u" || version == "alpine-jdk8u") {
+        publishVersion = "jdk8u"
+    }
+
+    def escRelease = release.replaceAll("\\+", "%2B")
+    def releaseAssetsUrl = "${binariesRepo}/releases/tags/${escRelease}".replaceAll("_NN_", publishVersion.replaceAll("[a-z]",""))
+
+    // Get list of assets, concatenate into a single string
+    def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json '+releaseAssetsUrl, returnStatus: true)
+    def releaseAssets = ""
+    if (rc == 0) {
+        releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
+    }
+
+    if (releaseAssets == "") {
+        echo "No release assets for ${releaseAssetsUrl}"
+    } else {
+        // Work out the JDK artifact filetype
+        def filetype
+        if (osarch.contains("Windows")) {
+            filetype = "\\.zip"
+        } else {
+            filetype = "\\.tar\\.gz"
+        }
+
+        def findAsset = releaseAssets =~/.*jdk_${arch}_[^"]*${filetype}".*/
+        if (findAsset) {
+            assetExists = true
+        }
+    }
+
+    if (assetExists) {
+        echo "${arch} JDK asset for version ${version} tag ${release} exists"
+    } else {
+        echo "${arch} JDK asset for version ${version} tag ${release} NOT FOUND"
+    }
+    return assetExists
+}
+
 node('worker') {
     def adopt_tag_search
     if (version == 8) {
@@ -170,14 +217,22 @@ node('worker') {
             echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
         }
 
-        // Check binaries repo for existance of the given release?
-        echo "Checking if ${binariesRepoTag} is already published?"
-        def desiredRepoTagURL="${binariesRepo}/releases/tag/${binariesRepoTag}"
-        def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
+        // Check binaries repo for existance of the given release tag having being already built?
+        def jdkAssetToCheck = "x64_linux"
+        if (mirrorRepo.contains("aarch32-jdk8u")) {
+            // aarch32-jdk8u built in its own pipeline
+            jdkAssetToCheck = "arm_linux"
+        } else if (mirrorRepo.contains("alpine-jdk8u")) {
+            // alpine-jdk8u built in its own pipeline
+            jdkAssetToCheck = "x64_alpine-linux"
+        }
 
-        if (httpCode == "200") {
+        echo "Checking if ${binariesRepoTag} is already published for JDK asset ${jdkAssetToCheck} ?"
+        def assetExists = checkJDKAssetExistsForArch(versionStr, binariesRepoTag, variant, jdkAssetToCheck)
+
+        if (assetExists) {
             echo "Build tag ${binariesRepoTag} is already published - nothing to do"
-        } else if (httpCode == "404") {
+        } else {
             echo "New unpublished build tag ${binariesRepoTag} - triggering builds"
             if (gaTagCheck == 0) {
                 echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
@@ -185,10 +240,6 @@ node('worker') {
                 triggerMainBuild = true
             }
             triggerEvaluationBuild = true
-        } else {
-            def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
-            echo "${error}"
-            throw new Exception("${error}")
         }
     } else {
         echo "FORCE triggering specified builds.."
@@ -223,6 +274,11 @@ node('worker') {
         }
     }
 } // End: node('worker')
+
+echo "STATUS: triggerMainBuild: ${triggerMainBuild}"
+echo "STATUS: triggerEvaluationBuild: ${triggerEvaluationBuild}"
+triggerMainBuild=false
+triggerEvaluationBuild=false
 
 if (triggerMainBuild || triggerEvaluationBuild) {
     // Set version suffix, jdk8 has different mechanism to jdk11+
