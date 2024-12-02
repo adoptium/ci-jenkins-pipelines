@@ -1,8 +1,6 @@
 # Contributing to ci-jenkins-pipelines
-dsfsdfg
 
-sdfsfsf
-Thanks for your interest in this project.
+Thsdfganks for your interest in this project.
 You can contribute to this project in many different ways.  **We appreciate all kinds of help, so thank you!**
 
 ## Project description
