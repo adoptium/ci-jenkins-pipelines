@@ -115,10 +115,10 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
 }
 
 // Verify the given published release tag contains the given asset architecture
-def checkJDKAssetExistsForArch(String version, String release, String variant, String arch) {
+def checkJDKAssetExistsForArch(String binariesRepo, String version, String releaseTag, String variant, String arch) {
     def assetExists = false
 
-    echo "Verifying ${version} assets in release: ${release}"
+    echo "Verifying ${version} JDK asset for ${arch} in release: ${releaseTag}"
 
     def publishVersion = version
     // aarch32-jdk8u and alpine-jdk8u published as "jdk8u" tags
@@ -126,7 +126,7 @@ def checkJDKAssetExistsForArch(String version, String release, String variant, S
         publishVersion = "jdk8u"
     }
 
-    def escRelease = release.replaceAll("\\+", "%2B")
+    def escRelease = releaseTag.replaceAll("\\+", "%2B")
     def releaseAssetsUrl = "${binariesRepo}/releases/tags/${escRelease}".replaceAll("_NN_", publishVersion.replaceAll("[a-z]",""))
 
     // Get list of assets, concatenate into a single string
@@ -228,7 +228,7 @@ node('worker') {
         }
 
         echo "Checking if ${binariesRepoTag} is already published for JDK asset ${jdkAssetToCheck} ?"
-        def assetExists = checkJDKAssetExistsForArch(versionStr, binariesRepoTag, variant, jdkAssetToCheck)
+        def assetExists = checkJDKAssetExistsForArch(binariesRepo, versionStr, binariesRepoTag, variant, jdkAssetToCheck)
 
         if (assetExists) {
             echo "Build tag ${binariesRepoTag} is already published - nothing to do"
