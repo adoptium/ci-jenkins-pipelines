@@ -277,13 +277,13 @@ if (triggerMainBuild || triggerEvaluationBuild) {
     def jobs = [:]
     def pipelines = [:]
 
-    // Trigger Main pipeline as long as we have a target configuration
+    // Trigger Main pipeline as long as we have a non-empty target configuration
     if (triggerMainBuild && mainTargetConfigurations != "{}") {
         pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
         echo "main build targetConfigurations:"
         echo JsonOutput.prettyPrint(mainTargetConfigurations)
     }
-    // Trigger Evaluation as long as we have a target configuration
+    // Trigger Evaluation as long as we have a non-empty target configuration
     if (triggerEvaluationBuild && evaluationTargetConfigurations != "{}") {
         pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
         echo "evaluation build targetConfigurations:"
