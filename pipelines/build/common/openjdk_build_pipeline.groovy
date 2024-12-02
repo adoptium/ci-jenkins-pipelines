@@ -1867,8 +1867,6 @@ class Build {
                             context.archiveArtifacts artifacts: 'workspace/target/*.json'
                         } else {
                             context.archiveArtifacts artifacts: 'workspace/target/*'
-                            // Archive cyclone dx jars
-                            context.archiveArtifacts artifacts: "workspace/build-scripts/jobs/${buildConfig.JAVA_TO_BUILD}-${buildConfig.TARGET_OS}-${buildConfig.ARCHITECTURE}-temurin/cyclonedx-lib/**/*.jar"
                         }
                     }
                 } catch (FlowInterruptedException e) {
