@@ -275,11 +275,6 @@ node('worker') {
     }
 } // End: node('worker')
 
-echo "STATUS: triggerMainBuild: ${triggerMainBuild}"
-echo "STATUS: triggerEvaluationBuild: ${triggerEvaluationBuild}"
-triggerMainBuild=false
-triggerEvaluationBuild=false
-
 if (triggerMainBuild || triggerEvaluationBuild) {
     // Set version suffix, jdk8 has different mechanism to jdk11+
     def additionalConfigureArgs = (version > 8) ? "--with-version-opt=ea" : ""
