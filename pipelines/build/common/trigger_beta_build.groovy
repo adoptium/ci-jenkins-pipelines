@@ -154,9 +154,9 @@ def checkJDKAssetExistsForArch(String binariesRepo, String version, String relea
     }
 
     if (assetExists) {
-        echo "${arch} JDK asset for version ${version} tag ${release} exists"
+        echo "${arch} JDK asset for version ${version} tag ${releaseTag} exists"
     } else {
-        echo "${arch} JDK asset for version ${version} tag ${release} NOT FOUND"
+        echo "${arch} JDK asset for version ${version} tag ${releaseTag} NOT FOUND"
     }
     return assetExists
 }
