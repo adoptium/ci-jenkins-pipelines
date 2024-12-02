@@ -141,7 +141,7 @@ def checkJDKAssetExistsForArch(String binariesRepo, String version, String relea
     } else {
         // Work out the JDK artifact filetype
         def filetype
-        if (osarch.contains("Windows")) {
+        if (arch.contains("windows")) {
             filetype = "\\.zip"
         } else {
             filetype = "\\.tar\\.gz"
