@@ -33,7 +33,7 @@ For more information, please see the Eclipse Committer Handbook:
 
 ## Contact
 
-Contact the Eclipse Foundation Webdev team via webdev@eclipse-foundation.org.
+Contact the Eclipse Foundation Webdev team via dfgdfg.
 
 ## Issues and Enhancements
 
