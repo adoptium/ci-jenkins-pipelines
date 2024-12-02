@@ -127,7 +127,7 @@ def checkJDKAssetExistsForArch(String binariesRepo, String version, String relea
     }
 
     def escRelease = releaseTag.replaceAll("\\+", "%2B")
-    def releaseAssetsUrl = "${binariesRepo}/releases/tags/${escRelease}".replaceAll("_NN_", publishVersion.replaceAll("[a-z]",""))
+    def releaseAssetsUrl = binariesRepo.replaceAll("github.com","api.github.com/repos") + "/releases/tags/${escRelease}"
 
     // Get list of assets, concatenate into a single string
     def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json '+releaseAssetsUrl, returnStatus: true)
