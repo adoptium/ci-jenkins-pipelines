@@ -1058,15 +1058,20 @@ class Build {
     // Kick off the sign_temurin_jsf job to sign the SBOM
     private void jsfSignSBOM() {
         context.stage('SBOM Sign') {
-            context.println "RUNNING sign_temurin_jsf for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
+            
+            context.println "Running build_sign_sbom_libraries to build the SBOM libraries"
+            def buildSBOMLibrariesJob = context.build job: 'build_sign_sbom_libraries',
+                propagate: true
 
-            def params = [
+            def paramsJsf = [
                   context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                   context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                  context.string(name: 'UPSTREAM_DIR', value: 'workspace')
+                  context.string(name: 'UPSTREAM_DIR', value: 'workspace'),
+                  context.string(name:'SBOM_LIBRARY_JOB_NUMBER', value: "${buildSBOMLibrariesJob.getNumber()}")
            ]
 
-            def signSHAsJob = context.build job: 'build-scripts/release/sign_temurin_jsf',
+            context.println "RUNNING sign_temurin_jsf for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
+            def signSBOMJob = context.build job: 'build-scripts/release/sign_temurin_jsf',
                propagate: true,
                parameters: params
 
@@ -1075,7 +1080,7 @@ class Build {
                 context.sh 'rm -rf workspace/target/* || true'
                 context.copyArtifacts(
                     projectName: 'build-scripts/release/sign_temurin_jsf',
-                    selector: context.specific("${signSHAsJob.getNumber()}"),
+                    selector: context.specific("${signSBOMJob.getNumber()}"),
                     filter: '**/*.sig',
                     fingerprintArtifacts: true,
                     target: 'workspace/target/',
