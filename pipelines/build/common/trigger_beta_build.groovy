@@ -114,6 +114,47 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
     return targetConfigurationsForVariant
 }
 
+// Verify the given published release tag contains the given asset architecture
+def checkJDKAssetExistsForArch(String binariesRepo, String version, String releaseTag, String arch) {
+    def assetExists = false
+
+    echo "Verifying ${version} JDK asset for ${arch} in release: ${releaseTag}"
+
+    def escRelease = releaseTag.replaceAll("\\+", "%2B")
+    def releaseAssetsUrl = binariesRepo.replaceAll("github.com","api.github.com/repos") + "/releases/tags/${escRelease}"
+
+    // Get list of assets, concatenate into a single string
+    def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json '+releaseAssetsUrl, returnStatus: true)
+    def releaseAssets = ""
+    if (rc == 0) {
+        releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
+    }
+
+    if (releaseAssets == "") {
+        echo "No release assets for ${releaseAssetsUrl}"
+    } else {
+        // Work out the JDK artifact filetype
+        def filetype
+        if (arch.contains("windows")) {
+            filetype = "\\.zip"
+        } else {
+            filetype = "\\.tar\\.gz"
+        }
+
+        def findAsset = releaseAssets =~/.*jdk_${arch}_[^"]*${filetype}".*/
+        if (findAsset) {
+            assetExists = true
+        }
+    }
+
+    if (assetExists) {
+        echo "${arch} JDK asset for version ${version} tag ${releaseTag} exists"
+    } else {
+        echo "${arch} JDK asset for version ${version} tag ${releaseTag} NOT FOUND"
+    }
+    return assetExists
+}
+
 node('worker') {
     def adopt_tag_search
     if (version == 8) {
@@ -170,14 +211,22 @@ node('worker') {
             echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
         }
 
-        // Check binaries repo for existance of the given release?
-        echo "Checking if ${binariesRepoTag} is already published?"
-        def desiredRepoTagURL="${binariesRepo}/releases/tag/${binariesRepoTag}"
-        def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
+        // Check binaries repo for existance of the given release tag having being already built?
+        def jdkAssetToCheck = "x64_linux"
+        if (mirrorRepo.contains("aarch32-jdk8u")) {
+            // aarch32-jdk8u built in its own pipeline
+            jdkAssetToCheck = "arm_linux"
+        } else if (mirrorRepo.contains("alpine-jdk8u")) {
+            // alpine-jdk8u built in its own pipeline
+            jdkAssetToCheck = "x64_alpine-linux"
+        }
 
-        if (httpCode == "200") {
+        echo "Checking if ${binariesRepoTag} is already published for JDK asset ${jdkAssetToCheck} ?"
+        def assetExists = checkJDKAssetExistsForArch(binariesRepo, versionStr, binariesRepoTag, jdkAssetToCheck)
+
+        if (assetExists) {
             echo "Build tag ${binariesRepoTag} is already published - nothing to do"
-        } else if (httpCode == "404") {
+        } else {
             echo "New unpublished build tag ${binariesRepoTag} - triggering builds"
             if (gaTagCheck == 0) {
                 echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
@@ -185,10 +234,6 @@ node('worker') {
                 triggerMainBuild = true
             }
             triggerEvaluationBuild = true
-        } else {
-            def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
-            echo "${error}"
-            throw new Exception("${error}")
         }
     } else {
         echo "FORCE triggering specified builds.."
@@ -232,12 +277,14 @@ if (triggerMainBuild || triggerEvaluationBuild) {
     def jobs = [:]
     def pipelines = [:]
 
-    if (triggerMainBuild) {
+    // Trigger Main pipeline as long as we have a non-empty target configuration
+    if (triggerMainBuild && mainTargetConfigurations != "{}") {
         pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
         echo "main build targetConfigurations:"
         echo JsonOutput.prettyPrint(mainTargetConfigurations)
     }
-    if (triggerEvaluationBuild) {
+    // Trigger Evaluation as long as we have a non-empty target configuration
+    if (triggerEvaluationBuild && evaluationTargetConfigurations != "{}") {
         pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
         echo "evaluation build targetConfigurations:"
         echo JsonOutput.prettyPrint(evaluationTargetConfigurations)
