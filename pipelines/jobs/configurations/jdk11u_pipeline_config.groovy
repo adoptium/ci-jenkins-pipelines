@@ -70,6 +70,7 @@ class Config11 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
+                dockerImage         : 'win2022_notrhel_image',
                 additionalNodeLabels: [
                         temurin:    'win2022&&vs2022',
                         openj9:     'win2012&&vs2017',
@@ -87,6 +88,7 @@ class Config11 {
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
+                dockerImage         : 'win2022_notrhel_image',
                 additionalNodeLabels: 'win2022&&vs2022',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
@@ -246,6 +248,7 @@ class Config11 {
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
+                dockerImage         : 'win2022_notrhel_image',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',

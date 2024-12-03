@@ -68,6 +68,7 @@ class Config8 {
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
+                dockerImage         : 'win2022_notrhel_image',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                 : 'default',
                 configureArgs       : [
@@ -81,6 +82,7 @@ class Config8 {
         x32Windows    : [
                 os                  : 'windows',
                 arch                : 'x86-32',
+                dockerImage         : 'win2022_notrhel_image',
                 additionalNodeLabels: 'win2022',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
