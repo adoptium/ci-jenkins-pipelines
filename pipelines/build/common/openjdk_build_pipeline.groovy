@@ -1062,6 +1062,43 @@ class Build {
             }
         }
     }
+    private void signSBOMCyclonedx() {
+        context.stage('Sign SBOM') {
+            context.println "RUNNING sign_temurin_cyclonedx for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
+
+            def params = [
+                  context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                  context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                  context.string(name: 'UPSTREAM_DIR', value: 'workspace/target')
+           ]
+
+            def signSBOMjob = context.build job: 'sign_temurin_cyclonedx',
+               propagate: true,
+               parameters: params
+
+            context.node('worker') {
+                // Remove any previous workspace artifacts
+                context.sh 'rm -rf workspace/target/* || true'
+                context.copyArtifacts(
+                    projectName: 'sign_temurin_cyclonedx',
+                    selector: context.specific("${signSBOMjob.getNumber()}"),
+                    filter: '**/*.xml',
+                    fingerprintArtifacts: true,
+                    target: 'workspace/target/',
+                    flatten: true)
+
+                // Archive signed XML SBOMs in Jenkins
+                try {
+                    context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                        context.archiveArtifacts artifacts: 'workspace/target/*.xml'
+                    }
+               } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
+                }
+            }
+        }
+    }
+
     /*
     Lists and returns any compressed archived or sbom file contents of the top directory of the build node
     */
@@ -2411,6 +2448,7 @@ def buildScriptsAssemble(
                     try {
                         context.println "openjdk_build_pipeline: Running GPG signing process"
                         gpgSign()
+                        signSBOMCyclonedx()
                     } catch (Exception e) {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
