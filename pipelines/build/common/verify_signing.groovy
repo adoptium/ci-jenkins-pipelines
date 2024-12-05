@@ -168,7 +168,7 @@ void verifyExecutables(String unpack_dir, String issueToOrg) {
 
         // Find all exe/dll's that must be Signed
 
-        withEnv(['unpack_dir='+unpack_dir, 'signtool='+signtool]) {
+        withEnv(['unpack_dir='+unpack_dir, 'signtool='+signtool, 'issueToOrg='+issueToOrg]) {
             // groovylint-disable
             sh '''
                 #!/bin/bash
