@@ -185,8 +185,15 @@ void verifyExecutables(String unpack_dir) {
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
                     else
-                        echo "Signed correctly: ${f}"
-                        cc_signed=$((cc_signed+1))
+                        num_sigs=$("${signtool}" verify /all /pa ${f} | grep -E '^[0-9][[:space:]]+sha256' | wc -l)
+                        if [[ "$num_sigs" -ne 1 ]]; then
+                            echo "Error: ${f} has ${num_sigs} Signatures, it must only have one."
+                            unsigned="$unsigned $f"
+                            cc_unsigned=$((cc_unsigned+1))
+                        else
+                            echo "Signed correctly: ${f}"
+                            cc_signed=$((cc_signed+1))
+                        fi
                     fi
                   done
 
