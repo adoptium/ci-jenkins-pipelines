@@ -200,7 +200,7 @@ void verifyExecutables(String unpack_dir, String issueToOrg) {
                             echo "Error: ${f} is NOT signed by ${issueToOrg}."
                             unsigned="$unsigned $f"
                             cc_unsigned=$((cc_unsigned+1))
-                        elif
+                        else
                             echo "Signed correctly: ${f}"
                             cc_signed=$((cc_signed+1))
                         fi
