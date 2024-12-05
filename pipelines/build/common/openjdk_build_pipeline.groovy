@@ -748,7 +748,7 @@ class Build {
     /*
     Run the Sign downstream job. We run this job on windows and jdk8 hotspot & jdk13 mac builds.
     The job code signs and notarizes the binaries so they can run on these operating systems without encountering issues.
-    tarball signing only required for jdk8u, as jdk11+ is signed dynamically during the build.
+    Tarball signing only required for jdk8u, as jdk11+ is signed dynamically during the build.
     */
     def sign(VersionInfo versionInfo) {
         // Sign and archive jobs if needed
