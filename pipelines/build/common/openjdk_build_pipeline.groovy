@@ -1572,7 +1572,7 @@ class Build {
                                                             success=true
                                                         fi
                                                     else
-                                                        if [ "$file" =~ api-ms-win.* ] || [ "$file" =~ msvcp.* ] || [ "$file" =~ ucrtbase.* ] || [ "$file" =~ vcruntime.* ]; then
+                                                        if [[ "$file" =~ api-ms-win.* ]] || [[ "$file" =~ msvcp.* ]] || [[ "$file" =~ ucrtbase.* ]] || [[ "$file" =~ vcruntime.* ]]; then
                                                             echo "Skipping Microsoft file $file"
                                                             success=true
                                                         elif ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign; then
