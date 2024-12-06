@@ -1560,7 +1560,6 @@ class Build {
                                                 fi
                                                 for f in $FILES
                                                 do
-                                                    echo "Signing $f using Eclipse Foundation codesign service"
                                                     dir=$(dirname "$f")
                                                     file=$(basename "$f")
                                                     ms_file_skipped=false
@@ -1572,6 +1571,7 @@ class Build {
                                                         fi
                                                     fi
                                                     if [ $ms_file_skipped == false ]; then
+                                                        echo "Signing $f using Eclipse Foundation codesign service"
                                                         mv "$f" "${dir}/unsigned_${file}"
                                                         success=false
                                                         if [ "${base_os}" == "mac" ]; then
