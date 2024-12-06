@@ -753,7 +753,7 @@ class Build {
     def sign(VersionInfo versionInfo) {
         // Sign and archive jobs if needed
         if (
-            (buildConfig.TARGET_OS == 'windows' || (buildConfig.TARGET_OS == 'mac') && buildConfig.JAVA_TO_BUILD == 'jdk8u')
+            (buildConfig.TARGET_OS == 'windows' || buildConfig.TARGET_OS == 'mac') && buildConfig.JAVA_TO_BUILD == 'jdk8u')
         ) {
             context.stage('sign zip/tgz') {
                 def filter = ''
