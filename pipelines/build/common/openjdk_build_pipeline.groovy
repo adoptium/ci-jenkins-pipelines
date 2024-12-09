@@ -1066,14 +1066,14 @@ class Build {
             def paramsJsf = [
                   context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                   context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                  context.string(name: 'UPSTREAM_DIR', value: 'workspace'),
+                  context.string(name: 'UPSTREAM_DIR', value: 'workspace/target'),
                   context.string(name: 'SBOM_LIBRARY_JOB_NUMBER', value: "${buildSBOMLibrariesJob.getNumber()}")
            ]
 
             context.println "RUNNING sign_temurin_jsf for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
             def signSBOMJob = context.build job: 'build-scripts/release/sign_temurin_jsf',
                propagate: true,
-               parameters: params
+               parameters: paramsJsf
 
             context.node('worker') {
                 // Remove any previous workspace artifacts
