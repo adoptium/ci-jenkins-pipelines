@@ -1551,6 +1551,8 @@ class Build {
                                                 #!/bin/bash
                                                 set -eu
                                                 echo "Signing JMOD files under build path ${base_path} for base_os ${base_os}"
+                                                echo "FINDING libjli.dylib ..."
+                                                find "${base_path}" -name "libjli.dylib"
                                                 TMP_DIR="${base_path}/"
                                                 if [ "${base_os}" == "mac" ]; then
                                                     ENTITLEMENTS="$WORKSPACE/entitlements.plist"
