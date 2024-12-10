@@ -748,13 +748,11 @@ class Build {
     /*
     Run the Sign downstream job. We run this job on windows and jdk8 hotspot & jdk13 mac builds.
     The job code signs and notarizes the binaries so they can run on these operating systems without encountering issues.
-    Tarball signing only required for jdk8u, as jdk11+ is signed dynamically during the build.
     */
     def sign(VersionInfo versionInfo) {
         // Sign and archive jobs if needed
         if (
-            (buildConfig.TARGET_OS == 'windows' || buildConfig.TARGET_OS == 'mac') &&
-            buildConfig.JAVA_TO_BUILD == 'jdk8u'
+            buildConfig.TARGET_OS == 'windows' || (buildConfig.TARGET_OS == 'mac')
         ) {
             context.stage('sign zip/tgz') {
                 def filter = ''
@@ -1551,8 +1549,6 @@ class Build {
                                                 #!/bin/bash
                                                 set -eu
                                                 echo "Signing JMOD files under build path ${base_path} for base_os ${base_os}"
-                                                echo "FINDING libjli.dylib ..."
-                                                find "${base_path}" -name "libjli.dylib"
                                                 TMP_DIR="${base_path}/"
                                                 if [ "${base_os}" == "mac" ]; then
                                                     ENTITLEMENTS="$WORKSPACE/entitlements.plist"
