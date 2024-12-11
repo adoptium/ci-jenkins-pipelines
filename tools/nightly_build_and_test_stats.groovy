@@ -57,7 +57,7 @@ def getPlatformReproTestMap() {
 
 // Check if the given tag is a -ga tag ?
 def isGaTag(String version, String tag) {
-    if (version == "${params.TIP_RELEASE}".trim()) {
+    if ("${params.TIP_RELEASES}".contains(version)) {
         // Tip release has no GA tags
         return false
     }
@@ -595,7 +595,7 @@ node('worker') {
     def apiUrl    = "${params.API_URL}"
     def slackChannel = "${params.SLACK_CHANNEL}"
     def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+") // feature versions 
-    def tipRelease      = "${params.TIP_RELEASE}".trim() // Current jdk(head) version
+    def tipReleases     = "${params.TIP_RELEASES}".split("[, ]+") // Current jdk(head) versions
     def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
     def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
     def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
@@ -668,8 +668,9 @@ node('worker') {
               }
             }
 
-            // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
-            if (tipRelease != "") {
+            // Check tip_releases status, by querying binaries repo as API does not server the "tip" dev releases
+            if (tipReleases.size() > 0) {
+             tipReleases.each { tipRelease ->
               def latestOpenjdkBuild = getLatestOpenjdkBuildTag(tipRelease)
               def tipVersion = tipRelease.replaceAll("[a-z]","").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
@@ -677,6 +678,7 @@ node('worker') {
               verifyReleaseContent(tipRelease, releaseName, variant, status)
               echo "  ${tipRelease} release binaries verification: "+status['assets']
               healthStatus[tipRelease] = status
+             }
             }
         }
     }
@@ -698,8 +700,8 @@ node('worker') {
         def pipelinesOfInterest = ""
         def allReleases = []
         allReleases.addAll(featureReleases)
-        if (tipRelease != "") {
-            allReleases.add(tipRelease)
+        if (tipReleases.size() > 0) {
+            allReleases.addAll(tipReleases)
         }
         if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
            allReleases.addAll(nonTagBuildReleases)
@@ -891,7 +893,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+////        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
         echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
@@ -901,8 +903,8 @@ node('worker') {
             echo '-------------- Latest pipeline health report ------------------'
             def allReleases = []
             allReleases.addAll(featureReleases)
-            if (tipRelease != "") {
-                allReleases.add(tipRelease)
+            if (tipReleases.size() > 0) {
+                allReleases.addAll(tipReleases)
             }
             if (("${params.NON_TAG_BUILD_RELEASES}".trim() != "")) {
                allReleases.addAll(nonTagBuildReleases)
@@ -1048,7 +1050,7 @@ node('worker') {
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*.${reproducibilityText} Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+////                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
