@@ -389,10 +389,6 @@ class Build {
         def jdkBranch = getJDKBranch()
         def jdkRepo = getJDKRepo()
         def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == 'openj9') ? buildConfig.SCM_REF : 'master'
-
-        def vendorTestRepos = ''
-        def vendorTestBranches = ''
-        def vendorTestDirs = ''
         List testList = buildConfig.TEST_LIST
         def enableTestDynamicParallel = Boolean.valueOf(buildConfig.ENABLE_TESTDYNAMICPARALLEL)
         def aqaBranch = 'master'
@@ -411,7 +407,6 @@ class Build {
             testTime = '120'
             parallel = 'Dynamic'
         }
-        def testLabel = ''
 
         testList.each { testType ->
             // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
@@ -446,10 +441,14 @@ class Build {
                             }
                         }
 
+                        def testLabel = ''
                         // Eclipse Adoptium Temurin reproducible comparing on x64 mac required to run on aarch64 mac
                         if (testType  == 'special.system' && jobName.contains('x86-64_mac') && buildConfig.VARIANT == 'temurin') {
                             testLabel = 'ci.role.test&&hw.arch.aarch64&&(sw.os.osx||sw.os.mac)'
                         }
+                        def vendorTestRepos = ''
+                        def vendorTestBranches = ''
+                        def vendorTestDirs = ''
                         if (testType  == 'special.system' || testType  == 'dev.system') {
                             def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
                             vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
@@ -2478,6 +2477,7 @@ def buildScriptsAssemble(
             } catch (Exception e) {
                 currentBuild.result = 'FAILURE'
                 context.println "Execution error: ${e}"
+
                 def sw = new StringWriter()
                 def pw = new PrintWriter(sw)
                 e.printStackTrace(pw)
