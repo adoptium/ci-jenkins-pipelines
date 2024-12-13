@@ -512,7 +512,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             }
 
             def pipelineLink = "${trssURL}/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
-            if (mapOfMoreRecentBuildIDs.containsKey(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("") && "${mapOfMoreRecentBuildIDs[onePlatform]}" != trssId) {
+            if (mapOfMoreRecentBuildIDs.containsKey(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("")) {
                 echo "Overriding the TRSS build ID for ${jdkVersion}, platform ${onePlatform}, tag ${srcTag}"
                 echo "Original TRSS pipeline link: ${pipelineLink}"
                 echo "New link: ${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
