@@ -274,7 +274,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
     echo "Finished getting build IDs by platform."
 }
 
-// Return our best guess at the url for the first pipeline that generated builds from a specific tag.
+// Return our best guess at the url for the latest pipeline that generated builds from a specific tag.
 // This pipeline is expected to have attempted to build JDKs for all supported platforms.
 def getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
     def functionBuildUrl = ["", "", ""]
@@ -284,6 +284,7 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
     def pipelineJson = new JsonSlurper().parseText(pipeline)
 
     if (pipelineJson.size() > 0) {
+        def foundBuildTimestamp = 0
         pipelineJson.each { job ->
             def overridePublishName = ""
             def buildScmRef = ""
@@ -306,11 +307,18 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
-                        functionBuildUrl = [job.buildUrl, job._id, job.status]
+                        if (job.timestamp > foundBuildTimestamp) {
+                            functionBuildUrl = [job.buildUrl, job._id, job.status]
+                            foundBuildTimestamp = job.timestamp
+                            echo "Found latest "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                        }
                     }
                 } else {
-                    functionBuildUrl = [job.buildUrl, job._id, job.status]
-                    echo "Found "+featureRelease+" pipeline with this ID: "+job._id
+                    if (job.timestamp > foundBuildTimestamp) {
+                        functionBuildUrl = [job.buildUrl, job._id, job.status]
+                        foundBuildTimestamp = job.timestamp
+                        echo "Found latest "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                    }
                 }
             }
         }
@@ -504,7 +512,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             }
 
             def pipelineLink = "${trssURL}/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
-            if (mapOfMoreRecentBuildIDs.containsKey(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("")) {
+            if (mapOfMoreRecentBuildIDs.containsKey(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("") && "${mapOfMoreRecentBuildIDs[onePlatform]}" != trssId) {
                 echo "Overriding the TRSS build ID for ${jdkVersion}, platform ${onePlatform}, tag ${srcTag}"
                 echo "Original TRSS pipeline link: ${pipelineLink}"
                 echo "New link: ${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
@@ -893,7 +901,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        ////slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
         echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
@@ -958,7 +966,7 @@ node('worker') {
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt")
 
-                        if ( reproBuildUrl != "" && callWgetSafely("${trssUrl}/api/getBuildHistory?buildUrl=${reproBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
+                        if ( reproBuildUrl != "" ) {
                             echo "This pipeline has testing enabled: ${reproBuildUrl}"
                             echo "This pipeline's current status is ${reproBuildStatus}"
 
@@ -991,9 +999,9 @@ node('worker') {
                                 errorMsg += "\nBuild repro summary: "+summaryOfRepros
                             }
                         } else {
-                            // Ignore test results if the tests for this pipeline were intentionally disabled, or if we cannot find a likely pipeline job.
-                            reproducibleBuilds[featureRelease][0] = "N/A - Tests disabled"
-                            echo "This pipeline is either a blank string, or does not have testing enabled: ${reproBuildUrl}"
+                            // Ignore if we cannot find a likely pipeline job.
+                            reproducibleBuilds[featureRelease][0] = "N/A"
+                            echo "This pipeline is blank string"
                         }
                     }
                 }
@@ -1050,7 +1058,7 @@ node('worker') {
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*.${reproducibilityText} Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                ////slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
