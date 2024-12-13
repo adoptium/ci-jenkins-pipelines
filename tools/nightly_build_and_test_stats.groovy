@@ -967,7 +967,7 @@ node('worker') {
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt")
 
                         if ( reproBuildUrl != "" ) {
-                            echo "This pipeline has testing enabled: ${reproBuildUrl}"
+                            echo "Latest pipeline: ${reproBuildUrl}"
                             echo "This pipeline's current status is ${reproBuildStatus}"
 
                             getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
