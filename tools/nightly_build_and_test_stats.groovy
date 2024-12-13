@@ -274,7 +274,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
     echo "Finished getting build IDs by platform."
 }
 
-// Return our best guess at the url for the first pipeline that generated builds from a specific tag.
+// Return our best guess at the url for the latest pipeline that generated builds from a specific tag.
 // This pipeline is expected to have attempted to build JDKs for all supported platforms.
 def getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
     def functionBuildUrl = ["", "", ""]
@@ -284,6 +284,7 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
     def pipelineJson = new JsonSlurper().parseText(pipeline)
 
     if (pipelineJson.size() > 0) {
+        def foundBuildTimestamp = 0
         pipelineJson.each { job ->
             def overridePublishName = ""
             def buildScmRef = ""
@@ -306,11 +307,18 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
-                        functionBuildUrl = [job.buildUrl, job._id, job.status]
+                        if (job.timestamp > foundBuildTimestamp) {
+                            functionBuildUrl = [job.buildUrl, job._id, job.status]
+                            foundBuildTimestamp = job.timestamp
+                            echo "Found latest "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                        }
                     }
                 } else {
-                    functionBuildUrl = [job.buildUrl, job._id, job.status]
-                    echo "Found "+featureRelease+" pipeline with this ID: "+job._id
+                    if (job.timestamp > foundBuildTimestamp) {
+                        functionBuildUrl = [job.buildUrl, job._id, job.status]
+                        foundBuildTimestamp = job.timestamp
+                        echo "Found latest "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                    }
                 }
             }
         }
@@ -958,8 +966,8 @@ node('worker') {
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt")
 
-                        if ( reproBuildUrl != "" && callWgetSafely("${trssUrl}/api/getBuildHistory?buildUrl=${reproBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
-                            echo "This pipeline has testing enabled: ${reproBuildUrl}"
+                        if ( reproBuildUrl != "" ) {
+                            echo "Latest pipeline: ${reproBuildUrl}"
                             echo "This pipeline's current status is ${reproBuildStatus}"
 
                             getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
@@ -991,9 +999,9 @@ node('worker') {
                                 errorMsg += "\nBuild repro summary: "+summaryOfRepros
                             }
                         } else {
-                            // Ignore test results if the tests for this pipeline were intentionally disabled, or if we cannot find a likely pipeline job.
-                            reproducibleBuilds[featureRelease][0] = "N/A - Tests disabled"
-                            echo "This pipeline is either a blank string, or does not have testing enabled: ${reproBuildUrl}"
+                            // Ignore if we cannot find a likely pipeline job.
+                            reproducibleBuilds[featureRelease][0] = "N/A"
+                            echo "This pipeline is blank string"
                         }
                     }
                 }
