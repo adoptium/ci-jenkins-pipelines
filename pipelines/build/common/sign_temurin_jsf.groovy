@@ -24,7 +24,7 @@ limitations under the License.
 
 import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
 
-def NODE_LABEL = "jsfsign"
+def NODE_LABEL = 'jsfsign'
 
 stage('Signing SBOM') {
     // Build SBOM Libraries
