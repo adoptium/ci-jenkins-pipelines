@@ -22,6 +22,8 @@ limitations under the License.
     UPSTREAM_DIR                Directory of UPSTREAM_JOB_NAME to copy artifacts from
 */
 
+import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
+
 def NODE_LABEL = "jsfsign"
 
 stage('Signing SBOM') {
