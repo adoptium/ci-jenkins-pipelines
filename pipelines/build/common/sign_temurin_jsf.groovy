@@ -24,17 +24,17 @@ limitations under the License.
 
 import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
 
-def NODE_LABEL = 'jsfsign'
-
 stage('Signing SBOM') {
-    // Build SBOM Libraries
-    println "Kicking off build_sign_sbom_libraries to build SBOM libraries"
-    def buildSBOMLibrariesJob = context.build job: 'build_sign_sbom_libraries',
-            propagate: true
 
-    node(NODE_LABEL) {
+    node('jsfsign') {
 
         try {
+            
+            // Build SBOM Libraries
+            println "Kicking off build_sign_sbom_libraries to build SBOM libraries"
+            def buildSBOMLibrariesJob = context.build job: 'build_sign_sbom_libraries',
+                propagate: true
+
             // Clean workspace
             println "Cleaning workspace"
             cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
