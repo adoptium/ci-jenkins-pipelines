@@ -64,7 +64,7 @@ stage('Signing SBOM') {
                 // Sign SBOMS
                 sh ''' 
                     cd artifacts
-                    for ARTIFACT in $(find . \( -name *sbom*.json \)  | grep -v metadata.json); do
+                    for ARTIFACT in $(find . ( -name *sbom*.json )  | grep -v metadata.json); do
                     echo "Signing ${ARTIFACT}"
                     java -cp "cyclonedx-lib/build/jar/*" temurin.sbom.TemurinSignSBOM --verbose --signSBOM --jsonFile "${ARTIFACT}" --privateKeyFile "$PRIVATE_KEY"
 
