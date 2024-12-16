@@ -54,7 +54,7 @@ stage('Signing SBOM') {
                 selector: specific("${buildSBOMLibrariesJob.getNumber()}"),
                 filter: 'cyclonedx-lib/build/jar/*.jar',
                 fingerprintArtifacts: true,
-                target: 'artifacts',
+                target: 'artifacts/cyclonedx-lib/build/jar',
                 flatten: true
                 )
 
@@ -71,16 +71,15 @@ stage('Signing SBOM') {
                     ls -la
                     for ARTIFACT in $(find . -name "*sbom*.json" | grep -v metadata.json); do
                     echo "Signing ${ARTIFACT}"
-                    java -cp "./*.jar" temurin.sbom.TemurinSignSBOM --verbose --signSBOM --jsonFile "${ARTIFACT}" --privateKeyFile "$PRIVATE_KEY"
+                    java -cp "cyclonedx-lib/build/jar/*" temurin.sbom.TemurinSignSBOM --verbose --signSBOM --jsonFile "${ARTIFACT}" --privateKeyFile "$PRIVATE_KEY"
 
                     echo "Verifying Signature on ${ARTIFACT}"
-                    java -cp "./*.jar" temurin.sbom.TemurinSignSBOM --verbose --verifySignature --jsonFile "${ARTIFACT}" --publicKeyFile "$PUBLIC_KEY"
+                    java -cp "cyclonedx-lib/build/jar/*" temurin.sbom.TemurinSignSBOM --verbose --verifySignature --jsonFile "${ARTIFACT}" --publicKeyFile "$PUBLIC_KEY"
                     done
                 '''
             }
             timeout(time: 1, unit: 'HOURS') {
-                archiveArtifacts artifacts: 'artifacts/*sbom*.json',
-                    excludes: '*metadata*'
+                archiveArtifacts artifacts: 'artifacts/*sbom*.json'
             }
         }
         catch (FlowInterruptedException e) {
