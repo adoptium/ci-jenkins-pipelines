@@ -1081,7 +1081,7 @@ class Build {
                 context.copyArtifacts(
                     projectName: 'build-scripts/release/sign_temurin_jsf',
                     selector: context.specific("${signSBOMJob.getNumber()}"),
-                    filter: '**/*.sig',
+                    filter: '**/*sbom*.json',
                     fingerprintArtifacts: true,
                     target: 'workspace/target/',
                     flatten: true)
@@ -1089,7 +1089,7 @@ class Build {
                 // Archive SBOM signatures in Jenkins
                 try {
                     context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                        context.archiveArtifacts artifacts: 'workspace/target/*.sig'
+                        context.archiveArtifacts artifacts: 'workspace/target/*sbom*.json'
                     }
                } catch (FlowInterruptedException e) {
                     throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
