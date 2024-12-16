@@ -38,7 +38,7 @@ stage('Signing SBOM') {
             println "Cleaning workspace"
             cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
-            println "Copying SBOMs from ${UPSTREAM_JOB_NUMBER} build number ${UPSTREAM_JOB_NUMBER}"
+            println "Copying SBOMs from ${UPSTREAM_JOB_NAME} build number ${UPSTREAM_JOB_NUMBER}"
             copyArtifacts(
                 projectName: "${UPSTREAM_JOB_NAME}",
                 selector: specific("${UPSTREAM_JOB_NUMBER}"),
@@ -65,7 +65,7 @@ stage('Signing SBOM') {
                 // Sign SBOMS
                 sh ''' 
                     cd artifacts
-                    for ARTIFACT in $(find . ( -name *sbom*.json )  | grep -v metadata.json); do
+                    for ARTIFACT in $(find . -name *sbom*.json | grep -v metadata.json); do
                     echo "Signing ${ARTIFACT}"
                     java -cp "cyclonedx-lib/build/jar/*" temurin.sbom.TemurinSignSBOM --verbose --signSBOM --jsonFile "${ARTIFACT}" --privateKeyFile "$PRIVATE_KEY"
 
