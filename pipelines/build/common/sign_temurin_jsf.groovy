@@ -64,6 +64,9 @@ stage('Signing SBOM') {
             withCredentials([file(credentialsId: privateKey, variable: 'PRIVATE_KEY'), file(credentialsId: publicKey, variable: 'PUBLIC_KEY')]) {   
                 // Sign SBOMS
                 sh ''' 
+                    #!/bin/bash
+                    set -eu
+
                     cd artifacts
                     for ARTIFACT in $(find . -name "*sbom*.json" | grep -v metadata.json); do
                     echo "Signing ${ARTIFACT}"
