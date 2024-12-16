@@ -29,10 +29,9 @@ stage('Signing SBOM') {
     node('jsfsign') {
 
         try {
-            
             // Build SBOM Libraries
             println "Kicking off build_sign_sbom_libraries to build SBOM libraries"
-            def buildSBOMLibrariesJob = context.build job: 'build_sign_sbom_libraries',
+            def buildSBOMLibrariesJob = build job: 'build_sign_sbom_libraries',
                 propagate: true
 
             // Clean workspace
@@ -40,9 +39,9 @@ stage('Signing SBOM') {
             cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
             println "Copying SBOMs from ${UPSTREAM_JOB_NUMBER} build number ${UPSTREAM_JOB_NUMBER}"
-            context.copyArtifacts(
+            copyArtifacts(
                 projectName: "${UPSTREAM_JOB_NAME}",
-                selector: context.specific("${UPSTREAM_JOB_NUMBER}"),
+                selector: specific("${UPSTREAM_JOB_NUMBER}"),
                 filter: 'workspace/target/*sbom*.json',
                 fingerprintArtifacts: true,
                 target: 'artifacts',
@@ -50,9 +49,9 @@ stage('Signing SBOM') {
                 )
 
             println "Copying JARs from build_sign_sbom_libraries build number ${buildSBOMLibrariesJob.getNumber()}"
-            context.copyArtifacts(
+            copyArtifacts(
                 projectName: "build_sign_sbom_libraries",
-                selector: context.specific("${buildSBOMLibrariesJob.getNumber()}"),
+                selector: specific("${buildSBOMLibrariesJob.getNumber()}"),
                 filter: 'cyclonedx-lib/build/jar/*.jar',
                 fingerprintArtifacts: true,
                 target: 'artifacts',
@@ -75,7 +74,7 @@ stage('Signing SBOM') {
                     done
                 '''
             }
-            context.timeout(time: 1, unit: 'HOURS') {
+            timeout(time: 1, unit: 'HOURS') {
                 archiveArtifacts artifacts: 'artifacts/*sbom*.json'
             }
         }
