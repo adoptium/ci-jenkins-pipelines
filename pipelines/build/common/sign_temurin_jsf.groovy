@@ -71,15 +71,16 @@ stage('Signing SBOM') {
                     ls -la
                     for ARTIFACT in $(find . -name "*sbom*.json" | grep -v metadata.json); do
                     echo "Signing ${ARTIFACT}"
-                    java -cp "cyclonedx-lib/build/jar/*.jar" temurin.sbom.TemurinSignSBOM --verbose --signSBOM --jsonFile "${ARTIFACT}" --privateKeyFile "$PRIVATE_KEY"
+                    java -cp "./*.jar" temurin.sbom.TemurinSignSBOM --verbose --signSBOM --jsonFile "${ARTIFACT}" --privateKeyFile "$PRIVATE_KEY"
 
                     echo "Verifying Signature on ${ARTIFACT}"
-                    java -cp "cyclonedx-lib/build/jar/*.jar" temurin.sbom.TemurinSignSBOM --verbose --verifySignature --jsonFile "${ARTIFACT}" --publicKeyFile "$PUBLIC_KEY"
+                    java -cp "./*.jar" temurin.sbom.TemurinSignSBOM --verbose --verifySignature --jsonFile "${ARTIFACT}" --publicKeyFile "$PUBLIC_KEY"
                     done
                 '''
             }
             timeout(time: 1, unit: 'HOURS') {
-                archiveArtifacts artifacts: 'artifacts/*sbom*.json'
+                archiveArtifacts artifacts: 'artifacts/*sbom*.json',
+                    excludes: '*metadata*'
             }
         }
         catch (FlowInterruptedException e) {
