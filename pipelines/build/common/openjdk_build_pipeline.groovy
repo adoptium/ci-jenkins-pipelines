@@ -2199,11 +2199,11 @@ def buildScriptsAssemble(
                                             }
                                             cleanWorkspace = false
                                         }
-                                        // For Windows docker build also clean alternative workspace
-                                        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
+                                        // For Windows build also clean alternative workspace
+                                        if ( buildConfig.TARGET_OS == 'windows' ) {
                                             context.ws(workspace) {
                                                 try {
-                                                    context.println "Windows docker build cleaning" + context.WORKSPACE
+                                                    context.println "Windows build cleaning" + context.WORKSPACE
                                                     context.cleanWs notFailBuild: true
                                                 } catch (e) {
                                                     context.println "Failed to clean ${e}"
