@@ -2199,6 +2199,17 @@ def buildScriptsAssemble(
                                             }
                                             cleanWorkspace = false
                                         }
+                                        // For Windows docker build also clean alternative workspace
+                                        if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
+                                            context.ws(workspace) {
+                                                try {
+                                                    context.println "Windows docker build cleaning" + context.WORKSPACE
+                                                    context.cleanWs notFailBuild: true
+                                                } catch (e) {
+                                                    context.println "Failed to clean ${e}"
+                                                }
+                                            }
+                                        }
                                     }
                                 } catch (FlowInterruptedException e) {
                                     throw new Exception("[ERROR] Controller clean workspace timeout (${buildTimeouts.CONTROLLER_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
