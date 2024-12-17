@@ -1562,7 +1562,7 @@ class Build {
                                                     ms_file_skipped=false
                                                     if [ "${base_os}" == "windows" ]; then
                                                         # Check if file is a Microsoft supplied file that is already signed
-                                                        if [[ "$file" =~ api-ms-win.* ]] || [[ "$file" =~ msvcp.* ]] || [[ "$file" =~ ucrtbase.* ]] || [[ "$file" =~ vcruntime.* ]]; then
+                                                        if [[ "$file" =~ api-ms-win.* ]] || [[ "$file" =~ API-MS-Win.* ]] || [[ "$file" =~ msvcp.* ]] || [[ "$file" =~ ucrtbase.* ]] || [[ "$file" =~ vcruntime.* ]]; then
                                                             echo "Skipping Microsoft file $file"
                                                             ms_file_skipped=true
                                                         fi
