@@ -1644,7 +1644,7 @@ def postBuildWSclean(
                                         context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
                                         context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
                                     } catch (e) {
-                                        context.println "Failed to clean workspace non-hidden files ${e}"
+                                        context.println "ERROR: Failed to clean workspace non-hidden files ${e}"
                                     }
 
                                     // Clean remaining hidden files using cleanWs
