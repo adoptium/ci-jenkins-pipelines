@@ -2217,7 +2217,7 @@ def buildScriptsAssemble(
                                                     context.println "Windows build cleaning" + context.WORKSPACE
                                                     context.cleanWs notFailBuild: true
                                                 } catch (e) {
-                                                    context.println "Failed to clean ${e}"
+                                                    context.println "ERROR: Failed to clean ${e}"
                                                 }
                                             }
                                         }
