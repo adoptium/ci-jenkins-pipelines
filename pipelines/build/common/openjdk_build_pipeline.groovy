@@ -1640,8 +1640,12 @@ def postBuildWSclean(
                             // Issue: https://issues.jenkins.io/browse/JENKINS-64779
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 if (cleanWorkspaceAfter) {
-                                    context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
+                                    try {
+                                        context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
+                                        context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
+                                    } catch (e) {
+                                        context.println "Failed to clean workspace non-hidden files ${e}"
+                                    }
 
                                     // Clean remaining hidden files using cleanWs
                                     try {
@@ -1651,8 +1655,12 @@ def postBuildWSclean(
                                         context.println "Failed to clean ${e}"
                                     }
                                 } else if (cleanWorkspaceBuildOutputAfter) {
-                                    context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
-                                    batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    try {
+                                      context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
+                                      batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    } catch (e) {
+                                        context.println "Failed to clean workspace build output files ${e}"
+                                    }
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
@@ -1687,6 +1695,7 @@ def buildScriptsAssemble(
         batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
     }
     context.stage('assemble') {
+      try {
         // This would ideally not be required but it's due to lack of UID mapping in windows containers
         if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE) {
             context.bat('chmod -R a+rwX ' + '/cygdrive/c/workspace/openjdk-build/workspace/build/src/build/*')
@@ -1756,7 +1765,9 @@ def buildScriptsAssemble(
             }
             throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
         }
+      } finally {
         postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
+      }
     } // context.stage('assemble')
 } // End of buildScriptsAssemble() 1643-1765
 
@@ -2199,7 +2210,7 @@ def buildScriptsAssemble(
                                             }
                                             cleanWorkspace = false
                                         }
-                                        // For Windows build also clean alternative workspace
+                                        // For Windows build also clean alternative(shorter path length) workspace
                                         if ( buildConfig.TARGET_OS == 'windows' ) {
                                             context.ws(workspace) {
                                                 try {
