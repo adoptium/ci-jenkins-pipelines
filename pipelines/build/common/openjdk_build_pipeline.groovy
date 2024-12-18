@@ -1659,7 +1659,7 @@ def postBuildWSclean(
                                       context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
                                       batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                     } catch (e) {
-                                        context.println "Failed to clean workspace build output files ${e}"
+                                        context.println "ERROR: Failed to clean workspace build output files ${e}"
                                     }
                                 }
                             } else {
