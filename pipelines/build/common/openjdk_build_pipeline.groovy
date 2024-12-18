@@ -1644,7 +1644,7 @@ def postBuildWSclean(
                                         context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
                                         context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
                                     } catch (e) {
-                                        context.println "ERROR: Failed to clean workspace non-hidden files ${e}"
+                                        context.println "Warning: Failed to clean workspace non-hidden files ${e}"
                                     }
 
                                     // Clean remaining hidden files using cleanWs
@@ -1652,14 +1652,14 @@ def postBuildWSclean(
                                         context.println 'Cleaning workspace hidden files using cleanWs: ' + context.WORKSPACE
                                         context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
                                     } catch (e) {
-                                        context.println "Failed to clean ${e}"
+                                        context.println "Warning: Failed to clean ${e}"
                                     }
                                 } else if (cleanWorkspaceBuildOutputAfter) {
                                     try {
                                       context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
                                       batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
                                     } catch (e) {
-                                        context.println "ERROR: Failed to clean workspace build output files ${e}"
+                                        context.println "Warning: Failed to clean workspace build output files ${e}"
                                     }
                                 }
                             } else {
@@ -2206,7 +2206,7 @@ def buildScriptsAssemble(
                                             try {
                                                 context.cleanWs notFailBuild: true
                                             } catch (e) {
-                                                context.println "Failed to clean ${e}"
+                                                context.println "Warning: Failed to clean ${e}"
                                             }
                                             cleanWorkspace = false
                                         }
@@ -2217,7 +2217,7 @@ def buildScriptsAssemble(
                                                     context.println "Windows build cleaning" + context.WORKSPACE
                                                     context.cleanWs notFailBuild: true
                                                 } catch (e) {
-                                                    context.println "ERROR: Failed to clean ${e}"
+                                                    context.println "Warning: Failed to clean ${e}"
                                                 }
                                             }
                                         }
