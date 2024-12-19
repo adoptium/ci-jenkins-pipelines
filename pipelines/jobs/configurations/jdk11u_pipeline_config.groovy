@@ -70,7 +70,9 @@ class Config11 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                dockerImage         : 'win2022_notrhel_image',
+                dockerImage         : 'windows2022_build_iamge',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: [
                         temurin:    'win2022&&vs2022',
                         openj9:     'win2012&&vs2017',
@@ -88,7 +90,9 @@ class Config11 {
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                dockerImage         : 'win2022_notrhel_image',
+                dockerImage         : 'windows2022_build_iamge',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022&&vs2022',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
@@ -248,7 +252,9 @@ class Config11 {
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
-                dockerImage         : 'win2022_notrhel_image',
+                dockerImage         : 'windows2022_build_iamge',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
