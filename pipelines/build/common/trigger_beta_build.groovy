@@ -276,10 +276,17 @@ if (triggerMainBuild || triggerEvaluationBuild) {
     // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
     def jobs = [:]
     def pipelines = [:]
+    def solarisBuildJob = false
 
     // Trigger Main pipeline as long as we have a non-empty target configuration
     if (triggerMainBuild && mainTargetConfigurations != "{}") {
-        pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+        if (version == 8 && (mainTargetConfigurations.contains("x64Solaris") || mainTargetConfigurations.contains("sparcv9Solaris"))) {
+            // Special case to handle building jdk8u Solaris
+            pipelines["main"] = "build-scripts/jobs/jdk8u/jdk8u-solaris-x64-temurin-simple"
+            solarisBuildJob = true
+        } else {
+            pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+        }
         echo "main build targetConfigurations:"
         echo JsonOutput.prettyPrint(mainTargetConfigurations)
     }
@@ -297,7 +304,14 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                 stage("Trigger build pipeline - ${pipeline}") {
                     echo "Triggering ${pipeline} for $latestAdoptTag"
 
-                    def jobParams = [
+                    def jobParams
+                    if (solarisBuildJob) {
+                        jobParams = [
+                            string(name: 'VARIANT',                 value: "$variant"),
+                            string(name: 'SCM_REF',                 value: "$latestAdoptTag"),
+                        ]
+                    } else {
+                        jobParams = [
                             string(name: 'releaseType',             value: "Weekly"),
                             string(name: 'scmReference',            value: "$latestAdoptTag"),
                             string(name: 'overridePublishName',     value: "$publishJobTag"),
@@ -305,6 +319,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                             booleanParam(name: 'enableTests',       value: enableTesting),
                             string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                         ]
+                    }
 
                     // Specify the required targetConfigurations
                     if (pipeline_type == "main") {
