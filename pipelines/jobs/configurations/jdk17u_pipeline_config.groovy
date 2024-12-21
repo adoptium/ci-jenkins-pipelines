@@ -29,7 +29,7 @@ class Config17 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
                 ],
                 additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
+                        openj9      : '!sw.tool.glibc.2_12'
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
