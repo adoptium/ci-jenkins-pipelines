@@ -776,11 +776,17 @@ class Builder implements Serializable {
     /*
     Call job to push artifacts to github. Usually it's only executed on a nightly build
     */
-    def publishBinary(IndividualBuildConfig config=null) {
+    def publishBinary(IndividualBuildConfig config=null, String jobResult, String jobUrl) {
         def timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
         def javaVersion=determineReleaseToolRepoVersion()
         def stageName = 'BETA publish'
         def releaseComment = 'BETA publish'
+        def releaseWarning = ''
+        if ( jobResult != "SUCCESS" && jobResult != "UNSTABLE" ) {
+            // Build was not successful, add warning and link to build job
+            releaseWarning = '<a href=' + jobUrl + '><span style="color:red;">WARNING: pipeline status was <b>' + jobResult + '</b></span></a> : '
+        }
+        
         def tag = "${javaToBuild}-${timestamp}"
         if (publishName) {
             tag = publishName
@@ -788,7 +794,7 @@ class Builder implements Serializable {
         def osArch = 'all available OS&ARCHs'
         def artifactsToCopy = '**/temurin/*.tar.gz,**/temurin/*.zip,**/temurin/*.sha256.txt,**/temurin/*.msi,**/temurin/*.pkg,**/temurin/*.json,**/temurin/*.sig'
         def dryRun = false 
-        def String releaseToolUrl = "${context.HUDSON_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
+        String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?"
         if ( config != null ) {
             def prefixOfArtifactsToCopy = "**/${config.TARGET_OS}/${config.ARCHITECTURE}/${config.VARIANT}"             
             artifactsToCopy = "${prefixOfArtifactsToCopy}/*.tar.gz,${prefixOfArtifactsToCopy}/*.zip,${prefixOfArtifactsToCopy}/*.sha256.txt,${prefixOfArtifactsToCopy}/*.msi,${prefixOfArtifactsToCopy}/*.pkg,${prefixOfArtifactsToCopy}/*.json,${prefixOfArtifactsToCopy}/*.sig"
@@ -828,7 +834,7 @@ class Builder implements Serializable {
         releaseToolUrl += "&TAG=${tag}&UPSTREAM_JOB_NAME=${urlJobName}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
 
         context.echo "return releaseToolUrl is ${releaseToolUrl}"
-        return ["${releaseToolUrl}", "${releaseComment}"]
+        return ["${releaseToolUrl}", "${releaseComment}", "${releaseWarning}"]
     }
 
     /*
@@ -975,8 +981,8 @@ class Builder implements Serializable {
 
                                         copyArtifactSuccess = true
                                         if (release) {
-                                            def (String releaseToolUrl, String releaseComment) = publishBinary(config)
-                                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
+                                            def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
+                                            releaseSummary.appendText("<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
                                         }
                                     }
                             }
@@ -1014,17 +1020,20 @@ class Builder implements Serializable {
                         flatten: true,
                         optional: true
                     )
-                    // Archive tap files as a single tar file
-                    context.sh """
-                        cd ${tarDir}/
-                        tar -czf ${tarTap} *.tap
-                    """
-                    try {
-                        context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                            context.archiveArtifacts artifacts: "${tarDir}/${tarTap}"
+                    // Archive tap files as a single tar file if we have any
+                    def tapExists = context.sh(script: "ls -l ${tarDir}/*.tap", returnStatus:true)
+                    if (tapExists == 0) {
+                        context.sh """
+                            cd ${tarDir}/
+                            tar -czf ${tarTap} *.tap
+                        """
+                        try {
+                            context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                                context.archiveArtifacts artifacts: "${tarDir}/${tarTap}"
+                            }
+                        } catch (FlowInterruptedException e) {
+                            throw new Exception("[ERROR] Archive AQAvitTapFiles.tar.gz timeout Exiting...")
                         }
-                    } catch (FlowInterruptedException e) {
-                        throw new Exception("[ERROR] Archive AQAvitTapFiles.tar.gz timeout Exiting...")
                     }
                 }
             }
@@ -1034,11 +1043,26 @@ class Builder implements Serializable {
             if (publish || release) {
                 if (release) {
                     context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
+                    if (context.JENKINS_URL.contains('adoptium')) {
+                        releaseSummary.appendText('</ul>', false)
+                        releaseSummary.appendText("<b>TAP files COLLECTION and RELEASE:</b><ul>")
+                        def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
+                        def tapCollectionUrl = "${context.JENKINS_URL}job/TAP_Collection/parambuild?Release_PipelineJob_Name=${urlJobName}"
+                        releaseSummary.appendText("<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
+                        String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
+                        def tag = publishName
+                        tag = URLEncoder.encode(tag, 'UTF-8')
+                        def artifactsToCopy = '**/AQAvitTapFiles.tar.gz'
+                        artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
+                        def javaVersion=determineReleaseToolRepoVersion()
+                        releaseToolUrl += "&VERSION=${javaVersion}&TAG=${tag}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
+                        releaseSummary.appendText("<li><a href=${releaseToolUrl}> RELEASE TEST RESULTS TAPs Link</a></li>")
+                    }
                 } else {
                     try {
                         context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                            def (String releaseToolUrl, String releaseComment) = publishBinary()
-                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
+                            def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(null, currentBuild.result, "${context.BUILD_URL}")
+                            releaseSummary.appendText("<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
                         }
                     } catch (FlowInterruptedException e) {
                         throw new Exception("[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")

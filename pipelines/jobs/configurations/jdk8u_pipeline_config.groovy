@@ -68,25 +68,31 @@ class Config8 {
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2022&&vs2017',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                 : 'default',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
         ],
 
         x32Windows    : [
                 os                  : 'windows',
                 arch                : 'x86-32',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ],
                 buildArgs : [
-                        temurin : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        temurin : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ],
                 test                 : 'default'
         ],

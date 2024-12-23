@@ -70,8 +70,11 @@ class Config11 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: [
-                        temurin:    'win2022&&vs2019',
+                        temurin:    'win2022&&vs2022',
                         openj9:     'win2012&&vs2017',
                         dragonwell: 'win2012'
                 ],
@@ -79,7 +82,7 @@ class Config11 {
                         'temurin'   : '--disable-ccache'
                 ],
                 buildArgs : [
-                        'temurin' : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin' : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ],
                 test                : 'default'
         ],
@@ -87,12 +90,15 @@ class Config11 {
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2022&&vs2019',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
+                additionalNodeLabels: 'win2022&&vs2022',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ],
                 buildArgs : [
-                        'temurin' : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin' : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ],
                 test                : 'default'
         ],
@@ -246,14 +252,17 @@ class Config11 {
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 crossCompile        : 'x64',
-                additionalNodeLabels: 'win2022&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ], 
                 buildArgs       : [
-                        'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--jvm-variant client,server --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
         ]
   ]

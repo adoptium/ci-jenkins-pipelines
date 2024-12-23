@@ -8,7 +8,9 @@ class Config21 {
                 additionalTestLabels: [
                         openj9      : '!sw.os.osx.10_11'
                 ],
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
+                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -26,8 +28,8 @@ class Config21 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
                 additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)',
-                        temurin     : '!(centos6||rhel6)'
+                        openj9      : '!sw.tool.glibc.2_12',
+                        temurin     : '!sw.tool.glibc.2_12'
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
@@ -66,12 +68,15 @@ class Config21 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test: [
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system']
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
         ],
 
@@ -138,7 +143,7 @@ class Config21 {
                 arch                : 'aarch64',
                 additionalNodeLabels: 'xcode15.0.1',
                 test: [
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system']
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -161,11 +166,14 @@ class Config21 {
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 buildArgs       : [
-                        'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
         ]
   ]

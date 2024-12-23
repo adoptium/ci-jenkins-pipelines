@@ -29,7 +29,7 @@ class Config17 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
                 ],
                 additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
+                        openj9      : '!sw.tool.glibc.2_12'
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
@@ -68,20 +68,26 @@ class Config17 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2022&&vs2019',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
         ],
 
         x32Windows: [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                additionalNodeLabels: 'win2022&&vs2019',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 buildArgs           : [
-                        'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
         ],
 
@@ -176,11 +182,14 @@ class Config17 {
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 crossCompile        : 'x64',
-                additionalNodeLabels: 'win2022&&vs2019',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
                 buildArgs       : [
-                        'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
         ]
   ]

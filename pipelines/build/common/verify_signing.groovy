@@ -22,6 +22,7 @@ Parameters:
   - TARGET_OS            : "mac" or "windows"
   - TARGET_ARCH          : "aarch64 or "x64" or "x86-32"
   - NODE_LABEL           : Jenkins label for where to run
+  - CERT_ISSUED_TO       : Issued to org name to verify Windows Signatures
 
 */
 
@@ -112,7 +113,7 @@ void unpackArchives(String unpack_dir, String[] archives) {
 }
 
 // Verify executables for Signatures
-void verifyExecutables(String unpack_dir) {
+void verifyExecutables(String unpack_dir, String issueToOrg) {
     if (params.TARGET_OS == "mac") {
         // On Mac find all dylib's and "executable" binaries
         // Ignore "legal" text folder to reduce the number of non-extension files it finds...
@@ -167,7 +168,7 @@ void verifyExecutables(String unpack_dir) {
 
         // Find all exe/dll's that must be Signed
 
-        withEnv(['unpack_dir='+unpack_dir, 'signtool='+signtool]) {
+        withEnv(['unpack_dir='+unpack_dir, 'signtool='+signtool, 'issueToOrg='+issueToOrg]) {
             // groovylint-disable
             sh '''
                 #!/bin/bash
@@ -185,8 +186,24 @@ void verifyExecutables(String unpack_dir) {
                         unsigned="$unsigned $f"
                         cc_unsigned=$((cc_unsigned+1))
                     else
-                        echo "Signed correctly: ${f}"
-                        cc_signed=$((cc_signed+1))
+                        num_microsoft_sigs=$("${signtool}" verify /v /all /pa ${f} | grep "Issued to:" | grep "Microsoft" | wc -l)
+                        num_org_sigs=$("${signtool}" verify /v /all /pa ${f} | grep "Issued to:" | grep "${issueToOrg}" | wc -l)
+                        if [[ "$num_microsoft_sigs" -ne 0 ]] && [[ "$num_org_sigs" -ne 0 ]]; then
+                            echo "Error: ${f} should not be signed by ${issueToOrg} as it is already signed by Microsoft."
+                            unsigned="$unsigned $f"
+                            cc_unsigned=$((cc_unsigned+1))
+                        elif [[ "$num_microsoft_sigs" -eq 0 ]] && [[ "$num_org_sigs" -gt 1 ]]; then
+                            echo "Error: ${f} is signed by ${issueToOrg} ${num_org_sigs} times, it must only be signed once."
+                            unsigned="$unsigned $f"
+                            cc_unsigned=$((cc_unsigned+1))
+                        elif [[ "$num_microsoft_sigs" -eq 0 ]] && [[ "$num_org_sigs" -eq 0 ]]; then
+                            echo "Error: ${f} is NOT signed by ${issueToOrg}."
+                            unsigned="$unsigned $f"
+                            cc_unsigned=$((cc_unsigned+1))
+                        else
+                            echo "Signed correctly: ${f}"
+                            cc_signed=$((cc_signed+1))
+                        fi
                     fi
                   done
 
@@ -355,7 +372,7 @@ if (params.TARGET_OS != "mac" && params.TARGET_OS != "windows") {
                 unpackArchives(unpack_dir, archives)
 
                 // Verify all executables for Signatures
-                verifyExecutables(unpack_dir)
+                verifyExecutables(unpack_dir, "${params.CERT_ISSUED_TO}")
 
                 // Verify installers (if built) are Signed and Notarized(mac only)
                 verifyInstallers()
