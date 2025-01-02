@@ -73,6 +73,8 @@ def isDuringReleasePeriod() {
         echo "No releases this month"
     }
 
+    echo "Is within release period? "+releasePeriod
+
     return releasePeriod
 }
 
