@@ -187,7 +187,7 @@ node('worker') {
     def binariesRepoTag = publishJobTag + "-beta"
 
     if (isDuringReleasePeriod()) {
-        echo "We are within a release period (previous Saturday to the following Sunday around the release Tuesday), so testing is disabled."
+        echo "We are within a release period (prior week previous Saturday to the following Sunday around the release Tuesday), so testing is disabled."
         enableTesting = false
     }
 
