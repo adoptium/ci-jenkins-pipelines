@@ -50,6 +50,7 @@ def publishJobTag
 
 // Is the current day within the release period of from the previous Saturday to the following Sunday
 // from the release Tuesday ?
+// Release Tuesday is now the 3rd Tuesday of the month
 def isDuringReleasePeriod() {
     def releasePeriod = false
     def now = ZonedDateTime.now(ZoneId.of('UTC'))
@@ -58,21 +59,18 @@ def isDuringReleasePeriod() {
     // Is it a release month? CPU updates in Jan, Apr, Jul, Oct
     // New major versions are released in Mar and Sept
     if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
-        // Yes, calculate release Tuesday, which is the closest Tuesday to the 17th
-        def day17th = now.withDayOfMonth(17)
-        def dayOfWeek17th = day17th.getDayOfWeek()
-        def releaseTuesday
-        if (dayOfWeek17th == DayOfWeek.SATURDAY || dayOfWeek17th == DayOfWeek.SUNDAY || dayOfWeek17th == DayOfWeek.MONDAY || dayOfWeek17th == DayOfWeek.TUESDAY) {
-            releaseTuesday = day17th.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY))
-        } else {
-            releaseTuesday = day17th.with(TemporalAdjusters.previous(DayOfWeek.TUESDAY))
-        }
+        // Yes, calculate release Tuesday, which is the 3rd Tuesday of the month
+        def day1st = now.withDayOfMonth(1)
+        def releaseTuesday = day1st.with(TemporalAdjusters.dayOfWeekInMonth(3, DayOfWeek.TUESDAY))
+        echo "Release Tuesday for this month is: "+releaseTuesday 
 
         // Release period no trigger from prior week previous Saturday to following Sunday
         def days = ChronoUnit.DAYS.between(releaseTuesday, now)
         if (days >= -10 && days <= 5) {
             releasePeriod = true
         }
+    } else {
+        echo "No releases this month"
     }
 
     return releasePeriod
