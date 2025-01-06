@@ -224,7 +224,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
                 if (onePipelineBuild.buildName.contains("refactor_openjdk_release_tool") && onePipelineBuild.status.contains("Done")) {
                     def wgetUrlForReleaseTool = "${onePipelineBuild.buildUrl}/consoleText"
                     if (onePipelineBuild.buildOutputId != null) {
-                        wgetUrlForReleaseTool = "${trssURL}/api/getOutputById?id=${onePipelineBuild.buildOutputId}"
+                        wgetUrlForReleaseTool = "${onePipelineBuild.url}/job/${onePipelineBuild.buildName}/${onePipelineBuild.buildNum}/consoleText"
                     }
 
                     def releaseToolOutput = callWgetSafely(wgetUrlForReleaseTool)
