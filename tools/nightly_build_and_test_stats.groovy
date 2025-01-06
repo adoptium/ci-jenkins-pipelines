@@ -222,7 +222,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
 
                 // Also, check if the pipeline published any successful builds overall.
                 if (onePipelineBuild.buildName.contains("refactor_openjdk_release_tool") && onePipelineBuild.status.contains("Done")) {
-                    def wgetUrlForReleaseTool = "${onePipelineBuild.buildUrl}/consoleText"
+                    def wgetUrlForReleaseTool = "${onePipelineBuild.url}/job/${onePipelineBuild.buildName}/${onePipelineBuild.buildNum}/consoleText"
                     if (onePipelineBuild.buildOutputId != null) {
                         wgetUrlForReleaseTool = "${trssURL}/api/getOutputById?id=${onePipelineBuild.buildOutputId}"
                     }
@@ -677,7 +677,7 @@ node('worker') {
             }
 
             // Check tip_releases status, by querying binaries repo as API does not server the "tip" dev releases
-            if (tipReleases.size() > 0) {
+            if ("${params.TIP_RELEASES}".trim() != "") {
              tipReleases.each { tipRelease ->
               def latestOpenjdkBuild = getLatestOpenjdkBuildTag(tipRelease)
               def tipVersion = tipRelease.replaceAll("[a-z]","").toInteger()
@@ -708,7 +708,7 @@ node('worker') {
         def pipelinesOfInterest = ""
         def allReleases = []
         allReleases.addAll(featureReleases)
-        if (tipReleases.size() > 0) {
+        if ("${params.TIP_RELEASES}".trim() != "") {
             allReleases.addAll(tipReleases)
         }
         if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
@@ -911,7 +911,7 @@ node('worker') {
             echo '-------------- Latest pipeline health report ------------------'
             def allReleases = []
             allReleases.addAll(featureReleases)
-            if (tipReleases.size() > 0) {
+            if ("${params.TIP_RELEASES}".trim() != "") {
                 allReleases.addAll(tipReleases)
             }
             if (("${params.NON_TAG_BUILD_RELEASES}".trim() != "")) {
