@@ -2484,8 +2484,9 @@ def buildScriptsAssemble(
                 if (!env.JOB_NAME.contains('pr-tester') && context.JENKINS_URL.contains('adopt')) {
                     try {
                         context.println "openjdk_build_pipeline: Running GPG signing process"
-                        gpgSign()
                         jsfSignSBOM()
+                        gpgSign()
+                        
                     } catch (Exception e) {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
