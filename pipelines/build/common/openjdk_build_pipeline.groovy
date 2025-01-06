@@ -1064,7 +1064,7 @@ class Build {
 
     // Kick off the sign_temurin_jsf job to sign the SBOM
     private void jsfSignSBOM() {
-        context.stage('SBOM Sign') {
+        context.stage('SBOM JSF Sign') {
             
             context.println "Running build_sign_sbom_libraries to build the SBOM libraries"
             def buildSBOMLibrariesJob = context.build job: 'build_sign_sbom_libraries',
@@ -2486,7 +2486,7 @@ def buildScriptsAssemble(
                         context.println "openjdk_build_pipeline: Running GPG signing process"
                         jsfSignSBOM()
                         gpgSign()
-                        
+
                     } catch (Exception e) {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
