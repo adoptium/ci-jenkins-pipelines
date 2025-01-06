@@ -2064,10 +2064,7 @@ def buildScriptsAssemble(
                        }
                        throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
                    }
-                   // With the exclusion above this is no longer strictly required
-                   if ( !enableSigner ) { // Don't clean if we need the workspace for the later assemble phase
-                       postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
-                   }
+                   postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
                    // Set Github Commit Status
                    if (env.JOB_NAME.contains('pr-tester')) {
                        updateGithubCommitStatus('SUCCESS', 'Build PASSED')
