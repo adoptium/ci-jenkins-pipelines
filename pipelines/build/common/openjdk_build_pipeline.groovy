@@ -516,6 +516,7 @@ class Build {
                         context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
                         context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
                         context.string(name: 'VENDOR_TEST_DIRS', value: vendorTestDirs),
+                        context.booleanParam(name: 'RERUN_FAILURE', value: true),
                         context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
                         ]
 
