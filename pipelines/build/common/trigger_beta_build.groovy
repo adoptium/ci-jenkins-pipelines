@@ -219,6 +219,12 @@ node('worker') {
         } else if (mirrorRepo.contains("alpine-jdk8u")) {
             // alpine-jdk8u built in its own pipeline
             jdkAssetToCheck = "x64_alpine-linux"
+        } else if (version == 8 && mainTargetConfigurations.contains("x64Solaris")) {
+            // Solaris built in own pipeline
+            jdkAssetToCheck = "x64_solaris"
+        } else if (version == 8 && mainTargetConfigurations.contains("sparcv9Solaris")) {
+            // Solaris built in own pipeline
+            jdkAssetToCheck = "sparcv9_solaris"
         }
 
         echo "Checking if ${binariesRepoTag} is already published for JDK asset ${jdkAssetToCheck} ?"
@@ -276,10 +282,21 @@ if (triggerMainBuild || triggerEvaluationBuild) {
     // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
     def jobs = [:]
     def pipelines = [:]
+    def solarisBuildJob = false
 
     // Trigger Main pipeline as long as we have a non-empty target configuration
     if (triggerMainBuild && mainTargetConfigurations != "{}") {
-        pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+        if (version == 8 && (mainTargetConfigurations.contains("x64Solaris") || mainTargetConfigurations.contains("sparcv9Solaris"))) {
+            // Special case to handle building jdk8u Solaris
+            if (mainTargetConfigurations.contains("x64Solaris")) {
+                pipelines["main"] = "build-scripts/jobs/jdk8u/jdk8u-solaris-x64-temurin-simplepipe"
+            } else {
+                pipelines["main"] = "build-scripts/jobs/jdk8u/jdk8u-solaris-sparcv9-temurin-simplepipe"
+            }
+            solarisBuildJob = true
+        } else {
+            pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+        }
         echo "main build targetConfigurations:"
         echo JsonOutput.prettyPrint(mainTargetConfigurations)
     }
@@ -297,7 +314,14 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                 stage("Trigger build pipeline - ${pipeline}") {
                     echo "Triggering ${pipeline} for $latestAdoptTag"
 
-                    def jobParams = [
+                    def jobParams
+                    if (solarisBuildJob) {
+                        jobParams = [
+                            booleanParam(name: 'RELEASE',           value: false),
+                            string(name: 'SCM_REF',                 value: "$latestAdoptTag"),
+                        ]
+                    } else {
+                        jobParams = [
                             string(name: 'releaseType',             value: "Weekly"),
                             string(name: 'scmReference',            value: "$latestAdoptTag"),
                             string(name: 'overridePublishName',     value: "$publishJobTag"),
@@ -305,6 +329,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                             booleanParam(name: 'enableTests',       value: enableTesting),
                             string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                         ]
+                    }
 
                     // Specify the required targetConfigurations
                     if (pipeline_type == "main") {
