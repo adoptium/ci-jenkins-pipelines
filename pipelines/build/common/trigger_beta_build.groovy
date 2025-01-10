@@ -219,6 +219,12 @@ node('worker') {
         } else if (mirrorRepo.contains("alpine-jdk8u")) {
             // alpine-jdk8u built in its own pipeline
             jdkAssetToCheck = "x64_alpine-linux"
+        } else if (version == 8 && mainTargetConfigurations.contains("x64Solaris")) {
+            // Solaris built in own pipeline
+            jdkAssetToCheck = "x64_solaris"
+        } else if (version == 8 && mainTargetConfigurations.contains("sparcv9Solaris")) {
+            // Solaris built in own pipeline
+            jdkAssetToCheck = "sparcv9_solaris"
         }
 
         echo "Checking if ${binariesRepoTag} is already published for JDK asset ${jdkAssetToCheck} ?"
