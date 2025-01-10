@@ -282,7 +282,11 @@ if (triggerMainBuild || triggerEvaluationBuild) {
     if (triggerMainBuild && mainTargetConfigurations != "{}") {
         if (version == 8 && (mainTargetConfigurations.contains("x64Solaris") || mainTargetConfigurations.contains("sparcv9Solaris"))) {
             // Special case to handle building jdk8u Solaris
-            pipelines["main"] = "build-scripts/jobs/jdk8u/jdk8u-solaris-x64-temurin-simple"
+            if (mainTargetConfigurations.contains("x64Solaris")) {
+                pipelines["main"] = "build-scripts/jobs/jdk8u/jdk8u-solaris-x64-temurin-simplepipe"
+            } else {
+                pipelines["main"] = "build-scripts/jobs/jdk8u/jdk8u-solaris-sparcv9-temurin-simplepipe"
+            }
             solarisBuildJob = true
         } else {
             pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
@@ -307,7 +311,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                     def jobParams
                     if (solarisBuildJob) {
                         jobParams = [
-                            string(name: 'VARIANT',                 value: "$variant"),
+                            booleanParam(name: 'RELEASE',           value: false),
                             string(name: 'SCM_REF',                 value: "$latestAdoptTag"),
                         ]
                     } else {
