@@ -516,6 +516,7 @@ class Build {
                         context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
                         context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
                         context.string(name: 'VENDOR_TEST_DIRS', value: vendorTestDirs),
+                        context.booleanParam(name: 'RERUN_FAILURE', value: true),
                         context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
                         ]
 
@@ -1054,6 +1055,49 @@ class Build {
                 try {
                     context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
                         context.archiveArtifacts artifacts: 'workspace/target/*.sig'
+                    }
+               } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
+                }
+            }
+        }
+    }
+
+    // Kick off the sign_temurin_jsf job to sign the SBOM
+    private void jsfSignSBOM() {
+        context.stage('SBOM JSF Sign') {
+            
+            context.println "Running build_sign_sbom_libraries to build the SBOM libraries"
+            def buildSBOMLibrariesJob = context.build job: 'build_sign_sbom_libraries',
+                propagate: true
+
+            def paramsJsf = [
+                  context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                  context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                  context.string(name: 'UPSTREAM_DIR', value: 'workspace/target'),
+                  context.string(name: 'SBOM_LIBRARY_JOB_NUMBER', value: "${buildSBOMLibrariesJob.getNumber()}")
+           ]
+
+            context.println "RUNNING sign_temurin_jsf for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
+            def signSBOMJob = context.build job: 'build-scripts/release/sign_temurin_jsf',
+               propagate: true,
+               parameters: paramsJsf
+
+            context.node('worker') {
+                // Remove any previous workspace artifacts
+                context.sh 'rm -rf workspace/target/* || true'
+                context.copyArtifacts(
+                    projectName: 'build-scripts/release/sign_temurin_jsf',
+                    selector: context.specific("${signSBOMJob.getNumber()}"),
+                    filter: '**/*sbom*.json',
+                    fingerprintArtifacts: true,
+                    target: 'workspace/target/',
+                    flatten: true)
+
+                // Archive SBOM signatures in Jenkins
+                try {
+                    context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                        context.archiveArtifacts artifacts: 'workspace/target/*sbom*.json'
                     }
                } catch (FlowInterruptedException e) {
                     throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
@@ -2021,10 +2065,7 @@ def buildScriptsAssemble(
                        }
                        throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
                    }
-                   // With the exclusion above this is no longer strictly required
-                   if ( !enableSigner ) { // Don't clean if we need the workspace for the later assemble phase
-                       postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
-                   }
+                   postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
                    // Set Github Commit Status
                    if (env.JOB_NAME.contains('pr-tester')) {
                        updateGithubCommitStatus('SUCCESS', 'Build PASSED')
@@ -2441,7 +2482,9 @@ def buildScriptsAssemble(
                 if (!env.JOB_NAME.contains('pr-tester') && context.JENKINS_URL.contains('adopt')) {
                     try {
                         context.println "openjdk_build_pipeline: Running GPG signing process"
+                        jsfSignSBOM()
                         gpgSign()
+
                     } catch (Exception e) {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'

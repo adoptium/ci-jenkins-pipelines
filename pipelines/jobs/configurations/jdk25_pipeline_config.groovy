@@ -29,8 +29,8 @@ class Config25 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'dev.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
                 additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)',
-                        temurin     : '!(centos6||rhel6)'
+                        openj9      : '!sw.tool.glibc.2_12',
+                        temurin     : '!sw.tool.glibc.2_12'
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
@@ -69,7 +69,9 @@ class Config25 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                dockerImage         : 'win2022_notrhel_image',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
@@ -165,7 +167,9 @@ class Config25 {
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
-                dockerImage         : 'win2022_notrhel_image',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
