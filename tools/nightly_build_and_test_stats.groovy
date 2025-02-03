@@ -274,14 +274,21 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
     echo "Finished getting build IDs by platform."
 }
 
-// Return our best guess at the url for the latest pipeline that generated builds from a specific tag.
+// Return our best guess at the urls for the pipelines that generated builds from a specific tag.
+// Optionally only return the "latest".
 // This pipeline is expected to have attempted to build JDKs for all supported platforms.
-def getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
-    def functionBuildUrl = ["", "", ""]
+def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly) {
+    def functionBuildUrls = []
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
     def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
     def pipelineJson = new JsonSlurper().parseText(pipeline)
+
+    if (latestOnly) {
+        echo "Finding the latest pipeline build URLs for: "+pipelineName+" "+publishName+" "+scmRef
+    } else {
+        echo "Finding all the pipeline build URLs for: "+pipelineName+" "+publishName+" "+scmRef
+    }
 
     if (pipelineJson.size() > 0) {
         def foundBuildTimestamp = 0
@@ -307,24 +314,32 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
-                        if (job.timestamp > foundBuildTimestamp) {
-                            functionBuildUrl = [job.buildUrl, job._id, job.status]
+                        if (job.timestamp > foundBuildTimestamp || !latestOnly) {
+                            if (latestOnly) {
+                                functionBuildUrls = [[job.buildUrl, job._id, job.status]]
+                            } else {
+                                functionBuildUrls.add([job.buildUrl, job._id, job.status])
+                            }
                             foundBuildTimestamp = job.timestamp
-                            echo "Found latest "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                            echo "Found "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
                         }
                     }
                 } else {
-                    if (job.timestamp > foundBuildTimestamp) {
-                        functionBuildUrl = [job.buildUrl, job._id, job.status]
+                    if (job.timestamp > foundBuildTimestamp || !latestOnly) {
+                        if (latestOnly) {
+                            functionBuildUrls = [[job.buildUrl, job._id, job.status]]
+                        } else {
+                            functionBuildUrls.add([job.buildUrl, job._id, job.status])
+                        }
                         foundBuildTimestamp = job.timestamp
-                        echo "Found latest "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                        echo "Found "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
                     }
                 }
             }
         }
     }
 
-    return functionBuildUrl
+    return functionBuildUrls
 }
 
 // Verify the given release contains all the expected assets
@@ -957,7 +972,11 @@ node('worker') {
                     }
                 } else {
                     // Check if build in-progress
-                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
+                    def (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
+                    def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true)
+                    if (buildUrls.size() > 0) {
+                        (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
+                    }
 
                     // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
                     if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
@@ -976,7 +995,11 @@ node('worker') {
                     }
 
                     if (reproducibleBuilds.containsKey(featureRelease)) {
-                        def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt")
+                        def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
+                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", true)
+                        if (reproBuildUrls.size() > 0) {
+                            (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildUrls[0]
+                        }
 
                         if ( reproBuildUrl != "" ) {
                             echo "Latest pipeline: ${reproBuildUrl}"
