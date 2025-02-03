@@ -692,7 +692,7 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     def failedTestJobNum  = 0
     def failedTestCaseNum = 0 
 
-    // Find all pipeline jobs for this release EA tag
+    // Find all "Done" pipeline jobs for this release EA tag
     def buildUrls
     if (tag == "") {
         // Non-tag release builds, just find the last build
@@ -704,9 +704,11 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     if (buildUrls.size() > 0) {
         buildUrls.each { buildUrlTuple ->
             (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrlTuple
-            def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant)
-            failedTestJobNum  += testResults.testJobFailure
-            failedTestCaseNum += testResults.testCaseFailed
+            if (probableBuildStatus == "Done") {
+                def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant)
+                failedTestJobNum  += testResults.testJobFailure
+                failedTestCaseNum += testResults.testCaseFailed
+            }
         }
     }
 
