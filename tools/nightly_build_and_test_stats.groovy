@@ -274,7 +274,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
     echo "Finished getting build IDs by platform."
 }
 
-// Return our best guess at the urls for the pipelines that generated builds from a specific tag.
+// Return our best guess at the urls for the Weekly EA pipelines that generated builds from a specific tag.
 // Optionally only return the "latest".
 // This pipeline is expected to have attempted to build JDKs for all supported platforms.
 def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly) {
@@ -297,6 +297,7 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
             def buildScmRef = ""
             def containsX64AlpineLinux = false
             def containsVariant = false
+            def releaseType = ""
 
             job.buildParams.each { buildParam ->
                 if (buildParam.name == "overridePublishName") {
@@ -306,11 +307,13 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
                 } else if (buildParam.name == "targetConfigurations") {
                     containsX64AlpineLinux = (buildParam.value.contains("x64AlpineLinux"))
                     containsVariant        = (buildParam.value.contains(variant))
+                } else if (buildParam.name == "releaseType") {
+                    releaseType = buildParam.value
                 }
             }
 
             // Is there a job for the required tag?
-            if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null) {
+            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
@@ -674,6 +677,43 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
         return testResult
 }
 
+// Generate a test summary string for the total of failed testcases & jobs for the given EA build
+def getFailedTestSummary(String trssUrl, String variant, String featureRelease, String releaseName, String tag) {
+    def buildVariant = variant  
+    def testVariant             
+    if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
+        testVariant = '_hs_'    
+    } else if (variant == 'openj9') {
+        testVariant = '_j9_'    
+    } else {                
+        testVariant = "_${variant}_"
+    }
+
+    def failedTestJobNum  = 0
+    def failedTestCaseNum = 0 
+
+    // Find all pipeline jobs for this release EA tag
+    def buildUrls
+    if (tag == "") {
+        // Non-tag release builds, just find the last build
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true)
+    } else {
+        // Tag build, find all pipeline jobs matching the tag
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false)
+    }
+    if (buildUrls.size() > 0) {
+        buildUrls.each { buildUrlTuple ->
+            (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrlTuple
+            def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant)
+            failedTestJobNum  += testResults.testJobFailure
+            failedTestCaseNum += testResults.testCaseFailed
+        }
+    }
+
+    return "FailedTestJobs: "+testResults+" FailedTestCases: "+failedTestCaseNum
+}
+
+
 node('worker') {
   try{
     def variant = "${params.VARIANT}"
@@ -955,9 +995,12 @@ node('worker') {
                 def probableBuildUrl = ""
                 def probableBuildStatus = ""
                 def probableBuildIdForTRSS = ""
+                def failedTestSummary = ""
 
                 // Is it a non-tag triggered build? eg.Oracle STS version
                 if (nonTagBuildReleases.contains(featureRelease)) {
+                    failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, "", "")
+
                     // Check for stale published build
                     def days = status['actualDays'] as int
                     lastPublishedMsg = "\nPublished: ${days} day(s) ago." // might actually be days + N hours, where N < 24
@@ -971,6 +1014,8 @@ node('worker') {
                         errorMsg = "\nStale threshold: ${maxDays} days."
                     }
                 } else {
+                    failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
+
                     // Check if build in-progress
                     (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
                     def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true)
