@@ -972,7 +972,7 @@ node('worker') {
                     }
                 } else {
                     // Check if build in-progress
-                    def (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
+                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
                     def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true)
                     if (buildUrls.size() > 0) {
                         (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
