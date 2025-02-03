@@ -826,6 +826,10 @@ node('worker') {
                                     // Release build tag triggered build
                                     pipeline_id = job._id
                                     pipelineUrl = job.buildUrl
+                                } else if (job.startBy.startsWith("upstream project \"build-scripts/weekly-")) {
+                                    // Scheduled "weekly" job for Oracle managed versions
+                                    pipeline_id = job._id
+                                    pipelineUrl = job.buildUrl
                                 }
                             }
                             // Was job a "match"?
