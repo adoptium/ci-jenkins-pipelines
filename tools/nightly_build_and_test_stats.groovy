@@ -812,7 +812,7 @@ node('worker') {
 
                             // Was job "Done"?
                             // Report pipelines built within the last week
-                            if (job.status != null && job.status.equals('Done') && job.startBy != null && days <= 7) {
+                            if (job.status != null && job.status.equals('Done') && job.startBy != null && days <= 27) {
                                 if (job.startBy.startsWith('timer')) {
                                     // Timer scheduled job
                                     pipeline_id = job._id
