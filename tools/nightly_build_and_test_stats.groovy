@@ -597,7 +597,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 }
 
 // Get the Pipeline Test job results...
-def getPipelineTestResults(String trssUrl, String pipeline_id, String buildVariant, String testVariant) {
+def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineUrl, String pipeline_id, String buildVariant, String testVariant) {
 	def buildJobComplete = 0
 	def buildJobFailure = 0
 	def testJobSuccess = 0
@@ -830,7 +830,7 @@ node('worker') {
                             }
                             // Was job a "match"?
                             if (pipeline_id != null) {
-                                def testResults = getPipelineTestResults(trssUrl, pipeline_id, buildVariant, testVariant)
+                                def testResults = getPipelineTestResults(trssUrl, pipelineName, pipelineUrl, pipeline_id, buildVariant, testVariant)
                                 testStats.add(testResults)
                             }
                     }
