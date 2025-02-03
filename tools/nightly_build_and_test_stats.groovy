@@ -596,6 +596,68 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
     }
 }
 
+def getPipelineTestResults(String trssUrl, String pipeline_id, String testVariant) {
+	def buildJobComplete = 0
+	def buildJobFailure = 0
+	def testJobSuccess = 0
+	def testJobUnstable = 0
+	def testJobFailure = 0
+	def testCasePassed = 0
+	def testCaseFailed = 0
+	def testCaseDisabled = 0
+	def testJobNumber = 0
+	def buildJobNumber = 0
+
+	// Get all child Test jobs for this pipeline job
+	def pipelineTestJobs = callWgetSafely("${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*")
+	def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
+	if (pipelineTestJobsJson.size() > 0) {
+	    testJobNumber = pipelineTestJobsJson.size()
+	    pipelineTestJobsJson.each { testJob ->
+		if (testJob.buildResult.equals('SUCCESS')) {
+		    testJobSuccess += 1
+		} else if (testJob.buildResult.equals('UNSTABLE')) {
+		    testJobUnstable += 1
+		} else {
+		    testJobFailure += 1
+		}
+		if (testJob.testSummary != null) {
+		    testCasePassed += testJob.testSummary.passed
+		    testCaseFailed += testJob.testSummary.failed
+		    testCaseDisabled += testJob.testSummary.disabled
+		}
+	    }
+	}
+	// Get all child Build jobs for this pipeline job
+	def pipelineBuildJobs = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
+	def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
+	buildJobNumber = 0
+	pipelineBuildJobsJson.each { buildJob ->
+		if (buildJob.buildName.contains(buildVariant)) {
+		    buildJobNumber += 1
+		    if (buildJob.buildResult.equals('FAILURE')) {
+			buildJobFailure += 1
+		    } else {
+			buildJobComplete += 1
+		    }
+		}
+	}
+
+	def testResult = [name: pipelineName, url: pipelineUrl,
+	      buildJobNumber:   buildJobNumber,
+	      buildJobComplete:  buildJobComplete,
+	      buildJobFailure:  buildJobFailure,
+	      testJobSuccess:   testJobSuccess,
+	      testJobUnstable:  testJobUnstable,
+	      testJobFailure:   testJobFailure,
+	      testCasePassed:   testCasePassed,
+	      testCaseFailed:   testCaseFailed,
+	      testCaseDisabled: testCaseDisabled,
+	      testJobNumber:    testJobNumber]
+
+        return testResult
+}
+
 node('worker') {
   try{
     def variant = "${params.VARIANT}"
@@ -742,16 +804,6 @@ node('worker') {
                     pipelineJson.each { job ->
                             def pipeline_id = null
                             def pipelineUrl
-                            def buildJobComplete = 0
-                            def buildJobFailure = 0
-                            def testJobSuccess = 0
-                            def testJobUnstable = 0
-                            def testJobFailure = 0
-                            def testCasePassed = 0
-                            def testCaseFailed = 0
-                            def testCaseDisabled = 0
-                            def testJobNumber = 0
-                            def buildJobNumber = 0
 
                             // Determine when job ran?
                             def build_time = LocalDateTime.ofInstant(Instant.ofEpochMilli(job.timestamp), ZoneId.of('UTC'))
@@ -777,53 +829,8 @@ node('worker') {
                             }
                             // Was job a "match"?
                             if (pipeline_id != null) {
-                                // Get all child Test jobs for this pipeline job
-                                def pipelineTestJobs = callWgetSafely("${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*")
-                                def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
-                                if (pipelineTestJobsJson.size() > 0) {
-                                    testJobNumber = pipelineTestJobsJson.size()
-                                    pipelineTestJobsJson.each { testJob ->
-                                        if (testJob.buildResult.equals('SUCCESS')) {
-                                            testJobSuccess += 1
-                                        } else if (testJob.buildResult.equals('UNSTABLE')) {
-                                            testJobUnstable += 1
-                                        } else {
-                                            testJobFailure += 1
-                                        }
-                                        if (testJob.testSummary != null) {
-                                            testCasePassed += testJob.testSummary.passed
-                                            testCaseFailed += testJob.testSummary.failed
-                                            testCaseDisabled += testJob.testSummary.disabled
-                                        }
-                                    }
-                                }
-                                // Get all child Build jobs for this pipeline job
-                                def pipelineBuildJobs = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
-                                def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
-                                buildJobNumber = 0
-                                pipelineBuildJobsJson.each { buildJob ->
-                                        if (buildJob.buildName.contains(buildVariant)) {
-                                            buildJobNumber += 1
-                                            if (buildJob.buildResult.equals('FAILURE')) {
-                                                buildJobFailure += 1
-                                            } else {
-                                                buildJobComplete += 1
-                                            }
-                                        }
-                                }
-
-                                def testResult = [name: pipelineName, url: pipelineUrl,
-                                      buildJobNumber:   buildJobNumber,
-                                      buildJobComplete:  buildJobComplete,
-                                      buildJobFailure:  buildJobFailure,
-                                      testJobSuccess:   testJobSuccess,
-                                      testJobUnstable:  testJobUnstable,
-                                      testJobFailure:   testJobFailure,
-                                      testCasePassed:   testCasePassed,
-                                      testCaseFailed:   testCaseFailed,
-                                      testCaseDisabled: testCaseDisabled,
-                                      testJobNumber:    testJobNumber]
-                                testStats.add(testResult)
+                                def testResults = getPipelineTestResults(trssUrl, pipeline_id, testVariant)
+                                testStats.add(testResults)
                             }
                     }
                   }
@@ -901,7 +908,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
         echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
@@ -1058,7 +1065,7 @@ node('worker') {
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*.${reproducibilityText} Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
