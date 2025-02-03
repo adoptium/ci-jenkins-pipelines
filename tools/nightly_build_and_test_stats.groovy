@@ -710,7 +710,7 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
         }
     }
 
-    return " FailedTestJobs: "+failedTestJobNum+" FailedTestCases: "+failedTestCaseNum
+    return " _Failed: TestJobs="+failedTestJobNum+" TestCases="+failedTestCaseNum+"_"
 }
 
 
@@ -1136,7 +1136,7 @@ node('worker') {
                 }
 
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} 'EA Build' status: *${health}*.${reproducibilityText} Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${missingMsg}"
+                def fullMessage = "${featureRelease} EA: *${health}*.${reproducibilityText} Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
                 //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
