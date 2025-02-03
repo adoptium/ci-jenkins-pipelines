@@ -621,9 +621,9 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
 	def testJobSuccess = 0
 	def testJobUnstable = 0
 	def testJobFailure = 0
-	def testCasePassed = 0
-	def testCaseFailed = 0
-	def testCaseDisabled = 0
+	def testTargetPassed = 0
+	def testTargetFailed = 0
+	def testTargetDisabled = 0
 	def testJobNumber = 0
 	def buildJobNumber = 0
 
@@ -641,9 +641,9 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
 		    testJobFailure += 1
 		}
 		if (testJob.testSummary != null) {
-		    testCasePassed += testJob.testSummary.passed
-		    testCaseFailed += testJob.testSummary.failed
-		    testCaseDisabled += testJob.testSummary.disabled
+		    testTargetPassed += testJob.testSummary.passed
+		    testTargetFailed += testJob.testSummary.failed
+		    testTargetDisabled += testJob.testSummary.disabled
 		}
 	    }
 	}
@@ -669,15 +669,15 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
 	      testJobSuccess:   testJobSuccess,
 	      testJobUnstable:  testJobUnstable,
 	      testJobFailure:   testJobFailure,
-	      testCasePassed:   testCasePassed,
-	      testCaseFailed:   testCaseFailed,
-	      testCaseDisabled: testCaseDisabled,
+	      testTargetPassed:   testTargetPassed,
+	      testTargetFailed:   testTargetFailed,
+	      testTargetDisabled: testTargetDisabled,
 	      testJobNumber:    testJobNumber]
 
         return testResult
 }
 
-// Generate a test summary string for the total of failed testcases & jobs for the given EA build
+// Generate a test summary string for the total of failed test targets & jobs for the given EA build
 def getFailedTestSummary(String trssUrl, String variant, String featureRelease, String releaseName, String tag) {
     def buildVariant = variant  
     def testVariant             
@@ -690,7 +690,7 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     }
 
     def failedTestJobNum  = 0
-    def failedTestCaseNum = 0 
+    def failedTestTargetNum = 0 
 
     // Find all "Done" pipeline jobs for this release EA tag
     def buildUrls
@@ -706,11 +706,11 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
             (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrlTuple
             def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant)
             failedTestJobNum  += testResults.testJobFailure
-            failedTestCaseNum += testResults.testCaseFailed
+            failedTestTargetNum += testResults.testTargetFailed
         }
     }
 
-    return " _Failed: TestJobs="+failedTestJobNum+" TestCases="+failedTestCaseNum+"_"
+    return " _Failed: TestJobs="+failedTestJobNum+" TestTargets="+failedTestTargetNum+"_"
 }
 
 
@@ -809,7 +809,7 @@ node('worker') {
         }
     }
 
-    // Get the last Nightly build and test job & case stats
+    // Get the last Nightly build and test job & target stats
     stage('getStats') {
         // Determine build and test variant job name search strings
         def buildVariant = variant
@@ -916,9 +916,9 @@ node('worker') {
             echo "    => Test job SUCCESS    = ${pipeline.testJobSuccess}"
             echo "    => Test job UNSTABLE   = ${pipeline.testJobUnstable}"
             echo "    => Test job FAILURE    = ${pipeline.testJobFailure}"
-            echo "    => Test case Passed    = ${pipeline.testCasePassed}"
-            echo "    => Test case Failed    = ${pipeline.testCaseFailed}"
-            echo "    => Test case Disabled  = ${pipeline.testCaseDisabled}"
+            echo "    => Test target Passed    = ${pipeline.testTargetPassed}"
+            echo "    => Test target Failed    = ${pipeline.testTargetFailed}"
+            echo "    => Test target Disabled  = ${pipeline.testTargetDisabled}"
             echo '==================================================================================='
             totalBuildJobs += pipeline.buildJobNumber
             buildFailures += pipeline.buildJobFailure
@@ -926,11 +926,11 @@ node('worker') {
             // Did test jobs run? (build may have failed)
             if (pipeline.testJobNumber > 0) {
                 numTestPipelines += 1
-                // Pipeline Test % success rating: %(SucceededOrUnstable) - %(FailedTestCases)
+                // Pipeline Test % success rating: %(SucceededOrUnstable) - %(FailedTestTargets)
                 nightlyTestSuccessRating += (((pipeline.testJobNumber - pipeline.testJobFailure) * 100 / pipeline.testJobNumber))
-                // Did test cases run?
-                if ((pipeline.testCasePassed + pipeline.testCaseFailed) > 0) {
-                    nightlyTestSuccessRating -= (pipeline.testCaseFailed * 100 / (pipeline.testCasePassed + pipeline.testCaseFailed))
+                // Did test target run?
+                if ((pipeline.testTargetPassed + pipeline.testTargetFailed) > 0) {
+                    nightlyTestSuccessRating -= (pipeline.testTargetFailed * 100 / (pipeline.testTargetPassed + pipeline.testTargetFailed))
                 }
             }
         }
