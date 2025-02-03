@@ -277,7 +277,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
 // Return our best guess at the urls for the Weekly EA pipelines that generated builds from a specific tag.
 // Optionally only return the "latest".
 // This pipeline is expected to have attempted to build JDKs for all supported platforms.
-def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly) {
+def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, String requiredStatus) {
     def functionBuildUrls = []
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
@@ -313,7 +313,7 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
             }
 
             // Is there a job for the required tag?
-            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null) {
+            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus == "" || job.status == requiredStatus)) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
@@ -696,19 +696,17 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     def buildUrls
     if (tag == "") {
         // Non-tag release builds, just find the last build
-        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true)
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true, "Done")
     } else {
         // Tag build, find all pipeline jobs matching the tag
-        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false)
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false, "Done")
     }
     if (buildUrls.size() > 0) {
         buildUrls.each { buildUrlTuple ->
             (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrlTuple
-            if (probableBuildStatus == "Done") {
-                def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant)
-                failedTestJobNum  += testResults.testJobFailure
-                failedTestCaseNum += testResults.testCaseFailed
-            }
+            def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant)
+            failedTestJobNum  += testResults.testJobFailure
+            failedTestCaseNum += testResults.testCaseFailed
         }
     }
 
@@ -1020,7 +1018,7 @@ node('worker') {
 
                     // Check if build in-progress
                     (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
-                    def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true)
+                    def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, "")
                     if (buildUrls.size() > 0) {
                         (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
                     }
@@ -1043,7 +1041,7 @@ node('worker') {
 
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
-                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", true)
+                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", true, "")
                         if (reproBuildUrls.size() > 0) {
                             (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildUrls[0]
                         }
