@@ -274,14 +274,21 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
     echo "Finished getting build IDs by platform."
 }
 
-// Return our best guess at the url for the latest pipeline that generated builds from a specific tag.
+// Return our best guess at the urls for the Weekly EA pipelines that generated builds from a specific tag.
+// Optionally only return the "latest".
 // This pipeline is expected to have attempted to build JDKs for all supported platforms.
-def getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
-    def functionBuildUrl = ["", "", ""]
+def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, String requiredStatus) {
+    def functionBuildUrls = []
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
     def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
     def pipelineJson = new JsonSlurper().parseText(pipeline)
+
+    if (latestOnly) {
+        echo "Finding the latest pipeline build URLs for: "+pipelineName+" "+publishName+" "+scmRef
+    } else {
+        echo "Finding all the pipeline build URLs for: "+pipelineName+" "+publishName+" "+scmRef
+    }
 
     if (pipelineJson.size() > 0) {
         def foundBuildTimestamp = 0
@@ -290,6 +297,7 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
             def buildScmRef = ""
             def containsX64AlpineLinux = false
             def containsVariant = false
+            def releaseType = ""
 
             job.buildParams.each { buildParam ->
                 if (buildParam.name == "overridePublishName") {
@@ -299,32 +307,42 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
                 } else if (buildParam.name == "targetConfigurations") {
                     containsX64AlpineLinux = (buildParam.value.contains("x64AlpineLinux"))
                     containsVariant        = (buildParam.value.contains(variant))
+                } else if (buildParam.name == "releaseType") {
+                    releaseType = buildParam.value
                 }
             }
 
             // Is there a job for the required tag?
-            if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null) {
+            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus == "" || job.status == requiredStatus)) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
-                        if (job.timestamp > foundBuildTimestamp) {
-                            functionBuildUrl = [job.buildUrl, job._id, job.status]
+                        if (job.timestamp > foundBuildTimestamp || !latestOnly) {
+                            if (latestOnly) {
+                                functionBuildUrls = [[job.buildUrl, job._id, job.status]]
+                            } else {
+                                functionBuildUrls.add([job.buildUrl, job._id, job.status])
+                            }
                             foundBuildTimestamp = job.timestamp
-                            echo "Found latest "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                            echo "Found "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
                         }
                     }
                 } else {
-                    if (job.timestamp > foundBuildTimestamp) {
-                        functionBuildUrl = [job.buildUrl, job._id, job.status]
+                    if (job.timestamp > foundBuildTimestamp || !latestOnly) {
+                        if (latestOnly) {
+                            functionBuildUrls = [[job.buildUrl, job._id, job.status]]
+                        } else {
+                            functionBuildUrls.add([job.buildUrl, job._id, job.status])
+                        }
                         foundBuildTimestamp = job.timestamp
-                        echo "Found latest "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                        echo "Found "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
                     }
                 }
             }
         }
     }
 
-    return functionBuildUrl
+    return functionBuildUrls
 }
 
 // Verify the given release contains all the expected assets
@@ -596,6 +614,106 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
     }
 }
 
+// Get the Pipeline Test job results...
+def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineUrl, String pipeline_id, String buildVariant, String testVariant) {
+	def buildJobComplete = 0
+	def buildJobFailure = 0
+	def testJobSuccess = 0
+	def testJobUnstable = 0
+	def testJobFailure = 0
+	def testTargetPassed = 0
+	def testTargetFailed = 0
+	def testTargetDisabled = 0
+	def testJobNumber = 0
+	def buildJobNumber = 0
+
+	// Get all child Test jobs for this pipeline job
+	def pipelineTestJobs = callWgetSafely("${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*")
+	def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
+	if (pipelineTestJobsJson.size() > 0) {
+	    testJobNumber = pipelineTestJobsJson.size()
+	    pipelineTestJobsJson.each { testJob ->
+		if (testJob.buildResult.equals('SUCCESS')) {
+		    testJobSuccess += 1
+		} else if (testJob.buildResult.equals('UNSTABLE')) {
+		    testJobUnstable += 1
+		} else {
+		    testJobFailure += 1
+		}
+		if (testJob.testSummary != null) {
+		    testTargetPassed += testJob.testSummary.passed
+		    testTargetFailed += testJob.testSummary.failed
+		    testTargetDisabled += testJob.testSummary.disabled
+		}
+	    }
+	}
+	// Get all child Build jobs for this pipeline job
+	def pipelineBuildJobs = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
+	def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
+	buildJobNumber = 0
+	pipelineBuildJobsJson.each { buildJob ->
+		if (buildJob.buildName.contains(buildVariant)) {
+		    buildJobNumber += 1
+		    if (buildJob.buildResult.equals('FAILURE')) {
+			buildJobFailure += 1
+		    } else {
+			buildJobComplete += 1
+		    }
+		}
+	}
+
+	def testResult = [name: pipelineName, url: pipelineUrl,
+	      buildJobNumber:   buildJobNumber,
+	      buildJobComplete:  buildJobComplete,
+	      buildJobFailure:  buildJobFailure,
+	      testJobSuccess:   testJobSuccess,
+	      testJobUnstable:  testJobUnstable,
+	      testJobFailure:   testJobFailure,
+	      testTargetPassed:   testTargetPassed,
+	      testTargetFailed:   testTargetFailed,
+	      testTargetDisabled: testTargetDisabled,
+	      testJobNumber:    testJobNumber]
+
+        return testResult
+}
+
+// Generate a test summary string for the total of failed test targets & jobs for the given EA build
+def getFailedTestSummary(String trssUrl, String variant, String featureRelease, String releaseName, String tag) {
+    def buildVariant = variant  
+    def testVariant             
+    if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
+        testVariant = '_hs_'    
+    } else if (variant == 'openj9') {
+        testVariant = '_j9_'    
+    } else {                
+        testVariant = "_${variant}_"
+    }
+
+    def failedTestJobNum  = 0
+    def failedTestTargetNum = 0 
+
+    // Find all "Done" pipeline jobs for this release EA tag
+    def buildUrls
+    if (tag == "") {
+        // Non-tag release builds, just find the last build
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true, "Done")
+    } else {
+        // Tag build, find all pipeline jobs matching the tag
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false, "Done")
+    }
+    if (buildUrls.size() > 0) {
+        buildUrls.each { buildUrlTuple ->
+            (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrlTuple
+            def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant)
+            failedTestJobNum  += testResults.testJobFailure
+            failedTestTargetNum += testResults.testTargetFailed
+        }
+    }
+
+    return " _Failed: TestJobs="+failedTestJobNum+" TestTargets="+failedTestTargetNum+"_"
+}
+
+
 node('worker') {
   try{
     def variant = "${params.VARIANT}"
@@ -691,7 +809,7 @@ node('worker') {
         }
     }
 
-    // Get the last Nightly build and test job & case stats
+    // Get the last Nightly build and test job & target stats
     stage('getStats') {
         // Determine build and test variant job name search strings
         def buildVariant = variant
@@ -742,16 +860,6 @@ node('worker') {
                     pipelineJson.each { job ->
                             def pipeline_id = null
                             def pipelineUrl
-                            def buildJobComplete = 0
-                            def buildJobFailure = 0
-                            def testJobSuccess = 0
-                            def testJobUnstable = 0
-                            def testJobFailure = 0
-                            def testCasePassed = 0
-                            def testCaseFailed = 0
-                            def testCaseDisabled = 0
-                            def testJobNumber = 0
-                            def buildJobNumber = 0
 
                             // Determine when job ran?
                             def build_time = LocalDateTime.ofInstant(Instant.ofEpochMilli(job.timestamp), ZoneId.of('UTC'))
@@ -760,7 +868,7 @@ node('worker') {
 
                             // Was job "Done"?
                             // Report pipelines built within the last week
-                            if (job.status != null && job.status.equals('Done') && job.startBy != null && days <= 7) {
+                            if (job.status != null && job.status.equals('Done') && job.startBy != null && days <= 27) {
                                 if (job.startBy.startsWith('timer')) {
                                     // Timer scheduled job
                                     pipeline_id = job._id
@@ -773,57 +881,16 @@ node('worker') {
                                     // Release build tag triggered build
                                     pipeline_id = job._id
                                     pipelineUrl = job.buildUrl
+                                } else if (job.startBy.startsWith("upstream project \"build-scripts/weekly-")) {
+                                    // Scheduled "weekly" job for Oracle managed versions
+                                    pipeline_id = job._id
+                                    pipelineUrl = job.buildUrl
                                 }
                             }
                             // Was job a "match"?
                             if (pipeline_id != null) {
-                                // Get all child Test jobs for this pipeline job
-                                def pipelineTestJobs = callWgetSafely("${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*")
-                                def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
-                                if (pipelineTestJobsJson.size() > 0) {
-                                    testJobNumber = pipelineTestJobsJson.size()
-                                    pipelineTestJobsJson.each { testJob ->
-                                        if (testJob.buildResult.equals('SUCCESS')) {
-                                            testJobSuccess += 1
-                                        } else if (testJob.buildResult.equals('UNSTABLE')) {
-                                            testJobUnstable += 1
-                                        } else {
-                                            testJobFailure += 1
-                                        }
-                                        if (testJob.testSummary != null) {
-                                            testCasePassed += testJob.testSummary.passed
-                                            testCaseFailed += testJob.testSummary.failed
-                                            testCaseDisabled += testJob.testSummary.disabled
-                                        }
-                                    }
-                                }
-                                // Get all child Build jobs for this pipeline job
-                                def pipelineBuildJobs = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
-                                def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
-                                buildJobNumber = 0
-                                pipelineBuildJobsJson.each { buildJob ->
-                                        if (buildJob.buildName.contains(buildVariant)) {
-                                            buildJobNumber += 1
-                                            if (buildJob.buildResult.equals('FAILURE')) {
-                                                buildJobFailure += 1
-                                            } else {
-                                                buildJobComplete += 1
-                                            }
-                                        }
-                                }
-
-                                def testResult = [name: pipelineName, url: pipelineUrl,
-                                      buildJobNumber:   buildJobNumber,
-                                      buildJobComplete:  buildJobComplete,
-                                      buildJobFailure:  buildJobFailure,
-                                      testJobSuccess:   testJobSuccess,
-                                      testJobUnstable:  testJobUnstable,
-                                      testJobFailure:   testJobFailure,
-                                      testCasePassed:   testCasePassed,
-                                      testCaseFailed:   testCaseFailed,
-                                      testCaseDisabled: testCaseDisabled,
-                                      testJobNumber:    testJobNumber]
-                                testStats.add(testResult)
+                                def testResults = getPipelineTestResults(trssUrl, pipelineName, pipelineUrl, pipeline_id, buildVariant, testVariant)
+                                testStats.add(testResults)
                             }
                     }
                   }
@@ -849,9 +916,9 @@ node('worker') {
             echo "    => Test job SUCCESS    = ${pipeline.testJobSuccess}"
             echo "    => Test job UNSTABLE   = ${pipeline.testJobUnstable}"
             echo "    => Test job FAILURE    = ${pipeline.testJobFailure}"
-            echo "    => Test case Passed    = ${pipeline.testCasePassed}"
-            echo "    => Test case Failed    = ${pipeline.testCaseFailed}"
-            echo "    => Test case Disabled  = ${pipeline.testCaseDisabled}"
+            echo "    => Test target Passed    = ${pipeline.testTargetPassed}"
+            echo "    => Test target Failed    = ${pipeline.testTargetFailed}"
+            echo "    => Test target Disabled  = ${pipeline.testTargetDisabled}"
             echo '==================================================================================='
             totalBuildJobs += pipeline.buildJobNumber
             buildFailures += pipeline.buildJobFailure
@@ -859,11 +926,11 @@ node('worker') {
             // Did test jobs run? (build may have failed)
             if (pipeline.testJobNumber > 0) {
                 numTestPipelines += 1
-                // Pipeline Test % success rating: %(SucceededOrUnstable) - %(FailedTestCases)
+                // Pipeline Test % success rating: %(SucceededOrUnstable) - %(FailedTestTargets)
                 nightlyTestSuccessRating += (((pipeline.testJobNumber - pipeline.testJobFailure) * 100 / pipeline.testJobNumber))
-                // Did test cases run?
-                if ((pipeline.testCasePassed + pipeline.testCaseFailed) > 0) {
-                    nightlyTestSuccessRating -= (pipeline.testCaseFailed * 100 / (pipeline.testCasePassed + pipeline.testCaseFailed))
+                // Did test target run?
+                if ((pipeline.testTargetPassed + pipeline.testTargetFailed) > 0) {
+                    nightlyTestSuccessRating -= (pipeline.testTargetFailed * 100 / (pipeline.testTargetPassed + pipeline.testTargetFailed))
                 }
             }
         }
@@ -928,9 +995,12 @@ node('worker') {
                 def probableBuildUrl = ""
                 def probableBuildStatus = ""
                 def probableBuildIdForTRSS = ""
+                def failedTestSummary = ""
 
                 // Is it a non-tag triggered build? eg.Oracle STS version
                 if (nonTagBuildReleases.contains(featureRelease)) {
+                    failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, "", "")
+
                     // Check for stale published build
                     def days = status['actualDays'] as int
                     lastPublishedMsg = "\nPublished: ${days} day(s) ago." // might actually be days + N hours, where N < 24
@@ -944,8 +1014,14 @@ node('worker') {
                         errorMsg = "\nStale threshold: ${maxDays} days."
                     }
                 } else {
+                    failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
+
                     // Check if build in-progress
-                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
+                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
+                    def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, "")
+                    if (buildUrls.size() > 0) {
+                        (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
+                    }
 
                     // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
                     if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
@@ -964,7 +1040,11 @@ node('worker') {
                     }
 
                     if (reproducibleBuilds.containsKey(featureRelease)) {
-                        def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt")
+                        def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
+                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", true, "")
+                        if (reproBuildUrls.size() > 0) {
+                            (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildUrls[0]
+                        }
 
                         if ( reproBuildUrl != "" ) {
                             echo "Latest pipeline: ${reproBuildUrl}"
@@ -1056,7 +1136,7 @@ node('worker') {
                 }
 
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*.${reproducibilityText} Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
+                def fullMessage = "${featureRelease} EA: *${health}*.${reproducibilityText} Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
                 slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
