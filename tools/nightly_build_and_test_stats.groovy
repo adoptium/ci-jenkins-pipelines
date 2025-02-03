@@ -968,7 +968,7 @@ node('worker') {
         }
 
         // Slack message:
-        //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
         echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
@@ -1138,7 +1138,7 @@ node('worker') {
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} EA: *${health}*.${reproducibilityText} Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
-                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
