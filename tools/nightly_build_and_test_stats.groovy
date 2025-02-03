@@ -710,7 +710,7 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
         }
     }
 
-    return "FailedTestJobs: "+testResults+" FailedTestCases: "+failedTestCaseNum
+    return "FailedTestJobs: "+failedTestJobNum+" FailedTestCases: "+failedTestCaseNum
 }
 
 
