@@ -562,7 +562,6 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 def reproTestBucket=platformReproTestMap[onePlatform][0]
                 def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
                 def trssTestJobNames = callWgetSafely("${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
-echo "TRSS test jobs: "+trssTestJobNames
                 // Did this build have tests? If not, skip to next build job.
                 if ( trssTestJobNames.length() <= 2 ) {
                     continue
@@ -574,6 +573,7 @@ echo "TRSS test jobs: "+trssTestJobNames
                 // For each test job (including testList subjobs), we now search for the reproducibility test.
                 assert testJobNamesJson instanceof List
                 for ( Map testJob in testJobNamesJson ) {
+echo "TRSS_TEST_JOB: "+testJob
                     def wgetUrl = "${testJob.buildUrl}/consoleText"
                     if (testJob.buildOutputId != null) {
                         wgetUrl = "${trssURL}/api/getOutputById?id=${testJob.buildOutputId}"
