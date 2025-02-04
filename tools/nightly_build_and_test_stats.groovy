@@ -581,7 +581,6 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                     tests.each { testTarget ->
                         if (testTarget.testName.startsWith(reproTestName)) {
                             wgetUrl = "${trssURL}/api/getOutputById?id=${testTarget.testOutputId}"
-                            break
                         }
                     }
 
