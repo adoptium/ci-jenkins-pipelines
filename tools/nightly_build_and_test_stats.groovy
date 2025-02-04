@@ -573,10 +573,16 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 // For each test job (including testList subjobs), we now search for the reproducibility test.
                 assert testJobNamesJson instanceof List
                 for ( Map testJob in testJobNamesJson ) {
-echo "TRSS_TEST_JOB: "+testJob
+                    // Default to Jenkins console
                     def wgetUrl = "${testJob.buildUrl}/consoleText"
-                    if (testJob.buildOutputId != null) {
-                        wgetUrl = "${trssURL}/api/getOutputById?id=${testJob.buildOutputId}"
+
+                    // See if we can find the test in the tests list, to get the output from
+                    def tests = testJob.tests
+                    tests.each { testTarget ->
+                        if (testTarget.testName.startsWith(reproTestName)) {
+                            wgetUrl = "${trssURL}/api/getOutputById?id=${testTarget.testOutputId}"
+                            break
+                        }
                     }
 
                     def testOutput = callWgetSafely(wgetUrl)
