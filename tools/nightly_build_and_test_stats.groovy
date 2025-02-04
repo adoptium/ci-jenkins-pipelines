@@ -522,6 +522,12 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         def platformsForOneJDKVersion = results[jdkVersion][1]
         assert platformsForOneJDKVersion instanceof Map
         for ( String onePlatform in platformsForOneJDKVersion.keySet() ) {
+            // Check if we already have a result from previous pipeline
+            if (results[jdkVersion][1][onePlatform] != "?" && !results[jdkVersion][1][onePlatform].startsWith("???")) {
+                // We have a result already...
+                continue
+            }
+
             // If this platform doesn't have a reproducibility test yet, skip it.
             if (platformReproTestMap[onePlatform][0].equals("NA")) {
                 results[jdkVersion][1][onePlatform] = "NA"
@@ -538,7 +544,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             }
 
             def trssBuildJobNames = callWgetSafely("${pipelineLink}")
-            results[jdkVersion][1][onePlatform] = "???% - Build not found. Pipeline link: " + pipelineLink
+            def reproResult = "???% - Build not found. Pipeline link: " + pipelineLink
 
             // Does this platform have a build in this pipeline? If not, skip to next platform.
             if ( trssBuildJobNames.length() <= 2 ) {
@@ -550,7 +556,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
             assert buildJobNamesJson instanceof List
             for ( Map buildJob in buildJobNamesJson ) {
-                results[jdkVersion][1][onePlatform] = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
+                reproResult = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
                 def testPlatform = platformConversionMap[onePlatform][1]
                 def reproTestName=platformReproTestMap[onePlatform][1]
                 def reproTestBucket=platformReproTestMap[onePlatform][0]
@@ -562,7 +568,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                     continue
                 }
 
-                results[jdkVersion][1][onePlatform] = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
+                reproResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
                 def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
 
                 // For each test job (including testList subjobs), we now search for the reproducibility test.
@@ -581,13 +587,18 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                         continue
                     }
 
-                    results[jdkVersion][1][onePlatform] = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
+                    reproResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
                     // Now we know the test ran, 
                     def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
                     if ( matcherObject ) {
-                        results[jdkVersion][1][onePlatform] = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
+                        reproResult = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
                     }
                 }
+            }
+
+            // Did we find a result?
+            if (!reproResult.startsWith("???")) {
+                results[jdkVersion][1][onePlatform] = reproResult
             }
         }
 
@@ -1059,16 +1070,15 @@ node('worker') {
 
                     if (reproducibleBuilds.containsKey(featureRelease)) {
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
-                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", true, "")
+                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, "")
                         if (reproBuildUrls.size() > 0) {
-                            (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildUrls[0]
-                        }
+                            reproBuildUrls.each { reproBuildTuple ->
+                                (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildTuple      
+                                echo "Checking for reproducibility results in pipeline: ${reproBuildUrl}"
+                                echo "This pipeline's current status is ${reproBuildStatus}"
 
-                        if ( reproBuildUrl != "" ) {
-                            echo "Latest pipeline: ${reproBuildUrl}"
-                            echo "This pipeline's current status is ${reproBuildStatus}"
-
-                            getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
+                                getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
+                            }
 
                             if ( ! reproducibleBuilds[featureRelease][0].startsWith("100") ) {
 
