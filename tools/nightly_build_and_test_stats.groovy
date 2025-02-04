@@ -689,8 +689,10 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
         testVariant = "_${variant}_"
     }
 
-    def failedTestJobNum  = 0
+    def failedTestJobNum    = 0
+    def testJobTotal        = 0
     def failedTestTargetNum = 0 
+    def testTargetTotal     = 0
 
     // Find all "Done" pipeline jobs for this release EA tag
     def buildUrls
@@ -705,12 +707,28 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
         buildUrls.each { buildUrlTuple ->
             (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrlTuple
             def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant)
-            failedTestJobNum  += testResults.testJobFailure
+            failedTestJobNum    += testResults.testJobFailure
+            testJobTotal        += testResults.testJobNumber
             failedTestTargetNum += testResults.testTargetFailed
+            testTargetTotal     += (testResults.testTargetPassed + testResults.testTargetFailed)
         }
     }
 
-    return " _Failed: TestJobs="+failedTestJobNum+" TestTargets="+failedTestTargetNum+"_"
+    if (testJobTotal == 0) {
+        return "_No AQA tests run._"
+    } else if ((failedTestJobNum + failedTestTargetNum) == 0) {
+        return "\n_AQA tests successful: "+testJobTotal+" jobs & "+testTargetTotal+" targets run._"
+    } else {
+        def summary = "\n_Failed:"
+        if (failedTestJobNum > 0) {
+            summary += " TestJobs="+failedTestJobNum+"/"+testJobTotal
+        }
+        if (failedTestTargetNum > 0) {
+            summary += " TestTargets="+failedTestTargetNum+"/"+testTargetTotal
+        }
+        summary += "._"
+        return summary
+    }
 }
 
 
@@ -1132,11 +1150,11 @@ node('worker') {
 
                 def reproducibilityText = ""
                 if (reproducibleBuilds.containsKey(featureRelease)) {
-                    reproducibilityText = " Reproducibility: "+reproducibleBuilds[featureRelease][0]
+                    reproducibilityText = "\nReproducibility: "+reproducibleBuilds[featureRelease][0]
                 }
 
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} EA: *${health}*.${reproducibilityText} Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${missingMsg}"
+                def fullMessage = "${featureRelease} EA: *${health}*. Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${reproducibilityText}${errorMsg}${missingMsg}"
                 echo "===> ${fullMessage}"
                 slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
