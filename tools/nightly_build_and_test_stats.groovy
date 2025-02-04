@@ -562,7 +562,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 def reproTestBucket=platformReproTestMap[onePlatform][0]
                 def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
                 def trssTestJobNames = callWgetSafely("${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
-
+echo "TRSS test jobs: "+trssTestJobNames
                 // Did this build have tests? If not, skip to next build job.
                 if ( trssTestJobNames.length() <= 2 ) {
                     continue
