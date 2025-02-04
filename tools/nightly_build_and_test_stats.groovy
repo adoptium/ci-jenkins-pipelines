@@ -522,6 +522,8 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         def platformsForOneJDKVersion = results[jdkVersion][1]
         assert platformsForOneJDKVersion instanceof Map
         for ( String onePlatform in platformsForOneJDKVersion.keySet() ) {
+            echo "Searching for "+onePlatform+" reproducibility %"
+
             // Check if we already have a result from previous pipeline
             if (results[jdkVersion][1][onePlatform] != "?" && !results[jdkVersion][1][onePlatform].startsWith("???")) {
                 // We have a result already...
