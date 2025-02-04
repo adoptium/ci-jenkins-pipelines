@@ -560,7 +560,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             for ( Map buildJob in buildJobNamesJson ) {
                 reproResult = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
                 def testPlatform = platformConversionMap[onePlatform][1]
-                def reproTestName=platformReproTestMap[onePlatform][1]
+                def reproTestName=platformReproTestMap[onePlatform][1]+"_0"
                 def reproTestBucket=platformReproTestMap[onePlatform][0]
                 def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
                 def trssTestJobNames = callWgetSafely("${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
@@ -581,7 +581,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                     // See if we can find the test in the tests list, to get the output from
                     def tests = testJob.tests
                     tests.each { testTarget ->
-                        if (testTarget.testName.startsWith(reproTestName)) {
+                        if (testTarget.testName == reproTestName) {
                             wgetUrl = "${trssURL}/api/getOutputById?id=${testTarget.testOutputId}"
                         }
                     }
