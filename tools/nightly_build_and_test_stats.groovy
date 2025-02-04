@@ -715,11 +715,11 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     }
 
     if (testJobTotal == 0) {
-        return "_No AQA tests run._"
+        return " _No AQA tests run._"
     } else if ((failedTestJobNum + failedTestTargetNum) == 0) {
         return "\n_AQA tests successful: "+testJobTotal+" jobs & "+testTargetTotal+" targets run._"
     } else {
-        def summary = "\n_Failed:"
+        def summary = "\n_AQA test failures:"
         if (failedTestJobNum > 0) {
             summary += " TestJobs="+failedTestJobNum+"/"+testJobTotal
         }
