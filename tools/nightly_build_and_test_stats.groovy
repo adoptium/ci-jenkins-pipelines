@@ -106,10 +106,12 @@ def getUpstreamRepo(String version) {
     return openjdkRepo
 }
 
-// Get the latest upstream openjdk build tag
-def getLatestOpenjdkBuildTag(String version) {
+// Get the latest upstream openjdk EA build tag (ie.non-GA tags)
+def getLatestOpenjdkEABuildTag(String version) {
     def openjdkRepo = getUpstreamRepo(version)
     def versionInt = (version == "aarch32-jdk8u" || version == "alpine-jdk8u") ? 8 : version.replaceAll("[a-z]","").toInteger()
+
+    echo "Finding latest upstream EA build tag for version "+version
 
     def tagFilter
     if (version == "aarch32-jdk8u") {
@@ -121,7 +123,14 @@ def getLatestOpenjdkBuildTag(String version) {
     }
 
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\+0' | grep -v '\\-b00' | grep -v '\\-ga' ${tagFilter} | sort -V -r | head -1 | tr -d '\\n'")
-    echo "latest upstream openjdk/${version} tag = ${latestTag}"
+    echo "Found "+version+" tag: "+latestTag
+
+    if (isGaTag(version, latestTag)) {
+        // Is a GA tag, so get next tag..
+        echo "Tag "+latestTag+" is a GA tag, finding next tag.."
+        latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\+0' | grep -v '\\-b00' | grep -v '\\-ga' ${tagFilter} | sort -V -r | head -2 | tail -1 | tr -d '\\n'")
+    }
+    echo "Latest upstream openjdk/${version} EA tag = ${latestTag}"
 
     return latestTag
 }
@@ -805,14 +814,14 @@ node('worker') {
                 def releaseName = assetsJson[0].release_name
                 if (nonTagBuildReleases.contains(featureRelease)) {
                   // A non tag build, eg.a scheduled build for Oracle managed STS versions
-                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
+                  def latestOpenjdkBuild = getLatestOpenjdkEABuildTag(featureRelease)
                   def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
                   def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
                   def now = ZonedDateTime.now(ZoneId.of('UTC'))
                   def days = ChronoUnit.DAYS.between(assetTs, now)
                   status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days, upstreamTag: latestOpenjdkBuild]
                 } else {
-                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
+                  def latestOpenjdkBuild = getLatestOpenjdkEABuildTag(featureRelease)
                   def expectedReleaseName = "${latestOpenjdkBuild}-ea-beta"
                   if (featureRelease == "aarch32-jdk8u") {
                       expectedReleaseName = latestOpenjdkBuild.substring(0, latestOpenjdkBuild.indexOf("-aarch32"))+"-ea-beta"
@@ -833,7 +842,7 @@ node('worker') {
             // Check tip_releases status, by querying binaries repo as API does not server the "tip" dev releases
             if ("${params.TIP_RELEASES}".trim() != "") {
              tipReleases.each { tipRelease ->
-              def latestOpenjdkBuild = getLatestOpenjdkBuildTag(tipRelease)
+              def latestOpenjdkBuild = getLatestOpenjdkEABuildTag(tipRelease)
               def tipVersion = tipRelease.replaceAll("[a-z]","").toInteger()
               def releaseName = getLatestBinariesTag("${tipVersion}")
               status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTag: latestOpenjdkBuild]
@@ -1059,8 +1068,8 @@ node('worker') {
                         (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
                     }
 
-                    // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
-                    if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
+                    // Check latest published binaries are for the latest openjdk EA build tag
+                    if (status['releaseName'] != status['expectedReleaseName']) {
                         def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
                         if (upstreamTagAge > 3 && probableBuildStatus == "Done") {
                             slackColor = 'danger'
@@ -1123,45 +1132,42 @@ node('worker') {
 
                 // Verify if any artifacts missing?
                 def missingMsg = ""
-                // Don't check if upstream tag is a GA, as the ea-beta will only be for evaluation platforms
-                if (!isGaTag(featureRelease, status['upstreamTag'])) {
-                    def missingAssets = []
-                    if (status['assets'] != 'Complete') {
-                        slackColor = 'danger'
-                        health = "Unhealthy"
-                        errorMsg += "\nArtifact status: "+status['assets']
-                        if (probableBuildStatus == "Streaming") {
-                            errorMsg += ", <" + probableBuildUrl + "|Build is in progress>"
-                        } else {
-                            errorMsg += ", *No build is in progress*"
-                        }
-                        missingAssets = status['missingAssets']
-                    }
+		def missingAssets = []
+		if (status['assets'] != 'Complete') {
+		    slackColor = 'danger'
+		    health = "Unhealthy"
+		    errorMsg += "\nArtifact status: "+status['assets']
+		    if (probableBuildStatus == "Streaming") {
+		        errorMsg += ", <" + probableBuildUrl + "|Build is in progress>"
+		    } else {
+		        errorMsg += ", *No build is in progress*"
+		    }
+		    missingAssets = status['missingAssets']
+	        }
 
-                    // Print out formatted missing artifacts if any missing
-                    if (missingAssets.size() > 0) {
-                        missingMsg += " :"
-                        // Collate by arch, array is sequenced by architecture
-                        def archName = ""
-                        def missingFiles = ""
-                        missingAssets.each { missing ->
-                            // arch : imageType : fileType
-                            def missingFile = missing.split("[ :]+")
-                            if (missingFile[0] != archName) {
-                                if (archName != "") {
-                                    missingMsg += "\n    *${archName}*: ${missingFiles}"
-                                    echo "===> ${missingMsg}"
-                                }
-                                archName = missingFile[0]
-                                missingFiles = missingFile[1]+missingFile[2]
-                            } else {
-                               missingFiles += ", "+missingFile[1]+missingFile[2]
-                            }
-                        } 
-                        if (missingFiles != "") {
-                            missingMsg += "\n    *${archName}*: ${missingFiles}"
-                            echo "===> ${missingMsg}"
-                        }
+		// Print out formatted missing artifacts if any missing
+		if (missingAssets.size() > 0) {
+		    missingMsg += " :"
+		    // Collate by arch, array is sequenced by architecture
+		    def archName = ""
+		    def missingFiles = ""
+		    missingAssets.each { missing ->
+		        // arch : imageType : fileType
+		        def missingFile = missing.split("[ :]+")
+		        if (missingFile[0] != archName) {
+		      	    if (archName != "") {
+		 	        missingMsg += "\n    *${archName}*: ${missingFiles}"
+			        echo "===> ${missingMsg}"
+			    }
+			    archName = missingFile[0]
+			    missingFiles = missingFile[1]+missingFile[2]
+		        } else {
+		            missingFiles += ", "+missingFile[1]+missingFile[2]
+		        }
+		    } 
+                    if (missingFiles != "") {
+                        missingMsg += "\n    *${archName}*: ${missingFiles}"
+                        echo "===> ${missingMsg}"
                     }
                 }
 
