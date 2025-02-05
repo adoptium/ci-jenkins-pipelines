@@ -69,7 +69,11 @@ def isGaTag(String version, String tag) {
     def gaCheckTag = "unknown"
     if (version.contains("jdk8u")) {
         if (tag.indexOf("-") > 0) {
-            gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+            if (version == "aarch32-jdk8u") {
+                gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"+tag.substring(tag.indexOf("-", tag.indexOf("-")+1))
+            } else {
+                gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+            }
         }
     } else {
         if (tag.indexOf("+") > 0) {
@@ -811,8 +815,10 @@ node('worker') {
 
               def status = []
               // Get latest published EA build (ie.not including GA builds)
+              // Ignore rogue published jdk8u solaris tag!
               def asset_index = 0
-              while(asset_index < assetsJson.size() && isGaTag(featureRelease, assetsJson[asset_index].release_name.replaceAll("-ea-beta", ""))) {
+              while(asset_index < assetsJson.size() && (isGaTag(featureRelease, assetsJson[asset_index].release_name.replaceAll("-ea-beta", "")) ||
+                                                        assetsJson[asset_index].release_name.contains("solaris")) ) {
                 asset_index += 1
               }
               if (asset_index < assetsJson.size()) {
