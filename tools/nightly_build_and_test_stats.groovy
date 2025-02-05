@@ -812,7 +812,7 @@ node('worker') {
               def status = []
               // Get latest published EA build (ie.not including GA builds)
               def asset_index = 0
-              while(asset_index < assetsJson.size() && isGaTag(featureRelease, assetsJson[asset_index].release_name.replaceAll("-ea-beta", ""))) {) {
+              while(asset_index < assetsJson.size() && isGaTag(featureRelease, assetsJson[asset_index].release_name.replaceAll("-ea-beta", ""))) {
                 asset_index += 1
               }
               if (asset_index < assetsJson.size()) {
