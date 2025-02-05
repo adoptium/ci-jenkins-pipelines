@@ -1035,6 +1035,7 @@ node('worker') {
                 def slackColor = 'good'
                 def health = "Healthy"
                 def errorMsg = ""
+                def reproSummary = ""
                 def releaseName = status['releaseName']
                 def lastPublishedMsg = ""
                 def probableBuildUrl = ""
@@ -1059,17 +1060,18 @@ node('worker') {
                         errorMsg = "\nStale threshold: ${maxDays} days."
                     }
                 } else {
-                    failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
+                    // Get failed AQA test summary for the current published featureRelease
+                    failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-ea-beta", "")+"_adopt")
 
-                    // Check if build in-progress
-                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
-                    def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, "")
-                    if (buildUrls.size() > 0) {
-                        (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
-                    }
-
-                    // Check latest published binaries are for the latest openjdk EA build tag
+                    // Check latest published binaries are for the latest openjdk EA build tag, if not check if build is in-progress..
                     if (status['releaseName'] != status['expectedReleaseName']) {
+                        // Check if build in-progress
+                        (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
+                        def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, "")
+                        if (buildUrls.size() > 0) {
+                            (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
+                        }
+
                         def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
                         if (upstreamTagAge > 3 && probableBuildStatus == "Done") {
                             slackColor = 'danger'
@@ -1085,6 +1087,8 @@ node('worker') {
                     }
 
                     if (reproducibleBuilds.containsKey(featureRelease)) {
+                        def reproDetailSummary = ""
+
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
                         def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, "")
                         if (reproBuildUrls.size() > 0) {
@@ -1120,13 +1124,15 @@ node('worker') {
                                 //Remove trailing comma.
                                 summaryOfRepros = summaryOfRepros.substring(0, summaryOfRepros.length() - 1);
 
-                                errorMsg += "\nBuild repro summary: "+summaryOfRepros
+                                reproDetailSummary = "\nBuild repro summary: "+summaryOfRepros
                             }
                         } else {
                             // Ignore if we cannot find a likely pipeline job.
                             reproducibleBuilds[featureRelease][0] = "N/A"
                             echo "This pipeline is blank string"
                         }
+
+                        reproSummary = "\nReproducibility: "+reproducibleBuilds[featureRelease][0]+reproDetailSummary
                     }
                 }
 
@@ -1171,13 +1177,8 @@ node('worker') {
                     }
                 }
 
-                def reproducibilityText = ""
-                if (reproducibleBuilds.containsKey(featureRelease)) {
-                    reproducibilityText = "\nReproducibility: "+reproducibleBuilds[featureRelease][0]
-                }
-
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} EA: *${health}*. Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${reproducibilityText}${errorMsg}${missingMsg}"
+                def fullMessage = "${featureRelease} EA: *${health}*. Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${reproSummary}${missingMsg}"
                 echo "===> ${fullMessage}"
                 slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
