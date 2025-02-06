@@ -64,7 +64,12 @@ def isGaTag(String version, String tag) {
 echo "TAG: "+tag
     def openjdkRepo = getUpstreamRepo(version) 
 
+    def annotatedTag = true
+    
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    if (tagCommitSHA == "") {
+       tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
 
 echo "tagSHA:"+tagCommitSHA
     def gaCheckTag = "unknown"
@@ -82,6 +87,9 @@ echo "tagSHA:"+tagCommitSHA
         }
     }
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    if (gaCommitSHA == "") {
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
 echo "gaSHA:"+gaCommitSHA
     if (gaCommitSHA != "" && tagCommitSHA == gaCommitSHA) {
 echo "ISGA"
