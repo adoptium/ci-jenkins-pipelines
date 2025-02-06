@@ -61,7 +61,7 @@ def isGaTag(String version, String tag) {
         // Tip release has no GA tags
         return false
     }
-
+echo "TAG: "+tag
     def openjdkRepo = getUpstreamRepo(version) 
 
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
@@ -69,7 +69,7 @@ def isGaTag(String version, String tag) {
     def gaCheckTag = "unknown"
     if (version.contains("jdk8u")) {
         if (tag.indexOf("-") > 0) {
-            if (version == "aarch32-jdk8u") {
+            if (version == "aarch32-jdk8u"  && tag.indexOf("-", tag.indexOf("-")+1) > 0) {
                 gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"+tag.substring(tag.indexOf("-", tag.indexOf("-")+1))
             } else {
                 gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
