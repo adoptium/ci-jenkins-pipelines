@@ -66,6 +66,7 @@ echo "TAG: "+tag
 
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
 
+echo "tagSHA:"+tagCommitSHA
     def gaCheckTag = "unknown"
     if (version.contains("jdk8u")) {
         if (tag.indexOf("-") > 0) {
@@ -81,10 +82,12 @@ echo "TAG: "+tag
         }
     }
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
-
+echo "gaSHA:"+gaCommitSHA
     if (gaCommitSHA != "" && tagCommitSHA == gaCommitSHA) {
+echo "ISGA"
         return true
     } else {
+echo "NOTGA"
         return false
     }
 }
