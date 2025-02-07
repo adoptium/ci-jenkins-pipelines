@@ -64,8 +64,6 @@ def isGaTag(String version, String tag) {
 
     def openjdkRepo = getUpstreamRepo(version) 
 
-    def annotatedTag = true
-    
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     if (tagCommitSHA == "") {
        // Some repos eg.jkd8u-aarch32-port use Lightweight tagging...
