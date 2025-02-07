@@ -1094,18 +1094,17 @@ node('worker') {
                     // Get failed AQA test summary for the current published featureRelease
                     failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-ea-beta", "")+"_adopt")
 
+                    // Get latest build, in case we need to report current build status when assets are missing or not the latest tag
+                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
+                    def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, "")
+                    if (buildUrls.size() > 0) {
+                        (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
+                    }
+
                     // Check latest published binaries are for the latest openjdk EA build tag, if not check if build is in-progress..
                     if (status['releaseName'] != status['expectedReleaseName']) {
-                        // Check if build in-progress
-                        (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
-                        def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, "")
-                        if (buildUrls.size() > 0) {
-                            (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
-                        }
-                     
-
                         def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
-                        if (upstreamTagAge > 3 && probableBuildStatus == "Done") {
+                        if (upstreamTagAge > 3 && (probableBuildStatus == "" || probableBuildStatus == "Done")) {
                             slackColor = 'danger'
                             health = "Unhealthy"
                             errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *No build is in progress*."
