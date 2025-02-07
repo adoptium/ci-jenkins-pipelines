@@ -824,10 +824,8 @@ node('worker') {
 
               def status = []
               // Get latest published EA build (ie.not including GA builds)
-              // Ignore rogue published jdk8u solaris tag!
               def asset_index = 0
-              while(asset_index < assetsJson.size() && (isGaTag(featureRelease, assetsJson[asset_index].release_name.replaceAll("-ea-beta", "")) ||
-                                                        assetsJson[asset_index].release_name.contains("solaris")) ) {
+              while(asset_index < assetsJson.size() && isGaTag(featureRelease, assetsJson[asset_index].release_name.replaceAll("-ea-beta", "")) ) {
                 asset_index += 1
               }
               if (asset_index < assetsJson.size()) {
