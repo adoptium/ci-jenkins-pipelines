@@ -335,6 +335,15 @@ echo "BUILDURLS: "+pipelineJson
                 }
             }
 echo "B: "+job
+echo "BB:"+releaseType
+echo "BB:"+containsVariant
+echo "BB:"+overridePublishName
+echo "BB:"+buildScmRef
+echo "BB:"+job.status
+echo "BB RS:"+requiredStatus+"BB"
+echo "BB:"+featureReleaseInt
+echo "BB:"+containsX64AlpineLinux
+echo "BB:"+featureRelease
             // Is there a job for the required tag?
             if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus == "" || job.status == requiredStatus)) {
                 if (featureReleaseInt == 8) {
