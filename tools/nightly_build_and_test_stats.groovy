@@ -314,6 +314,7 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
 
     if (pipelineJson.size() > 0) {
         def foundBuildTimestamp = 0
+echo "BUILDURLS: "+pipelineJson
         pipelineJson.each { job ->
             def overridePublishName = ""
             def buildScmRef = ""
@@ -333,12 +334,13 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
                     releaseType = buildParam.value
                 }
             }
-
+echo "B: "+job
             // Is there a job for the required tag?
             if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus == "" || job.status == requiredStatus)) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
+echo "AAA"
                         if (job.timestamp > foundBuildTimestamp || !latestOnly) {
                             if (latestOnly) {
                                 functionBuildUrls = [[job.buildUrl, job._id, job.status]]
@@ -1033,7 +1035,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall EA Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall EA Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
         echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
@@ -1091,6 +1093,7 @@ node('worker') {
                         if (buildUrls.size() > 0) {
                             (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
                         }
+                     
 
                         def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
                         if (upstreamTagAge > 3 && probableBuildStatus == "Done") {
@@ -1200,7 +1203,7 @@ node('worker') {
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} EA: *${health}*. Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${reproSummary}${missingMsg}"
                 echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
