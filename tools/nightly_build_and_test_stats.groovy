@@ -299,7 +299,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
 // Return our best guess at the urls for the Weekly EA pipelines that generated builds from a specific tag.
 // Optionally only return the "latest".
 // This pipeline is expected to have attempted to build JDKs for all supported platforms.
-def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, String requiredStatus) {
+def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, List requiredStatus) {
     def functionBuildUrls = []
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
@@ -335,7 +335,7 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
             }
 
             // Is there a job for the required tag?
-            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus == "" || job.status == requiredStatus)) {
+            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus.size() == 0 || requiredStatus.contains(job.status))) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
@@ -734,14 +734,14 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     def failedTestTargetNum = 0 
     def testTargetTotal     = 0
 
-    // Find all "Done" pipeline jobs for this release EA tag
+    // Find all "Done" or "Streaming" pipeline jobs for this release EA tag
     def buildUrls
     if (tag == "") {
         // Non-tag release builds, just find the last build
-        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true, "Done")
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true, ["Done","Streaming"])
     } else {
         // Tag build, find all pipeline jobs matching the tag
-        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false, "Done")
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false, ["Done","Streaming"])
     }
     if (buildUrls.size() > 0) {
         buildUrls.each { buildUrlTuple ->
@@ -1033,7 +1033,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall EA Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall EA Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
         echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
@@ -1085,7 +1085,7 @@ node('worker') {
 
                     // Get latest build, in case we need to report current build status when assets are missing or not the latest tag
                     (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
-                    def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, "")
+                    def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, [])
                     if (buildUrls.size() > 0) {
                         (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
                     }
@@ -1110,7 +1110,7 @@ node('worker') {
                         def reproDetailSummary = ""
 
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
-                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, "")
+                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, [])
                         if (reproBuildUrls.size() > 0) {
                             reproBuildUrls.each { reproBuildTuple ->
                                 (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildTuple      
@@ -1200,7 +1200,7 @@ node('worker') {
                 def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                 def fullMessage = "${featureRelease} EA: *${health}*. Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${reproSummary}${missingMsg}"
                 echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
             }
             echo '----------------------------------------------------------------'
         }
