@@ -66,7 +66,7 @@ def isGaTag(String version, String tag) {
 
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     if (tagCommitSHA == "") {
-       // Some repos eg.jkd8u-aarch32-port use Lightweight tagging...
+       // Some repos eg.jdk8u-aarch32-port use Lightweight tagging...
        tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     }
 
@@ -87,7 +87,7 @@ def isGaTag(String version, String tag) {
     }
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     if (gaCommitSHA == "") {
-        // Some repos eg.jkd8u-aarch32-port use Lightweight tagging...
+        // Some repos eg.jdk8u-aarch32-port use Lightweight tagging...
         gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     }
 
