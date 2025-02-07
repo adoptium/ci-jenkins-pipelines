@@ -61,20 +61,20 @@ def isGaTag(String version, String tag) {
         // Tip release has no GA tags
         return false
     }
-echo "TAG: "+tag
     def openjdkRepo = getUpstreamRepo(version) 
 
     def annotatedTag = true
     
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     if (tagCommitSHA == "") {
+       // Some repos eg.jkd8u-aarch32-port use Lightweight tagging...
        tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     }
 
-echo "tagSHA:"+tagCommitSHA
     def gaCheckTag = "unknown"
     if (version.contains("jdk8u")) {
         if (tag.indexOf("-") > 0) {
+            // Is this a jdk8u-aarch32 tag eg.jdk8u442-b06-aarch32-20250125
             if (version == "aarch32-jdk8u"  && tag.indexOf("-", tag.indexOf("-")+1) > 0) {
                 gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"+tag.substring(tag.indexOf("-", tag.indexOf("-")+1))
             } else {
@@ -88,14 +88,12 @@ echo "tagSHA:"+tagCommitSHA
     }
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     if (gaCommitSHA == "") {
+        // Some repos eg.jkd8u-aarch32-port use Lightweight tagging...
         gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
     }
-echo "gaSHA:"+gaCommitSHA
     if (gaCommitSHA != "" && tagCommitSHA == gaCommitSHA) {
-echo "ISGA"
         return true
     } else {
-echo "NOTGA"
         return false
     }
 }
