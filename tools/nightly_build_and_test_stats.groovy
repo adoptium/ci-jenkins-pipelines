@@ -65,11 +65,20 @@ def isGaTag(String version, String tag) {
     def openjdkRepo = getUpstreamRepo(version) 
 
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    if (tagCommitSHA == "") {
+       // Some repos eg.jdk8u-aarch32-port use Lightweight tagging...
+       tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
 
     def gaCheckTag = "unknown"
     if (version.contains("jdk8u")) {
         if (tag.indexOf("-") > 0) {
-            gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+            // Is this a jdk8u-aarch32 tag eg.jdk8u442-b06-aarch32-20250125
+            if (version == "aarch32-jdk8u"  && tag.indexOf("-", tag.indexOf("-")+1) > 0) {
+                gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"+tag.substring(tag.indexOf("-", tag.indexOf("-")+1))
+            } else {
+                gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+            }
         }
     } else {
         if (tag.indexOf("+") > 0) {
@@ -77,6 +86,10 @@ def isGaTag(String version, String tag) {
         }
     }
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    if (gaCommitSHA == "") {
+        // Some repos eg.jdk8u-aarch32-port use Lightweight tagging...
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
 
     if (gaCommitSHA != "" && tagCommitSHA == gaCommitSHA) {
         return true
@@ -286,7 +299,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
 // Return our best guess at the urls for the Weekly EA pipelines that generated builds from a specific tag.
 // Optionally only return the "latest".
 // This pipeline is expected to have attempted to build JDKs for all supported platforms.
-def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, String requiredStatus) {
+def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, List requiredStatus) {
     def functionBuildUrls = []
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
@@ -322,7 +335,7 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
             }
 
             // Is there a job for the required tag?
-            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus == "" || job.status == requiredStatus)) {
+            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus.size() == 0 || requiredStatus.contains(job.status))) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
@@ -721,14 +734,14 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     def failedTestTargetNum = 0 
     def testTargetTotal     = 0
 
-    // Find all "Done" pipeline jobs for this release EA tag
+    // Find all "Done" or "Streaming" pipeline jobs for this release EA tag
     def buildUrls
     if (tag == "") {
         // Non-tag release builds, just find the last build
-        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true, "Done")
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true, ["Done","Streaming"])
     } else {
         // Tag build, find all pipeline jobs matching the tag
-        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false, "Done")
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false, ["Done","Streaming"])
     }
     if (buildUrls.size() > 0) {
         buildUrls.each { buildUrlTuple ->
@@ -810,8 +823,13 @@ node('worker') {
               def assetsJson = new JsonSlurper().parseText(assets)
 
               def status = []
-              if (assetsJson.size() > 0) {
-                def releaseName = assetsJson[0].release_name
+              // Get latest published EA build (ie.not including GA builds)
+              def asset_index = 0
+              while(asset_index < assetsJson.size() && isGaTag(featureRelease, assetsJson[asset_index].release_name.replaceAll("-ea-beta", "")) ) {
+                asset_index += 1
+              }
+              if (asset_index < assetsJson.size()) {
+                def releaseName = assetsJson[asset_index].release_name
                 if (nonTagBuildReleases.contains(featureRelease)) {
                   // A non tag build, eg.a scheduled build for Oracle managed STS versions
                   def latestOpenjdkBuild = getLatestOpenjdkEABuildTag(featureRelease)
@@ -1013,7 +1031,7 @@ node('worker') {
         }
 
         // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall EA Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
         echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
     }
@@ -1063,17 +1081,17 @@ node('worker') {
                     // Get failed AQA test summary for the current published featureRelease
                     failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-ea-beta", "")+"_adopt")
 
+                    // Get latest build, in case we need to report current build status when assets are missing or not the latest tag
+                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
+                    def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, [])
+                    if (buildUrls.size() > 0) {
+                        (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
+                    }
+
                     // Check latest published binaries are for the latest openjdk EA build tag, if not check if build is in-progress..
                     if (status['releaseName'] != status['expectedReleaseName']) {
-                        // Check if build in-progress
-                        (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
-                        def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, "")
-                        if (buildUrls.size() > 0) {
-                            (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
-                        }
-
                         def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
-                        if (upstreamTagAge > 3 && probableBuildStatus == "Done") {
+                        if (upstreamTagAge > 3 && (probableBuildStatus == "" || probableBuildStatus == "Done")) {
                             slackColor = 'danger'
                             health = "Unhealthy"
                             errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *No build is in progress*."
@@ -1090,7 +1108,7 @@ node('worker') {
                         def reproDetailSummary = ""
 
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
-                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, "")
+                        def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, [])
                         if (reproBuildUrls.size() > 0) {
                             reproBuildUrls.each { reproBuildTuple ->
                                 (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildTuple      
