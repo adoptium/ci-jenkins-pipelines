@@ -319,6 +319,8 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                         jobParams = [
                             booleanParam(name: 'RELEASE',           value: false),
                             string(name: 'SCM_REF',                 value: "$latestAdoptTag"),
+                            booleanParam(name: 'ENABLE_TESTS',      value: enableTesting),
+                            booleanParam(name: 'DRY_RUN',           value: false)
                         ]
                     } else {
                         jobParams = [
