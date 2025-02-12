@@ -647,6 +647,8 @@ class Build {
                                                                     context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
                                                                     context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
                                                                     context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
+                                                                    context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
+                                                                    context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
                                                                     context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
                             remoteJenkinsName: 'temurin-compliance',
                             shouldNotFailBuild: true,
