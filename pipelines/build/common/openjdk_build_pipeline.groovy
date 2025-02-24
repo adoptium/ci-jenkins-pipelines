@@ -567,6 +567,7 @@ class Build {
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName}"
         context.echo "sdkUrl is ${sdkUrl}"
         def remoteTargets = [:]
+        def remoteTriggeredBuilds = [:]
         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
         def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
         def setupJCKRun = false
@@ -621,48 +622,50 @@ class Build {
 
         targets.each { targetMode, targetTests -> 
             try {
-                context.println "Remote trigger: ${targetTests}"
                 remoteTargets["${targetTests}"] = {
-                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
-                    def parallel = 'None'
-                    def num_machines = '1'
-                    if ("${targetMode}" == 'parallel') {
-                         parallel = 'Dynamic'
-                         num_machines = '2'
-                    }
-                    context.catchError {
-                        context.triggerRemoteJob abortTriggeredJob: true,
-                            blockBuildUntilComplete: false,
-                            job: 'AQA_Test_Pipeline',
-                            parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                    context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
-                                                                    context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
-                                                                    context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                    context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                    context.MapParameter(name: 'PARALLEL', value: parallel),
-                                                                    context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                    context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                    context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                    context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
-                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                                    context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
-                                                                    context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
-                                                                    context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
-                                                                    context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
-                                                                    context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
-                            remoteJenkinsName: 'temurin-compliance',
-                            shouldNotFailBuild: true,
-                            token: 'RemoteTrigger',
-                            useCrumbCache: true,
-                            useJobInfoCache: true
+                    context.stage("${targetTests}") {
+                        context.println "Remote trigger: ${targetTests}"
+                        def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
+                        def parallel = 'None'
+                        def num_machines = '1'
+                        if ("${targetMode}" == 'parallel') {
+                            parallel = 'Dynamic'
+                            num_machines = '2'
+                        }
+                        context.catchError {
+                            remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
+                                blockBuildUntilComplete: false,
+                                job: 'AQA_Test_Pipeline',
+                                parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
+                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
+                                                                        context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
+                                                                        context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                                                                        context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
+                                                                        context.MapParameter(name: 'PARALLEL', value: parallel),
+                                                                        context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
+                                                                        context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
+                                                                        context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
+                                                                        context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
+                                                                        context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                                        context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
+                                                                        context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
+                                                                        context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
+                                                                        context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
+                                                                        context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
+                                remoteJenkinsName: 'temurin-compliance',
+                                shouldNotFailBuild: true,
+                                token: 'RemoteTrigger',
+                                useCrumbCache: true,
+                                useJobInfoCache: true
+                        }
                     }
                 }
             } catch (Exception e) {
                 context.println "Failed to remote trigger jck tests: ${e.message}"
             }
         }
-
-        return remoteTargets
+        context.parallel remoteTargets
+        return remoteTriggeredBuilds
     }
 
     def compareReproducibleBuild(String nonDockerNodeName) {
@@ -2508,41 +2511,55 @@ def buildScriptsAssemble(
 
                 // Run Smoke Tests and AQA Tests
                 if (enableTests) {
-                  if (currentBuild.currentResult != "SUCCESS") {
-                    context.println('[ERROR] Build stages were not successful, not running AQA tests')
-                  } else {
-                    try {
-                        //Only smoke tests succeed TCK and AQA tests will be triggerred.
-                        context.println "openjdk_build_pipeline: running smoke tests"
-                        if (runSmokeTests() == 'SUCCESS') {
-                            context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
-                            // Remote trigger Eclipse Temurin JCK tests
-                            if (buildConfig.VARIANT == 'temurin' && enableTCK) {
-                                def platform = ''
-                                if (buildConfig.ARCHITECTURE.contains('x64')) {
-                                    platform = 'x86-64_' + buildConfig.TARGET_OS
-                                } else {
-                                    platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
+                    if (currentBuild.currentResult != "SUCCESS") {
+                        context.println('[ERROR] Build stages were not successful, not running AQA tests')
+                    } else {
+                        try {
+                            //Only smoke tests succeed TCK and AQA tests will be triggerred.
+                            context.println "openjdk_build_pipeline: running smoke tests"
+                            if (runSmokeTests() == 'SUCCESS') {
+                                context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
+                                // Remote trigger Eclipse Temurin JCK tests
+                                def remoteTriggeredBuilds = [:]
+                                if (buildConfig.VARIANT == 'temurin' && enableTCK) {
+                                    def platform = ''
+                                    if (buildConfig.ARCHITECTURE.contains('x64')) {
+                                        platform = 'x86-64_' + buildConfig.TARGET_OS
+                                    } else {
+                                        platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
+                                    }
+                                    if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
+                                        context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
+                                        //def remoteTargets = remoteTriggerJckTests(platform, filename)
+                                        //context.parallel remoteTargets
+                                        remoteTriggeredBuilds = remoteTriggerJckTests(platform, filename)                                   
+                                    }
                                 }
-                                if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                    context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                    def remoteTargets = remoteTriggerJckTests(platform, filename)
-                                    context.parallel remoteTargets
-                                }
-                            }
 
-                            if (buildConfig.TEST_LIST.size() > 0) {
-                                def testStages = runAQATests()
-                                context.parallel testStages
+                                if (buildConfig.TEST_LIST.size() > 0) {
+                                    def testStages = runAQATests()
+                                    context.parallel testStages
+                                }
+                                
+                                // Asynchronously get the remote JCK job status and set as the stage status.
+                                if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
+                                    remoteTriggeredBuilds.each{ testTargets, jobHandle -> 
+                                        while( !jobHandle.isFinished() ) {
+                                            context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString();
+                                            sleep 3600
+                                            jobHandle.updateBuildStatus()
+                                        }
+                                        setStageResult("${testTargets}", jobHandle.getBuildResult().toString());
+                                    }
+                                }
+                            } else { 
+                                context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
                             }
-                        } else {
-                            context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
+                        } catch (Exception e) {
+                            context.println(e.message)
+                            currentBuild.result = 'FAILURE'
                         }
-                    } catch (Exception e) {
-                        context.println(e.message)
-                        currentBuild.result = 'FAILURE'
                     }
-                  }
                 }
 
                 // Compare reproducible build if needed
