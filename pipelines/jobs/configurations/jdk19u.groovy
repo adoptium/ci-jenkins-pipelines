@@ -35,11 +35,6 @@ targetConfigurations = [
 
 ]
 
-// 03:30 Tue, Thur, Sat
-triggerSchedule_nightly = 'TZ=UTC\n30 03 * * 2,4,6'
-// 17:05 Sun
-triggerSchedule_weekly = 'TZ=UTC\n05 17 * * 7'
-
 // scmReferences to use for weekly release build
 weekly_release_scmReferences = [
         'hotspot'        : '',

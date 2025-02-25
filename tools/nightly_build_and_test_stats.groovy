@@ -106,7 +106,7 @@ def getUpstreamRepo(String version) {
     def isUpdateVersion = version.endsWith("u")
     
     if (versionInt >= 23 && !isUpdateVersion) {
-        // jdk-23+ stabalisation versions are now branches in jdk(head) repo
+        // jdk-23+ stabilisation versions are now branches in jdk(head) repo
         openjdkRepo = "https://github.com/openjdk/jdk.git"
     } else if (version == "aarch32-jdk8u") {
         openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
