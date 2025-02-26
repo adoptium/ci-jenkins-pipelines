@@ -623,41 +623,39 @@ class Build {
         targets.each { targetMode, targetTests -> 
             try {
                 remoteTargets["${targetTests}"] = {
-                    context.stage("${targetTests}") {
-                        context.println "Remote trigger: ${targetTests}"
-                        def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
-                        def parallel = 'None'
-                        def num_machines = '1'
-                        if ("${targetMode}" == 'parallel') {
-                            parallel = 'Dynamic'
-                            num_machines = '2'
-                        }
-                        context.catchError {
-                            remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
-                                blockBuildUntilComplete: false,
-                                job: 'AQA_Test_Pipeline',
-                                parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
-                                                                        context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
-                                                                        context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                        context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                        context.MapParameter(name: 'PARALLEL', value: parallel),
-                                                                        context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                        context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                        context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                        context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
-                                                                        context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                                        context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
-                                                                        context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
-                                                                        context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
-                                                                        context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
-                                                                        context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
-                                remoteJenkinsName: 'temurin-compliance',
-                                shouldNotFailBuild: true,
-                                token: 'RemoteTrigger',
-                                useCrumbCache: true,
-                                useJobInfoCache: true
-                        }
+                    context.println "Remote trigger: ${targetTests}"
+                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
+                    def parallel = 'None'
+                    def num_machines = '1'
+                    if ("${targetMode}" == 'parallel') {
+                        parallel = 'Dynamic'
+                        num_machines = '2'
+                    }
+                    context.catchError {
+                        remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
+                            blockBuildUntilComplete: false,
+                            job: 'AQA_Test_Pipeline',
+                            parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
+                                                                    context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
+                                                                    context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
+                                                                    context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                                                                    context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
+                                                                    context.MapParameter(name: 'PARALLEL', value: parallel),
+                                                                    context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
+                                                                    context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
+                                                                    context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
+                                                                    context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
+                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                                    context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
+                                                                    context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
+                                                                    context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
+                                                                    context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
+                                                                    context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
+                            remoteJenkinsName: 'temurin-compliance',
+                            shouldNotFailBuild: true,
+                            token: 'RemoteTrigger',
+                            useCrumbCache: true,
+                            useJobInfoCache: true
                     }
                 }
             } catch (Exception e) {
@@ -2544,12 +2542,14 @@ def buildScriptsAssemble(
                                 // Asynchronously get the remote JCK job status and set as the stage status.
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
                                     remoteTriggeredBuilds.each{ testTargets, jobHandle -> 
-                                        while( !jobHandle.isFinished() ) {
-                                            context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString();
-                                            sleep 3600
-                                            jobHandle.updateBuildStatus()
+                                        context.stage("${testTargets}") {
+                                            while( !jobHandle.isFinished() ) {
+                                                context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString();
+                                                sleep 3600
+                                                jobHandle.updateBuildStatus()
+                                            }
+                                            setStageResult("${testTargets}", jobHandle.getBuildResult().toString());
                                         }
-                                        setStageResult("${testTargets}", jobHandle.getBuildResult().toString());
                                     }
                                 }
                             } else { 
