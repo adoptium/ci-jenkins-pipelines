@@ -25,3 +25,12 @@ index 249eaa66247..56e348b29b6 100644
    binutils_ver := binutils-2.41
    ccache_ver := ccache-3.7.12
    mpfr_ver := mpfr-4.2.0
+@@ -251,7 +252,7 @@
+         # Only run this if rpm dir is empty.
+         ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
+ 	  cd $(DOWNLOAD_RPMS) && \
+-	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
++	      tar xvpf /home/jenkins/download-rpmsF2728.tar
+         endif
+ 
+ ################################################################################
