@@ -30,7 +30,7 @@ index 249eaa66247..56e348b29b6 100644
          ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
  	  cd $(DOWNLOAD_RPMS) && \
 -	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
-+	      tar xvpf /home/jenkins/download-rpmsF2728.tar
++	      curl https://ci.adoptium.net/userContent/devkit/download-rpmsF2728.riscv64.tar | tar xpvf -
          endif
  
  ################################################################################
