@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ################################################################################
+# For Fedora see https://mirrormanager.fedoraproject.org/ for a lsit of versions/architectures
+
 
 set -e
 
