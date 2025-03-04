@@ -15,6 +15,7 @@
 # For Fedora see https://mirrormanager.fedoraproject.org/ for a lsit of versions/architectures
 
 
+set -x
 set -e
 
 if [ $# -lt 4 ]; then
@@ -58,7 +59,7 @@ if [ "${BASE_OS}" = "rhel" ] && [ "${ARCH}" = "s390x" ]; then
     fi
   done
   # Temporary fudge to use Centos logic until we adjust Tools.gmk
-  BASE_OS=Centos
+  # BASE_OS=Centos
 fi
 
 # Perform "bootstrap" devkit build
@@ -71,14 +72,14 @@ BOOTSTRAP_DEVKIT="$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}"
 BOOTSTRAP_DOWNLOADED_RPMS="$(pwd)/build/bootstrap_rpms_${devkit_target}-to-${devkit_target}"
 
 mv build/devkit/result/${devkit_target}-to-${devkit_target} "${BOOTSTRAP_DEVKIT}"
-mv build/devkit/download/rpms/${ARCH}-linux-gnu-Centos${BASE_OS_VERSION} "${BOOTSTRAP_DOWNLOADED_RPMS}"
+mv build/devkit/download/rpms/${ARCH}-linux-gnu-Fedora-${BASE_OS_VERSION} "${BOOTSTRAP_DOWNLOADED_RPMS}"
 
 # Make final "DevKit" using the bootstrap devkit
 rm -rf build/devkit
 
 # Move saved bootstrap rpm downloads to final build folder
 mkdir -p build/devkit/download/rpms
-mv ${BOOTSTRAP_DOWNLOADED_RPMS} build/devkit/download/rpms/${ARCH}-linux-gnu-Centos${BASE_OS_VERSION}
+mv ${BOOTSTRAP_DOWNLOADED_RPMS} build/devkit/download/rpms/${ARCH}-linux-gnu-${BASE_OS}_${BASE_OS_VERSION}
 
 echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in ${BOOTSTRAP_DEVKIT}"
 cd make/devkit && pwd && \
