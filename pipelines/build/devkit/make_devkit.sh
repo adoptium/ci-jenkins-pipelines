@@ -79,7 +79,11 @@ rm -rf build/devkit
 
 # Move saved bootstrap rpm downloads to final build folder
 mkdir -p build/devkit/download/rpms
-mv ${BOOTSTRAP_DOWNLOADED_RPMS} build/devkit/download/rpms/${ARCH}-linux-gnu-${BASE_OS}_${BASE_OS_VERSION}
+echo SXAWC: PWD = $PWD
+ls -ld build/devkit/download/rpms/${ARCH}-linux-gnu-${BASE_OS}_${BASE_OS_VERSION} || true
+ls -l ${BOOTSTRAP_DOWNLOADED_RPMS}  || true
+ls -l build/devkit/download/rpms || true
+mv ${BOOTSTRAP_DOWNLOADED_RPMS} build/devkit/download/rpms/${ARCH}-linux-gnu-${BASE_OS}_${BASE_OS_VERSION} || true
 
 echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in ${BOOTSTRAP_DEVKIT}"
 cd make/devkit && pwd && \
