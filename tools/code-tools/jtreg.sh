@@ -57,50 +57,50 @@ buildJTReg()
     if [ "$1" == "$JTREG_5" ]; then
       export BUILD_NUMBER="b01"
       export BUILD_VERSION="5.1"
-      export JAVA_HOME=/usr/lib/jvm/java-1.8.0
+      export JAVA_HOME=/usr/lib/jvm/jdk8
     elif [ "$1" == "$JTREG_6" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="6"
-      export JAVA_HOME=/usr/lib/jvm/java-1.8.0
+      export JAVA_HOME=/usr/lib/jvm/jdk8
     elif [ "$1" == "$JTREG_6_1" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="6.1"
-      export JAVA_HOME=/usr/lib/jvm/java-1.8.0
+      export JAVA_HOME=/usr/lib/jvm/jdk8
     elif [ "$1" == "$JTREG_7" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7"
-      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export JAVA_HOME=/usr/lib/jvm/jdk11
     elif [ "$1" == "$JTREG_7_1" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.1.1"
-      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export JAVA_HOME=/usr/lib/jvm/jdk11
     elif [ "$1" == "$JTREG_7_2" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.2"
-      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export JAVA_HOME=/usr/lib/jvm/jdk11
     elif [ "$1" == "$JTREG_7_3" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.3"
-      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export JAVA_HOME=/usr/lib/jvm/jdk11
     elif [ "$1" == "$JTREG_7_3_1" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.3.1"
-      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export JAVA_HOME=/usr/lib/jvm/jdk11
     elif [ "$1" == "$JTREG_7_4" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.4"
-      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export JAVA_HOME=/usr/lib/jvm/jdk11
     elif [ "$1" == "$JTREG_7_5" ]; then
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="7.5"
-      export JAVA_HOME=/usr/lib/jvm/jdk-11
+      export JAVA_HOME=/usr/lib/jvm/jdk11
     fi
     git checkout $version
   else
     unset BUILD_NUMBER
     unset BUILD_VERSION
     unset JTREG_BUILD_NUMBER
-    export JAVA_HOME=/usr/lib/jvm/jdk-17
+    export JAVA_HOME=/usr/lib/jvm/jdk17
     git checkout master
   fi
 
