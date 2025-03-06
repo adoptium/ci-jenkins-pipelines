@@ -71,15 +71,18 @@ cd ../..
 BOOTSTRAP_DEVKIT="$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}"
 BOOTSTRAP_DOWNLOADED_RPMS="$(pwd)/build/bootstrap_rpms_${devkit_target}-to-${devkit_target}"
 
-mv build/devkit/result/${devkit_target}-to-${devkit_target} "${BOOTSTRAP_DEVKIT}"
-mv build/devkit/download/rpms/${ARCH}-linux-gnu-Fedora-${BASE_OS_VERSION} "${BOOTSTRAP_DOWNLOADED_RPMS}"
+echo SXAEC1ls -l 
+ls -l build/devkit/result
+ls -l build/devkit/download/rpms/
+mv -v build/devkit/result/${devkit_target}-to-${devkit_target} "${BOOTSTRAP_DEVKIT}"
+mv -v build/devkit/download/rpms/${ARCH}-linux-gnu-Fedora_${BASE_OS_VERSION} "${BOOTSTRAP_DOWNLOADED_RPMS}" || true
 
 # Make final "DevKit" using the bootstrap devkit
 rm -rf build/devkit
 
 # Move saved bootstrap rpm downloads to final build folder
 mkdir -p build/devkit/download/rpms
-echo SXAWC: PWD = $PWD
+echo SXAEC2: PWD = $PWD
 ls -ld build/devkit/download/rpms/${ARCH}-linux-gnu-${BASE_OS}_${BASE_OS_VERSION} || true
 ls -l ${BOOTSTRAP_DOWNLOADED_RPMS}  || true
 ls -l build/devkit/download/rpms || true
