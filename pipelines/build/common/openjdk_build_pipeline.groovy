@@ -650,6 +650,7 @@ class Build {
                                                                     context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
                                                                     context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
                                                                     context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
+                                                                    context.MapParameter(name: 'EXTRA_OPTIONS', value: "-Djava.awt.headless=true"),
                                                                     context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
                             remoteJenkinsName: 'temurin-compliance',
                             shouldNotFailBuild: true,
