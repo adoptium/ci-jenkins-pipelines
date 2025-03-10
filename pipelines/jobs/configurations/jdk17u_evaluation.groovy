@@ -4,10 +4,10 @@ targetConfigurations = [
         ],
         'aarch64Windows': [
                 'temurin'
-        ],
-        'riscv64Linux': [
-                'temurin'
         ]
+        //'riscv64Linux': [
+        //        'temurin'
+        //]
         // 'x64Mac'      : [
         //         'openj9'
         // ],
