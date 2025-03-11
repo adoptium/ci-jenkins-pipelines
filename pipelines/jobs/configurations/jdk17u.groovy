@@ -40,6 +40,9 @@ targetConfigurations = [
         ],
         'arm32Linux'  : [
                 'temurin'
+        ],
+        'riscv64Linux': [
+                'temurin'
         ]
 ]
 
