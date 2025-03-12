@@ -607,6 +607,12 @@ class Build {
             targets['parallel'] = 'extended.jck'
         }
 
+        if ("${platform}" == 'aarch64_mac') {
+            // aarch64_mac runs extended.jck on !osx12, allow sanity&special to run on any
+            targets['serial']   = 'sanity.jck,special.jck'
+            targets['serial_extended'] = 'extended.jck' 
+        }
+
         /*
         Here we limit the win32 testing to the burstable nodes (a subset of the available windows nodes).
         This prevents win32 tests from occupying all the Windows nodes before we can test core platform win64.
