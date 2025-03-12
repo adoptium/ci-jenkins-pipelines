@@ -649,12 +649,13 @@ class Build {
                     }
 
                     def additionalTestLabel_param = additionalTestLabel
-                    if ("${platform}" == 'aarch64_mac' && targetTests.contains('extended.jck')) {
-                        // extended java_awt tests won't all run on the osx12 node
+                    if ("${platform}" == 'aarch64_mac') {
+                        // extended java_awt tests won't all run on the osx12 node, split extended from sanity/special across nodes
+                        def osxLabel = (targetTests.contains('extended.jck')) ? '!sw.os.osx.12' : 'sw.os.osx.12'
                         if (additionalTestLabel_param == '') {
-                            additionalTestLabel_param = '!sw.os.osx.12'
+                            additionalTestLabel_param = "${osxLabel}"
                         } else {
-                            additionalTestLabel_param += '&&!sw.os.osx.12'
+                            additionalTestLabel_param += "&&${osxLabel}"
                         }
                     }
 
