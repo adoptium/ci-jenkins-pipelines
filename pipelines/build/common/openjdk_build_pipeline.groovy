@@ -642,6 +642,16 @@ class Build {
                         extra_app_options += " customJvmOpts=-Djava.net.preferIPv4Stack=true"
                     }
 
+                    def additionalTestLabel_param = additionalTestLabel
+                    if ("${platform}" == 'aarch64_mac' && targetTests.contains('extended.jck')) {
+                        // extended java_awt tests won't all run on the osx12 node
+                        if (additionalTestLabel_param == '') {
+                            additionalTestLabel_param = '!sw.os.osx.12'
+                        } else {
+                            additionalTestLabel_param += '&&!sw.os.osx.12'
+                        }
+                    }
+
                     context.catchError {
                         remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
                             blockBuildUntilComplete: false,
@@ -656,7 +666,7 @@ class Build {
                                                                     context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
                                                                     context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
                                                                     context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions} ${extra_app_options}"),
-                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel_param),
                                                                     context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
                                                                     context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
                                                                     context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
