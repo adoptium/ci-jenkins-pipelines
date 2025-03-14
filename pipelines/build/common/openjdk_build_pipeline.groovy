@@ -2573,7 +2573,7 @@ def buildScriptsAssemble(
                                         context.stage("${testTargets}") {
                                             while( !jobHandle.isFinished() ) {
                                                 context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString();
-                                                sleep 3600
+                                                sleep 3600000
                                                 jobHandle.updateBuildStatus()
                                             }
                                             context.println "Remote build URL " + jobHandle.getBuildUrl();
