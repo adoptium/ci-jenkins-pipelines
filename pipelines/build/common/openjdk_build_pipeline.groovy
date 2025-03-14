@@ -2576,6 +2576,7 @@ def buildScriptsAssemble(
                                                 sleep 3600
                                                 jobHandle.updateBuildStatus()
                                             }
+                                            context.println "Remote build URL " + jobHandle.getBuildUrl();
                                             setStageResult("${testTargets}", jobHandle.getBuildResult().toString());
                                         }
                                     }
