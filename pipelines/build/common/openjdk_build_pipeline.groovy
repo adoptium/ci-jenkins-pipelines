@@ -607,6 +607,12 @@ class Build {
             targets['parallel'] = 'extended.jck'
         }
 
+        if ("${platform}" == 'aarch64_mac') {
+            // aarch64_mac runs extended.jck on !osx12, allow sanity&special to run on any
+            targets['serial']   = 'sanity.jck,special.jck'
+            targets['serial_extended'] = 'extended.jck' 
+        }
+
         /*
         Here we limit the win32 testing to the burstable nodes (a subset of the available windows nodes).
         This prevents win32 tests from occupying all the Windows nodes before we can test core platform win64.
@@ -631,6 +637,28 @@ class Build {
                         parallel = 'Dynamic'
                         num_machines = '2'
                     }
+
+                    def extra_options = ""
+                    if ("${platform}" == 's390x_linux' && targetTests.contains('extended.jck')) {
+                        extra_options += " -Xss4m"
+                    }
+
+                    def extra_app_options = ""
+                    if ("${platform}" == 'ppc64_aix' && targetTests.contains('special.jck')) {
+                        extra_app_options += " customJvmOpts=-Djava.net.preferIPv4Stack=true"
+                    }
+
+                    def additionalTestLabel_param = additionalTestLabel
+                    if ("${platform}" == 'aarch64_mac') {
+                        // extended java_awt tests won't all run on the osx12 node, split extended from sanity/special across nodes
+                        def osxLabel = (targetTests.contains('extended.jck')) ? '!sw.os.osx.12' : 'sw.os.osx.12'
+                        if (additionalTestLabel_param == '') {
+                            additionalTestLabel_param = "${osxLabel}"
+                        } else {
+                            additionalTestLabel_param += "&&${osxLabel}"
+                        }
+                    }
+
                     context.catchError {
                         remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
                             blockBuildUntilComplete: false,
@@ -644,12 +672,13 @@ class Build {
                                                                     context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
                                                                     context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
                                                                     context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                    context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
-                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
+                                                                    context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions} ${extra_app_options}"),
+                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel_param),
                                                                     context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
                                                                     context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
                                                                     context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
                                                                     context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
+                                                                    context.MapParameter(name: 'EXTRA_OPTIONS', value: "${extra_options}"),
                                                                     context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
                             remoteJenkinsName: 'temurin-compliance',
                             shouldNotFailBuild: true,
