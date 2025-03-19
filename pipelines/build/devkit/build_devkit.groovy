@@ -30,7 +30,8 @@ def build_devkit() {
     stage('Build DevKit') {
         // Make DevKit
         sh("cd pipelines/build/devkit && ./make_devkit.sh ${params.VERSION} ${params.ARCH} ${params.BASE_OS} ${params.BASE_OS_VERSION}")
-        sh("find pipelines/build/devkit -name log.build -type f -print | while read F; do echo ===== SXAEC: $F; cat $F; done")
+        // This needs to be single quotes (or backslash-escaped $) to work
+        sh('find pipelines/build/devkit -name log.build -type f -print | while read F; do echo ===== SXAEC: $F; cat $F; done')
 
         def devkit_target="${params.ARCH}-linux-gnu"
 
