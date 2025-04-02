@@ -1436,7 +1436,8 @@ class Build {
                                             """.stripIndent(), returnStdout: true, returnStatus: false).replaceAll('\n', '')
             } else {
                 context.println "Windows detected - running bat to generate SHA256 sums in writeMetadata"
-                hash = context.bat(script: "sha256sum ${file} | cut -f2 -d'\r'", returnStdout: true, returnStatus: false).replaceAll('\n', '')
+                String hash_stdout = context.bat(script: "sha256sum ${file}", returnStdout: true, returnStatus: false)
+                hash = hash_stdout.split('\r').last()
             }
             context.println "archive sha256 = ${hash}"
 
