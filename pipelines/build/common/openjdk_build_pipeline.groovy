@@ -1436,9 +1436,11 @@ class Build {
                                             """.stripIndent(), returnStdout: true, returnStatus: false).replaceAll('\n', '')
             } else {
                 context.println "Windows detected - running bat to generate SHA256 sums in writeMetadata"
-                String hash_stdout = context.bat(script: "sha256sum ${file}", returnStdout: true, returnStatus: false)
-                // Windows batch returns stdout of <command invoked>\r\n<sha256sum output>\r\n
-                hash = hash_stdout.split('\r').last().replaceAll('\n', '').split(' ').first()
+                //String hash_stdout = context.bat(script: "sha256sum ${file}", returnStdout: true, returnStatus: false)
+                //// Windows batch returns stdout of <command invoked>\r\n<sha256sum output>\r\n
+                //hash = hash_stdout.split('\r').last().replaceAll('\n', '').split(' ').first()
+
+       hash = context.bat(script: "sha256sum ${file} | cut -f1 -d' '") // .replaceAll('\n', '')
             }
             context.println "archive sha256 = ${hash}"
 
@@ -1446,12 +1448,12 @@ class Build {
             data.sha256 = hash
 
             // To save on spam, only print out the metadata the first time
-            if (!metaWrittenOut && initialWrite) {
+            //if (!metaWrittenOut && initialWrite) {
                 context.println '===METADATA OUTPUT==='
                 context.println JsonOutput.prettyPrint(JsonOutput.toJson(data.asMap()))
                 context.println '=/=METADATA OUTPUT=/='
                 metaWrittenOut = true
-            }
+            //}
 
             // Special handling for sbom metadata file (to be backwards compatible for api service)
             // from "*sbom<XXX>.json" to "*sbom<XXX>-metadata.json"
