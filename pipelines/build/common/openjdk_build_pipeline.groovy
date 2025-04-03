@@ -2573,10 +2573,10 @@ def buildScriptsAssemble(
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
                                     remoteTriggeredBuilds.each{ testTargets, jobHandle -> 
                                         context.stage("${testTargets}") {
-                                            // NOT_TRIGGERED is not a valid StageResult value. Map it to NOT_BUILT
-                                            def remoteJobStatus = "NOT_BUILT"
+                                            def remoteJobStatus
                                             if (jobHandle == null || jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED")) {
                                                 context.println "Failed, remote job ${testTargets} was not triggered"
+                                                remoteJobStatus = "FAILURE"
                                             } else {
                                                 while( !jobHandle.isFinished() ) {
                                                     context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString();
