@@ -1446,12 +1446,12 @@ class Build {
             data.sha256 = hash
 
             // To save on spam, only print out the metadata the first time
-            //if (!metaWrittenOut && initialWrite) {
+            if (!metaWrittenOut && initialWrite) {
                 context.println '===METADATA OUTPUT==='
                 context.println JsonOutput.prettyPrint(JsonOutput.toJson(data.asMap()))
                 context.println '=/=METADATA OUTPUT=/='
                 metaWrittenOut = true
-            //}
+            }
 
             // Special handling for sbom metadata file (to be backwards compatible for api service)
             // from "*sbom<XXX>.json" to "*sbom<XXX>-metadata.json"
