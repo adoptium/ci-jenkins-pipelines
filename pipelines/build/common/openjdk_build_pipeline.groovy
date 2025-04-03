@@ -2575,7 +2575,9 @@ def buildScriptsAssemble(
                                         context.stage("${testTargets}") {
                                             // NOT_TRIGGERED is not a valid StageResult value. Map it to NOT_BUILT
                                             def remoteJobStatus = "NOT_BUILT"
-                                            if ( !jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
+                                            if (jobHandle == null || jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED")) {
+                                                context.println "Failed, remote job ${testTargets} was not triggered"
+                                            } else {
                                                 while( !jobHandle.isFinished() ) {
                                                     context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString();
                                                     sleep 3600000
