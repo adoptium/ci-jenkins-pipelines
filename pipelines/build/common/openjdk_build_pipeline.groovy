@@ -1438,7 +1438,7 @@ class Build {
                 context.println "Windows detected - running bat to generate SHA256 sums in writeMetadata"
                 hash = context.bat(script: "@sha256sum ${file}", returnStdout: true, returnStatus: false).split(' ').first()
             }
-            context.println "archive sha256 = /${hash}/"
+            context.println "archive sha256 = ${hash}"
 
             data.binary_type = type
             data.sha256 = hash
