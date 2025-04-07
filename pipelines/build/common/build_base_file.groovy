@@ -1049,7 +1049,7 @@ class Builder implements Serializable {
                         def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
                         def tapCollectionUrl = "${context.JENKINS_URL}job/TAP_Collection/parambuild?Release_PipelineJob_Name=${urlJobName}"
                         releaseSummary.appendText("<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
-                        String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
+                        String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
                         def tag = publishName
                         tag = URLEncoder.encode(tag, 'UTF-8')
                         def artifactsToCopy = '**/AQAvitTapFiles.tar.gz'
