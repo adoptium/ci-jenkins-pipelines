@@ -648,6 +648,10 @@ class Build {
                         extra_app_options += " customJvmOpts=-Djava.net.preferIPv4Stack=true"
                     }
 
+                    if (platform.contains("windows") && jdkVersion >= 24) {
+                        extra_app_options += " customJvmOpts=-Djava.awt.headless=false"
+                    }
+
                     def additionalTestLabel_param = additionalTestLabel
                     if ("${platform}" == 'aarch64_mac') {
                         // extended java_awt tests won't all run on the osx12 node, split extended from sanity/special across nodes
