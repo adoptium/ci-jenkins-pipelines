@@ -2575,17 +2575,23 @@ def buildScriptsAssemble(
                                     remoteTriggeredBuilds.each{ testTargets, jobHandle -> 
                                         context.stage("${testTargets}") {
                                             def remoteJobStatus
-                                            if (jobHandle == null || jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED")) {
+                                            if ( jobHandle == null ) {
                                                 context.println "Failed, remote job ${testTargets} was not triggered"
                                                 remoteJobStatus = "FAILURE"
                                             } else {
-                                                while( !jobHandle.isFinished() ) {
-                                                    context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString();
-                                                    sleep 3600000
-                                                    jobHandle.updateBuildStatus()
+                                                jobHandle.updateBuildStatus()
+                                                if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
+                                                    context.println "Failed, remote job ${testTargets} status is NOT_TRIGGERED"
+                                                    remoteJobStatus = "FAILURE"
+                                                } else {
+                                                    while( !jobHandle.isFinished() ) {
+                                                        context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString();
+                                                        sleep 3600000
+                                                        jobHandle.updateBuildStatus()
+                                                    }
+                                                    context.println "Remote build URL " + jobHandle.getBuildUrl();
+                                                    remoteJobStatus = jobHandle.getBuildResult().toString()
                                                 }
-                                                remoteJobStatus = jobHandle.getBuildResult().toString()
-                                                context.println "Remote build URL " + jobHandle.getBuildUrl();
                                             }
                                             setStageResult("${testTargets}", remoteJobStatus);
                                         }
