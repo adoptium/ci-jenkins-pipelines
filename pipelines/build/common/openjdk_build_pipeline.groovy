@@ -649,8 +649,8 @@ class Build {
                         extra_options += " -Djava.awt.headless=false"
                     }
 
-                    if (platform.contains("windows") && jdkVersion >= 17) {
-                        // Required on windows jdk-17+(at least) as some java_lang tests run into virtual memory issues
+                    if (platform.contains("windows")) {
+                        // Required on windows as some java_lang tests run into virtual memory issues
                         extra_options += " -Xmx512m"
                     }
 
