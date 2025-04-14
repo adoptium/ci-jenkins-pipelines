@@ -643,6 +643,17 @@ class Build {
                         extra_options += " -Xss4m"
                     }
 
+                    if (platform.contains("windows") && jdkVersion >= 24) {
+                        // Required since jdk-24 with https://bugs.openjdk.org/browse/JDK-8185862 due to Windows headless detection
+                        // changes default headless from being false in Jenkins process to being true breaking java_awt tests
+                        extra_options += " -Djava.awt.headless=false"
+                    }
+
+                    if (platform.contains("windows")) {
+                        // Required on windows as some java_lang tests run into virtual memory issues
+                        extra_options += " -Xmx512m"
+                    }
+
                     def extra_app_options = ""
                     if ("${platform}" == 'ppc64_aix' && targetTests.contains('special.jck')) {
                         extra_app_options += " customJvmOpts=-Djava.net.preferIPv4Stack=true"
