@@ -30,6 +30,8 @@ def build_devkit() {
     stage('Build DevKit') {
         // Make DevKit
         sh("cd pipelines/build/devkit && ./make_devkit.sh ${params.VERSION} ${params.ARCH} ${params.BASE_OS} ${params.BASE_OS_VERSION}")
+        // This needs to be single quotes (or backslash-escaped $) to work
+        sh('find pipelines/build/devkit -name log.build -type f -print | while read F; do echo ===== SXAEC: $F; cat $F; done')
 
         def devkit_target="${params.ARCH}-linux-gnu"
 
@@ -113,7 +115,7 @@ def build() {
 }
 
 node(params.DEVKIT_BUILD_NODE) {
-  try {
+//  try {
     cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
 
     if (params.DOCKER_IMAGE != "") { 
@@ -132,9 +134,9 @@ node(params.DEVKIT_BUILD_NODE) {
     } else {
         // Build directly on host
         build()
-    }
-  } finally { 
-    cleanWs notFailBuild: true
-  } 
+    } 
+//  } finally { 
+//    cleanWs notFailBuild: true
+//  } 
 }
 
