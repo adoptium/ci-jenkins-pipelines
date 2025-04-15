@@ -25,12 +25,6 @@ targetConfigurations = [
         ],
         'arm32Linux'  : [
                 'temurin'
-        ],
-        'x64Solaris': [
-                'temurin'
-        ],
-        'sparcv9Solaris': [
-                'temurin'
         ]
 ]
 
