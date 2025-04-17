@@ -442,6 +442,11 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                     imagetypes.add("static-libs")
                     imagetypes.add("testimage")
                 }
+                // jmods images only expected for JDK 24
+                def vNum = extractVersNum(version)
+                if (vNum > 0 && vNum >= 24) {
+                    imagetypes.add("jmods")
+                }
 
                 // Work out the filetypes
                 def filetypes
@@ -517,6 +522,24 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
             }
         }
     }
+}
+
+// Extract the version number from the version string, such as "jdk8u".
+//
+// "jdk25"  => 25
+// "jdk24u" => 24
+//
+// Returns -1 if no number got extracted
+def extractVersNum(String jdkVers) {
+    // Anything NOT a digit, followed by digits,
+    // followed by anything not a digit (optional)
+    def pattern = /[^\d]+(\d+)[^\d]?/
+    def matcher = jdkVers =~ pattern
+    if (matcher.matches()) {
+        // First group in the matcher is the digits we matched
+        return Integer.valueOf(matcher[0][1])
+    }
+    return -1
 }
 
 // For a given pipeline, tell us how reproducible the builds were.
