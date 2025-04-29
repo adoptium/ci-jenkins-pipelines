@@ -625,12 +625,13 @@ class Build {
                 additionalTestLabel += '&&hw.cpu.burstable'
             }
         }
-
+        def weekly = ''
+        if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
         targets.each { targetMode, targetTests -> 
             try {
                 remoteTargets["${targetTests}"] = {
                     context.println "Remote trigger: ${targetTests}"
-                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
+                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF}${weekly} : ${platform} : ${targetTests}"
                     def parallel = 'None'
                     def num_machines = '1'
                     if ("${targetMode}" == 'parallel') {
