@@ -726,6 +726,8 @@ class Builder implements Serializable {
             return "evaluation"
         } else if (currentBuild.fullProjectName.contains("release")) {
             return "release"
+        } else if (currentBuild.fullProjectName.contains("trestle")) {
+            return "trestle"
         }
         return
     }
@@ -838,7 +840,7 @@ class Builder implements Serializable {
     }
 
     /*
-    Main function. This is what is executed remotely via the [release-|evaluation-]openjdkxx-pipeline and pr-tester jobs
+    Main function. This is what is executed remotely via the [release-|evaluation-|trestle-]openjdkxx-pipeline and pr-tester jobs
     Running in the *openjdkX-pipeline
     */
     @SuppressWarnings('unused')
