@@ -1433,6 +1433,8 @@ class Build {
                 type = 'sources'
             } else if (file.contains('-sbom')) {
                 type = 'sbom'
+            } else if (file.contains('-jmods')) {
+                type = 'jmods'
             }
             context.println "writeMetaData for " + file
 
