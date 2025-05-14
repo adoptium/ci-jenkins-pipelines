@@ -7,9 +7,10 @@ file used as jenkinsfile to generator official release pipeline
 */
 
 // ensure releaseVersions is updated before create releaseTag
-def releaseVersions = [8,11,17,21,24]
+def releaseVersions = params.releaseVersions ? params.releaseVersions : "8,11,17,21,24"
+releaseVersions = releaseVersions.trim().split("\\s*,\\s*");
 
-
+	CLOUD_PROVIDER = params.releaseVersions ? params.releaseVersions : ""
 // Regenerate release-openjdkX-pipeline per each jdk version listed in releaseVersions
 node('worker') {
     try{
