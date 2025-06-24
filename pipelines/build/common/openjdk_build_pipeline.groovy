@@ -574,6 +574,9 @@ class Build {
         if (buildConfig.SCM_REF && buildConfig.AQA_REF && sdkUrl.contains("release")) {
             setupJCKRun = true
         }
+        def weekly = ''
+        if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
+
         // Determine from the platform the Jck jtx exclude platform
         def excludePlat
         def excludeRoot = "/home"
@@ -605,12 +608,18 @@ class Build {
             // Primary platforms run extended.jck in Parallel
             targets['serial']   = 'sanity.jck,special.jck'
             targets['parallel'] = 'extended.jck'
+            if ( !Boolean.valueOf(buildConfig.WEEKLY) ) {
+                targets['serial_dev']   = 'dev.jck'
+            }
         }
 
         if ("${platform}" == 'aarch64_mac') {
             // aarch64_mac runs extended.jck on !osx12, allow sanity&special to run on any
             targets['serial']   = 'sanity.jck,special.jck'
-            targets['serial_extended'] = 'extended.jck' 
+            targets['serial_extended'] = 'extended.jck'
+            if ( !Boolean.valueOf(buildConfig.WEEKLY) ) {
+                targets['serial_dev']   = 'dev.jck'
+            }
         }
 
         /*
@@ -627,8 +636,7 @@ class Build {
                 additionalTestLabel += '&&hw.cpu.burstable'
             }
         }
-        def weekly = ''
-        if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
+
         targets.each { targetMode, targetTests -> 
             try {
                 remoteTargets["${targetTests}"] = {
@@ -670,6 +678,14 @@ class Build {
                             additionalTestLabel_param = "${osxLabel}"
                         } else {
                             additionalTestLabel_param += "&&${osxLabel}"
+                        }
+                    }
+
+                    if ("${targetTests}" == 'dev.jck' && "${platform}" == 'x86-64_windows') {
+                        if (additionalTestLabel_param == '') {
+                            additionalTestLabel_param = "interactive"
+                        } else {
+                            additionalTestLabel_param += "&&interactive"
                         }
                     }
 
