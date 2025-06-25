@@ -92,6 +92,8 @@ function detectJdks() {
   find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8
   echo "Available jdks 17 in ${jvm_dir}:"
   find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17
+  echo "Available jdks 21 in ${jvm_dir}:"
+  find ${jvm_dir} -maxdepth 1 | sort | grep -e java-21-     -e jdk-21
   jdk08=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-1.8.0-  -e jdk-8   | head -n 1))
   jdk17=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-17-     -e jdk-17  | head -n 1))
   jdk21=$(readlink -f $(find ${jvm_dir} -maxdepth 1 | sort | grep -e java-21-     -e jdk-21  | head -n 1))
