@@ -627,8 +627,7 @@ class Build {
                 additionalTestLabel += '&&hw.cpu.burstable'
             }
         }
-        def weekly = ''
-        if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
+
         targets.each { targetMode, targetTests -> 
             try {
                 remoteTargets["${targetTests}"] = {
