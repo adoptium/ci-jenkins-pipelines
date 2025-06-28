@@ -21,6 +21,8 @@ import common.RepoHandler
 import groovy.json.*
 import java.nio.file.NoSuchFileException
 import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
+import org.jenkinsci.plugins.ParameterizedRemoteTrigger.parameters2.MapParameters
+import org.jenkinsci.plugins.ParameterizedRemoteTrigger.parameters2.MapParameter
 
 import java.util.regex.Matcher
 
@@ -574,6 +576,9 @@ class Build {
         if (buildConfig.SCM_REF && buildConfig.AQA_REF && sdkUrl.contains("release")) {
             setupJCKRun = true
         }
+        def weekly = ''
+        if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
+
         // Determine from the platform the Jck jtx exclude platform
         def excludePlat
         def excludeRoot = "/home"
@@ -605,12 +610,18 @@ class Build {
             // Primary platforms run extended.jck in Parallel
             targets['serial']   = 'sanity.jck,special.jck'
             targets['parallel'] = 'extended.jck'
+            if ( !Boolean.valueOf(buildConfig.WEEKLY) ) {
+                targets['serial_dev']   = 'dev.jck'
+            }
         }
 
         if ("${platform}" == 'aarch64_mac') {
             // aarch64_mac runs extended.jck on !osx12, allow sanity&special to run on any
             targets['serial']   = 'sanity.jck,special.jck'
-            targets['serial_extended'] = 'extended.jck' 
+            targets['serial_extended'] = 'extended.jck'
+            if ( !Boolean.valueOf(buildConfig.WEEKLY) ) {
+                targets['serial_dev']   = 'dev.jck'
+            }
         }
 
         /*
@@ -627,8 +638,7 @@ class Build {
                 additionalTestLabel += '&&hw.cpu.burstable'
             }
         }
-        def weekly = ''
-        if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
+
         targets.each { targetMode, targetTests -> 
             try {
                 remoteTargets["${targetTests}"] = {
@@ -673,27 +683,40 @@ class Build {
                         }
                     }
 
+                    def paramList = [
+                        SDK_RESOURCE: 'customized',
+                        TARGETS: "${targetTests}",
+                        JCK_GIT_REPO: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git",
+                        CUSTOMIZED_SDK_URL: "${sdkUrl}",
+                        JDK_VERSIONS: "${jdkVersion}",
+                        PARALLEL: parallel,
+                        NUM_MACHINES: "${num_machines}",
+                        PLATFORMS: "${platform}",
+                        PIPELINE_DISPLAY_NAME: "${displayName}",
+                        APPLICATION_OPTIONS: "${appOptions} ${extra_app_options}",
+                        LABEL_ADDITION: additionalTestLabel_param,
+                        cause: "Remote triggered by job ${env.BUILD_URL}", 
+                        AUTO_AQA_GEN: "${aqaAutoGen}",
+                        RERUN_ITERATIONS: "1",
+                        RERUN_FAILURE: "true",
+                        EXTRA_OPTIONS: "${extra_options}",
+                        SETUP_JCK_RUN: "${setupJCKRun}"
+                    ]
+
+                    if ("${targetTests}" == 'dev.jck' && "${platform}" == 'x86-64_windows') {
+                        paramList['LABEL'] = 'ci.role.test.interactive'
+                    }
+                    
+                    def paramMap = paramList.collect { k, v -> [$class: 'MapParameter', name: k, value: v] }
+
                     context.catchError {
                         remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
                             blockBuildUntilComplete: false,
                             job: 'AQA_Test_Pipeline',
-                            parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                    context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
-                                                                    context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
-                                                                    context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                    context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                    context.MapParameter(name: 'PARALLEL', value: parallel),
-                                                                    context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                    context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                    context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                    context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions} ${extra_app_options}"),
-                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel_param),
-                                                                    context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
-                                                                    context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
-                                                                    context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
-                                                                    context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
-                                                                    context.MapParameter(name: 'EXTRA_OPTIONS', value: "${extra_options}"),
-                                                                    context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
+                            parameters: [
+                                $class: 'MapParameters',
+                                parameters: paramMap
+                            ],
                             remoteJenkinsName: 'temurin-compliance',
                             shouldNotFailBuild: true,
                             token: 'RemoteTrigger',
