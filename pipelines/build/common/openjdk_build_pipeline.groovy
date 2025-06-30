@@ -606,6 +606,10 @@ class Build {
             // Primary platforms run extended.jck in Parallel
             targets['serial']   = 'sanity.jck,special.jck,dev.jck'
             targets['parallel'] = 'extended.jck'
+            if ("${platform}" == 'x86-64_windows') {
+                targets['serial']   = 'sanity.jck,special.jck'
+                targets['serial_dev'] = targets['dev.jck']
+            }
         }
 
         if ("${platform}" == 'aarch64_mac') {
@@ -675,7 +679,7 @@ class Build {
                         }
                     }
 
-                   if ("${platform}" == 'x86-64_windows' && targetTests.contains('dev.jck')) {
+                   if ("${platform}" == 'x86-64_windows' && "${targetTests}" == 'dev.jck') {
                         context.catchError {
                             remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
                                 blockBuildUntilComplete: false,
