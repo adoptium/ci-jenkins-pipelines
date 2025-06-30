@@ -574,7 +574,6 @@ class Build {
         if (buildConfig.SCM_REF && buildConfig.AQA_REF && sdkUrl.contains("release")) {
             setupJCKRun = true
         }
-
         // Determine from the platform the Jck jtx exclude platform
         def excludePlat
         def excludeRoot = "/home"
@@ -595,7 +594,7 @@ class Build {
 
         def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
         def targets
-        if (configureArguments.contains('--enable-headless-only=yes')) {
+        if (configureArguments.contains('--enable-headless-only=yes') || "${platform}" == 'ppc64_aix' || "${platform}" == 'sparcv9_solaris' || "${platform}" == 'x86-64_solaris') {
             // Headless platforms have no auto-manuals, so do not exclude any tests
             appOptions=""
             targets = ['serial': 'sanity.jck,extended.jck,special.jck']
