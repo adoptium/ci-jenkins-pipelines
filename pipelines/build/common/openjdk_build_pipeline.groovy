@@ -593,14 +593,14 @@ class Build {
         }
 
         def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
-        def targets
         if (configureArguments.contains('--enable-headless-only=yes')) {
            // Headless platforms have no auto-manuals, so do not exclude any tests
             appOptions=""
-            targets = ['serial': 'sanity.jck,extended.jck,special.jck']
         }
-        
-        if ( "${platform}" == 'ppc64_aix' || "${platform}" == 'sparcv9_solaris' || "${platform}" == 'x86-64_solaris') {
+
+        def targets
+        if ("${platform}" == 'ppc64_aix' || "${platform}" == 'sparcv9_solaris' || "${platform}" == 'x86-64_solaris' ||
+             configureArguments.contains('--enable-headless-only=yes')) {
             targets = ['serial': 'sanity.jck,extended.jck,special.jck']
         } else {
             targets = ['serial': 'sanity.jck,extended.jck,special.jck,dev.jck']
@@ -611,8 +611,8 @@ class Build {
             targets['serial']   = 'sanity.jck,special.jck,dev.jck'
             targets['parallel'] = 'extended.jck'
             if ("${platform}" == 'x86-64_windows') {
-                targets['serial']   = 'sanity.jck,special.jck'
-                targets['serial_dev'] = targets['dev.jck']
+                targets['serial']     = 'sanity.jck,special.jck'
+                targets['serial_dev'] = 'dev.jck'
             }
         }
 
