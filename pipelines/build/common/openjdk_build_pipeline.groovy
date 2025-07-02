@@ -481,7 +481,7 @@ class Build {
                                 context.catchError {
                                     retry(count: 2) {
 									    try {
-                                            context.build job: 'Test_Job_Auto_Gen', propagate: false, parameters: updatedParams
+                                            context.build job: 'Test_Job_Auto_Gen_typo', propagate: false, parameters: updatedParams
                                         } catch(e) {
 										    sleep(300)
 										    throw e
