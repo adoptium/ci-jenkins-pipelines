@@ -459,7 +459,6 @@ class Build {
                             vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
                         }
 
-
                         String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
                         def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
 
@@ -479,7 +478,7 @@ class Build {
                                 }
                                 context.println "Use Test_Job_Auto_Gen to generate AQA test job with parameters: ${updatedParams}"
                                 context.catchError {
-                                    retry(count: 2) {
+                                    context.retry(count: 2) {
 									    try {
                                             context.build job: 'Test_Job_Auto_Gen_typo', propagate: false, parameters: updatedParams
                                         } catch(e) {
