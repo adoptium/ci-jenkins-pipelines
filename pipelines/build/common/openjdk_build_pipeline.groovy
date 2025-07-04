@@ -478,10 +478,10 @@ class Build {
                                 }
                                 context.println "Use Test_Job_Auto_Gen to generate AQA test job with parameters: ${updatedParams}"
                                 context.catchError {
-                                    context.retry(count: 2) {
+                                    context.retry(count: 3) {
 									    try {
                                             context.build job: 'Test_Job_Auto_Gen_typo', propagate: false, parameters: updatedParams
-                                        } catch(e) {
+                                        } catch(Error e) {
 										    sleep(300)
 										    throw e
 									    }
