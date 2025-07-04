@@ -2668,7 +2668,7 @@ def waitForJckStatus(remoteTriggeredBuilds) {
         waitingForRemoteJck = false 
         remoteTriggeredBuilds.each{ testTargets, jobHandle ->
             context.stage("${testTargets}") {
-                def remoteJobStatus
+                def remoteJobStatus = ""
                 if ( jobHandle == null ) {
                     context.println "Failed, remote job ${testTargets} was not triggered"
                     remoteJobStatus = "FAILURE"
@@ -2680,17 +2680,20 @@ def waitForJckStatus(remoteTriggeredBuilds) {
                     } else { 
                         if ( !jobHandle.isFinished() ) {
                             waitingForRemoteJck = true
+                        } else {
+                            remoteJobStatus = jobHandle.getBuildResult().toString()
                         }
                         context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
-                        remoteJobStatus = jobHandle.getBuildResult().toString()
                     }
                 }
-                setStageResult("${testTargets}", remoteJobStatus);
+                if ( remoteJobStatus != "" ) {
+                    setStageResult("${testTargets}", remoteJobStatus);
+                }
             }
         }
         if (waitingForRemoteJck) {
             def sleepTimeMins = 20
-            context.println "Waiting for remote jck jobs, sleeping for ${sleepTime} minutes..."
+            context.println "Waiting for remote jck jobs, sleeping for ${sleepTimeMins} minutes..."
             sleep (sleepTimeMins * 60 * 1000)
         }
     }
