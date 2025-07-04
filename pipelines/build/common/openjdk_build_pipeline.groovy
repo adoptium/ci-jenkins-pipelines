@@ -2631,6 +2631,9 @@ def buildScriptsAssemble(
                                 
                                 // Asynchronously get the remote JCK job status and set as the stage status.
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
+                                  def waitingForRemoteJck = true
+                                  while( waitingForRemoteJck ) {
+                                    waitingForRemoteJck = false
                                     remoteTriggeredBuilds.each{ testTargets, jobHandle -> 
                                         context.stage("${testTargets}") {
                                             def remoteJobStatus
@@ -2643,18 +2646,22 @@ def buildScriptsAssemble(
                                                     context.println "Failed, remote job ${testTargets} status is NOT_TRIGGERED"
                                                     remoteJobStatus = "FAILURE"
                                                 } else {
-                                                    while( !jobHandle.isFinished() ) {
-                                                        context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString();
-                                                        sleep 3600000
-                                                        jobHandle.updateBuildStatus()
+                                                    if ( !jobHandle.isFinished() ) {
+                                                        waitingForRemoteJck = true
                                                     }
-                                                    context.println "Remote build URL " + jobHandle.getBuildUrl();
+                                                    context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
                                                     remoteJobStatus = jobHandle.getBuildResult().toString()
                                                 }
                                             }
                                             setStageResult("${testTargets}", remoteJobStatus);
                                         }
                                     }
+                                    if (waitingForRemoteJck) {
+                                        def sleepTimeMins = 20
+                                        context.println "Waiting for remote jck jobs, sleeping for ${sleepTime} minutes..."
+                                        sleep (sleepTimeMins * 60 * 1000)
+                                    }
+                                  }
                                 }
                             } else { 
                                 context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
