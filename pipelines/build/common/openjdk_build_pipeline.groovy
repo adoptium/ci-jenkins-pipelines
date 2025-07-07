@@ -1838,7 +1838,6 @@ def buildScriptsAssemble(
 			if ( !cygwin_workspace.startsWith("/cygdrive") ) {
 				cygwin_workspace = "/cygdrive/c" + cygwin_workspace.substring(2)
 			}
-			
             context.bat('chmod -R a+rwX ' + cygwin_workspace + '/workspace/build/src/build/*')
         }
         // Restore signed JMODs
