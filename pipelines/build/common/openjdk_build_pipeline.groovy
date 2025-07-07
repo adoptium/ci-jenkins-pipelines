@@ -494,7 +494,7 @@ class Build {
 									    } finally {
 											if ( !autogen_result.equals("SUCCESS") && x > 0 ) {
 												context.println "This script will now pause for 5 minutes before retrying."
-												sleep(300)
+												sleep(5*60*1000)
 											}
 										}
 									}
