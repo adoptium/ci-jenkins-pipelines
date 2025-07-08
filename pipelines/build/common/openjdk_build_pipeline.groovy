@@ -482,7 +482,7 @@ class Build {
                                     x--
                                     def autogen_result = "BLANK"
                                     context.catchError {
-                                        def testJob = context.build job: 'Test_Job_Auto_Gen_typo', propagate: false, parameters: updatedParams
+                                        def testJob = context.build job: 'Test_Job_Auto_Gen', propagate: false, parameters: updatedParams
                                         autogen_result = testJob.getResult()
                                     }
                                     if ( !autogen_result.equals("SUCCESS") && x > 0 ) {
