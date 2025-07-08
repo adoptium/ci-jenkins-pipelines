@@ -1834,10 +1834,11 @@ def buildScriptsAssemble(
       try {
         // This would ideally not be required but it's due to lack of UID mapping in windows containers
         if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE) {
-			def cygwin_workspace = context.WORKSPACE
-			if ( !cygwin_workspace.startsWith("/cygdrive") ) {
-				cygwin_workspace = "/cygdrive/c" + cygwin_workspace.substring(2)
-			}
+            def cygwin_workspace = context.WORKSPACE
+            if ( !cygwin_workspace.startsWith("/cygdrive") ) {
+                // Where cygwin_workspace is expected to be something like: C:/workspace/openjdk-build
+                cygwin_workspace = "/cygdrive/" + cygwin_workspace.toLowerCase().charAt(0) + cygwin_workspace.substring(2)
+            }
             context.bat('chmod -R a+rwX ' + cygwin_workspace + '/workspace/build/src/build/*')
         }
         // Restore signed JMODs
