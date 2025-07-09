@@ -477,17 +477,18 @@ class Build {
                                     }
                                 }
                                 context.println "Use Test_Job_Auto_Gen to generate AQA test job with parameters: ${updatedParams}"
-                                int x = 3
-                                while ( x > 0 ) {
-                                    x--
-                                    def autogen_result = "BLANK"
+                                int autogenBuildAttempts = 3
+                                int autogenRetryDelayInMins = 5
+                                while ( autogenBuildAttempts > 0 ) {
+                                    autogenBuildAttempts--
+                                    def autogenResult = "BLANK"
                                     context.catchError {
                                         def testJob = context.build job: 'Test_Job_Auto_Gen', propagate: false, parameters: updatedParams
-                                        autogen_result = testJob.getResult()
+                                        autogenResult = testJob.getResult()
                                     }
-                                    if ( !autogen_result.equals("SUCCESS") && x > 0 ) {
-                                        context.println "This script will now pause for 5 minutes before retrying."
-                                        sleep(5*60*1000)
+                                    if ( !autogenResult.equals("SUCCESS") && autogenBuildAttempts > 0 ) {
+                                        context.println "This script will now pause for ${autogenRetryDelayInMins} minutes before retrying."
+                                        sleep(autogenRetryDelayInMins*60*1000)
                                     } else {
                                         break
                                     }
