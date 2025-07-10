@@ -639,6 +639,9 @@ class Build {
 
         def weekly = ''
         if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
+        def jckRerunSummary = context.manager.createSummary('info.gif')
+        jckRerunSummary.appendText('<b>RERUN JCK TESTS:</b><ul>', false)
+        def aqa_test_pipeline_BaseURL = "https://ci.adoptium.net/view/Test_grinder/job/AQA_Test_Pipeline/parambuild"
         targets.each { targetMode, targetTests -> 
             try {
                 remoteTargets["${targetTests}"] = {
@@ -682,6 +685,32 @@ class Build {
                             additionalTestLabel_param += "&&${osxLabel}"
                         }
                     }
+                    
+                    def paramList = [
+                        SDK_RESOURCE: 'customized',
+                        TARGETS: "${targetTests}",
+                        JCK_GIT_REPO: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git",
+                        CUSTOMIZED_SDK_URL: "${sdkUrl}",
+                        JDK_VERSIONS: "${jdkVersion}",
+                        PARALLEL: parallel,
+                        NUM_MACHINES: "${num_machines}",
+                        PLATFORMS: "${platform}",
+                        PIPELINE_DISPLAY_NAME: "${displayName}",
+                        APPLICATION_OPTIONS: "${appOptions} ${extra_app_options}",
+                        LABEL_ADDITION: additionalTestLabel_param,
+                        cause: "Remote triggered by job ${env.BUILD_URL}", // Label is lowercase on purpose to map to the Jenkins target reporting system
+                        AUTO_AQA_GEN: "${aqaAutoGen}",
+                        RERUN_ITERATIONS: "1",
+                        RERUN_FAILURE: "true",
+                        EXTRA_OPTIONS: "${extra_options}",
+                        SETUP_JCK_RUN: "${setupJCKRun}"
+                    ]
+                    if ("${platform}" == 'x86-64_windows' && "${targetTests}" == 'dev.jck') {
+                        paramlist["LABEL"] = 'ci.role.test.interactive'
+                    }
+                    def queryString = paramList.collect { k, v -> "${URLEncoder.encode(k, 'UTF-8')}=${URLEncoder.encode(v, 'UTF-8')}"}.join('&')
+                    def aqa_test_pipeline_FullURL = "${aqa_test_pipeline_BaseURL}?${queryString}&MODE=RELAY"
+                    jckRerunSummary .appendText("<li>${targetTests}<a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
 
                    if ("${platform}" == 'x86-64_windows' && "${targetTests}" == 'dev.jck') {
                         context.catchError {
@@ -740,7 +769,6 @@ class Build {
                                 useCrumbCache: true,
                                 useJobInfoCache: true
                         }
-
                     }
                 }
             } catch (Exception e) {
@@ -748,6 +776,7 @@ class Build {
             }
         }
         context.parallel remoteTargets
+        jckRerunSummary.appendText('</ul>', false)
         return remoteTriggeredBuilds
     }
 
