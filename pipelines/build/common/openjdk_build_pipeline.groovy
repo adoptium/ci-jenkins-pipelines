@@ -459,7 +459,6 @@ class Build {
                             vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
                         }
 
-
                         String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
                         def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
 
@@ -478,8 +477,21 @@ class Build {
                                     }
                                 }
                                 context.println "Use Test_Job_Auto_Gen to generate AQA test job with parameters: ${updatedParams}"
-                                context.catchError {
-                                    context.build job: 'Test_Job_Auto_Gen', propagate: false, parameters: updatedParams
+                                int autogenBuildAttempts = 3
+                                int autogenRetryDelayInMins = 5
+                                while ( autogenBuildAttempts > 0 ) {
+                                    autogenBuildAttempts--
+                                    def autogenResult = "BLANK"
+                                    context.catchError {
+                                        def testJob = context.build job: 'Test_Job_Auto_Gen', propagate: false, parameters: updatedParams
+                                        autogenResult = testJob.getResult()
+                                    }
+                                    if ( !autogenResult.equals("SUCCESS") && autogenBuildAttempts > 0 ) {
+                                        context.println "This script will now pause for ${autogenRetryDelayInMins} minutes before retrying."
+                                        sleep(autogenRetryDelayInMins*60*1000)
+                                    } else {
+                                        break
+                                    }
                                 }
                             } else {
                                 context.node('worker') {
