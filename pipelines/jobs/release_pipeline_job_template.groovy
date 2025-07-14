@@ -130,7 +130,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         stringParam('dockerExcludes', '', 'Map of targetConfigurations to exclude from docker building. If a targetConfiguration (i.e. { "x64LinuxXL": [ "openj9" ], "aarch64Linux": [ "hotspot", "openj9" ] }) has been entered into this field, jenkins will build the jdk without using docker. This param overrides the dockerImage and dockerFile downstream job parameters.')
         stringParam('baseFilePath', '', "Relative path to where the build_base_file.groovy file is located. This runs the downstream job setup and configuration retrieval services.<br>Default: <code>${defaultsJson['baseFileDirectories']['upstream']}</code>")
         stringParam('buildConfigFilePath', '', "Relative path to where the jdkxx_pipeline_config.groovy file is located. It contains the build configurations for each platform, architecture and variant.<br>Default: <code>${defaultsJson['configDirectories']['build']}/jdkxx_pipeline_config.groovy</code>")
-        booleanParam('aqaAutoGen', false, 'If set to true, force auto generate AQA test jobs. Defaults to false')
+        booleanParam('aqaAutoGen', true, 'If set to true, force auto generate AQA test jobs. Defaults to false')
         booleanParam('enableReproducibleCompare', runReproducibleCompare, 'If set to true the reproducible compare job might be triggered')
         booleanParam('enableTests', runTests, 'If set to true the test pipeline will be executed')
         booleanParam('enableTestDynamicParallel', runParallel, 'If set to true test will be run parallel')
