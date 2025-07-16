@@ -718,7 +718,7 @@ class Build {
                         SETUP_JCK_RUN: "${setupJCKRun}"
                     ]
                     if ("${platform}" == 'x86-64_windows' && "${targetTests}" == 'dev.jck') {
-                        paramlist["LABEL"] = 'ci.role.test.interactive'
+                        paramList["LABEL"] = 'ci.role.test.interactive'
                     }
                     def queryString = paramList.collect { k, v -> "${URLEncoder.encode(k, 'UTF-8')}=${URLEncoder.encode(v, 'UTF-8')}"}.join('&')
                     def aqa_test_pipeline_FullURL = "${aqa_test_pipeline_BaseURL}?${queryString}&MODE=RELAY"
