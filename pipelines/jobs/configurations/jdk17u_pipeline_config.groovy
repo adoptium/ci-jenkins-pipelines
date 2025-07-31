@@ -9,7 +9,10 @@ class Config17 {
                         openj9      : '!sw.os.osx.10_11'
                 ],
                 test                : 'default',
-                configureArgs       : '--enable-dtrace',
+                configureArgs       : [
+                        'openj9'      : '--enable-dtrace',
+                        'temurin'     : '--enable-dtrace MAKE=/usr/bin/make'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -144,6 +147,9 @@ class Config17 {
                 arch                : 'aarch64',
                 additionalNodeLabels: 'xcode15.0.1',
                 test                : 'default',
+                configureArgs       : [
+                        'temurin'     : 'MAKE=/usr/bin/make'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]

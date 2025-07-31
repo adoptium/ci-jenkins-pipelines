@@ -11,7 +11,10 @@ class Config21 {
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
-                configureArgs       : '--enable-dtrace',
+                configureArgs       : [
+                        'openj9'      : '--enable-dtrace',
+                        'temurin'     : '--enable-dtrace MAKE=/usr/bin/make'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -144,6 +147,9 @@ class Config21 {
                 additionalNodeLabels: 'xcode15.0.1',
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
+                ],
+                configureArgs       : [
+                        'temurin'     : 'MAKE=/usr/bin/make'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'

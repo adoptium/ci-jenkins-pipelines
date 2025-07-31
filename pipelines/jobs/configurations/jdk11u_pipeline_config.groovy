@@ -8,7 +8,7 @@ class Config11 {
                 additionalNodeLabels: 'xcode15.0.1',
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto --with-cmake',
-                        'temurin'     : '--enable-dtrace=auto --disable-ccache'
+                        'temurin'     : '--enable-dtrace=auto --disable-ccache MAKE=/usr/bin/make'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -165,7 +165,10 @@ class Config11 {
                 arch                : 'aarch64',
                 test                : 'default',
                 additionalNodeLabels: 'xcode15.0.1',
-                configureArgs       : '--disable-ccache',
+                configureArgs       : [
+                        'openj9'      : '--disable-ccache',
+                        'temurin'     : '--disable-ccache MAKE=/usr/bin/make'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
                 ]

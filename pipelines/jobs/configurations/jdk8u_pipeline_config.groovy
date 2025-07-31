@@ -10,7 +10,7 @@ class Config8 {
                 ],
                 test                 : 'default',
                 configureArgs       : [
-                        'temurin'   : '--disable-ccache'
+                        'temurin'   : '--disable-ccache MAKE=/usr/bin/make'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
