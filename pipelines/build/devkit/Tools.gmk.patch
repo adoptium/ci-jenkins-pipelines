@@ -1,16 +1,16 @@
-diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
-index 187320ca2..9f1454d5e 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
-@@ -62,6 +62,19 @@ ifeq ($(BASE_OS), OL)
-     BASE_URL := http://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
+@@ -64,13 +64,22 @@
+     BASE_URL := https://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
      LINUX_VERSION := OL6.4
    endif
+-else ifeq ($(BASE_OS), Fedora)
+-  DEFAULT_OS_VERSION := 41
 +else ifeq ($(BASE_OS), Centos)
 +  DEFAULT_OS_VERSION := 7
-+  ifeq ($(BASE_OS_VERSION), )
-+    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
-+  endif
+   ifeq ($(BASE_OS_VERSION), )
+     BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
+   endif
 +  BASE_OS_MAJOR_VERSION := $(shell echo $(BASE_OS_VERSION) | cut -d'.' -f1)
 +  CENTOS_MIRROR := vault.centos.org
 +  ifeq ($(ARCH), x86_64)
@@ -19,21 +19,27 @@ index 187320ca2..9f1454d5e 100644
 +    BASE_URL := http://$(CENTOS_MIRROR)/altarch/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
 +  endif
 +  LINUX_VERSION := Centos$(BASE_OS_VERSION)
- else ifeq ($(BASE_OS), Fedora)
++else ifeq ($(BASE_OS), Fedora)
    ifeq ($(ARCH), riscv64)
-     DEFAULT_OS_VERSION := rawhide/68692
-@@ -87,6 +104,7 @@ else ifeq ($(BASE_OS), Fedora)
-       BASE_URL := https://archives.fedoraproject.org/pub/archive/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
-     endif
-   endif
-+  BASE_OS_MAJOR_VERSION := $(shell echo $(BASE_OS_VERSION) | cut -d'.' -f1)
-   LINUX_VERSION := Fedora_$(BASE_OS_VERSION)
- else
-   $(error Unknown base OS $(BASE_OS))
-@@ -95,16 +113,39 @@ endif
- ##########################################################################################
+-    BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
++    BASE_URL := https://secondary.fedoraproject.org/pub/alt/risc-v/archive/RPMS/riscv64
+   else
+     LATEST_ARCHIVED_OS_VERSION := 35
+     ifeq ($(filter x86_64 armhfp, $(ARCH)), )
+@@ -93,16 +102,21 @@
+ ################################################################################
  # Define external dependencies
  
+-gcc_ver_only := 14.2.0
+-binutils_ver_only := 2.43
+-ccache_ver_only := 4.10.2
+-CCACHE_CMAKE_BASED := 1
+-mpfr_ver_only := 4.2.1
+-gmp_ver_only := 6.3.0
+-mpc_ver_only := 1.3.1
+-gdb_ver_only := 15.2
+-
+-dependencies := gcc binutils ccache mpfr gmp mpc gdb
 +# Centos GPG KEYS
 +Centos_7_GPG_KEY_noarch := 6341AB2753D78A78A7C27BB124C6A8A7F4A80EB5  #gitleaks:allow
 +Centos_7_GPG_KEY_aarch64 := EF8F3CA66EFDF32B36CDADF76C7CB6EF305D49D6 #gitleaks:allow
@@ -49,47 +55,29 @@ index 187320ca2..9f1454d5e 100644
 +GMP_SIG := sig
 +MPC_SIG := sig
 +GDB_SIG := sig
-+
- # Latest that could be made to work.
- GCC_VER := 11.3.0
- ifeq ($(GCC_VER), 11.3.0)
-   gcc_ver := gcc-11.3.0
-+  GCC_GPG_KEY := 7F74F97C103468EE5D750B583AB00996FC26A641 #gitleaks:allow
-   binutils_ver := binutils-2.39
-+  BINUTILS_GPG_KEY := 3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F #gitleaks:allow
-   ccache_ver := ccache-3.7.12
-+  CCACHE_GPG_KEY := 5A939A71A46792CF57866A51996DDA075594ADB8 #gitleaks:allow
-   mpfr_ver := mpfr-4.1.1
-+  MPFR_SHA256 := 85fdf11614cc08e3545386d6b9c8c9035e3db1e506211a45f4e108117fe3c951 #gitleaks:allow
-   gmp_ver := gmp-6.2.1
-+  GMP_GPG_KEY := 343C2FF0FBEE5EC2EDBEF399F3599FF828C67298 #gitleaks:allow
-   mpc_ver := mpc-1.2.1
-+  MPC_GPG_KEY := AD17A21EF8AED8F1CC02DBD9F7D5C9BF765C61E3 #gitleaks:allow
-   gdb_ver := gdb-11.2
-+  GDB_GPG_KEY := F40ADB902B24264AA42E50BF92EDB04BFF325CF3 #gitleaks:allow
-   REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
- else ifeq ($(GCC_VER), 11.2.0)
-   gcc_ver := gcc-11.2.0
-@@ -246,7 +287,17 @@ download-rpms:
+ 
+ $(foreach dep,$(dependencies),$(eval $(dep)_ver := $(dep)-$($(dep)_ver_only)))
+ 
+@@ -181,7 +195,17 @@
          # Only run this if rpm dir is empty.
          ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
  	  cd $(DOWNLOAD_RPMS) && \
 -	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
 +	    wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
-+	  gpg --keyserver keyserver.ubuntu.com --recv-keys \
-+	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH))
-+	  gpg --keyserver keyserver.ubuntu.com --recv-keys \
-+	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_noarch)
-+	  rm -f $(DOWNLOAD_RPMS)/rpm.sig && gpg --armor --export \
-+	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH)) > $(DOWNLOAD_RPMS)/rpm.sig
-+	  gpg --armor --export \
-+	    $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_noarch) >> $(DOWNLOAD_RPMS)/rpm.sig
-+	  rpm --import $(DOWNLOAD_RPMS)/rpm.sig || true
-+	  rpm -K $(DOWNLOAD_RPMS)/*.rpm
++	    gpg --keyserver keyserver.ubuntu.com --recv-keys \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH))
++	    gpg --keyserver keyserver.ubuntu.com --recv-keys \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_noarch)
++	    rm -f $(DOWNLOAD_RPMS)/rpm.sig && gpg --armor --export \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH)) > $(DOWNLOAD_RPMS)/rpm.sig
++	    gpg --armor --export \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_noarch) >> $(DOWNLOAD_RPMS)/rpm.sig
++	    rpm --import $(DOWNLOAD_RPMS)/rpm.sig || true
++	    rpm -K $(DOWNLOAD_RPMS)/*.rpm
          endif
  
- ##########################################################################################
-@@ -271,6 +322,14 @@ define Download
+ ################################################################################
+@@ -214,6 +238,14 @@
  
    $$($(1)_FILE) :
  	wget -P $(DOWNLOAD) $$($(1))
@@ -104,7 +92,7 @@ index 187320ca2..9f1454d5e 100644
  endef
  
  # Download and unpack all source packages
-@@ -323,6 +382,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
+@@ -266,6 +298,9 @@
  # have it anyway, but just to make sure...
  # Patch libc.so and libpthread.so to force linking against libraries in sysroot
  # and not the ones installed on the build machine.
@@ -114,7 +102,7 @@ index 187320ca2..9f1454d5e 100644
  $(libs) : $(rpms)
  	@echo Patching libc and pthreads
  	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-@@ -332,6 +394,7 @@ $(libs) : $(rpms)
+@@ -275,6 +310,7 @@
  	      -e 's|/lib/||g' ) > $$f.tmp ; \
  	  mv $$f.tmp $$f ; \
  	done)
@@ -122,7 +110,7 @@ index 187320ca2..9f1454d5e 100644
  	@mkdir -p $(SYSROOT)/usr/lib
  	@touch $@
  
-@@ -440,6 +503,9 @@ endif
+@@ -386,6 +422,9 @@
  
  # Makefile creation. Simply run configure in build dir.
  # Setting CFLAGS to -O2 generates a much faster ld.
@@ -132,7 +120,7 @@ index 187320ca2..9f1454d5e 100644
  $(bfdmakes) \
  $(BUILDDIR)/$(binutils_ver)/Makefile \
      : $(BINUTILS_CFG)
-@@ -454,6 +520,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
+@@ -400,6 +439,7 @@
  	      --with-sysroot=$(SYSROOT) \
  	      --disable-nls \
  	      --program-prefix=$(TARGET)- \
