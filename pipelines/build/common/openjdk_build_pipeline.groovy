@@ -2148,6 +2148,7 @@ def buildScriptsAssemble(
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
                                     def files_to_sign = getEclipseSigningFileList(base_path)
+                                    context.println "FILES: ${files_to_sign}"
                                     //context.stash name: 'jmods',
                                     //     includes: "${base_path}/hotspot/variant-server/**/*," +
                                     //         "${base_path}/support/modules_cmds/**/*," +
