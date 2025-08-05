@@ -1158,7 +1158,7 @@ node('worker') {
                                     //Remove trailing comma.
                                     summaryOfRepros = summaryOfRepros.substring(0, summaryOfRepros.length() - 1)
 
-                                    reproDetailSummary = "\nBuild repro summary: "+summaryOfRepros
+                                    reproDetailSummary = "\n${featureRelease} Reproducibility: "+summaryOfRepros
                                 }
                             } else {
                                 // Ignore if we cannot find a likely pipeline job.
