@@ -1701,8 +1701,7 @@ class Build {
     /*
      Build the comma separated list of files to be Eclipse signed
      */
-    def getEclipseSigningFileList() {
-        def base_path = 'workspace/build/src/build'
+    def getEclipseSigningFileList(base_path) {
         def target_os = "${buildConfig.TARGET_OS}"
 
         def sign_count = 0
@@ -1715,24 +1714,26 @@ class Build {
                       ]
 
         folders.each { folder ->
-            def files
-            if (target_os == "mac") {
-                files = context.sh(script: "find '${base_path}/${folder}/' -perm +111 -type f -o -name '*.dylib' -type f || find '${base_path}/${folder}/' -perm /111 -type f -o -name '*.dylib'  -type f", returnStdout:true).trim().split('\n')
-            } else {
-                files = context.sh(script: "find '${base_path}/${folder}/' -type f -name '*.exe' -o -name '*.dll'", returnStdout:true).trim().split('\n')
-            }
-
-            files.each { file ->
+            if (context.fileExists("${base_path}/${folder}")) {
+                def files
                 if (target_os == "mac") {
-                    files_to_sign = files_to_sign + file + ","
-                    sign_count += 1
+                    files = context.sh(script: "find '${base_path}/${folder}/' -perm +111 -type f -o -name '*.dylib' -type f || find '${base_path}/${folder}/' -perm /111 -type f -o -name '*.dylib'  -type f", returnStdout:true).trim().split('\n')
                 } else {
-                    def f = new File(projectPaths.idVerPath)
-                    String filename = f.name
-                    // Check if file is a Microsoft supplied file that is already signed
-                    if ( !f.startsWith("api-ms-win") && !f.startsWith("API-MS-Win") && !f.startsWith("msvcp") && !f.startsWith("ucrtbase") && !f.startsWith("vcruntime") ) {
+                    files = context.sh(script: "find '${base_path}/${folder}/' -type f -name '*.exe' -o -name '*.dll'", returnStdout:true).trim().split('\n')
+                }
+
+                files.each { file ->
+                    if (target_os == "mac") {
                         files_to_sign = files_to_sign + file + ","
                         sign_count += 1
+                    } else {
+                        def f = new File(projectPaths.idVerPath)
+                        String filename = f.name
+                        // Check if file is a Microsoft supplied file that is already signed
+                        if ( !f.startsWith("api-ms-win") && !f.startsWith("API-MS-Win") && !f.startsWith("msvcp") && !f.startsWith("ucrtbase") && !f.startsWith("vcruntime") ) {
+                            files_to_sign = files_to_sign + file + ","
+                            sign_count += 1
+                        }
                     }
                 }
             }
@@ -2146,7 +2147,7 @@ def buildScriptsAssemble(
                                         }
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
-                                    getEclipseSigningFileList()
+                                    getEclipseSigningFileList(base_path)
                                     context.stash name: 'jmods',
                                          includes: "${base_path}/hotspot/variant-server/**/*," +
                                              "${base_path}/support/modules_cmds/**/*," +
