@@ -2156,7 +2156,7 @@ def buildScriptsAssemble(
                                     //          // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
                                     //         "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
                                     //     excludes: "**/*.dat,**/*bfc"
-                                    if (context.fileExists("workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs//java.desktop/liblcms.dylib") {
+                                    if (context.fileExists("workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs//java.desktop/liblcms.dylib")) {
                                        context.println "FOUND"
                                     } else {
                                        context.println "NOT FOUND"
