@@ -1701,7 +1701,8 @@ class Build {
     /*
      Build the comma separated list of files to be Eclipse signed
      */
-    def getEclipseSigningFileList(base_path) {
+    def getEclipseSigningFileList(base_path_input) {
+        def base_path = base_path_input.replaceAll("//", "/")
         def target_os = "${buildConfig.TARGET_OS}"
 
         def sign_count = 0
@@ -2148,7 +2149,6 @@ def buildScriptsAssemble(
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
                                     def files_to_sign = getEclipseSigningFileList(base_path)
-                                    context.println "FILES: ${files_to_sign}"
                                     //context.stash name: 'jmods',
                                     //     includes: "${base_path}/hotspot/variant-server/**/*," +
                                     //         "${base_path}/support/modules_cmds/**/*," +
@@ -2156,11 +2156,6 @@ def buildScriptsAssemble(
                                     //          // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
                                     //         "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
                                     //     excludes: "**/*.dat,**/*bfc"
-                                    if (context.fileExists("workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs//java.desktop/liblcms.dylib")) {
-                                       context.println "FOUND"
-                                    } else {
-                                       context.println "NOT FOUND"
-                                    }
 context.stash name: 'jmods1', includes: 'workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs/java.desktop/liblcms.dylib'
 context.println "done jmod1"
 context.stash name: 'jmods2', includes: 'workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs//java.desktop/liblcms.dylib'
