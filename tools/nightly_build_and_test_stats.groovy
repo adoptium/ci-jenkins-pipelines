@@ -1166,7 +1166,7 @@ node('worker') {
                                 echo "This pipeline is blank string"
                             }
 
-                            reproSummary = "\nReproducibility: "+reproducibleBuilds[featureRelease][0]+reproDetailSummary
+                            reproSummary = "\n${reproDetailSummary}\nOverall Reproducibility: "+reproducibleBuilds[featureRelease][0]
                         }
                     }
 
