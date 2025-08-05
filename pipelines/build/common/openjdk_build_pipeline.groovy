@@ -2156,7 +2156,25 @@ def buildScriptsAssemble(
                                     //          // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
                                     //         "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
                                     //     excludes: "**/*.dat,**/*bfc"
+                                    if (context.fileExists("workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs//java.desktop/liblcms.dylib") {
+                                       context.println "FOUND"
+                                    } else {
+                                       context.println "NOT FOUND"
+                                    }
+context.stash name: 'jmods1', includes: 'workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs/java.desktop/liblcms.dylib'
+context.println "done jmod1"
+context.stash name: 'jmods2', includes: 'workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs//java.desktop/liblcms.dylib'
+context.println "done jmod2"
+context.stash name: 'jmods3', includes: 'workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs//java.desktop/liblcms.dylib,'
+context.println "done jmod3"
+context.stash name: 'jmods4', includes: "workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs/java.desktop/liblcms.dylib"
+context.println "done jmod4"
+context.stash name: 'jmods5', includes: "workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs//java.desktop/liblcms.dylib"
+context.println "done jmod5,"
+context.stash name: 'jmods6', includes: "workspace/build/src/build/macosx-aarch64-server-release/support/modules_libs//java.desktop/liblcms.dylib,"
+context.println "done jmod6"
                                     context.stash name: 'jmods', includes: "${files_to_sign}"
+context.println "done jmods"
 
                                     // eclipse-codesign and assemble sections were inlined here before 
                                     // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
