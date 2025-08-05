@@ -1698,6 +1698,38 @@ class Build {
         batOrSh('git rev-parse HEAD')
     }
 
+    /*
+     Build the comma separated list of files to be Eclipse signed
+     */
+    def getEclipseSigningFileList() {
+        def base_path = 'workspace/build/src/build'
+        def target_os = "${buildConfig.TARGET_OS}"
+
+        def files_to_sign = ""
+
+        def files
+        if (target_os == "mac") {
+            files = context.sh(script: "find '${base_path}/' -perm +111 -type f -o -name '*.dylib' -type f || find '${base_path}/' -perm /111 -type f -o -name '*.dylib'  -type f", returnStdout:true).trim().split('\n')
+        } else {
+            files = context.sh(script: "find '${base_path}/' -type f -name '*.exe' -o -name '*.dll'", returnStdout:true).trim().split('\n')
+        }
+
+        files.each { file ->
+            if (target_os == "mac") {
+                files_to_sign = files_to_sign + file + ","
+            } else {
+                def f = new File(projectPaths.idVerPath)
+                String filename = f.name
+                // Check if file is a Microsoft supplied file that is already signed
+                if ( !f.startsWith("api-ms-win") && !f.startsWith("API-MS-Win") && !f.startsWith("msvcp") && !f.startsWith("ucrtbase") && !f.startsWith("vcruntime") ) {
+                    files_to_sign = files_to_sign + file + ","
+                }
+            }
+        }
+
+        context.println "Files to be signed: $files_to_sign"
+    }
+
     def buildScriptsEclipseSigner() {
         def build_path
         build_path = 'workspace/build/src/build'
@@ -2101,6 +2133,7 @@ def buildScriptsAssemble(
                                         }
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
+                                    getEclipseSigningFileList()
                                     context.stash name: 'jmods',
                                          includes: "${base_path}/hotspot/variant-server/**/*," +
                                              "${base_path}/support/modules_cmds/**/*," +
