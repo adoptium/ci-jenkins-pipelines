@@ -563,23 +563,15 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
-        // ...and platforms.
-        def platformsForOneJDKVersion = results[jdkVersion][1]
-        assert platformsForOneJDKVersion instanceof Map
-        for ( String onePlatform in platformsForOneJDKVersion.keySet() ) {
+        platformIterator:
+        for ( String onePlatform in results[jdkVersion][1].keySet() ) {
             echo "Searching for "+onePlatform+" reproducibility %"
-
-            // Check if we already have a result from previous pipeline
-            if (results[jdkVersion][1][onePlatform] != "?" && !results[jdkVersion][1][onePlatform].startsWith("???")) {
-                // We have a result already...
-                continue
-            }
 
             // If this platform doesn't have a reproducibility test yet, skip it.
             if (platformReproTestMap[onePlatform][0].equals("NA")) {
                 results[jdkVersion][1][onePlatform] = "NA"
                 // Then we exit this lambda and skip to the next platform.
-                continue
+                continue platformIterator
             }
 
             def pipelineLink = "${trssURL}/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
@@ -591,19 +583,20 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             }
 
             def trssBuildJobNames = callWgetSafely("${pipelineLink}")
-            def reproResult = "???% - Build not found. Pipeline link: " + pipelineLink
+            results[jdkVersion][1][onePlatform] = "???% - Build not found. Pipeline link: " + pipelineLink
 
             // Does this platform have a build in this pipeline? If not, skip to next platform.
             if ( trssBuildJobNames.length() <= 2 ) {
-                continue
+                continue platformIterator
             }
 
             def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
 
             // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
             assert buildJobNamesJson instanceof List
+            buildIterator:
             for ( Map buildJob in buildJobNamesJson ) {
-                reproResult = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
+                results[jdkVersion][1][onePlatform] = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
                 def testPlatform = platformConversionMap[onePlatform][1]
                 def reproTestName=platformReproTestMap[onePlatform][1]+"_0"
                 def reproTestBucket=platformReproTestMap[onePlatform][0]
@@ -611,14 +604,15 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 def trssTestJobNames = callWgetSafely("${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
                 // Did this build have tests? If not, skip to next build job.
                 if ( trssTestJobNames.length() <= 2 ) {
-                    continue
+                    continue buildIterator
                 }
 
-                reproResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
+                results[jdkVersion][1][onePlatform] = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
                 def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
 
                 // For each test job (including testList subjobs), we now search for the reproducibility test.
                 assert testJobNamesJson instanceof List
+                testIterator:
                 for ( Map testJob in testJobNamesJson ) {
                     // Default to Jenkins console
                     def wgetUrl = "${testJob.buildUrl}/consoleText"
@@ -636,21 +630,19 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                     // If we can find it, then we look for the anticipated percentage.
                     if ( !testOutput.contains("Running test "+reproTestName) ) {
                         echo "The following test's output does not contain ${reproTestName}, so we are skipping it: ${wgetUrl}"
-                        continue
+                        continue testIterator
                     }
 
-                    reproResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
+                    results[jdkVersion][1][onePlatform] = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
                     // Now we know the test ran, 
                     def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
                     if ( matcherObject ) {
                         reproResult = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
+                        results[jdkVersion][1][onePlatform] = reproResult
+                        echo "A reproducibility percentage of ${reproResult} was found for ${testPlatform}."
+                        continue platformIterator
                     }
                 }
-            }
-
-            // Did we find a result?
-            if (!reproResult.startsWith("???")) {
-                results[jdkVersion][1][onePlatform] = reproResult
             }
         }
 
