@@ -1701,8 +1701,7 @@ class Build {
     /*
      Build the comma separated list of files to be Eclipse signed
      */
-    def getEclipseSigningFileList(base_path_input) {
-        def base_path = base_path_input.replaceAll("//", "/")
+    def getEclipseSigningFileList(base_path) {
         def target_os = "${buildConfig.TARGET_OS}"
 
         def sign_count = 0
@@ -1739,6 +1738,8 @@ class Build {
                 }
             }
         }
+
+        files_to_sign = files_to_sign.replaceAll("//", "/")
 
         context.println "${sign_count} files to be signed: $files_to_sign"
 
