@@ -1912,11 +1912,11 @@ def buildScriptsAssemble(
     def assembleBuildArgs
 
     // Remove jmod directories to be replaced with the stash saved above
-    batOrSh "rm -rf ${base_path}/hotspot/variant-server ${base_path}/support/modules_cmds ${base_path}/support/modules_libs"
-    // JDK 16 + jpackage executables need to be signed as well
-    if (buildConfig.JAVA_TO_BUILD != 'jdk11u') {
-        batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
-    }
+    //batOrSh "rm -rf ${base_path}/hotspot/variant-server ${base_path}/support/modules_cmds ${base_path}/support/modules_libs"
+    //// JDK 16 + jpackage executables need to be signed as well
+    //if (buildConfig.JAVA_TO_BUILD != 'jdk11u') {
+    //    batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
+    //}
     context.stage('assemble') {
       try {
         // This would ideally not be required but it's due to lack of UID mapping in windows containers
@@ -2147,14 +2147,15 @@ def buildScriptsAssemble(
                                         }
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
-                                    getEclipseSigningFileList(base_path)
-                                    context.stash name: 'jmods',
-                                         includes: "${base_path}/hotspot/variant-server/**/*," +
-                                             "${base_path}/support/modules_cmds/**/*," +
-                                             "${base_path}/support/modules_libs/**/*," +
-                                              // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
-                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
-                                         excludes: "**/*.dat,**/*bfc"
+                                    def files_to_sign = getEclipseSigningFileList(base_path)
+                                    //context.stash name: 'jmods',
+                                    //     includes: "${base_path}/hotspot/variant-server/**/*," +
+                                    //         "${base_path}/support/modules_cmds/**/*," +
+                                    //         "${base_path}/support/modules_libs/**/*," +
+                                    //          // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
+                                    //         "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
+                                    //     excludes: "**/*.dat,**/*bfc"
+                                    context.stash name: 'jmods', includes: "${files_to_sign}"
 
                                     // eclipse-codesign and assemble sections were inlined here before 
                                     // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
