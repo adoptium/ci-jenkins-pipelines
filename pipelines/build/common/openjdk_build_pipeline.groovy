@@ -1720,10 +1720,10 @@ class Build {
                 def f = new File($file)
                 String filename = f.name
                 // Touch dylib dependencies so does not get rebuilt by make
-                if (fileExists("${file}.dSYM/Contents/Info.plist") {
+                if (fileExists("${file}.dSYM/Contents/Info.plist")) {
                     batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Info.plist")
                 }
-                if (fileExists("${file}.dSYM/Contents/Resources/DWARF/${filename}") {
+                if (fileExists("${file}.dSYM/Contents/Resources/DWARF/${filename}")) {
                     batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Resources/DWARF/${filename}")
                 }
             }
