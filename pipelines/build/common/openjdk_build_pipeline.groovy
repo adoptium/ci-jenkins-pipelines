@@ -1710,7 +1710,6 @@ class Build {
         // Timestamp to touch all signed and dependent files with
         def timestamp = new Date().format('yyyyMMddHHmm.ss', TimeZone.getTimeZone('UTC'))
 
-batOrSh("pwd")
         def signed_files = files_to_sign_list.split(",")
         signed_files.each { file ->
             context.println "Processing signed file: $file"
@@ -1718,7 +1717,7 @@ batOrSh("pwd")
             batOrSh("touch -t ${timestamp} ${file}")
 
             if (target_os == "mac") {
-                def f = new File($file)
+                def f = new File(file)
                 String filename = f.name
                 // Touch dylib dependencies so does not get rebuilt by make
                 if (fileExists("${file}.dSYM/Contents/Info.plist")) {
