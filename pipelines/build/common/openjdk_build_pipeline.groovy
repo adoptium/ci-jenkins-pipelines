@@ -2176,7 +2176,7 @@ def buildScriptsAssemble(
                                     //          // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
                                     //         "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
                                     //     excludes: "**/*.dat,**/*bfc"
-                                    context.stash name: 'jmods', includes: "${files_to_sign}"
+                                    context.stash name: 'jmods', includes: "${files_to_sign_list}"
 
                                     // eclipse-codesign and assemble sections were inlined here before 
                                     // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
