@@ -71,6 +71,7 @@ class Build {
     Map<String,String> dependency_version = new HashMap<String,String>()
     String crossCompileVersionPath = ''
     Map variantVersion = [:]
+    String files_to_sign_list = ''
 
     // Declare timeouts for each critical stage (unit is HOURS)
     Map buildTimeouts = [
@@ -1699,6 +1700,37 @@ class Build {
     }
 
     /*
+     Restore the Eclipse "signed_jmods" and touch to ensure they do not get rebuilt by make
+     */
+    def restoreSignedFiles() {
+        context.unstash 'signed_jmods'
+
+        def target_os = "${buildConfig.TARGET_OS}"
+
+        // Timestamp to touch all signed and dependent files with
+        def timestamp = new Date().format('yyyyMMddHHmm.ss', TimeZone.getTimeZone('UTC'))
+
+        def signed_files = files_to_sign_list.split(",")
+        signed_files.each { file ->
+            context.println "Processing signed file: $file"
+
+            batOrSh("touch -t ${timestamp} ${file}")
+
+            if (target_os == "mac") {
+                def f = new File($file)
+                String filename = f.name
+                // Touch dylib dependencies so does not get rebuilt by make
+                if (fileExists("${file}.dSYM/Contents/Info.plist") {
+                    batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Info.plist")
+                }
+                if (fileExists("${file}.dSYM/Contents/Resources/DWARF/${filename}") {
+                    batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Resources/DWARF/${filename}")
+                }
+            }
+        }
+    }
+
+    /*
      Build the comma separated list of files to be Eclipse signed
      */
     def getEclipseSigningFileList(base_path) {
@@ -1774,30 +1806,17 @@ class Build {
                                                 set -eu
                                                 echo "Signing JMOD files under build path ${base_path} for base_os ${base_os}"
                                                 TMP_DIR="${base_path}/"
-                                                if [ "${base_os}" == "mac" ]; then
-                                                    ENTITLEMENTS="$WORKSPACE/entitlements.plist"
-                                                    FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib' -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
-                                                else
-                                                    FILES=$(find "${TMP_DIR}" -type f -name '*.exe' -o -name '*.dll')
-                                                fi
+                                                MAC_ENTITLEMENTS="$WORKSPACE/entitlements.plist"
+                                                FILES=$(find "${TMP_DIR}" -type f)
                                                 for f in $FILES
                                                 do
-                                                    dir=$(dirname "$f")
-                                                    file=$(basename "$f")
-                                                    ms_file_skipped=false
-                                                    if [ "${base_os}" == "windows" ]; then
-                                                        # Check if file is a Microsoft supplied file that is already signed
-                                                        if [[ "$file" =~ api-ms-win.* ]] || [[ "$file" =~ API-MS-Win.* ]] || [[ "$file" =~ msvcp.* ]] || [[ "$file" =~ ucrtbase.* ]] || [[ "$file" =~ vcruntime.* ]]; then
-                                                            echo "Skipping Microsoft file $file"
-                                                            ms_file_skipped=true
-                                                        fi
-                                                    fi
-                                                    if [ $ms_file_skipped == false ]; then
+                                                        dir=$(dirname "$f")
+                                                        file=$(basename "$f")
                                                         echo "Signing $f using Eclipse Foundation codesign service"
                                                         mv "$f" "${dir}/unsigned_${file}"
                                                         success=false
                                                         if [ "${base_os}" == "mac" ]; then
-                                                            if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
+                                                            if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$MAC_ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
                                                                 echo "curl command failed, sign of $f failed"
                                                             else
                                                                 success=true
@@ -1818,7 +1837,7 @@ class Build {
                                                                 echo $iteration Of $max_iterations
                                                                 sleep 1
                                                                 if [ "${base_os}" == "mac" ]; then
-                                                                    if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
+                                                                    if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$MAC_ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
                                                                         success=true
                                                                     fi
                                                                 else
@@ -1842,7 +1861,6 @@ class Build {
                                                         fi
                                                         chmod --reference="${dir}/unsigned_${file}" "$f"
                                                         rm -rf "${dir}/unsigned_${file}"
-                                                    fi # ms_file_skipped == false
                                                 done
                                             '''
                                             // groovylint-enable
@@ -1931,7 +1949,8 @@ def buildScriptsAssemble(
             context.bat('chmod -R a+rwX ' + cygwin_workspace + '/workspace/build/src/build/*')
         }
         // Restore signed JMODs
-        context.unstash 'signed_jmods'
+        restoreSignedFiles()
+        #context.unstash 'signed_jmods'
         // Convert IndividualBuildConfig to jenkins env variables
         context.withEnv(buildConfigEnvVars) {
             if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
@@ -2149,7 +2168,7 @@ def buildScriptsAssemble(
                                         }
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
-                                    def files_to_sign = getEclipseSigningFileList(base_path)
+                                    files_to_sign_list = getEclipseSigningFileList(base_path)
                                     //context.stash name: 'jmods',
                                     //     includes: "${base_path}/hotspot/variant-server/**/*," +
                                     //         "${base_path}/support/modules_cmds/**/*," +
