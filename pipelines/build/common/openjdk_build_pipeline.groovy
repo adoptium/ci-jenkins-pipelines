@@ -72,6 +72,7 @@ class Build {
     String crossCompileVersionPath = ''
     Map variantVersion = [:]
     String files_to_sign_list = ''
+    String files_to_sign_base_path = ''
 
     // Declare timeouts for each critical stage (unit is HOURS)
     Map buildTimeouts = [
@@ -1719,12 +1720,24 @@ class Build {
             if (target_os == "mac") {
                 def f = new File(file)
                 String filename = f.name
-                // Touch dylib dependencies so does not get rebuilt by make
+                // Touch dylib/exe dependencies so does not get rebuilt by make
                 if (context.fileExists("${file}.dSYM/Contents/Info.plist")) {
                     batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Info.plist")
                 }
                 if (context.fileExists("${file}.dSYM/Contents/Resources/DWARF/${filename}")) {
                     batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Resources/DWARF/${filename}")
+                }
+            } else if (target_os == "windows") {
+                def f = new File(file)
+                String filename = f.name
+                // Touch dll/exe dependencies so does not get rebuilt by make
+                if (filename.endsWith(".dll") || filename.endsWith(".exe")) {
+                    // Find x.lib which other x.dll/x.exe might depend on
+                    def lib_name = filename.replaceAll("\.dll", ".lib").replaceAll("\.exe", ".lib")
+                    def libs = context.sh(script: "find '${files_to_sign_base_path}/' -type f -name '${lib_name}'", returnStdout:true).trim().split('\n')
+                    libs.each { lib ->
+                        batOrSh("touch -t ${timestamp} ${lib}")
+                    }
                 }
             }
         }
@@ -1758,7 +1771,7 @@ class Build {
                     if (target_os == "mac") {
                         files_to_sign = files_to_sign + file + ","
                         sign_count += 1
-                    } else {
+                    } else if (target_os == "windows") {
                         def f = new File(file)
                         String filename = f.name
                         // Check if file is a Microsoft supplied file that is already signed
@@ -2168,6 +2181,7 @@ def buildScriptsAssemble(
                                         }
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
+                                    files_to_sign_base_path = base_path
                                     files_to_sign_list = getEclipseSigningFileList(base_path)
                                     //context.stash name: 'jmods',
                                     //     includes: "${base_path}/hotspot/variant-server/**/*," +
