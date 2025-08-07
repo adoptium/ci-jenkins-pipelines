@@ -1733,7 +1733,7 @@ class Build {
                 // Touch dll/exe dependencies so does not get rebuilt by make
                 if (filename.endsWith(".dll") || filename.endsWith(".exe")) {
                     // Find x.lib which other x.dll/x.exe might depend on
-                    def lib_name = filename.replaceAll("\.dll", ".lib").replaceAll("\.exe", ".lib")
+                    def lib_name = filename.replaceAll("\\.dll", ".lib").replaceAll("\\.exe", ".lib")
                     def libs = context.sh(script: "find '${files_to_sign_base_path}/' -type f -name '${lib_name}'", returnStdout:true).trim().split('\n')
                     libs.each { lib ->
                         batOrSh("touch -t ${timestamp} ${lib}")
