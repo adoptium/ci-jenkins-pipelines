@@ -1759,10 +1759,10 @@ class Build {
                         files_to_sign = files_to_sign + file + ","
                         sign_count += 1
                     } else {
-                        def f = new File(projectPaths.idVerPath)
+                        def f = new File(file)
                         String filename = f.name
                         // Check if file is a Microsoft supplied file that is already signed
-                        if ( !f.startsWith("api-ms-win") && !f.startsWith("API-MS-Win") && !f.startsWith("msvcp") && !f.startsWith("ucrtbase") && !f.startsWith("vcruntime") ) {
+                        if ( !filename.startsWith("api-ms-win") && !filename.startsWith("API-MS-Win") && !filename.startsWith("msvcp") && !filename.startsWith("ucrtbase") && !filename.startsWith("vcruntime") ) {
                             files_to_sign = files_to_sign + file + ","
                             sign_count += 1
                         }
