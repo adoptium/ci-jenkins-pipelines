@@ -1714,30 +1714,33 @@ class Build {
         def signed_files = files_to_sign_list.split(",")
         signed_files.each { file ->
             context.println "Processing signed file: $file"
+            if (!context.fileExists("${file}")) {
+                context.println "${file} not found"
+            } else {
+                batOrSh("touch -t ${timestamp} ${file}")
 
-            batOrSh("touch -t ${timestamp} ${file}")
-
-            if (target_os == "mac") {
-                def f = new File(file)
-                String filename = f.name
-                // Touch dylib/exe dependencies so does not get rebuilt by make
-                if (context.fileExists("${file}.dSYM/Contents/Info.plist")) {
-                    batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Info.plist")
-                }
-                if (context.fileExists("${file}.dSYM/Contents/Resources/DWARF/${filename}")) {
-                    batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Resources/DWARF/${filename}")
-                }
-            } else if (target_os == "windows") {
-                def f = new File(file)
-                String filename = f.name
-                // Touch dll/exe dependencies so does not get rebuilt by make
-                if (filename.endsWith(".dll") || filename.endsWith(".exe")) {
-                    // Find x.lib which other x.dll/x.exe might depend on
-                    def lib_name = filename.replaceAll("\\.dll", ".lib").replaceAll("\\.exe", ".lib")
-                    def libs = context.sh(script: "find '${files_to_sign_base_path}/' -type f -name '${lib_name}'", returnStdout:true).trim().split('\n')
-                    libs.each { lib ->
-                        if (lib.trim() != "") {
-                            batOrSh("touch -t ${timestamp} ${lib}")
+                if (target_os == "mac") {
+                    def f = new File(file)
+                    String filename = f.name
+                    // Touch dylib/exe dependencies so does not get rebuilt by make
+                    if (context.fileExists("${file}.dSYM/Contents/Info.plist")) {
+                        batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Info.plist")
+                    }
+                    if (context.fileExists("${file}.dSYM/Contents/Resources/DWARF/${filename}")) {
+                        batOrSh("touch -t ${timestamp} ${file}.dSYM/Contents/Resources/DWARF/${filename}")
+                    }
+                } else if (target_os == "windows") {
+                    def f = new File(file)
+                    String filename = f.name
+                    // Touch dll/exe dependencies so does not get rebuilt by make
+                    if (filename.endsWith(".dll") || filename.endsWith(".exe")) {
+                        // Find x.lib which other x.dll/x.exe might depend on
+                        def lib_name = filename.replaceAll("\\.dll", ".lib").replaceAll("\\.exe", ".lib")
+                        def libs = context.sh(script: "find '${files_to_sign_base_path}/' -type f -name '${lib_name}'", returnStdout:true).trim().split('\n')
+                        libs.each { lib ->
+                            if (lib.trim() != "") {
+                                batOrSh("touch -t ${timestamp} ${lib}")
+                            }
                         }
                     }
                 }
