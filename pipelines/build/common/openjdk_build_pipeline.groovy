@@ -1736,7 +1736,9 @@ class Build {
                     def lib_name = filename.replaceAll("\\.dll", ".lib").replaceAll("\\.exe", ".lib")
                     def libs = context.sh(script: "find '${files_to_sign_base_path}/' -type f -name '${lib_name}'", returnStdout:true).trim().split('\n')
                     libs.each { lib ->
-                        batOrSh("touch -t ${timestamp} ${lib}")
+                        if (lib.trim() != "") {
+                            batOrSh("touch -t ${timestamp} ${lib}")
+                        }
                     }
                 }
             }
@@ -1763,21 +1765,23 @@ class Build {
                 def files
                 if (target_os == "mac") {
                     files = context.sh(script: "find '${base_path}/${folder}/' -perm +111 -type f -o -name '*.dylib' -type f || find '${base_path}/${folder}/' -perm /111 -type f -o -name '*.dylib'  -type f", returnStdout:true).trim().split('\n')
-                } else {
+                } else if (target_os == "windows") {
                     files = context.sh(script: "find '${base_path}/${folder}/' -type f -name '*.exe' -o -name '*.dll'", returnStdout:true).trim().split('\n')
                 }
 
                 files.each { file ->
-                    if (target_os == "mac") {
-                        files_to_sign = files_to_sign + file + ","
-                        sign_count += 1
-                    } else if (target_os == "windows") {
-                        def f = new File(file)
-                        String filename = f.name
-                        // Check if file is a Microsoft supplied file that is already signed
-                        if ( !filename.startsWith("api-ms-win") && !filename.startsWith("API-MS-Win") && !filename.startsWith("msvcp") && !filename.startsWith("ucrtbase") && !filename.startsWith("vcruntime") ) {
+                    if (file.trim() != "") {
+                        if (target_os == "mac") {
                             files_to_sign = files_to_sign + file + ","
                             sign_count += 1
+                        } else if (target_os == "windows") {
+                            def f = new File(file)
+                            String filename = f.name
+                            // Check if file is a Microsoft supplied file that is already signed
+                            if ( !filename.startsWith("api-ms-win") && !filename.startsWith("API-MS-Win") && !filename.startsWith("msvcp") && !filename.startsWith("ucrtbase") && !filename.startsWith("vcruntime") ) {
+                                files_to_sign = files_to_sign + file + ","
+                                sign_count += 1
+                            }
                         }
                     }
                 }
