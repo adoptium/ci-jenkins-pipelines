@@ -1736,7 +1736,7 @@ class Build {
                     if (filename.endsWith(".dll") || filename.endsWith(".exe")) {
                         // Find x.lib which other x.dll/x.exe might depend on
                         def lib_name = filename.replaceAll("\\.dll", ".lib").replaceAll("\\.exe", ".lib")
-                        def libs = context.bat(script: "find '${files_to_sign_base_path}/' -type f -name '${lib_name}'", returnStdout:true).trim().split('\n')
+                        def libs = context.bat(script: "@find '${files_to_sign_base_path}/' -type f -name '${lib_name}'", returnStdout:true).trim().split('\n')
                         libs.each { lib ->
                             if (lib.trim() != "") {
                                 context.bat("touch -t ${timestamp} ${lib}")
@@ -1769,7 +1769,7 @@ class Build {
                 if (target_os == "mac") {
                     files = context.sh(script: "find '${base_path}/${folder}/' -perm +111 -type f -o -name '*.dylib' -type f || find '${base_path}/${folder}/' -perm /111 -type f -o -name '*.dylib'  -type f", returnStdout:true).trim().split('\n')
                 } else if (target_os == "windows") {
-                    files = context.bat(script: "find '${base_path}/${folder}/' -type f -name '*.exe' -o -name '*.dll'", returnStdout:true).trim().split('\n')
+                    files = context.bat(script: "@find '${base_path}/${folder}/' -type f -name '*.exe' -o -name '*.dll'", returnStdout:true).trim().split('\n')
                 }
 
                 files.each { file ->
