@@ -1742,6 +1742,16 @@ class Build {
                                 context.bat("touch -t ${timestamp} ${lib}")
                             }
                         }
+                        // Touch exe marker files
+                        if (filename.endsWith(".exe")) {
+                            def marker_name = "_" + filename.replaceAll("\\.exe", "_run_exec.marker")
+                            def markers = context.bat(script: "@find '${files_to_sign_base_path}/' -type f -name '${marker_name}'", returnStdout:true).trim().split('\n')
+                            markers.each { marker -> 
+                                if (marker.trim() != "") {
+                                    context.bat("touch -t ${timestamp} ${marker}")
+                            }
+                        }
+                        }
                     }
                 }
             }
