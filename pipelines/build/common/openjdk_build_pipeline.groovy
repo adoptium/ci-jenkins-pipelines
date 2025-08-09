@@ -1758,6 +1758,29 @@ class Build {
         }
     }
 
+    def touchSignedFileFolders() {
+        context.unstash 'signed_jmods'
+
+        def target_os = "${buildConfig.TARGET_OS}"
+
+        def folders = ["hotspot/variant-server",
+                       "support/modules_cmds",
+                       "support/modules_libs",
+                       "jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources"
+                      ]
+
+        // Timestamp to touch all signed and dependent files with
+        def timestamp = new Date().format('yyyyMMddHHmm.ss', TimeZone.getTimeZone('UTC'))
+
+        if (target_os == "windows") {
+            folders.each { folder ->
+                if (context.fileExists("${files_to_sign_base_path}/${folder}")) {
+                    batOrSh("find ${files_to_sign_base_path}/${folder} -exec touch -t ${timestamp} {} +")
+                }
+            }
+        }
+    }
+
     /*
      Build the comma separated list of files to be Eclipse signed
      */
@@ -1979,7 +2002,8 @@ def buildScriptsAssemble(
             context.bat('chmod -R a+rwX ' + cygwin_workspace + '/workspace/build/src/build/*')
         }
         // Restore signed JMODs
-        restoreSignedFiles()
+        //restoreSignedFiles()
+        touchSignedFileFolders()
         //context.unstash 'signed_jmods'
         // Convert IndividualBuildConfig to jenkins env variables
         context.withEnv(buildConfigEnvVars) {
