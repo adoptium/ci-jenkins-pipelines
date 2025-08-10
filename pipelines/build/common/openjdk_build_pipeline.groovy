@@ -1764,8 +1764,7 @@ class Build {
         def target_os = "${buildConfig.TARGET_OS}"
 
         def folders = ["hotspot/variant-server",
-                       "support/modules_cmds",
-                       "support/modules_libs",
+                       "support",
                        "jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources"
                       ]
 
