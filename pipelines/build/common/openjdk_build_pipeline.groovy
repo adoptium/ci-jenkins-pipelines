@@ -71,8 +71,6 @@ class Build {
     Map<String,String> dependency_version = new HashMap<String,String>()
     String crossCompileVersionPath = ''
     Map variantVersion = [:]
-    String files_to_sign_list = ''
-    String files_to_sign_base_path = ''
 
     // Declare timeouts for each critical stage (unit is HOURS)
     Map buildTimeouts = [
@@ -1701,86 +1699,6 @@ class Build {
     }
 
     /*
-     Restore the Eclipse "signed_jmods" and touch to ensure they do not get rebuilt by make
-     */
-    def restoreSignedFiles() {
-        context.unstash 'signed_jmods'
-
-        def target_os = "${buildConfig.TARGET_OS}"
-
-        // Timestamp to touch all signed and dependent files with
-        def timestamp = new Date().format('yyyyMMddHHmm.ss', TimeZone.getTimeZone('UTC'))
-
-        def signed_files = files_to_sign_list.split(",")
-        signed_files.each { file ->
-            context.println "Processing signed file: $file"
-            if (!context.fileExists("${file}")) {
-                context.println "${file} not found"
-            } else {
-                batOrSh("touch -t ${timestamp} ${file}")
-
-                if (target_os == "mac") {
-                    def f = new File(file)
-                    String filename = f.name
-                    // Touch dylib/exe dependencies so does not get rebuilt by make
-                    if (context.fileExists("${file}.dSYM/Contents/Info.plist")) {
-                        context.sh("touch -t ${timestamp} ${file}.dSYM/Contents/Info.plist")
-                    }
-                    if (context.fileExists("${file}.dSYM/Contents/Resources/DWARF/${filename}")) {
-                        context.sh("touch -t ${timestamp} ${file}.dSYM/Contents/Resources/DWARF/${filename}")
-                    }
-                } else if (target_os == "windows") {
-                    def f = new File(file)
-                    String filename = f.name
-                    // Touch dll/exe dependencies so does not get rebuilt by make
-                    if (filename.endsWith(".dll") || filename.endsWith(".exe")) {
-                        // Find x.lib which other x.dll/x.exe might depend on
-                        def lib_name = filename.replaceAll("\\.dll", ".lib").replaceAll("\\.exe", ".lib")
-                        def libs = context.bat(script: "@find '${files_to_sign_base_path}/' -type f -name '${lib_name}'", returnStdout:true).trim().split('\n')
-                        libs.each { lib ->
-                            if (lib.trim() != "") {
-                                context.bat("touch -t ${timestamp} ${lib}")
-                            }
-                        }
-                        // Touch exe marker files
-                        if (filename.endsWith(".exe")) {
-                            def marker_name = "_" + filename.replaceAll("\\.exe", "_run_exec.marker")
-                            def markers = context.bat(script: "@find '${files_to_sign_base_path}/' -type f -name '${marker_name}'", returnStdout:true).trim().split('\n')
-                            markers.each { marker -> 
-                                if (marker.trim() != "") {
-                                    context.bat("touch -t ${timestamp} ${marker}")
-                            }
-                        }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    def touchSignedFileFolders() {
-        context.unstash 'signed_jmods'
-
-        def target_os = "${buildConfig.TARGET_OS}"
-
-        def folders = ["hotspot/variant-server",
-                       "support",
-                       "jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources"
-                      ]
-
-        // Timestamp to touch all signed and dependent files with
-        def timestamp = new Date().format('yyyyMMddHHmm.ss', TimeZone.getTimeZone('UTC'))
-
-        if (target_os == "windows") {
-            folders.each { folder ->
-                if (context.fileExists("${files_to_sign_base_path}/${folder}")) {
-                    batOrSh("find ${files_to_sign_base_path}/${folder} -exec touch -t ${timestamp} {} +")
-                }
-            }
-        }
-    }
-
-    /*
      Build the comma separated list of files to be Eclipse signed
      */
     def getEclipseSigningFileList(base_path) {
@@ -1983,12 +1901,6 @@ def buildScriptsAssemble(
     base_path = build_path
     def assembleBuildArgs
 
-    // Remove jmod directories to be replaced with the stash saved above
-    //batOrSh "rm -rf ${base_path}/hotspot/variant-server ${base_path}/support/modules_cmds ${base_path}/support/modules_libs"
-    //// JDK 16 + jpackage executables need to be signed as well
-    //if (buildConfig.JAVA_TO_BUILD != 'jdk11u') {
-    //    batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
-    //}
     context.stage('assemble') {
       try {
         // This would ideally not be required but it's due to lack of UID mapping in windows containers
@@ -2001,9 +1913,7 @@ def buildScriptsAssemble(
             context.bat('chmod -R a+rwX ' + cygwin_workspace + '/workspace/build/src/build/*')
         }
         // Restore signed JMODs
-        //restoreSignedFiles()
-        touchSignedFileFolders()
-        //context.unstash 'signed_jmods'
+        context.unstash 'signed_jmods'
         // Convert IndividualBuildConfig to jenkins env variables
         context.withEnv(buildConfigEnvVars) {
             if (env.BUILD_ARGS != null && !env.BUILD_ARGS.isEmpty()) {
@@ -2221,15 +2131,7 @@ def buildScriptsAssemble(
                                         }
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
-                                    files_to_sign_base_path = base_path
-                                    files_to_sign_list = getEclipseSigningFileList(base_path)
-                                    //context.stash name: 'jmods',
-                                    //     includes: "${base_path}/hotspot/variant-server/**/*," +
-                                    //         "${base_path}/support/modules_cmds/**/*," +
-                                    //         "${base_path}/support/modules_libs/**/*," +
-                                    //          // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
-                                    //         "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
-                                    //     excludes: "**/*.dat,**/*bfc"
+                                    def files_to_sign_list = getEclipseSigningFileList(base_path)
                                     context.stash name: 'jmods', includes: "${files_to_sign_list}"
 
                                     // eclipse-codesign and assemble sections were inlined here before 
