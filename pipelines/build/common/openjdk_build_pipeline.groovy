@@ -1728,8 +1728,8 @@ class Build {
                             files_to_sign = files_to_sign + file + ","
                             sign_count += 1
                         } else if (target_os == "windows") {
-                            def f = new File(file)
-                            String filename = f.name
+                            def file_path = Paths.get(file)
+                            String filename = file_path.getFileName()
                             // Check if file is a Microsoft supplied file that is already signed
                             if ( !filename.startsWith("api-ms-win") && !filename.startsWith("API-MS-Win") && !filename.startsWith("msvcp") && !filename.startsWith("ucrtbase") && !filename.startsWith("vcruntime") ) {
                                 files_to_sign = files_to_sign + file + ","
