@@ -23,6 +23,7 @@ import java.nio.file.NoSuchFileException
 import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
 
 import java.util.regex.Matcher
+import java.nio.file.Paths
 
 /**
  * This file is a template for running a build for a given configuration
