@@ -1897,8 +1897,6 @@ def buildScriptsAssemble(
     def build_path
 
     build_path = 'workspace/build/src/build'
-    def base_path
-    base_path = build_path
     def assembleBuildArgs
 
     context.stage('assemble') {
