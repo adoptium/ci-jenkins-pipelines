@@ -23,7 +23,6 @@ import java.nio.file.NoSuchFileException
 import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
 
 import java.util.regex.Matcher
-import java.nio.file.Paths
 
 /**
  * This file is a template for running a build for a given configuration
@@ -1729,8 +1728,7 @@ class Build {
                             files_to_sign = files_to_sign + file + ","
                             sign_count += 1
                         } else if (target_os == "windows") {
-                            def file_path = Paths.get(file)
-                            String filename = file_path.getFileName()
+                            String filename = context.sh(script: "basename '$f'", returnStdout:true).trim()
                             // Check if file is a Microsoft supplied file that is already signed
                             if ( !filename.startsWith("api-ms-win") && !filename.startsWith("API-MS-Win") && !filename.startsWith("msvcp") && !filename.startsWith("ucrtbase") && !filename.startsWith("vcruntime") ) {
                                 files_to_sign = files_to_sign + file + ","
