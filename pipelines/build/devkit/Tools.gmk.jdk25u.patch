@@ -1,0 +1,176 @@
+--- a/make/devkit/Tools.gmk	2025-08-08 15:45:38.000000000 +0100
++++ b/make/devkit/Tools.gmk	2025-08-13 13:34:26.000000000 +0100
+@@ -64,13 +64,30 @@
+     BASE_URL := https://yum.oracle.com/repo/OracleLinux/OL6/4/base/$(ARCH)/
+     LINUX_VERSION := OL6.4
+   endif
++else ifeq ($(BASE_OS), Centos)
++  DEFAULT_OS_VERSION := 7
++  ifeq ($(BASE_OS_VERSION), )
++    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
++  endif
++  BASE_OS_MAJOR_VERSION := $(shell echo $(BASE_OS_VERSION) | cut -d'.' -f1)
++  CENTOS_MIRROR := vault.centos.org
++  ifeq ($(ARCH), x86_64)
++    BASE_URL := http://$(CENTOS_MIRROR)/centos/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
++  else
++    BASE_URL := http://$(CENTOS_MIRROR)/altarch/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
++  endif
++  LINUX_VERSION := Centos$(BASE_OS_VERSION)
+ else ifeq ($(BASE_OS), Fedora)
+   DEFAULT_OS_VERSION := 41
+   ifeq ($(BASE_OS_VERSION), )
+     BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
+   endif
+   ifeq ($(ARCH), riscv64)
+-    BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
++    ifeq ($(BASE_OS_VERSION), 28)
++      BASE_URL := https://secondary.fedoraproject.org/pub/alt/risc-v/archive/RPMS/riscv64
++    else
++      BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
++    endif
+   else
+     LATEST_ARCHIVED_OS_VERSION := 35
+     ifeq ($(filter x86_64 armhfp, $(ARCH)), )
+@@ -102,12 +119,38 @@
+ mpc_ver_only := 1.3.1
+ gdb_ver_only := 15.2
+ 
+-dependencies := gcc binutils ccache mpfr gmp mpc gdb
++#GCC_GPG_KEY := 7F74F97C103468EE5D750B583AB00996FC26A641 #gitleaks:allow
++GCC_GPG_KEY := 09B5FA62 #gitleaks:allow
++BINUTILS_GPG_KEY := 3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F #gitleaks:allow
++CCACHE_GPG_KEY := 5A939A71A46792CF57866A51996DDA075594ADB8 #gitleaks:allow
++MPFR_SHA256 := b9df93635b20e4089c29623b19420c4ac848a1b29df1cfd59f26cab0d2666aa0 #gitleaks:allow
++GMP_GPG_KEY := 343C2FF0FBEE5EC2EDBEF399F3599FF828C67298 #gitleaks:allow
++MPC_GPG_KEY := AD17A21EF8AED8F1CC02DBD9F7D5C9BF765C61E3 #gitleaks:allow
++GDB_GPG_KEY := F40ADB902B24264AA42E50BF92EDB04BFF325CF3 #gitleaks:allow
++
++# Centos GPG KEYS
++
++Centos_6_GPG_KEY_noarch := C1DAC52D1664E8A4386DBA430946FCA2C105B9DE  #gitleaks:allow
++Centos_6_GPG_KEY_x86_64 := C1DAC52D1664E8A4386DBA430946FCA2C105B9DE  #gitleaks:allow
++Centos_7_GPG_KEY_noarch := 6341AB2753D78A78A7C27BB124C6A8A7F4A80EB5  #gitleaks:allow
++Centos_7_GPG_KEY_aarch64 := EF8F3CA66EFDF32B36CDADF76C7CB6EF305D49D6 #gitleaks:allow
++Centos_7_GPG_KEY_x86_64 := 6341AB2753D78A78A7C27BB124C6A8A7F4A80EB5  #gitleaks:allow
++Centos_7_GPG_KEY_ppc64le := BAFA3436FC50768E3C3C2E4EA963BBDBF533F4FA #gitleaks:allow
++
++# PGP Signature file extensions
++GCC_SIG := sig
++BINUTILS_SIG := sig
++CCACHE_SIG := asc
++GMP_SIG := sig
++MPC_SIG := sig
++GDB_SIG := sig
++
++dependencies := gcc binutils mpfr gmp mpc gdb
+ 
+ $(foreach dep,$(dependencies),$(eval $(dep)_ver := $(dep)-$($(dep)_ver_only)))
+ 
+-GCC := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.xz
+-BINUTILS := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.gz
++GCC := https://mirrorservice.org/sites/sourceware.org/pub/gcc/releases/$(gcc_ver)/$(gcc_ver).tar.xz
++BINUTILS := https://sourceware.org/pub/binutils/releases/$(binutils_ver).tar.gz
+ CCACHE := https://github.com/ccache/ccache/releases/download/v$(ccache_ver_only)/$(ccache_ver).tar.xz
+ MPFR := https://www.mpfr.org/$(mpfr_ver)/$(mpfr_ver).tar.bz2
+ GMP := http://ftp.gnu.org/pub/gnu/gmp/$(gmp_ver).tar.bz2
+@@ -147,7 +190,8 @@
+     libffi libffi-devel \
+     fontconfig fontconfig-devel \
+     systemtap-sdt-devel \
+-    #
++    numactl-libs numactl-devel \
++    # Noting that numactl will not be available on RHEL/s390x
+ 
+ ################################################################################
+ # Define common directories and files
+@@ -181,7 +225,18 @@
+         # Only run this if rpm dir is empty.
+         ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
+ 	  cd $(DOWNLOAD_RPMS) && \
+-	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
++	    wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
++	    echo SXAEC: $(ARCH)
++	    gpg --keyserver keyserver.ubuntu.com --recv-keys \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH))
++	    gpg --keyserver keyserver.ubuntu.com --recv-keys \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_noarch)
++	    rm -f $(DOWNLOAD_RPMS)/rpm.sig && gpg --armor --export \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH)) > $(DOWNLOAD_RPMS)/rpm.sig
++	    gpg --armor --export \
++	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_noarch) >> $(DOWNLOAD_RPMS)/rpm.sig
++	    rpm --import $(DOWNLOAD_RPMS)/rpm.sig || true
++	    rpm -K $(DOWNLOAD_RPMS)/*.rpm
+         endif
+ 
+ ################################################################################
+@@ -214,6 +269,16 @@
+ 
+   $$($(1)_FILE) :
+ 	wget -P $(DOWNLOAD) $$($(1))
++        ifeq ($(1),MPFR)
++	  echo SXAEC: $(1) / $($(1)_SHA256) $$@ THIS ONLY GIVES ONE FIELD ON THE SCREEN SO sha256sum -c does not work
++	  echo $($(1)_SHA256) $$@ | sha256sum -c
++        else
++	  echo SXAEC2: $(1) / $$($(1)).$($(1)_SIG)
++	  wget -P $(DOWNLOAD) $$($(1)).$($(1)_SIG)
++	  gpg --keyserver keyserver.ubuntu.com --recv-keys $($(1)_GPG_KEY)
++	  echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $($(1)_GPG_KEY) trust;
++	  gpg --verify $$@.$($(1)_SIG) $$@
++        endif
+ endef
+ 
+ # Download and unpack all source packages
+@@ -266,6 +331,9 @@
+ # have it anyway, but just to make sure...
+ # Patch libc.so and libpthread.so to force linking against libraries in sysroot
+ # and not the ones installed on the build machine.
++# Remove comment sections from static libraries and C runtime objects
++# to prevent leaking RHEL-specific package versions into
++# devkit-produced binaries.
+ $(libs) : $(rpms)
+ 	@echo Patching libc and pthreads
+ 	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
+@@ -275,6 +343,7 @@
+ 	      -e 's|/lib/||g' ) > $$f.tmp ; \
+ 	  mv $$f.tmp $$f ; \
+ 	done)
++	@find $(SYSROOT) -name '*.[ao]' -exec objcopy --remove-section .comment '{}' ';'
+ 	@mkdir -p $(SYSROOT)/usr/lib
+ 	@touch $@
+ 
+@@ -369,6 +438,7 @@
+     $(mpc) \
+     $(bfdmakes) \
+     $(ccache) : ENVS += $(TOOLS)
++#SXA#    $(ccache) : ENVS += $(TOOLS)
+ 
+ # libdir to work around hateful bfd stuff installing into wrong dirs...
+ # ensure we have 64 bit bfd support in the HOST library. I.e our
+@@ -377,12 +447,12 @@
+ # wants.
+ $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
+ 
+-ifeq ($(filter $(ARCH), s390x riscv64 ppc64le), )
+-  # gold compiles but cannot link properly on s390x @ gcc 13.2 and Fedore 41
+-  # gold is not available for riscv64 and ppc64le,
+-  # and subsequent linking will fail if we try to enable it.
+-  LINKER_CONFIG := --enable-gold=default
+-endif
++#ifeq ($(filter $(ARCH), s390x riscv64 ppc64le), )
++#  # gold compiles but cannot link properly on s390x @ gcc 13.2 and Fedore 41
++#  # gold is not available for riscv64 and ppc64le,
++#  # and subsequent linking will fail if we try to enable it.
++#  LINKER_CONFIG := --enable-gold=default
++#endif
+ 
+ # Makefile creation. Simply run configure in build dir.
+ # Setting CFLAGS to -O2 generates a much faster ld.
+@@ -400,6 +470,7 @@
+ 	      --with-sysroot=$(SYSROOT) \
+ 	      --disable-nls \
+ 	      --program-prefix=$(TARGET)- \
++	      --enable-deterministic-archives \
+ 	      --enable-multilib \
+ 	      --enable-threads \
+ 	      --enable-plugins \

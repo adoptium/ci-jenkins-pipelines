@@ -38,8 +38,16 @@ git clone --depth 1 ${openjdkRepo} ${VERSION}
 cd ${VERSION}
 
 # Patch to support Centos7
-cp ../binutils-2.39.patch make/devkit/patches/${ARCH}-binutils-2.39.patch
-patch -p1 < ../Tools.gmk.patch
+if [ "${VERSION}" = "jdk21u" ]; then
+  cp ../binutils-2.39.patch make/devkit/patches/${ARCH}-binutils-2.39.patch
+fi
+
+if [ "${ARCH}" = "s390x" -o "${ARCH}" = "riscv64" ] ; then
+  # No numa packages available
+  sed 's/numa.*\\/\\' < "../Tools.gmk.${VERSION}.patch" | patch -p1
+else
+  patch -p1 < "../Tools.gmk.${VERSION}.patch"
+fi
 
 devkit_target="${ARCH}-linux-gnu"
 
