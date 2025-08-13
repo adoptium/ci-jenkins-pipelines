@@ -1728,7 +1728,7 @@ class Build {
                             files_to_sign = files_to_sign + file + ","
                             sign_count += 1
                         } else if (target_os == "windows") {
-                            String filename = context.sh(script: "basename '$f'", returnStdout:true).trim()
+                            String filename = context.sh(script: "@basename '${file}'", returnStdout:true).trim()
                             // Check if file is a Microsoft supplied file that is already signed
                             if ( !filename.startsWith("api-ms-win") && !filename.startsWith("API-MS-Win") && !filename.startsWith("msvcp") && !filename.startsWith("ucrtbase") && !filename.startsWith("vcruntime") ) {
                                 files_to_sign = files_to_sign + file + ","
