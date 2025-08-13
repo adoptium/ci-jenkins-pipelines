@@ -45,7 +45,7 @@ fi
 # Patch to support Centos, RHEL
 if [ "${ARCH}" = "s390x" -o "${ARCH}" = "riscv64" ] ; then
   # No numa packages available
-  sed 's/numa.*\\/\\' < "../Tools.gmk.${VERSION}.patch" | patch -p1
+  sed 's/numa.*\\/\\/g' < "../Tools.gmk.${VERSION}.patch" | patch -p1
 else
   patch -p1 < "../Tools.gmk.${VERSION}.patch"
 fi
