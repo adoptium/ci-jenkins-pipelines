@@ -2294,11 +2294,11 @@ def buildScriptsAssemble(
     }
 
     def waitForJckStatus(remoteTriggeredBuilds) {
+      context.stage("${remoteTriggeredBuilds}") {
         def waitingForRemoteJck = true
         while( waitingForRemoteJck ) {
             waitingForRemoteJck = false
             remoteTriggeredBuilds.each{ testTargets, jobHandle ->
-                context.stage("${testTargets}") {
                     def remoteJobStatus = ""
                     if ( jobHandle == null ) {
                         context.println "Failed, remote job ${testTargets} was not triggered"
@@ -2320,7 +2320,6 @@ def buildScriptsAssemble(
                     if ( remoteJobStatus != "" ) {
                         setStageResult("${testTargets}", remoteJobStatus);
                     }
-                }
             }
             if (waitingForRemoteJck) {
                 def sleepTimeMins = 20
@@ -2328,6 +2327,7 @@ def buildScriptsAssemble(
                 sleep (sleepTimeMins * 60 * 1000)
             }
         }
+      }
     }
 
     /*
