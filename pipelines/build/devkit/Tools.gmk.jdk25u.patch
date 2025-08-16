@@ -110,7 +110,7 @@
  	wget -P $(DOWNLOAD) $$($(1))
 +        ifeq ($(1),MPFR)
 +	  echo SXAEC: $(1) / $($(1)_SHA256) $$@ THIS ONLY GIVES ONE FIELD ON THE SCREEN SO sha256sum -c does not work
-+	  echo $($(1)_SHA256) $$@ | sha256sum -c
++	  echo "$($(1)_SHA256) $$@" | sha256sum -c
 +        else
 +	  echo SXAEC2: $(1) / $$($(1)).$($(1)_SIG)
 +	  wget -P $(DOWNLOAD) $$($(1)).$($(1)_SIG)
