@@ -134,7 +134,7 @@ node(params.DEVKIT_BUILD_NODE) {
         build()
     }
   } finally { 
-    cleanWs notFailBuild: true
+    println "Not cleaning workspace" // cleanWs notFailBuild: true
   } 
 }
 
