@@ -2294,7 +2294,17 @@ def buildScriptsAssemble(
     }
 
     def waitForJckStatus(remoteTriggeredBuilds) {
-      context.stage("${remoteTriggeredBuilds}") {
+      def stageName = ""
+      remoteTriggeredBuilds.each{ testTargets, jobHandle ->
+        if (stageName == "") {
+          stageName = testTargets
+        } else {
+          stageName += ",${testTargets}"
+        }
+      }
+
+      def completedJckJobs = ""
+      context.stage("${stageName}") {
         def waitingForRemoteJck = true
         while( waitingForRemoteJck ) {
             waitingForRemoteJck = false
@@ -2311,14 +2321,16 @@ def buildScriptsAssemble(
                         } else {
                             if ( !jobHandle.isFinished() ) {
                                 waitingForRemoteJck = true
+                                context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
                             } else {
                                 remoteJobStatus = jobHandle.getBuildResult().toString()
+                                context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
                             }
-                            context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
                         }
                     }
-                    if ( remoteJobStatus != "" ) {
+                    if ( remoteJobStatus != "" && !completedJckJobs.contains(testTargets)) {
                         setStageResult("${testTargets}", remoteJobStatus);
+                        completedJckJobs += ",${testTargets}"
                     }
             }
             if (waitingForRemoteJck) {
