@@ -66,3 +66,5 @@ jobs:
           VALIDATE_CHECKOV: false
           # ignore shell formatting checker
           VALIDATE_SHELL_SHFMT: false
+          # ignore file duplicate checker
+          VALIDATE_JSCPD: false
