@@ -162,7 +162,7 @@ class Build {
         def (level, group) = testType.tokenize('.')
         jobParams.put('LEVELS', level)
         jobParams.put('GROUPS', group)
-        jobParams.put('BUILD_LIST', "${group},functional" )
+        jobParams.put('BUILD_LIST', group )
         def variant
         switch (buildConfig.VARIANT) {
             case 'openj9': variant = 'j9'; break
