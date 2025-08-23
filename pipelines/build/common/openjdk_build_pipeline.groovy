@@ -162,6 +162,7 @@ class Build {
         def (level, group) = testType.tokenize('.')
         jobParams.put('LEVELS', level)
         jobParams.put('GROUPS', group)
+        jobParams.put('BUILD_LIST', group )
         def variant
         switch (buildConfig.VARIANT) {
             case 'openj9': variant = 'j9'; break
@@ -529,7 +530,8 @@ class Build {
                         context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
                         context.string(name: 'VENDOR_TEST_DIRS', value: vendorTestDirs),
                         context.booleanParam(name: 'RERUN_FAILURE', value: true),
-                        context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
+                        context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}"),
+                        context.string(name: 'BUILD_LIST', value: jobParams["BUILD_LIST"])
                         ]
 
                         // If TIME_LIMIT is set, override target job default TIME_LIMIT value.
