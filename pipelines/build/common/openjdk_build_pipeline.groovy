@@ -162,6 +162,7 @@ class Build {
         def (level, group) = testType.tokenize('.')
         jobParams.put('LEVELS', level)
         jobParams.put('GROUPS', group)
+        jobParams.put('BUILD_LIST', group )
         def variant
         switch (buildConfig.VARIANT) {
             case 'openj9': variant = 'j9'; break
@@ -529,7 +530,8 @@ class Build {
                         context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
                         context.string(name: 'VENDOR_TEST_DIRS', value: vendorTestDirs),
                         context.booleanParam(name: 'RERUN_FAILURE', value: true),
-                        context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
+                        context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}"),
+                        context.string(name: 'BUILD_LIST', value: jobParams["BUILD_LIST"])
                         ]
 
                         // If TIME_LIMIT is set, override target job default TIME_LIMIT value.
@@ -2313,11 +2315,21 @@ def buildScriptsAssemble(
     }
 
     def waitForJckStatus(remoteTriggeredBuilds) {
+      def stageName = ""
+      remoteTriggeredBuilds.each{ testTargets, jobHandle ->
+        if (stageName == "") {
+          stageName = testTargets
+        } else {
+          stageName += ",${testTargets}"
+        }
+      }
+
+      def completedJckJobs = ""
+      context.stage("${stageName}") {
         def waitingForRemoteJck = true
         while( waitingForRemoteJck ) {
             waitingForRemoteJck = false
             remoteTriggeredBuilds.each{ testTargets, jobHandle ->
-                context.stage("${testTargets}") {
                     def remoteJobStatus = ""
                     if ( jobHandle == null ) {
                         context.println "Failed, remote job ${testTargets} was not triggered"
@@ -2330,16 +2342,17 @@ def buildScriptsAssemble(
                         } else {
                             if ( !jobHandle.isFinished() ) {
                                 waitingForRemoteJck = true
+                                context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
                             } else {
                                 remoteJobStatus = jobHandle.getBuildResult().toString()
+                                context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
                             }
-                            context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
                         }
                     }
-                    if ( remoteJobStatus != "" ) {
+                    if ( remoteJobStatus != "" && !completedJckJobs.contains(testTargets)) {
                         setStageResult("${testTargets}", remoteJobStatus);
+                        completedJckJobs += ",${testTargets}"
                     }
-                }
             }
             if (waitingForRemoteJck) {
                 def sleepTimeMins = 20
@@ -2347,6 +2360,7 @@ def buildScriptsAssemble(
                 sleep (sleepTimeMins * 60 * 1000)
             }
         }
+      }
     }
 
     /*
