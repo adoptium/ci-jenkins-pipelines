@@ -1700,6 +1700,55 @@ class Build {
         batOrSh('git rev-parse HEAD')
     }
 
+    /*
+     Build the comma separated list of files to be Eclipse signed
+     */
+    def getEclipseSigningFileList(base_path) {
+        def target_os = "${buildConfig.TARGET_OS}"
+
+        def sign_count = 0
+        def files_to_sign = ""
+
+        def folders = ["hotspot/variant-server",
+                       "support/modules_cmds",
+                       "support/modules_libs",
+                       "jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources"
+                      ]
+
+        folders.each { folder ->
+            if (context.fileExists("${base_path}/${folder}")) {
+                def files
+                if (target_os == "mac") {
+                    files = context.sh(script: "find '${base_path}/${folder}/' -perm +111 -type f -o -name '*.dylib' -type f || find '${base_path}/${folder}/' -perm /111 -type f -o -name '*.dylib'  -type f", returnStdout:true).trim().split('\n')
+                } else if (target_os == "windows") {
+                    files = context.bat(script: "@find '${base_path}/${folder}/' -type f -name '*.exe' -o -name '*.dll'", returnStdout:true).trim().split('\n')
+                }
+
+                files.each { file ->
+                    if (file.trim() != "") {
+                        if (target_os == "mac") {
+                            files_to_sign = files_to_sign + file + ","
+                            sign_count += 1
+                        } else if (target_os == "windows") {
+                            String filename = context.bat(script: "@basename '${file}'", returnStdout:true).trim()
+                            // Check if file is a Microsoft supplied file that is already signed
+                            if ( !filename.startsWith("api-ms-win") && !filename.startsWith("API-MS-Win") && !filename.startsWith("msvcp") && !filename.startsWith("ucrtbase") && !filename.startsWith("vcruntime") ) {
+                                files_to_sign = files_to_sign + file + ","
+                                sign_count += 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        files_to_sign = files_to_sign.replaceAll("//", "/")
+
+        context.println "${sign_count} files to be signed: $files_to_sign"
+
+        return files_to_sign
+    }
+
     def buildScriptsEclipseSigner() {
         def build_path
         build_path = 'workspace/build/src/build'
@@ -1728,30 +1777,17 @@ class Build {
                                                 set -eu
                                                 echo "Signing JMOD files under build path ${base_path} for base_os ${base_os}"
                                                 TMP_DIR="${base_path}/"
-                                                if [ "${base_os}" == "mac" ]; then
-                                                    ENTITLEMENTS="$WORKSPACE/entitlements.plist"
-                                                    FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib' -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
-                                                else
-                                                    FILES=$(find "${TMP_DIR}" -type f -name '*.exe' -o -name '*.dll')
-                                                fi
+                                                MAC_ENTITLEMENTS="$WORKSPACE/entitlements.plist"
+                                                FILES=$(find "${TMP_DIR}" -type f)
                                                 for f in $FILES
                                                 do
-                                                    dir=$(dirname "$f")
-                                                    file=$(basename "$f")
-                                                    ms_file_skipped=false
-                                                    if [ "${base_os}" == "windows" ]; then
-                                                        # Check if file is a Microsoft supplied file that is already signed
-                                                        if [[ "$file" =~ api-ms-win.* ]] || [[ "$file" =~ API-MS-Win.* ]] || [[ "$file" =~ msvcp.* ]] || [[ "$file" =~ ucrtbase.* ]] || [[ "$file" =~ vcruntime.* ]]; then
-                                                            echo "Skipping Microsoft file $file"
-                                                            ms_file_skipped=true
-                                                        fi
-                                                    fi
-                                                    if [ $ms_file_skipped == false ]; then
+                                                        dir=$(dirname "$f")
+                                                        file=$(basename "$f")
                                                         echo "Signing $f using Eclipse Foundation codesign service"
                                                         mv "$f" "${dir}/unsigned_${file}"
                                                         success=false
                                                         if [ "${base_os}" == "mac" ]; then
-                                                            if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
+                                                            if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$MAC_ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
                                                                 echo "curl command failed, sign of $f failed"
                                                             else
                                                                 success=true
@@ -1772,7 +1808,7 @@ class Build {
                                                                 echo $iteration Of $max_iterations
                                                                 sleep 1
                                                                 if [ "${base_os}" == "mac" ]; then
-                                                                    if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
+                                                                    if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$MAC_ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
                                                                         success=true
                                                                     fi
                                                                 else
@@ -1796,7 +1832,6 @@ class Build {
                                                         fi
                                                         chmod --reference="${dir}/unsigned_${file}" "$f"
                                                         rm -rf "${dir}/unsigned_${file}"
-                                                    fi # ms_file_skipped == false
                                                 done
                                             '''
                                             // groovylint-enable
@@ -1860,19 +1895,8 @@ def buildScriptsAssemble(
     cleanWorkspaceBuildOutputAfter,
     buildConfigEnvVars
 ) {
-    def build_path
-
-    build_path = 'workspace/build/src/build'
-    def base_path
-    base_path = build_path
     def assembleBuildArgs
 
-    // Remove jmod directories to be replaced with the stash saved above
-    batOrSh "rm -rf ${base_path}/hotspot/variant-server ${base_path}/support/modules_cmds ${base_path}/support/modules_libs"
-    // JDK 16 + jpackage executables need to be signed as well
-    if (buildConfig.JAVA_TO_BUILD != 'jdk11u') {
-        batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
-    }
     context.stage('assemble') {
       try {
         // This would ideally not be required but it's due to lack of UID mapping in windows containers
@@ -2103,13 +2127,8 @@ def buildScriptsAssemble(
                                         }
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
-                                    context.stash name: 'jmods',
-                                         includes: "${base_path}/hotspot/variant-server/**/*," +
-                                             "${base_path}/support/modules_cmds/**/*," +
-                                             "${base_path}/support/modules_libs/**/*," +
-                                              // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
-                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
-                                         excludes: "**/*.dat,**/*bfc"
+                                    def files_to_sign_list = getEclipseSigningFileList(base_path)
+                                    context.stash name: 'jmods', includes: "${files_to_sign_list}"
 
                                     // eclipse-codesign and assemble sections were inlined here before 
                                     // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
