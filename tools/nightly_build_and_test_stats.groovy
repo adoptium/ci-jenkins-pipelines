@@ -47,7 +47,7 @@ def getPlatformReproTestMap() {
     // A map to return the test bucket and test name for the repducibile platforms
     def platformReproTestMap = [x64Linux:           ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 x64Windows:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
-                                x64Mac:             ["NA", ""],
+                                x64Mac:             ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"],
                                 ppc64leLinux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 aarch64Linux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 aarch64Mac:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
@@ -807,7 +807,19 @@ node('worker') {
         // Specifies what JDK versions and platforms are expected to be reproducible.
         // The "?" symbols will soon be replaced by reproducibility percentages.
         // Layout: [jdkVersion: [Overall-reproducibility, [By-platform reproducibility breakdown]]]
-        def reproducibleBuilds = ["jdk21u": [ "?", ["x64Linux": "?", "aarch64Linux": "?", "ppc64leLinux": "?", "x64Windows": "?", "x64Mac": "?", "aarch64Mac": "?"]]]
+        def reproducibleBuilds = ["jdk21u": [ "?", ["x64Linux":     "?",
+                                                    "aarch64Linux": "?",
+                                                    "ppc64leLinux": "?",
+                                                    "x64Windows":   "?",
+                                                    "x64Mac":       "?",
+                                                    "aarch64Mac":   "?"]],
+                                  "jdk25":  [ "?", ["x64Linux":     "?",
+                                                    "aarch64Linux": "?",
+                                                    "ppc64leLinux": "?",
+                                                    "x64Windows":   "?",
+                                                    "x64Mac":       "?",
+                                                    "aarch64Mac":   "?"]]
+                                  ]
 
         stage('getPipelineStatus') {
             def apiVariant = variant
