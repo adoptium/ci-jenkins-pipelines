@@ -38,7 +38,7 @@ node('worker') {
         timestamps {
             def generatedPipelines = []
 
-            String pipelineUrl = "https://github.com/adoptium/ci-jenkins-pipelines.git"
+            String pipelineUrl = "https://github.com/andrew-m-leonard/ci-jenkins-pipelines.git"
             def releaseTag = params.releaseTag
             checkout changelog: false, poll: false, scm: [$class: 'GitSCM', branches: [[name: releaseTag]], userRemoteConfigs: [[url: pipelineUrl]]]
 
