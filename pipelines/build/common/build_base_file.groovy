@@ -855,8 +855,7 @@ class Builder implements Serializable {
                 if (release) {
                     if (publishName) {
                         // Keep Jenkins release logs for real releases
-                        //Jenkins release jobs no longer kept forever due to disk space demands : https://github.com/adoptium/infrastructure/issues/3028#issuecomment-3159233668
-                        //currentBuild.setKeepLog(keepReleaseLogs)
+                        currentBuild.setKeepLog(keepReleaseLogs)
                         currentBuild.setDisplayName(publishName)
                     }
                     releaseSummary.appendText('<b>RELEASE PUBLISH BINARIES:</b><ul>', false)
