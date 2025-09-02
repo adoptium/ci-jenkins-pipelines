@@ -18,7 +18,7 @@ node('worker') {
             do not really need to set both,
             but to make jobTemplatePath can handle nightly and release pipeline the same way
         */
-        String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/${params.releaseTag}/pipelines/defaults.json"
+        String ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/andrew-m-leonard/ci-jenkins-pipelines/${params.releaseTag}/pipelines/defaults.json"
 
         // Pull in upstream origin ci-jenkins-pipeline defaults json config
         def getAdopt = new URL(ADOPT_DEFAULTS_FILE_URL).openConnection()
