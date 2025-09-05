@@ -145,7 +145,9 @@ node('worker') {
         }
 
         // If testenv tag is a "-ga" tag, then resolve to the actual openjdk build tag it's tagging
-        if (jdkBranch.contains("-ga")) {
+        // Skip this if we're running a dryrun, as 'jdk-XX-dryrun-ga' can be created as copies of 
+        // release candidate tag levels which can be mistaken for this tag due to matching commit shas.
+        if (jdkBranch.contains("-ga") && !jdkBranch.contains("dryrun")) {
             jdkBranch = resolveGaTag("${params.jdkVersion}", jdkBranch)
         }
 
