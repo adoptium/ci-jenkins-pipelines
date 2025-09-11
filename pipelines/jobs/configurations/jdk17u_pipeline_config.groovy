@@ -175,7 +175,7 @@ class Config17 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-14.2.0-Fedora_28-b00'
                 ]
         ],
 
