@@ -69,10 +69,11 @@ class Config25 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                dockerImage         : 'windows2022_build_image',
-                dockerRegistry      : 'https://adoptium.azurecr.io',
-                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
-                additionalNodeLabels: 'win2022&&vs2022',
+                dockerImage         : '',
+                dockerRegistry      : '',
+                dockerCredential    : '',
+// Target new VS2022 version node for issue: https://github.com/adoptium/aqa-tests/issues/6592 with no DOCKER
+                additionalNodeLabels: 'win2022&&vs2022&&build-azure-win2022-vs2022-latest-x64-2',
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
@@ -167,11 +168,12 @@ class Config25 {
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
-                dockerImage         : 'windows2022_build_image',
-                dockerRegistry      : 'https://adoptium.azurecr.io',
-                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
+                dockerImage         : '',
+                dockerRegistry      : '',
+                dockerCredential    : '',
                 crossCompile        : 'x64',
-                additionalNodeLabels: 'win2022&&vs2022',
+// Target new VS2022 version node for issue: https://github.com/adoptium/aqa-tests/issues/6592 with no DOCKER
+                additionalNodeLabels: 'win2022&&vs2022&&build-azure-win2022-vs2022-latest-x64-2',
                 test                : 'default',
                 buildArgs       : [
                         'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
