@@ -103,7 +103,7 @@ buildJTReg()
     elif [ "$1" == "$JTREG_8" ]; then
       export JTREG_BUILD_NUMBER="2"
       export BUILD_VERSION="8"
-      export JAVA_HOME=/usr/lib/jvm/jdk11
+      export JAVA_HOME=/usr/lib/jvm/jdk17
     fi
     git checkout $version
   else
