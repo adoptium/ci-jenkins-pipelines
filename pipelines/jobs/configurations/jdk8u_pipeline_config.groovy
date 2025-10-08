@@ -68,7 +68,7 @@ class Config8 {
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
-                dockerImage         : 'windows2022_build_image',
+                dockerImage         : 'windows2022_build_image@sha256:0d0a3afb998c34df0277d6a5ed97c2d8d705012e6a93d358af25af638963ef6f',
                 dockerRegistry      : 'https://adoptium.azurecr.io',
                 dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022&&vs2022',
@@ -84,7 +84,7 @@ class Config8 {
         x32Windows    : [
                 os                  : 'windows',
                 arch                : 'x86-32',
-                dockerImage         : 'windows2022_build_image',
+                dockerImage         : 'windows2022_build_imagewindows2022_build_image@sha256:0d0a3afb998c34df0277d6a5ed97c2d8d705012e6a93d358af25af638963ef6f',
                 dockerRegistry      : 'https://adoptium.azurecr.io',
                 dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022',
@@ -172,9 +172,9 @@ class Config8 {
                 dockerImage: 'adoptopenjdk/ubuntu1604_build_image',
                 dockerArgs: '--platform linux/arm/v7',
                 test: 'default',
-                configureArgs       : [ 
+                configureArgs       : [
                         'temurin'   : '--disable-ccache --with-jobs=4'
-                ],    
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]
