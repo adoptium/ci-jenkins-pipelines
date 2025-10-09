@@ -546,7 +546,7 @@ class Build {
                         currentBuild.result = testJob.getResult()
                         setStageResult("${testType}", testJob.getResult())
                         context.node('worker') {
-                            //Copy Taps files from downstream test jobs if files available. 
+                            //Copy Taps files from downstream test jobs if files available.
                             context.sh 'rm -f workspace/target/AQAvitTaps/*.tap'
                             try {
                                 context.timeout(time: 2, unit: 'HOURS') {
@@ -639,7 +639,7 @@ class Build {
         /*
         Here we limit the win32 testing to the burstable nodes (a subset of the available windows nodes).
         This prevents win32 tests from occupying all the Windows nodes before we can test core platform win64.
-        However, we will not add this tag during non-release builds, as overall throughput will be more 
+        However, we will not add this tag during non-release builds, as overall throughput will be more
         important than priority order.
         */
         if ("${platform}" == 'x86-32_windows' && Boolean.valueOf(buildConfig.RELEASE)) {
@@ -656,7 +656,7 @@ class Build {
         def jckRerunSummary = context.manager.createSummary('info.gif')
         jckRerunSummary.appendText('<b>RERUN JCK TESTS:</b><ul>', false)
         def aqa_test_pipeline_BaseURL = "https://ci.adoptium.net/view/Test_grinder/job/AQA_Test_Pipeline/parambuild"
-        targets.each { targetMode, targetTests -> 
+        targets.each { targetMode, targetTests ->
             try {
                 remoteTargets["${targetTests}"] = {
                     context.println "Remote trigger: ${targetTests}"
@@ -699,7 +699,7 @@ class Build {
                             additionalTestLabel_param += "&&${osxLabel}"
                         }
                     }
-                    
+
                     def paramList = [
                         SDK_RESOURCE: 'customized',
                         TARGETS: "${targetTests}",
@@ -1149,7 +1149,7 @@ class Build {
                             context.string(name: 'TARGET_ARCH', value: "${buildConfig.ARCHITECTURE}"),
                             context.string(name: 'NODE_LABEL', value: "${verifyNode}")
                     ]
-            } catch (e) { 
+            } catch (e) {
                 context.println("Failed to sign_verification for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ${e}")
                 currentBuild.result = 'FAILURE'
                 setStageResult("sign verification", 'FAILURE')
@@ -1198,7 +1198,7 @@ class Build {
     // Kick off the sign_temurin_jsf job to sign the SBOM
     private void jsfSignSBOM() {
         context.stage('SBOM JSF Sign') {
-            
+
             context.println "Running build_sign_sbom_libraries to build the SBOM libraries"
             def buildSBOMLibrariesJob = context.build job: 'build_sign_sbom_libraries',
                 propagate: true
@@ -1921,7 +1921,7 @@ def buildScriptsAssemble(
                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                 def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS, ADOPT_DEFAULTS_JSON, buildConfig.CI_REF, buildConfig.BUILD_REF)
                 repoHandler.checkoutAdoptBuild(context)
-                if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
                     context.bat(script: 'bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                 }
                 printGitRepoInfo()
@@ -2078,8 +2078,8 @@ def buildScriptsAssemble(
 
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
-                    
-                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+
+                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
                         context.bat(script: 'bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                     }
                     batOrSh('git clean -fdx')
@@ -2130,7 +2130,7 @@ def buildScriptsAssemble(
                                     def files_to_sign_list = getEclipseSigningFileList(base_path)
                                     context.stash name: 'jmods', includes: "${files_to_sign_list}"
 
-                                    // eclipse-codesign and assemble sections were inlined here before 
+                                    // eclipse-codesign and assemble sections were inlined here before
                                     // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
 
                                 } else { // Not Windows/Mac JDK11+ (i.e. doesn't require internal signing)
@@ -2202,7 +2202,7 @@ def buildScriptsAssemble(
                 } else {
                     context.println "Skipping writing incomplete metadata for now - will be done in the assemble phase instead"
                 }
-                    
+
             } finally {
                 // Archive any artifacts including failed make logs, unless doing internal
                 // signing where we will perform this step after the assemble phase
@@ -2278,7 +2278,7 @@ def buildScriptsAssemble(
         }
     }
 
-    /* 
+    /*
         this function should only be used in pr-tester
     */
     def updateGithubCommitStatus(STATE, MESSAGE) {
@@ -2476,6 +2476,13 @@ def buildScriptsAssemble(
                                     throw new Exception("[ERROR] Controller clean workspace timeout (${buildTimeouts.CONTROLLER_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
                             }
+                            // Strip any sha from the image name
+                            def short_docker_image_name = buildConfig.DOCKER_IMAGE.replaceAll('@.*', '')
+                            // Guard In Case short_docker_image_name is null for some reason...
+                            if (!short_docker_image_name) {
+                              short_docker_image_name = buildConfig.DOCKER_IMAGE
+                            }
+
                             if (!("${buildConfig.DOCKER_IMAGE}".contains('rhel'))) {
                                 // Pull the docker image from DockerHub
                                 try {
@@ -2488,8 +2495,8 @@ def buildScriptsAssemble(
                                                     context.docker.image(buildConfig.DOCKER_IMAGE).pull()
                                                 }
                                             }
-                                            def long_docker_image_name = context.sh(script: "docker image ls | grep ${buildConfig.DOCKER_IMAGE} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
-                                            context.sh(script: "docker tag '${long_docker_image_name}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
+                                            def long_docker_image_name = context.sh(script: "docker image ls | grep ${short_docker_image_name} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
+                                            context.sh(script: "docker tag '${long_docker_image_name}' '${short_docker_image_name}'", returnStdout:false)
                                         } else {
                                             if (buildConfig.DOCKER_ARGS) {
                                                 context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
@@ -2503,10 +2510,10 @@ def buildScriptsAssemble(
                                 }
                             }
                             // Store the pulled docker image digest as 'buildinfo'
-                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-                                dockerImageDigest = context.sh(script: "docker inspect --format={{.Id}} ${buildConfig.DOCKER_IMAGE} | /bin/cut -d: -f2", returnStdout:true)
+                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
+                                dockerImageDigest = context.sh(script: "docker inspect --format={{.Id}} ${short_docker_image_name} | /bin/cut -d: -f2", returnStdout:true)
                             } else {
-                                dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
+                                dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${short_docker_image_name}", returnStdout:true)
                             }
 
                             // Use our dockerfile if DOCKER_FILE is defined
@@ -2558,7 +2565,7 @@ def buildScriptsAssemble(
                                     context.echo("Switched to using non-default workspace path ${workspace}")
                                     context.println "openjdk_build_pipeline: building in windows docker image " + buildConfig.DOCKER_IMAGE
                                     context.ws(workspace) {
-                                        context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                        context.docker.image(short_docker_image_name).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScripts(
                                                 cleanWorkspace,
                                                 cleanWorkspaceAfter,
@@ -2736,7 +2743,7 @@ def buildScriptsAssemble(
                                         context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
                                         //def remoteTargets = remoteTriggerJckTests(platform, filename)
                                         //context.parallel remoteTargets
-                                        remoteTriggeredBuilds = remoteTriggerJckTests(platform, filename)                                   
+                                        remoteTriggeredBuilds = remoteTriggerJckTests(platform, filename)
                                     }
                                 }
 
@@ -2744,12 +2751,12 @@ def buildScriptsAssemble(
                                     def testStages = runAQATests()
                                     context.parallel testStages
                                 }
-                                
+
                                 // Asynchronously get the remote JCK job status and set as the stage status.
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
                                   waitForJckStatus(remoteTriggeredBuilds)
                                 }
-                            } else { 
+                            } else {
                                 context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
                             }
                         } catch (Exception e) {
