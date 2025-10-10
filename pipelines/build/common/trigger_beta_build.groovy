@@ -24,8 +24,7 @@ import java.time.temporal.TemporalAdjusters
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
-  if the given build has not already been published, and the given version is
-  not GA yet (existance of -ga tag).
+  if the given build has not already been published.
 
   The "Force" option can be used to re-build and re-publish the existing latest build.
 */
@@ -195,22 +194,13 @@ node('worker') {
 
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         // Determine this versions potential GA tag, so as to not build and publish a GA version
-        def gaTag
         def versionStr
         if (version > 8) {
             versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("+"))
         } else {
             versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("-"))
         }
-        gaTag=versionStr+"-ga"
-        echo "Expected GA tag to check for = ${gaTag}"
    
-        // If "-ga" tag exists, then we don't want to trigger a MAIN build 
-        def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "'+gaTag+'"', returnStatus:true)
-        if (gaTagCheck == 0) {
-            echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
-        }
-
         // Check binaries repo for existance of the given release tag having being already built?
         def jdkAssetToCheck = "x64_linux"
         if (mirrorRepo.contains("aarch32-jdk8u")) {
@@ -234,11 +224,7 @@ node('worker') {
             echo "Build tag ${binariesRepoTag} is already published - nothing to do"
         } else {
             echo "New unpublished build tag ${binariesRepoTag} - triggering builds"
-            if (gaTagCheck == 0) {
-                echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
-            } else {
-                triggerMainBuild = true
-            }
+            triggerMainBuild = true
             triggerEvaluationBuild = true
         }
     } else {
