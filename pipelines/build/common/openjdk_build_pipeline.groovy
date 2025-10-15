@@ -688,6 +688,10 @@ class Build {
                     if ("${platform}" == 'ppc64_aix' && targetTests.contains('special.jck')) {
                         extra_app_options += " customJvmOpts=-Djava.net.preferIPv4Stack=true"
                     }
+                    if ("${platform}" == 'ppc64_aix') {
+                        // TC aix nodes struggle using the default cpus+1 concurrency, limit to 3
+                        extra_app_options += " concurrency=3"
+                    }
 
                     def additionalTestLabel_param = additionalTestLabel
                     if ("${platform}" == 'aarch64_mac') {
