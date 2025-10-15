@@ -95,7 +95,8 @@ def resolveGaTag(String jdkVersion, String jdkBranch) {
         def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| grep -v '\\^{}'")
         def foundRepo = resolveGaCommit.get(0)
         def foundSHA  = resolveGaCommit.get(1)
-        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${foundRepo} ${annotatedTagFilter} | grep \"${foundSHA}\" | grep -v \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
+        // Find upstream target actual tag, ignore any other "-ga" tags, must be a real build tag
+        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${foundRepo} ${annotatedTagFilter} | grep \"${foundSHA}\" | grep -v \"${jdkBranch}\" | grep -v '\\-ga' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
         if (upstreamTag != "") {
             println "[INFO] Resolved ${jdkBranch} to upstream build tag ${upstreamTag}"
             resolvedTag = upstreamTag
