@@ -2503,6 +2503,7 @@ def buildScriptsAssemble(
                                             } else {
                                                 source_tag = ":${imageDigest}"
                                             }
+context.println "source_tag = ${source_tag}"
                                             context.sh(script: "docker tag '${long_docker_image_name}${source_tag}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
                                         } else {
                                             if (buildConfig.DOCKER_ARGS) {
