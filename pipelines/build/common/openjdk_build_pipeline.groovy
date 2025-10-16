@@ -2480,12 +2480,6 @@ def buildScriptsAssemble(
                                     throw new Exception("[ERROR] Controller clean workspace timeout (${buildTimeouts.CONTROLLER_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
                             }
-                            // Strip any sha from the image name
-                            def short_docker_image_name = buildConfig.DOCKER_IMAGE.replaceAll('@.*', '')
-                            // Guard In Case short_docker_image_name is null for some reason...
-                            if (!short_docker_image_name) {
-                              short_docker_image_name = buildConfig.DOCKER_IMAGE
-                            }
 
                             if (!("${buildConfig.DOCKER_IMAGE}".contains('rhel'))) {
                                 // Pull the docker image from DockerHub
@@ -2499,8 +2493,11 @@ def buildScriptsAssemble(
                                                     context.docker.image(buildConfig.DOCKER_IMAGE).pull()
                                                 }
                                             }
-                                            def long_docker_image_name = context.sh(script: "docker image ls | grep ${short_docker_image_name} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
-                                            context.sh(script: "docker tag '${long_docker_image_name}' '${short_docker_image_name}'", returnStdout:false)
+                                            def imageParts = buildConfig.DOCKER_IMAGE.tokenize('@')
+                                            def imageName = imageParts[0]
+                                            def imageDigest = imageParts.size() > 1 ? imageParts[1] : "latest"
+                                            def long_docker_image_name = context.sh(script: "docker image ls --digests| grep ${imageName} | grep ${imageDigest} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
+                                            context.sh(script: "docker tag '${long_docker_image_name}:${imageDigest}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
                                         } else {
                                             if (buildConfig.DOCKER_ARGS) {
                                                 context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
@@ -2515,9 +2512,9 @@ def buildScriptsAssemble(
                             }
                             // Store the pulled docker image digest as 'buildinfo'
                             if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
-                                dockerImageDigest = context.sh(script: "docker inspect --format={{.Id}} ${short_docker_image_name} | /bin/cut -d: -f2", returnStdout:true)
+                                dockerImageDigest = context.sh(script: "docker inspect --format={{.Id}} ${buildConfig.DOCKER_IMAGE} | /bin/cut -d: -f2", returnStdout:true)
                             } else {
-                                dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${short_docker_image_name}", returnStdout:true)
+                                dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
                             }
 
                             // Use our dockerfile if DOCKER_FILE is defined
@@ -2569,7 +2566,7 @@ def buildScriptsAssemble(
                                     context.echo("Switched to using non-default workspace path ${workspace}")
                                     context.println "openjdk_build_pipeline: building in windows docker image " + buildConfig.DOCKER_IMAGE
                                     context.ws(workspace) {
-                                        context.docker.image(short_docker_image_name).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                        context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScripts(
                                                 cleanWorkspace,
                                                 cleanWorkspaceAfter,
