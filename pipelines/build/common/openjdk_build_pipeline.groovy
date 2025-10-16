@@ -2497,7 +2497,13 @@ def buildScriptsAssemble(
                                             def imageName = imageParts[0]
                                             def imageDigest = imageParts.size() > 1 ? imageParts[1] : "latest"
                                             def long_docker_image_name = context.sh(script: "docker image ls --digests| grep ${imageName} | grep ${imageDigest} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
-                                            context.sh(script: "docker tag '${long_docker_image_name}:${imageDigest}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
+                                            def source_tag
+                                            if (buildConfig.DOCKER_IMAGE.contains('@')) {
+                                                source_tag = "@${imageDigest}"
+                                            } else {
+                                                source_tag = ":${imageDigest}"
+                                            }
+                                            context.sh(script: "docker tag '${long_docker_image_name}${source_tag}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
                                         } else {
                                             if (buildConfig.DOCKER_ARGS) {
                                                 context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
