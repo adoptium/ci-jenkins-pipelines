@@ -2505,7 +2505,7 @@ def buildScriptsAssemble(
                                                 source_tag = "@${imageDigest}"
                                                 // docker_image target contains a digest(sha) which cannot be a target tag
                                                 // create a new target tag name based on syntax: <imageName>_<sha256>
-                                                docker_image_target = imageName + "_" + imageDigest.replaceAll(":","")
+                                                docker_image_target = imageName + "_" + imageDigest.replaceAll(":","_")
                                                 context.println "Mapped ${buildConfig.DOCKER_IMAGE} to target tag ${docker_image_target}, as it contains a digest"
                                             } else {
                                                 // ":latest"
@@ -2530,6 +2530,7 @@ def buildScriptsAssemble(
                             } else {
                                 dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${docker_image_target}", returnStdout:true)
                             }
+                            context.println "Target docker image digest = ${dockerImageDigest}"
 
                             // Use our dockerfile if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {
