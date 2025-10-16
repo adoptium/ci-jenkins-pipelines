@@ -2481,35 +2481,42 @@ def buildScriptsAssemble(
                                 }
                             }
 
-                            if (!("${buildConfig.DOCKER_IMAGE}".contains('rhel'))) {
+                            // Target docker image to use, this may get aliased to a target tag using docker tag as target cannot contain a digest
+                            def docker_image_target = buildConfig.DOCKER_IMAGE
+
+                            if (!("${docker_image_target}".contains('rhel'))) {
                                 // Pull the docker image from DockerHub
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: 'HOURS') {
                                         if (buildConfig.DOCKER_CREDENTIAL) {
                                             context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
                                                 if (buildConfig.DOCKER_ARGS) {
-                                                    context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
+                                                    context.sh(script: "docker pull ${docker_image_target} ${buildConfig.DOCKER_ARGS}")
                                                 } else {
-                                                    context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                                    context.docker.image(docker_image_target).pull()
                                                 }
                                             }
-                                            def imageParts = buildConfig.DOCKER_IMAGE.tokenize('@')
+                                            def imageParts = docker_image_target.tokenize('@')
                                             def imageName = imageParts[0]
                                             def imageDigest = imageParts.size() > 1 ? imageParts[1] : "latest"
                                             def long_docker_image_name = context.sh(script: "docker image ls --digests| grep ${imageName} | grep ${imageDigest} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
                                             def source_tag
-                                            if (buildConfig.DOCKER_IMAGE.contains('@')) {
+                                            if (docker_image_target.contains('@')) {
                                                 source_tag = "@${imageDigest}"
+                                                // docker_image target contains a digest(sha) which cannot be a target tag
+                                                // create a new target tag name based on syntax: <imageName>_<sha256>
+                                                docker_image_target = imageName + "_" + imageDigest.replaceAll(":","")
+                                                context.println "Mapped ${buildConfig.DOCKER_IMAGE} to target tag ${docker_image_target}, as it contains a digest"
                                             } else {
+                                                // ":latest"
                                                 source_tag = ":${imageDigest}"
                                             }
-context.println "source_tag = ${source_tag}"
-                                            context.sh(script: "docker tag '${long_docker_image_name}${source_tag}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
+                                            context.sh(script: "docker tag '${long_docker_image_name}${source_tag}' '${docker_image_target}'", returnStdout:false)
                                         } else {
                                             if (buildConfig.DOCKER_ARGS) {
-                                                context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
+                                                context.sh(script: "docker pull ${docker_image_target} ${buildConfig.DOCKER_ARGS}")
                                             } else {
-                                                context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                                context.docker.image(docker_image_target).pull()
                                             }
                                         }
                                     }
@@ -2518,10 +2525,10 @@ context.println "source_tag = ${source_tag}"
                                 }
                             }
                             // Store the pulled docker image digest as 'buildinfo'
-                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
-                                dockerImageDigest = context.sh(script: "docker inspect --format={{.Id}} ${buildConfig.DOCKER_IMAGE} | /bin/cut -d: -f2", returnStdout:true)
+                            if ( buildConfig.TARGET_OS == 'windows' && docker_image_target ) {
+                                dockerImageDigest = context.sh(script: "docker inspect --format={{.Id}} ${docker_image_target} | /bin/cut -d: -f2", returnStdout:true)
                             } else {
-                                dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
+                                dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${docker_image_target}", returnStdout:true)
                             }
 
                             // Use our dockerfile if DOCKER_FILE is defined
@@ -2547,7 +2554,7 @@ context.println "source_tag = ${source_tag}"
                                 }
 
                                 context.println "openjdk_build_pipeline: building in docker image from docker file " + buildConfig.DOCKER_FILE
-                                context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
+                                context.docker.build("build-image", "--build-arg image=${docker_image_target} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
                                     buildScripts(
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
@@ -2571,9 +2578,9 @@ context.println "source_tag = ${source_tag}"
                                 if (buildConfig.TARGET_OS == 'windows') {
                                     context.println "openjdk_build_pipeline: running exploded build in docker on Windows"
                                     context.echo("Switched to using non-default workspace path ${workspace}")
-                                    context.println "openjdk_build_pipeline: building in windows docker image " + buildConfig.DOCKER_IMAGE
+                                    context.println "openjdk_build_pipeline: building in windows docker image " + docker_image_target
                                     context.ws(workspace) {
-                                        context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                        context.docker.image(docker_image_target).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScripts(
                                                 cleanWorkspace,
                                                 cleanWorkspaceAfter,
@@ -2585,8 +2592,8 @@ context.println "source_tag = ${source_tag}"
                                         }
                                     }
                                 } else {
-                                    context.println "openjdk_build_pipeline: running initial build in docker on non-windows with image " + buildConfig.DOCKER_IMAGE
-                                    context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                    context.println "openjdk_build_pipeline: running initial build in docker on non-windows with image " + docker_image_target
+                                    context.docker.image(docker_image_target).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                         buildScripts(
                                             cleanWorkspace,
                                             cleanWorkspaceAfter,
@@ -2604,7 +2611,7 @@ context.println "source_tag = ${source_tag}"
                                     context.ws(workspace) {
                                         context.println "Signing with non-default workspace location ${workspace}"
                                         context.println "openjdk_build_pipeline: running assemble phase (invocation 1)"
-                                            context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                            context.docker.image(docker_image_target).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScriptsAssemble(
                                                 cleanWorkspaceAfter,
                                                 cleanWorkspaceBuildOutputAfter,
