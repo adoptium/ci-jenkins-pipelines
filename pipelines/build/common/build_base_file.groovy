@@ -1043,7 +1043,7 @@ class Builder implements Serializable {
             if (publish || release) {
                 if (release) {
                     context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
-                    if (context.JENKINS_URL.contains('adoptium')) {
+                    if (context.JENKINS_URL.contains('ci.adoptium.net')) {
                         releaseSummary.appendText('</ul>', false)
                         releaseSummary.appendText("<b>TAP files COLLECTION and RELEASE:</b><ul>")
                         def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
