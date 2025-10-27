@@ -2711,10 +2711,12 @@ def buildScriptsAssemble(
                         throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
                     }
                 }
-                if (!env.JOB_NAME.contains('pr-tester') && context.JENKINS_URL.contains('adopt')) {
+                if (!env.JOB_NAME.contains('pr-tester') && buildConfig.VARIANT == 'temurin' && enableSigner) {
                     try {
                         context.println "openjdk_build_pipeline: Running GPG signing process"
-                        jsfSignSBOM()
+                        if (buildConfig.BUILD_ARGS.contains('--create-sbom')) {
+                            jsfSignSBOM()
+                        }
                         gpgSign()
 
                     } catch (Exception e) {
