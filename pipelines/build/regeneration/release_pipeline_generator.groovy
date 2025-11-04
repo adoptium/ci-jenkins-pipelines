@@ -6,12 +6,13 @@ import groovy.json.JsonOutput
 file used as jenkinsfile to generator official release pipeline
 */
 
-// ensure releaseVersions is updated before create releaseTag
-def releaseVersions = "${params.releaseVersions}".split("[, ]+")
-
 // Regenerate release-openjdkX-pipeline per each jdk version listed in releaseVersions
 node('worker') {
     try{
+        // ensure releaseVersions is updated before create releaseTag
+        def releaseVersions = "${params.releaseVersions}".split("[, ]+")
+        println "Generating release pipelines for versions: ${releaseVersions}"
+
         /*
             use releaseTag's defaults.json for adoptDefaultsJson and defaultsJson
             do not really need to set both,
