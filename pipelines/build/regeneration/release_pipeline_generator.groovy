@@ -6,11 +6,7 @@ import groovy.json.JsonOutput
 file used as jenkinsfile to generator official release pipeline
 */
 
-// ensure releaseVersions is updated before create releaseTag
-def releaseVersions = [8,11,17,21,25]
-
-
-// Regenerate release-openjdkX-pipeline per each jdk version listed in releaseVersions
+// Regenerate release-openjdkX-pipeline per each jdk version listed in params.releaseVersions
 node('worker') {
     try{
         /*
@@ -67,7 +63,7 @@ node('worker') {
             println "ENABLE_PIPELINE_SCHEDULE = false"
             println "USE_ADOPT_SHELL_SCRIPTS = true"
 
-            releaseVersions.each({ javaVersion ->
+            params.releaseVersions.each({ javaVersion ->
                 def config = [
                     GIT_URL                     : pipelineUrl,
                     releaseTag                  : releaseTag,
@@ -128,7 +124,7 @@ node('worker') {
                 println "[SUCCESS] THE FOLLOWING release PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER:\n${generatedPipelines}"
             }
 
-            releaseVersions.each({ javaVersion ->
+            params.releaseVersions.each({ javaVersion ->
                 def uFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}u_release.groovy"
                 def nonUFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
                 def jobName
