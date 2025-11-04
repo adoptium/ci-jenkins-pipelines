@@ -6,7 +6,10 @@ import groovy.json.JsonOutput
 file used as jenkinsfile to generator official release pipeline
 */
 
-// Regenerate release-openjdkX-pipeline per each jdk version listed in params.releaseVersions
+// ensure releaseVersions is updated before create releaseTag
+def releaseVersions = "${params.releaseVersions}".split("[, ]+")
+
+// Regenerate release-openjdkX-pipeline per each jdk version listed in releaseVersions
 node('worker') {
     try{
         /*
@@ -63,7 +66,7 @@ node('worker') {
             println "ENABLE_PIPELINE_SCHEDULE = false"
             println "USE_ADOPT_SHELL_SCRIPTS = true"
 
-            params.releaseVersions.each({ javaVersion ->
+            releaseVersions.each({ javaVersion ->
                 def config = [
                     GIT_URL                     : pipelineUrl,
                     releaseTag                  : releaseTag,
@@ -86,7 +89,7 @@ node('worker') {
                         target = load nonUFile
                     }              
                 } catch (NoSuchFileException e) {
-                    throw new Exception("[ERROR] enable to load jdk${javaVersion}u_release.groovy nor jdk${javaVersion}_release.groovy does not exist!")
+                    throw new Exception("[ERROR] unable to load jdk${javaVersion}u_release.groovy nor jdk${javaVersion}_release.groovy does not exist!")
                 }
 
                 // For jdk8u remove aarch32 from the pipeline's target so it does not get built automatically,
@@ -124,7 +127,7 @@ node('worker') {
                 println "[SUCCESS] THE FOLLOWING release PIPELINES WERE GENERATED IN THE ${jobRoot} FOLDER:\n${generatedPipelines}"
             }
 
-            params.releaseVersions.each({ javaVersion ->
+            releaseVersions.each({ javaVersion ->
                 def uFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}u_release.groovy"
                 def nonUFile = "${WORKSPACE}/${releaseConfigPath}/jdk${javaVersion}_release.groovy"
                 def jobName
