@@ -10,7 +10,7 @@ file used as jenkinsfile to generator official release pipeline
 node('worker') {
     try{
         // ensure releaseVersions is updated before create releaseTag
-        def releaseVersions = "${params.releaseVersions}".split("[, ]+")
+        String[] releaseVersions = "${params.releaseVersions}".split("[, ]+")
         println "Generating release pipelines for versions: ${releaseVersions}"
 
         /*
