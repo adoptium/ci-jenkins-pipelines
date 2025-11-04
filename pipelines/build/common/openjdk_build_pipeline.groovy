@@ -612,28 +612,33 @@ class Build {
             appOptions=""
         }
 
-        def targets
+        enum TckTarget {
+            SANITY,
+            EXTENDED,
+            SPECIAL,
+            DEV
+        }
+
+        enum TckMode {
+            SERIAL,
+            PARALLEL,
+            DISABLED
+        }
+
+        Map<TckTarget, TckMode> targets = new HashMap<>()
+        targets.put(TckTarget.SANITY, TckMode.SERIAL)
+        targets.put(TckTarget.EXTENDED, TckMode.SERIAL)
+        targets.put(TckTarget.SPECIAL, TckMode.SERIAL)
+        targets.put(TckTarget.DEV, TckMode.SERIAL)
+
         if ("${platform}" == 'ppc64_aix' || "${platform}" == 'sparcv9_solaris' || "${platform}" == 'x86-64_solaris' ||
-             configureArguments.contains('--enable-headless-only=yes')) {
-            targets = ['serial': 'sanity.jck,extended.jck,special.jck']
-        } else {
-            targets = ['serial': 'sanity.jck,extended.jck,special.jck,dev.jck']
+                configureArguments.contains('--enable-headless-only=yes')) {
+            targets.replace(TckTarget.DEV, TckMode.DISABLED)
         }
 
         if ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') {
             // Primary platforms run extended.jck in Parallel
-            targets['serial']   = 'sanity.jck,special.jck,dev.jck'
-            targets['parallel'] = 'extended.jck'
-            if ("${platform}" == 'x86-64_windows') {
-                targets['serial']     = 'sanity.jck,special.jck'
-                targets['serial_dev'] = 'dev.jck'
-            }
-        }
-
-        if ("${platform}" == 'aarch64_mac') {
-            // aarch64_mac runs extended.jck on !osx12, allow sanity&special to run on any
-            targets['serial']   = 'sanity.jck,special.jck,dev.jck'
-            targets['serial_extended'] = 'extended.jck'
+            targets.replace(TckTarget.EXTENDED, TckMode.PARALLEL)
         }
 
         /*
@@ -656,20 +661,24 @@ class Build {
         def jckRerunSummary = context.manager.createSummary('info.gif')
         jckRerunSummary.appendText('<b>RERUN JCK TESTS:</b><ul>', false)
         def aqa_test_pipeline_BaseURL = "https://ci.adoptium.net/view/Test_grinder/job/AQA_Test_Pipeline/parambuild"
-        targets.each { targetMode, targetTests ->
+        targets.each { targetTestEnum, targetModeEnum ->
+            if (targetModeEnum == TckMode.DISABLED) {
+                continue
+            }
             try {
-                remoteTargets["${targetTests}"] = {
-                    context.println "Remote trigger: ${targetTests}"
-                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF}${weekly} : ${platform} : ${targetTests}"
+                def targetTest = targetTest.name() + ".jck"
+                remoteTargets["${targetTest}"] = {
+                    context.println "Remote trigger: ${targetTest}"
+                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF}${weekly} : ${platform} : ${targetTest}"
                     def parallel = 'None'
                     def num_machines = '1'
-                    if ("${targetMode}" == 'parallel') {
+                    if (targetModeEnum == TckMode.PARALLEL) {
                         parallel = 'Dynamic'
                         num_machines = '2'
                     }
 
                     def extra_options = ""
-                    if ("${platform}" == 's390x_linux' && targetTests.contains('extended.jck')) {
+                    if ("${platform}" == 's390x_linux' && targetTest.equals('extended.jck')) {
                         extra_options += " -Xss4m"
                     }
 
@@ -685,7 +694,7 @@ class Build {
                     }
 
                     def extra_app_options = ""
-                    if ("${platform}" == 'ppc64_aix' && targetTests.contains('special.jck')) {
+                    if ("${platform}" == 'ppc64_aix' && targetTest.equals('special.jck')) {
                         extra_app_options += " customJvmOpts=-Djava.net.preferIPv4Stack=true"
                     }
                     if ("${platform}" == 'ppc64_aix') {
@@ -696,7 +705,7 @@ class Build {
                     def additionalTestLabel_param = additionalTestLabel
                     if ("${platform}" == 'aarch64_mac') {
                         // extended java_awt tests won't all run on the osx12 node, split extended from sanity/special across nodes
-                        def osxLabel = (targetTests.contains('extended.jck')) ? '!sw.os.osx.12' : 'sw.os.osx.12'
+                        def osxLabel = (targetTest.equals('extended.jck')) ? '!sw.os.osx.12' : 'sw.os.osx.12'
                         if (additionalTestLabel_param == '') {
                             additionalTestLabel_param = "${osxLabel}"
                         } else {
@@ -706,7 +715,7 @@ class Build {
 
                     def paramList = [
                         SDK_RESOURCE: 'customized',
-                        TARGETS: "${targetTests}",
+                        TARGETS: "${targetTest}",
                         JCK_GIT_REPO: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git",
                         CUSTOMIZED_SDK_URL: "${sdkUrl}",
                         JDK_VERSIONS: "${jdkVersion}",
@@ -723,20 +732,20 @@ class Build {
                         EXTRA_OPTIONS: "${extra_options}",
                         SETUP_JCK_RUN: "${setupJCKRun}"
                     ]
-                    if ("${platform}" == 'x86-64_windows' && "${targetTests}" == 'dev.jck') {
+                    if ("${platform}" == 'x86-64_windows' && "${targetTest}" == 'dev.jck') {
                         paramList["LABEL"] = 'ci.role.test.interactive'
                     }
                     def queryString = paramList.collect { k, v -> "${URLEncoder.encode(k, 'UTF-8')}=${URLEncoder.encode(v, 'UTF-8')}"}.join('&')
                     def aqa_test_pipeline_FullURL = "${aqa_test_pipeline_BaseURL}?${queryString}&MODE=RELAY"
-                    jckRerunSummary .appendText("<li>${targetTests}<a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
+                    jckRerunSummary .appendText("<li>${targetTest}<a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
 
-                   if ("${platform}" == 'x86-64_windows' && "${targetTests}" == 'dev.jck') {
+                   if ("${platform}" == 'x86-64_windows' && "${targetTest}" == 'dev.jck') {
                         context.catchError {
-                            remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
+                            remoteTriggeredBuilds["${targetTest}"] = context.triggerRemoteJob abortTriggeredJob: true,
                                 blockBuildUntilComplete: false,
                                 job: 'AQA_Test_Pipeline',
                                 parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
+                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTest}"),
                                                                         context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
                                                                         context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                         context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
@@ -761,11 +770,11 @@ class Build {
                         }
                     } else {
                         context.catchError {
-                            remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
+                            remoteTriggeredBuilds["${targetTest}"] = context.triggerRemoteJob abortTriggeredJob: true,
                                 blockBuildUntilComplete: false,
                                 job: 'AQA_Test_Pipeline',
                                 parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
+                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTest}"),
                                                                         context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
                                                                         context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                         context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
