@@ -10,7 +10,7 @@ file used as jenkinsfile to generator official release pipeline
 node('worker') {
     try{
         // ensure releaseVersions is updated before create releaseTag
-        String[] releaseVersions = "${params.releaseVersions}".split("[, ]+")
+        def releaseVersions = "${params.releaseVersions}".split("[, ]+")
         println "Generating release pipelines for versions: ${releaseVersions}"
 
         /*
@@ -74,7 +74,7 @@ node('worker') {
                     aqaTag                      : aqaRef,
                     BUILD_FOLDER                : jobRoot,
                     CHECKOUT_CREDENTIALS        : "",
-                    JAVA_VERSION                : javaVersion,
+                    JAVA_VERSION                : "${javaVersion}",
                     JOB_NAME                    : "release-openjdk${javaVersion}-pipeline",
                     SCRIPT                      : "${scriptFolderPath}/openjdk_pipeline.groovy",
                     adoptScripts                : true // USE_ADOPT_SHELL_SCRIPTS
