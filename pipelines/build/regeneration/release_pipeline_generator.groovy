@@ -9,7 +9,6 @@ file used as jenkinsfile to generator official release pipeline
 // Regenerate release-openjdkX-pipeline per each jdk version listed in releaseVersions
 node('worker') {
     try{
-        // ensure releaseVersions is updated before create releaseTag
         def releaseVersions = "${params.releaseVersions}".split("[, ]+").collect { it.toInteger() }
         println "Generating release pipelines for versions: ${releaseVersions}"
 
