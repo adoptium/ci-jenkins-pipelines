@@ -302,15 +302,27 @@ if (triggerMainBuild || triggerEvaluationBuild) {
 
                     def jobParams
                     if (solarisBuildJob) {
+                        def dryRun
+                        if (params.PUBLISH) {
+                            dryRun = false
+                        } else {
+                            dryRun = true
+                        }
                         jobParams = [
                             booleanParam(name: 'RELEASE',           value: false),
                             string(name: 'SCM_REF',                 value: "$latestAdoptTag"),
                             booleanParam(name: 'ENABLE_TESTS',      value: enableTesting),
-                            booleanParam(name: 'DRY_RUN',           value: false)
+                            booleanParam(name: 'DRY_RUN',           value: dryRun)
                         ]
                     } else {
+                        def releaseType
+                        if (params.PUBLISH) {
+                            releaseType = "Weekly"
+                        } else {
+                            releaseType = "Weekly Without Publish"
+                        }
                         jobParams = [
-                            string(name: 'releaseType',             value: "Weekly"),
+                            string(name: 'releaseType',             value: releaseType),
                             string(name: 'scmReference',            value: "$latestAdoptTag"),
                             string(name: 'overridePublishName',     value: "$publishJobTag"),
                             booleanParam(name: 'aqaAutoGen',        value: true),
