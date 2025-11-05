@@ -737,7 +737,7 @@ class Build {
                     }
                     def queryString = paramList.collect { k, v -> "${URLEncoder.encode(k, 'UTF-8')}=${URLEncoder.encode(v, 'UTF-8')}"}.join('&')
                     def aqa_test_pipeline_FullURL = "${aqa_test_pipeline_BaseURL}?${queryString}&MODE=RELAY"
-                    jckRerunSummary .appendText("<li>${targetTest}<a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
+                    jckRerunSummary.appendText("<li><a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
 
                    if ("${platform}" == 'x86-64_windows' && "${targetTest}" == 'dev.jck') {
                         context.catchError {
@@ -2328,21 +2328,14 @@ def buildScriptsAssemble(
     }
 
     def waitForJckStatus(remoteTriggeredBuilds) {
-      def stageName = ""
-      remoteTriggeredBuilds.each{ testTargets, jobHandle ->
-        if (stageName == "") {
-          stageName = testTargets
-        } else {
-          stageName += ",${testTargets}"
-        }
-      }
+        def jckStages = [:]
+        def completedJckJobs = ""
 
-      def completedJckJobs = ""
-      context.stage("${stageName}") {
-        def waitingForRemoteJck = true
-        while( waitingForRemoteJck ) {
-            waitingForRemoteJck = false
-            remoteTriggeredBuilds.each{ testTargets, jobHandle ->
+        remoteTriggeredBuilds.each{ testTarget, jobHandle ->
+            jckStages[testTarget] = {
+                def waitingForRemoteJck = true
+                while ( waitingForRemoteJck ) {
+                    waitingForRemoteJck = false
                     def remoteJobStatus = ""
                     if ( jobHandle == null ) {
                         context.println "Failed, remote job ${testTargets} was not triggered"
@@ -2366,14 +2359,15 @@ def buildScriptsAssemble(
                         setStageResult("${testTargets}", remoteJobStatus);
                         completedJckJobs += ",${testTargets}"
                     }
-            }
-            if (waitingForRemoteJck) {
-                def sleepTimeMins = 20
-                context.println "Waiting for remote jck jobs, sleeping for ${sleepTimeMins} minutes..."
-                sleep (sleepTimeMins * 60 * 1000)
+                    if (waitingForRemoteJck) {
+                        def sleepTimeMins = 20
+                        context.println "Waiting for remote jck jobs, sleeping for ${sleepTimeMins} minutes..."
+                        sleep (sleepTimeMins * 60 * 1000)
+                    }
+                }
             }
         }
-      }
+        context.parallel jckStages
     }
 
     /*
