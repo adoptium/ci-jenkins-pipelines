@@ -51,9 +51,16 @@ stage('Submit Release Pipelines') {
             echo("Creating ${params.buildPipeline} - ${variantName}")
             jobs[variantName] = {
                 stage("Build - ${params.buildPipeline} - ${variantName}") {
+                    def releaseType = "${params.releaseType}"
+
+                    // Only Temurin can Publish
+                    if ("${variantName}" != "temurin" && !releaseType.contains("Without Publish")) {
+                      releaseType = "${releaseType} Without Publish"
+                    }
+
                     result = build job: "${params.buildPipeline}",
                             parameters: [
-                                string(name: 'releaseType',        value: "${params.releaseType}"),
+                                string(name: 'releaseType',        value: releaseType),
                                 string(name: 'scmReference',       value: scmRef),
                                 booleanParam(name: 'aqaAutoGen', value: aqaAutoGen),
                                 text(name: 'targetConfigurations', value: JsonOutput.prettyPrint(JsonOutput.toJson(targetConfig))),
