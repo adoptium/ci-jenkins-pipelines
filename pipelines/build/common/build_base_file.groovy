@@ -864,6 +864,9 @@ class Builder implements Serializable {
                 }
             }
 
+            // Flag indicating whether TAP test collections have been generated
+            def generatedTapsCollection = false
+
             def jobs = [:]
 
             // Special case for JDK head where the jobs are called jdk-os-arch-variant
@@ -979,6 +982,11 @@ class Builder implements Serializable {
                                             throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
 
+                                        if ("${config.VARIANT}" == "temurin" && enableTests) {
+                                            // Temurin generates test tap collections, that should appear in the summary
+                                            generatedTapsCollection = true
+                                        }
+
                                         copyArtifactSuccess = true
                                         if (release) {
                                             def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
@@ -1043,19 +1051,21 @@ class Builder implements Serializable {
             if (publish || release) {
                 if (release) {
                     context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
-                    releaseSummary.appendText('</ul>', false)
-                    releaseSummary.appendText("<b>TAP files COLLECTION and RELEASE:</b><ul>")
-                    def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
-                    def tapCollectionUrl = "${context.JENKINS_URL}job/TAP_Collection/parambuild?Release_PipelineJob_Name=${urlJobName}"
-                    releaseSummary.appendText("<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
-                    String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
-                    def tag = publishName
-                    tag = URLEncoder.encode(tag, 'UTF-8')
-                    def artifactsToCopy = '**/AQAvitTapFiles.tar.gz'
-                    artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
-                    def javaVersion=determineReleaseToolRepoVersion()
-                    releaseToolUrl += "&VERSION=${javaVersion}&TAG=${tag}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
-                    releaseSummary.appendText("<li><a href=${releaseToolUrl}> RELEASE TEST RESULTS TAPs Link</a></li>")
+                    if (generatedTapsCollection) {
+                        releaseSummary.appendText('</ul>', false)
+                        releaseSummary.appendText("<b>TAP files COLLECTION and RELEASE:</b><ul>")
+                        def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
+                        def tapCollectionUrl = "${context.JENKINS_URL}job/TAP_Collection/parambuild?Release_PipelineJob_Name=${urlJobName}"
+                        releaseSummary.appendText("<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
+                        String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
+                        def tag = publishName
+                        tag = URLEncoder.encode(tag, 'UTF-8')
+                        def artifactsToCopy = '**/AQAvitTapFiles.tar.gz'
+                        artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
+                        def javaVersion=determineReleaseToolRepoVersion()
+                        releaseToolUrl += "&VERSION=${javaVersion}&TAG=${tag}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
+                        releaseSummary.appendText("<li><a href=${releaseToolUrl}> RELEASE TEST RESULTS TAPs Link</a></li>")
+                    }
                 } else {
                     try {
                         context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
