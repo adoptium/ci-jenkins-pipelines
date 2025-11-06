@@ -1124,7 +1124,7 @@ node('worker') {
                                 health = "Unhealthy"
                                 errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *No build is in progress*."
                             } else {
-                                if (probableBuildStatus == "Streaming") {
+                                if ( (probableBuildStatus == "Streaming") || (probableBuildStatus == "NotDone") ) {
                                     errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. <" + probableBuildUrl + "|Build is in progress>."
                                 } else {
                                     errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *Build is awaiting 'trigger'*."
@@ -1189,7 +1189,7 @@ node('worker') {
                         slackColor = 'danger'
                         health = "Unhealthy"
                         errorMsg += "\nArtifact status: "+status['assets']
-                        if (probableBuildStatus == "Streaming") {
+                        if ( (probableBuildStatus == "Streaming") || (probableBuildStatus == "NotDone") ) {
                             errorMsg += ", <" + probableBuildUrl + "|Build is in progress>"
                         } else {
                             errorMsg += ", *No build is in progress*"
