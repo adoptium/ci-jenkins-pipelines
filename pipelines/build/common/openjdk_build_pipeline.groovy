@@ -1715,9 +1715,13 @@ class Build {
 
         def folders = ["hotspot/variant-server",
                        "support/modules_cmds",
-                       "support/modules_libs",
-                       "jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources"
+                       "support/modules_libs"
                       ]
+
+        if (target_os == "mac") {
+            // jpackage resources are only signed for Mac
+            folders.add("jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources")
+        }
 
         folders.each { folder ->
             if (context.fileExists("${base_path}/${folder}")) {
