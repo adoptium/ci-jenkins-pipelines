@@ -2328,46 +2328,45 @@ def buildScriptsAssemble(
     }
 
     def waitForJckStatus(remoteTriggeredBuilds) {
-        def jckStages = [:]
         def completedJckJobs = ""
+        def completedJckJobCount = 0
 
-        remoteTriggeredBuilds.each{ testTarget, jobHandle ->
-            jckStages[testTarget] = {
-                def waitingForRemoteJck = true
-                while ( waitingForRemoteJck ) {
-                    waitingForRemoteJck = false
-                    def remoteJobStatus = ""
-                    if ( jobHandle == null ) {
-                        context.println "Failed, remote job ${testTargets} was not triggered"
+        while (true) {
+            remoteTriggeredBuilds.each{ testTarget, jobHandle ->
+                def remoteJobStatus = ""
+                if ( jobHandle == null ) {
+                    context.println "Failed, remote job ${testTarget} was not triggered"
+                    remoteJobStatus = "FAILURE"
+                } else {
+                    jobHandle.updateBuildStatus()
+                    if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
+                        context.println "Failed, remote job ${testTarget} status is NOT_TRIGGERED"
                         remoteJobStatus = "FAILURE"
                     } else {
-                        jobHandle.updateBuildStatus()
-                        if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
-                            context.println "Failed, remote job ${testTargets} status is NOT_TRIGGERED"
-                            remoteJobStatus = "FAILURE"
+                        if ( !jobHandle.isFinished() ) {
+                            context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
                         } else {
-                            if ( !jobHandle.isFinished() ) {
-                                waitingForRemoteJck = true
-                                context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
-                            } else {
-                                remoteJobStatus = jobHandle.getBuildResult().toString()
-                                context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
-                            }
+                            remoteJobStatus = jobHandle.getBuildResult().toString()
+                            context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
                         }
                     }
-                    if ( remoteJobStatus != "" && !completedJckJobs.contains(testTargets)) {
-                        setStageResult("${testTargets}", remoteJobStatus);
-                        completedJckJobs += ",${testTargets}"
+                }
+                if ( remoteJobStatus != "" && !completedJckJobs.contains(testTarget)) {
+                    context.stage("${testTarget}") {
+                        setStageResult("${testTarget}", remoteJobStatus)
                     }
-                    if (waitingForRemoteJck) {
-                        def sleepTimeMins = 20
-                        context.println "Waiting for remote jck jobs, sleeping for ${sleepTimeMins} minutes..."
-                        sleep (sleepTimeMins * 60 * 1000)
-                    }
+                    completedJckJobs += ",${testTarget}"
+                    completedJckJobCount++
                 }
             }
-        }
-        context.parallel jckStages
+            if (remoteTriggeredBuilds > completedJckJobCount) {
+                def sleepTimeMins = 20
+                context.println "Waiting for remote jck jobs, sleeping for ${sleepTimeMins} minutes..."
+                sleep (sleepTimeMins * 60 * 1000)
+            } else {
+                continue
+            }
+        } // End of while loop.
     }
 
     /*
