@@ -2359,7 +2359,7 @@ def buildScriptsAssemble(
                     completedJckJobCount++
                 }
             }
-            if (remoteTriggeredBuilds > completedJckJobCount) {
+            if (remoteTriggeredBuilds.size() > completedJckJobCount) {
                 def sleepTimeMins = 20
                 context.println "Waiting for remote jck jobs, sleeping for ${sleepTimeMins} minutes..."
                 sleep (sleepTimeMins * 60 * 1000)
