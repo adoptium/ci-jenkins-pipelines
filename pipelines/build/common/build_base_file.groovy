@@ -864,6 +864,9 @@ class Builder implements Serializable {
                 }
             }
 
+            // Flag indicating whether TAP test collections have been generated
+            def generatedTapsCollection = false
+
             def jobs = [:]
 
             // Special case for JDK head where the jobs are called jdk-os-arch-variant
@@ -979,6 +982,11 @@ class Builder implements Serializable {
                                             throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
 
+                                        if ("${config.VARIANT}" == "temurin" && enableTests) {
+                                            // Temurin generates test tap collections, that should appear in the summary
+                                            generatedTapsCollection = true
+                                        }
+
                                         copyArtifactSuccess = true
                                         if (release) {
                                             def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
@@ -1043,7 +1051,7 @@ class Builder implements Serializable {
             if (publish || release) {
                 if (release) {
                     context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
-                    if (context.JENKINS_URL.contains('adoptium')) {
+                    if (generatedTapsCollection) {
                         releaseSummary.appendText('</ul>', false)
                         releaseSummary.appendText("<b>TAP files COLLECTION and RELEASE:</b><ul>")
                         def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')

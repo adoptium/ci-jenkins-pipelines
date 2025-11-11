@@ -178,7 +178,7 @@ void verifyExecutables(String unpack_dir, String issueToOrg) {
                 unsigned=""
                 cc_signed=0
                 cc_unsigned=0
-                FILES=$(find ${unpack_dir} -type f -name '*.exe' -o -name '*.dll')
+                FILES=$(find ${unpack_dir} -type f \\( -name '*.exe' -o -name '*.dll' \\) -not -path '*/jdk/jpackage/internal/resources/*')
                 for f in $FILES
                   do
                     if ! "${signtool}" verify /pa ${f}; then
