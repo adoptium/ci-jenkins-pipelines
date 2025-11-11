@@ -650,7 +650,7 @@ class Build {
         def aqa_test_pipeline_BaseURL = "https://ci.adoptium.net/view/Test_grinder/job/AQA_Test_Pipeline/parambuild"
         targets.each { targetTest, targetMode ->
             if (targetMode == "disabled") {
-                continue
+                return // Skip to the next target.
             }
             try {
                 remoteTargets["${targetTest}"] = {
