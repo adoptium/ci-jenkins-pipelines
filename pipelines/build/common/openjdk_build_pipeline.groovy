@@ -608,37 +608,24 @@ class Build {
 
         def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
         if (configureArguments.contains('--enable-headless-only=yes')) {
-           // Headless platforms have no auto-manuals, so do not exclude any tests
+            // Headless platforms have no auto-manuals, so do not exclude any tests
             appOptions=""
         }
 
-        enum TckTarget {
-            SANITY,
-            EXTENDED,
-            SPECIAL,
-            DEV
-        }
-
-        enum TckMode {
-            SERIAL,
-            PARALLEL,
-            DISABLED
-        }
-
-        Map<TckTarget, TckMode> targets = new HashMap<>()
-        targets.put(TckTarget.SANITY, TckMode.SERIAL)
-        targets.put(TckTarget.EXTENDED, TckMode.SERIAL)
-        targets.put(TckTarget.SPECIAL, TckMode.SERIAL)
-        targets.put(TckTarget.DEV, TckMode.SERIAL)
+        Map<String, String> targets = new HashMap<>()
+        targets.put("sanity.jck", "serial")
+        targets.put("extended.jck", "serial")
+        targets.put("special.jck", "serial")
+        targets.put("dev.jck", "serial")
 
         if ("${platform}" == 'ppc64_aix' || "${platform}" == 'sparcv9_solaris' || "${platform}" == 'x86-64_solaris' ||
                 configureArguments.contains('--enable-headless-only=yes')) {
-            targets.replace(TckTarget.DEV, TckMode.DISABLED)
+            targets.replace("dev.jck", "disabled")
         }
 
         if ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') {
             // Primary platforms run extended.jck in Parallel
-            targets.replace(TckTarget.EXTENDED, TckMode.PARALLEL)
+            targets.replace("extended.jck", "parallel")
         }
 
         /*
@@ -661,18 +648,17 @@ class Build {
         def jckRerunSummary = context.manager.createSummary('info.gif')
         jckRerunSummary.appendText('<b>RERUN JCK TESTS:</b><ul>', false)
         def aqa_test_pipeline_BaseURL = "https://ci.adoptium.net/view/Test_grinder/job/AQA_Test_Pipeline/parambuild"
-        targets.each { targetTestEnum, targetModeEnum ->
-            if (targetModeEnum == TckMode.DISABLED) {
+        targets.each { targetTest, targetMode ->
+            if (targetMode == "disabled") {
                 continue
             }
             try {
-                def targetTest = targetTest.name() + ".jck"
                 remoteTargets["${targetTest}"] = {
                     context.println "Remote trigger: ${targetTest}"
                     def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF}${weekly} : ${platform} : ${targetTest}"
                     def parallel = 'None'
                     def num_machines = '1'
-                    if (targetModeEnum == TckMode.PARALLEL) {
+                    if (targetMode == "parallel") {
                         parallel = 'Dynamic'
                         num_machines = '2'
                     }
