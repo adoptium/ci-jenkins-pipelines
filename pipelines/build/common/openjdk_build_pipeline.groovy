@@ -2399,7 +2399,7 @@ def buildScriptsAssemble(
                             context.string(name: 'TAG', value: "${env.BUILD_NUMBER}"),
                             context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                             context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                            context.string(name: 'UPSTREAM_DIR', value: "workspace/target"))
+                            context.string(name: 'UPSTREAM_DIR', value: "workspace/target")
                     ]
                 currentBuild.result = validationJob.getResult()
                 setStageResult("validate sbom", validationJob.getResult())
