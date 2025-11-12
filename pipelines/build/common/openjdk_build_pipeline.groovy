@@ -381,6 +381,7 @@ class Build {
             throw new Exception('[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed. ')
         }
     }
+
     /*
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
     If a test job doesn't exist, it will be created dynamically.
@@ -2368,6 +2369,50 @@ def buildScriptsAssemble(
     }
 
     /*
+    This method validates all SBOMs produced by this build.
+    */
+    def validateSbom() {
+        String jobName = "sbom_validator_job"
+
+        try {
+            context.println 'Validating SBOM/s'
+            context.stage('validate sbom') {
+                // Check sbom validation job exists.
+                String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+                if (!JobHelper.jobIsRunnable(jobName as String)) {
+                    throw new Exception("[ERROR] Jenkins job ${jobName} could not be found.");
+                }
+
+                // Gather parameters.
+                String jdk_Version = getJavaVersionNumber() as String
+                String source_tag = "scm_not_specified"
+                if (!buildConfig.SCM_REF.isEmpty()){
+                    source_tag = buildConfig.SCM_REF
+                }
+
+                // Launch job to validate SBOMs
+                def validationJob = context.build job: jobName,
+                    propagate: false,
+                    parameters: [
+                            context.string(name: 'VERSION', value: "${source_tag}"),
+                            context.string(name: 'TAG', value: "${env.BUILD_NUMBER}"),
+                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                            context.string(name: 'UPSTREAM_DIR', value: "workspace/target"))
+                    ]
+                currentBuild.result = validationJob.getResult()
+                setStageResult("validate sbom", validationJob.getResult())
+                return validationJob.getResult()
+            }
+        } catch (e) {
+            context.println("Failed to validate ${buildConfig.TARGET_OS} SBOMs ${e}")
+            currentBuild.result = 'FAILURE'
+            setStageResult("validate sbom", 'FAILURE')
+        }
+    }
+
+    /*
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
     Running in downstream build job jdk-*-*-* called by kick_off_build.groovy
     */
@@ -2736,6 +2781,23 @@ def buildScriptsAssemble(
                             currentBuild.result = 'FAILURE'
                         }
                     }
+                }
+
+                // Validate the SBOM.
+                if (buildConfig.BUILD_ARGS.contains('--create-sbom')) {
+                    try {
+                        if (validateSbom() == 'SUCCESS') {
+                            context.println "openjdk_build_pipeline: SBOMs created by this build passed validation."
+                        } else {
+                            context.println('[ERROR] SBOMs created by this build failed validation.')
+                            currentBuild.result = 'FAILURE'
+                        }
+                    } catch (Exception e) {
+                        context.println(e.message)
+                        currentBuild.result = 'FAILURE'
+                    }
+                } else {
+                    context.println('openjdk_build_pipeline: Skipping sbom validation because --create-sbom was not found in BUILD_ARGS.')
                 }
 
                 // Run Smoke Tests and AQA Tests
