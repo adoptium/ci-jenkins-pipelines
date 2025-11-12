@@ -2320,9 +2320,16 @@ def buildScriptsAssemble(
     def waitForJckStatus(remoteTriggeredBuilds) {
         def completedJckJobs = ""
         def completedJckJobCount = 0
+        def remoteJobTargets = map.keySet() as String[]
 
         while (true) {
-            remoteTriggeredBuilds.each{ testTarget, jobHandle ->
+            for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
+                String testTarget = remoteJobTargets[testIndex]
+                def jobHandle = remoteTriggeredBuilds[testTarget]
+                if ( completedJckJobs.contains(testTarget) ) {
+                    // This job has already finished, so we don't want to see more "waiting" output.'
+                    continue
+                }
                 def remoteJobStatus = ""
                 if ( jobHandle == null ) {
                     context.println "Failed, remote job ${testTarget} was not triggered"
@@ -2341,7 +2348,7 @@ def buildScriptsAssemble(
                         }
                     }
                 }
-                if ( remoteJobStatus != "" && !completedJckJobs.contains(testTarget)) {
+                if ( remoteJobStatus != "" ) {
                     context.stage("${testTarget}") {
                         setStageResult("${testTarget}", remoteJobStatus)
                     }
@@ -2765,7 +2772,7 @@ def buildScriptsAssemble(
 
                                 // Asynchronously get the remote JCK job status and set as the stage status.
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
-                                  waitForJckStatus(remoteTriggeredBuilds)
+                                    waitForJckStatus(remoteTriggeredBuilds)
                                 }
                             } else {
                                 context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
