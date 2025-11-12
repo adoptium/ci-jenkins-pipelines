@@ -2395,8 +2395,8 @@ def buildScriptsAssemble(
                 def validationJob = context.build job: jobName,
                     propagate: false,
                     parameters: [
-                            context.string(name: 'VERSION', value: "${source_tag}"),
-                            context.string(name: 'TAG', value: "${env.BUILD_NUMBER}"),
+                            context.string(name: 'VERSION', value: "${jdk_Version}"),
+                            context.string(name: 'TAG', value: "${source_tag}"),
                             context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
                             context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
                             context.string(name: 'UPSTREAM_DIR', value: "workspace/target")
