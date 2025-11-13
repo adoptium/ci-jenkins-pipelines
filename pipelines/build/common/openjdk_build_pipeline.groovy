@@ -2376,7 +2376,7 @@ def buildScriptsAssemble(
 
         try {
             context.println 'Validating SBOM/s'
-            context.stage('validate sbom') {
+            context.stage('validate SBOM') {
                 // Check sbom validation job exists.
                 String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
                 def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
