@@ -2320,7 +2320,7 @@ def buildScriptsAssemble(
     def waitForJckStatus(remoteTriggeredBuilds) {
         def completedJckJobs = ""
         def completedJckJobCount = 0
-        def remoteJobTargets = map.keySet() as String[]
+        def remoteJobTargets = remoteTriggeredBuilds.keySet() as String[]
 
         while (true) {
             for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
