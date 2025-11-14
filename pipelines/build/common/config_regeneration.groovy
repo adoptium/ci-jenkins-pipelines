@@ -640,8 +640,12 @@ class Regeneration implements Serializable {
                     // Get all pipelines
                     def getPipelines = queryAPI("${jenkinsBuildRoot}/api/json?tree=jobs[name]&pretty=true&depth1")
 
-                    // Parse api response to only extract the relevant pipeline
-                    getPipelines.jobs.name.each { pipeline ->
+                    if (getPipelines == null) {
+                      // ${jenkinsBuildRoot}/api cannot be queried by API
+                      context.println "Unable to query ${jenkinsBuildRoot}/api/json?tree=jobs[name]&pretty=true&depth1"
+                    } else {
+                      // Parse api response to only extract the relevant pipeline
+                      getPipelines.jobs.name.each { pipeline ->
                         def pipelineName = (jobType != "evaluation" ? "openjdk${versionNumbers[0]}-pipeline" : "evaluation-openjdk${versionNumbers[0]}-pipeline")
                         if (pipeline == pipelineName) {
                             Boolean inProgress = true
@@ -677,6 +681,7 @@ class Regeneration implements Serializable {
 
                             context.println "[SUCCESS] ${pipeline} is idle. Running regeneration job..."
                         }
+                      }
                     }
                 }
             } // end check stage
