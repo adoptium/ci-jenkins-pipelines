@@ -2363,7 +2363,7 @@ def buildScriptsAssemble(
                 context.println "Waiting for remote jck jobs, sleeping for ${sleepTimeMins} minutes..."
                 sleep (sleepTimeMins * 60 * 1000)
             } else {
-                continue
+                break
             }
         }
     }
