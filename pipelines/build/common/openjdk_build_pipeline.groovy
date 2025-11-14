@@ -618,8 +618,10 @@ class Build {
         targets.put("special.jck", "serial")
         targets.put("dev.jck", "serial")
 
-        if ("${platform}" == 'ppc64_aix' || "${platform}" == 'sparcv9_solaris' || "${platform}" == 'x86-64_solaris' ||
-                configureArguments.contains('--enable-headless-only=yes')) {
+        if ("${platform}" == 'ppc64_aix'
+                || "${platform}" == 'sparcv9_solaris'
+                || "${platform}" == 'x86-64_solaris'
+                || configureArguments.contains('--enable-headless-only=yes')) {
             targets.replace("dev.jck", "disabled")
         }
 
@@ -2363,7 +2365,7 @@ def buildScriptsAssemble(
             } else {
                 continue
             }
-        } // End of while loop.
+        }
     }
 
     /*
