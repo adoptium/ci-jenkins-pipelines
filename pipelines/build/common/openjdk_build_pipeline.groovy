@@ -636,21 +636,6 @@ class Build {
             targets['serial_extended'] = 'extended.jck'
         }
 
-        /*
-        Here we limit the win32 testing to the burstable nodes (a subset of the available windows nodes).
-        This prevents win32 tests from occupying all the Windows nodes before we can test core platform win64.
-        However, we will not add this tag during non-release builds, as overall throughput will be more
-        important than priority order.
-        */
-        if ("${platform}" == 'x86-32_windows' && Boolean.valueOf(buildConfig.RELEASE)) {
-            context.println "Windows 32bit JCK tests need the extra label hw.cpu.burstable"
-            if (additionalTestLabel == '') {
-                additionalTestLabel = 'hw.cpu.burstable'
-            } else {
-                additionalTestLabel += '&&hw.cpu.burstable'
-            }
-        }
-
         def weekly = ''
         if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
         def jckRerunSummary = context.manager.createSummary('info.gif')
