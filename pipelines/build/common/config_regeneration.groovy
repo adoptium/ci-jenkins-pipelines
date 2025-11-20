@@ -516,10 +516,19 @@ class Regeneration implements Serializable {
         params.put('JOB_NAME', jobName)
         params.put('JOB_FOLDER', jobFolder)
         params.put('VARIANT', config.VARIANT)
-        params.put('SCRIPT_PATH', scriptPath)
 
-        params.put('GIT_URL', gitRemoteConfigs['url'])
-        params.put('GIT_BRANCH', gitBranch)
+        def scriptRepoUrl = gitRemoteConfigs['url']
+        def scriptRepoBranch = gitBranch
+        if (!fileExists(scriptPath)) {
+            context.println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
+            scriptRepoUrl = ADOPT_DEFAULTS_JSON['repository']['pipeline_url']
+            scriptRepoBranch = ADOPT_DEFAULTS_JSON['repository']['pipeline_branch']
+            scriptPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['downstream']
+        }
+
+        params.put('SCRIPT_PATH', scriptPath)
+        params.put('GIT_URL',     scriptRepoUrl)
+        params.put('GIT_BRANCH',  scriptRepoBranch)
 
         // We have to use JsonSlurpers throughout the code for instantiating maps for consistancy and parsing reasons
         Map userRemoteConfigs = new JsonSlurper().parseText('{"branch" : "", "remotes": ""}') as Map
