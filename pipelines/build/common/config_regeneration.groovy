@@ -519,7 +519,7 @@ class Regeneration implements Serializable {
 
         def scriptRepoUrl = gitRemoteConfigs['url']
         def scriptRepoBranch = gitBranch
-        if (!fileExists(scriptPath)) {
+        if (!context.fileExists(scriptPath)) {
             context.println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
             scriptRepoUrl = ADOPT_DEFAULTS_JSON['repository']['pipeline_url']
             scriptRepoBranch = ADOPT_DEFAULTS_JSON['repository']['pipeline_branch']
