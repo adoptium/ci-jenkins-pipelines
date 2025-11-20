@@ -709,7 +709,7 @@ class Build {
                         EXTRA_OPTIONS: "${extra_options}",
                         SETUP_JCK_RUN: "${setupJCKRun}"
                     ]
-                    if ("${platform}" == 'x86-64_windows' && "${targetTests}" == 'dev.jck') {
+                    if (("${platform}" == 'x86-64_windows' || "${platform}" == 'x86-32_windows') && "${targetTests}" == 'dev.jck') {
                         paramList["LABEL"] = 'ci.role.test.interactive'
                     }
                     def queryString = paramList.collect { k, v -> "${URLEncoder.encode(k, 'UTF-8')}=${URLEncoder.encode(v, 'UTF-8')}"}.join('&')
