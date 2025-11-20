@@ -43,7 +43,7 @@ class Regeneration implements Serializable {
     private final jobTemplatePath
 
     private final baseFilePath
-    private final scriptPath
+    private       scriptPath
     private final jenkinsBuildRoot
     private final jenkinsCreds
     private final checkoutCreds
