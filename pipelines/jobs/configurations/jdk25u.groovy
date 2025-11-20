@@ -3,7 +3,8 @@ targetConfigurations = [
                 'temurin'
         ],
         'x64Linux'    : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'x64AlpineLinux' : [
                 'temurin'
@@ -18,13 +19,15 @@ targetConfigurations = [
                 'temurin'
         ],
         'ppc64Aix'    : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'ppc64leLinux': [
                 'temurin'
         ],
         's390xLinux'  : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'aarch64Linux': [
                 'hotspot',
