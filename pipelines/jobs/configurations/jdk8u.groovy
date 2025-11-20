@@ -7,7 +7,8 @@ targetConfigurations = [
                 'openj9',
                 'corretto',
                 'dragonwell',
-                'bisheng'
+                'bisheng',
+                'hotspot'
         ],
         'x64AlpineLinux' : [
                 'temurin'
@@ -23,7 +24,7 @@ targetConfigurations = [
         ],
         'ppc64Aix'      : [
                 'temurin',
-                'openj9'
+                'hotspot'
         ],
         'ppc64leLinux'  : [
                 'temurin',
