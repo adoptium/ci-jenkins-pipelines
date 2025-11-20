@@ -184,7 +184,20 @@ node('worker') {
       ])
     }
 
+    /*
+    Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
+    */
+    def checkoutUserPipelines = { ->
+        checkout([$class: 'GitSCM',
+        branches: [ [ name: DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
+        userRemoteConfigs: [ [ url: DEFAULTS_JSON['repository']['pipeline_url'] ] ]
+      ])
+    }
+
     scmVars = checkout scm
+
+    // Check User pipelines first
+    checkoutUserPipelines()
 
     String helperRef = DEFAULTS_JSON['repository']['helper_ref']
     library(identifier: "openjdk-jenkins-helper@${helperRef}")
@@ -198,7 +211,7 @@ node('worker') {
 
         checkoutAdoptPipelines()
         configureBuild = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['baseFileDirectories']['upstream']}"
-        checkout scm
+        checkoutUserPipelines()
     }
 
     // Load buildConfigFilePath. This is where jdkxx_pipeline_config.groovy is located. It contains the build configurations for each platform, architecture and variant.
@@ -231,7 +244,7 @@ node('worker') {
         } else {
             buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
         }
-        checkout scm
+        checkoutUserPipelines()
     }
 }
 
