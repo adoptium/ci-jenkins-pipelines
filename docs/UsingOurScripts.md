@@ -129,7 +129,11 @@ This file contains the default constants and paths used in the build scripts for
         ]
     },
     // Raw content URL of this (defaults.json) file. This is so the openjdk_build_pipeline.groovy script can set user default configs when checking out to the shell script repo
-    "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
+    "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json",
+    // Whether to enable creation of the "installers" for the pipeline job
+    "enableInstallers"       : true,
+    // Whether to enable the signing of binaries for the pipeline job
+    "enableSigner"           : true
 }
 ```
 
