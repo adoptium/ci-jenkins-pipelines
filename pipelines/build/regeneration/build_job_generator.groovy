@@ -27,7 +27,7 @@ limitations under the License.
 
 String javaVersion = params.JAVA_VERSION
 String ADOPT_DEFAULTS_FILE_URL = 'https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json'
-if (params.REPOSITORY_BRANCH != "" && params.REPOSITORY_URL == "") { // If Adoptium repository is being used (REPOSITORY_URL not specified), but REPOSITORY_BRANCH has been specified then this will be a release branch/tag
+if (params.REPOSITORY_BRANCH != "") { // mainly for release jobs to use tag
     ADOPT_DEFAULTS_FILE_URL = "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/${params.REPOSITORY_BRANCH}/pipelines/defaults.json"
 }
 String DEFAULTS_FILE_URL = (params.DEFAULTS_URL) ?: ADOPT_DEFAULTS_FILE_URL
