@@ -73,7 +73,7 @@ node('worker') {
 branches: [ [ name: "user_config_gen_with_adopt_ci" ] ],
 
                 /*userRemoteConfigs: [ [ url: ADOPT_DEFAULTS_JSON['repository']['pipeline_url'] ] ]*/
-userRemoteConfigs: [ [ url: "https://github.com/andrew-m-leonard/adoptium-ci-jenkins-configuration.git" ] ]
+userRemoteConfigs: [ [ url: "https://github.com/andrew-m-leonard/ci-jenkins-configuration.git" ] ]
             ])
         }
 
