@@ -519,7 +519,6 @@ class Regeneration implements Serializable {
 
         def scriptRepoUrl = gitRemoteConfigs['url']
         def scriptRepoBranch = gitBranch
-context.println "[AAAA] Checking ${scriptPath} exists, scriptRepoUrl=${scriptRepoUrl}, scriptRepoBranch=${scriptRepoBranch}"
         if (!context.fileExists(scriptPath)) {
             context.println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
             scriptRepoUrl = ADOPT_DEFAULTS_JSON['repository']['pipeline_url']
@@ -569,7 +568,6 @@ context.println "[AAAA] Checking ${scriptPath} exists, scriptRepoUrl=${scriptRep
         // Execute job dsl, using adopt's template if the user doesn't have one
         def create = null
         try {
-context.println "[BBBB] ${jobTemplatePath}, additionalParameters=${params}"
             create = context.jobDsl targets: jobTemplatePath, ignoreExisting: false, additionalParameters: params
         } catch (Exception e) {
             context.println "[WARNING] Something went wrong when creating the job dsl. It may be because we are trying to pull the template inside a user repository. Using Adopt's template instead. Error:\n${e}"
