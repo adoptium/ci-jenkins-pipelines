@@ -78,11 +78,15 @@ node('worker') {
         Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root.
         These are the top level pipeline jobs.
         */
+            def scriptRepoUri = repoUri
+            def scriptRepoBranch = repoBranch
             def scriptFolderPath = (params.SCRIPT_FOLDER_PATH) ?: DEFAULTS_JSON['scriptDirectories']['upstream']
 
             if (!fileExists(scriptFolderPath)) {
                 println "[WARNING] ${scriptFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
                 checkoutAdoptPipelines()
+                scriptRepoUri = ADOPT_DEFAULTS_JSON['repository']['pipeline_url']
+                scriptRepoBranch = ADOPT_DEFAULTS_JSON['repository']['pipeline_branch']
                 scriptFolderPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['upstream']
                 println "[SUCCESS] The path is now ${scriptFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
                 checkoutUserPipelines()
@@ -129,8 +133,10 @@ node('worker') {
             }
 
             println '[INFO] Running generator script with the following configuration:'
-            println "REPOSITORY_URL = $repoUri"
-            println "REPOSITORY_BRANCH = $repoBranch"
+            println "USER REPOSITORY_URL = $repoUri"
+            println "USER REPOSITORY_BRANCH = $repoBranch"
+            println "SCRIPT REPOSITORY_URL = $scriptRepoUri"
+            println "SCRIPT REPOSITORY_BRANCH = $scriptRepoBranch"
             println "JOB_ROOT = $jobRoot"
             println "SCRIPT_FOLDER_PATH = $scriptFolderPath"
             println "NIGHTLY_FOLDER_PATH = $nightlyFolderPath"
@@ -153,8 +159,8 @@ node('worker') {
 
                 def config = [
                     TEST                : false,
-                    GIT_URL             : repoUri,
-                    BRANCH              : repoBranch,
+                    GIT_URL             : scriptRepoUri,
+                    BRANCH              : scriptRepoBranch,
                     BUILD_FOLDER        : jobRoot,
                     CHECKOUT_CREDENTIALS: checkoutCreds,
                     JAVA_VERSION        : javaVersion,
