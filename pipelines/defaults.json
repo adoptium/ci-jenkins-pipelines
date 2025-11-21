@@ -77,5 +77,7 @@
             "numMachines"    : ["3"]
         }
     },
-    "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json"
+    "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json",
+    "enableInstallers"       : true,
+    "enableSigner"           : true
 }

@@ -77,7 +77,7 @@ node('worker') {
                     JAVA_VERSION                : javaVersion,
                     JOB_NAME                    : "release-openjdk${javaVersion}-pipeline",
                     SCRIPT                      : "${scriptFolderPath}/openjdk_pipeline.groovy",
-                    adoptScripts                : true // USE_ADOPT_SHELL_SCRIPTS,
+                    adoptScripts                : true, // USE_ADOPT_SHELL_SCRIPTS
                     enableInstallers            : true,
                     enableSigner                : true
                 ]
