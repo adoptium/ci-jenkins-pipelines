@@ -169,7 +169,9 @@ node('worker') {
                     disableJob          : false,
                     pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
                     adoptScripts        : false,
-                    releaseType         : 'Nightly Without Publish'
+                    releaseType         : 'Nightly Without Publish',
+                    enableInstallers    : true,
+                    enableSigner        : true
                 ]
 
                 def target
@@ -224,6 +226,13 @@ node('worker') {
                 config.put('enableReproducibleCompare', DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean)
                 config.put('enableTests', DEFAULTS_JSON['testDetails']['enableTests'] as Boolean)
                 config.put('enableTestDynamicParallel', DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean)
+
+                if (DEFAULTS_JSON.containsKey('enableInstallers')) {
+                    config.put('enableInstallers', DEFAULTS_JSON['enableInstallers'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('enableSigner')) {
+                    config.put('enableSigner', DEFAULTS_JSON['enableSigner'] as Boolean)
+                }
 
                 println "[INFO] JDK${javaVersion}: nightly pipelineSchedule = ${config.pipelineSchedule}"
 
