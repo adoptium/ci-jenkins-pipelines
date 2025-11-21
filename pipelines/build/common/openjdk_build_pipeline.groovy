@@ -609,32 +609,26 @@ class Build {
 
         def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
         if (configureArguments.contains('--enable-headless-only=yes')) {
-           // Headless platforms have no auto-manuals, so do not exclude any tests
+            // Headless platforms have no auto-manuals, so do not exclude any tests
             appOptions=""
         }
 
-        def targets
-        if ("${platform}" == 'ppc64_aix' || "${platform}" == 'sparcv9_solaris' || "${platform}" == 'x86-64_solaris' ||
-             configureArguments.contains('--enable-headless-only=yes')) {
-            targets = ['serial': 'sanity.jck,extended.jck,special.jck']
-        } else {
-            targets = ['serial': 'sanity.jck,extended.jck,special.jck,dev.jck']
+        Map<String, String> targets = new HashMap<>()
+        targets.put("sanity.jck", "serial")
+        targets.put("extended.jck", "serial")
+        targets.put("special.jck", "serial")
+        targets.put("dev.jck", "serial")
+
+        if ("${platform}" == 'ppc64_aix'
+                || "${platform}" == 'sparcv9_solaris'
+                || "${platform}" == 'x86-64_solaris'
+                || configureArguments.contains('--enable-headless-only=yes')) {
+            targets.replace("dev.jck", "disabled")
         }
 
         if ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') {
             // Primary platforms run extended.jck in Parallel
-            targets['serial']   = 'sanity.jck,special.jck,dev.jck'
-            targets['parallel'] = 'extended.jck'
-            if ("${platform}" == 'x86-64_windows') {
-                targets['serial']     = 'sanity.jck,special.jck'
-                targets['serial_dev'] = 'dev.jck'
-            }
-        }
-
-        if ("${platform}" == 'aarch64_mac') {
-            // aarch64_mac runs extended.jck on !osx12, allow sanity&special to run on any
-            targets['serial']   = 'sanity.jck,special.jck,dev.jck'
-            targets['serial_extended'] = 'extended.jck'
+            targets.replace("extended.jck", "parallel")
         }
 
         def weekly = ''
@@ -642,20 +636,23 @@ class Build {
         def jckRerunSummary = context.manager.createSummary('info.gif')
         jckRerunSummary.appendText('<b>RERUN JCK TESTS:</b><ul>', false)
         def aqa_test_pipeline_BaseURL = "https://ci.adoptium.net/view/Test_grinder/job/AQA_Test_Pipeline/parambuild"
-        targets.each { targetMode, targetTests ->
+        targets.each { targetTest, targetMode ->
+            if (targetMode == "disabled") {
+                return // Skip to the next target.
+            }
             try {
-                remoteTargets["${targetTests}"] = {
-                    context.println "Remote trigger: ${targetTests}"
-                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF}${weekly} : ${platform} : ${targetTests}"
+                remoteTargets["${targetTest}"] = {
+                    context.println "Remote trigger: ${targetTest}"
+                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF}${weekly} : ${platform} : ${targetTest}"
                     def parallel = 'None'
                     def num_machines = '1'
-                    if ("${targetMode}" == 'parallel') {
+                    if (targetMode == "parallel") {
                         parallel = 'Dynamic'
                         num_machines = '2'
                     }
 
                     def extra_options = ""
-                    if ("${platform}" == 's390x_linux' && targetTests.contains('extended.jck')) {
+                    if ("${platform}" == 's390x_linux' && targetTest.equals('extended.jck')) {
                         extra_options += " -Xss4m"
                     }
 
@@ -671,7 +668,7 @@ class Build {
                     }
 
                     def extra_app_options = ""
-                    if ("${platform}" == 'ppc64_aix' && targetTests.contains('special.jck')) {
+                    if ("${platform}" == 'ppc64_aix' && targetTest.equals('special.jck')) {
                         extra_app_options += " customJvmOpts=-Djava.net.preferIPv4Stack=true"
                     }
                     if ("${platform}" == 'ppc64_aix') {
@@ -682,7 +679,7 @@ class Build {
                     def additionalTestLabel_param = additionalTestLabel
                     if ("${platform}" == 'aarch64_mac') {
                         // extended java_awt tests won't all run on the osx12 node, split extended from sanity/special across nodes
-                        def osxLabel = (targetTests.contains('extended.jck')) ? '!sw.os.osx.12' : 'sw.os.osx.12'
+                        def osxLabel = (targetTest.equals('extended.jck')) ? '!sw.os.osx.12' : 'sw.os.osx.12'
                         if (additionalTestLabel_param == '') {
                             additionalTestLabel_param = "${osxLabel}"
                         } else {
@@ -692,7 +689,7 @@ class Build {
 
                     def paramList = [
                         SDK_RESOURCE: 'customized',
-                        TARGETS: "${targetTests}",
+                        TARGETS: "${targetTest}",
                         JCK_GIT_REPO: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git",
                         CUSTOMIZED_SDK_URL: "${sdkUrl}",
                         JDK_VERSIONS: "${jdkVersion}",
@@ -714,15 +711,15 @@ class Build {
                     }
                     def queryString = paramList.collect { k, v -> "${URLEncoder.encode(k, 'UTF-8')}=${URLEncoder.encode(v, 'UTF-8')}"}.join('&')
                     def aqa_test_pipeline_FullURL = "${aqa_test_pipeline_BaseURL}?${queryString}&MODE=RELAY"
-                    jckRerunSummary .appendText("<li>${targetTests}<a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
+                    jckRerunSummary.appendText("<li><a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
 
-                   if ("${platform}" == 'x86-64_windows' && "${targetTests}" == 'dev.jck') {
+                   if ("${platform}" == 'x86-64_windows' && "${targetTest}" == 'dev.jck') {
                         context.catchError {
-                            remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
+                            remoteTriggeredBuilds["${targetTest}"] = context.triggerRemoteJob abortTriggeredJob: true,
                                 blockBuildUntilComplete: false,
                                 job: 'AQA_Test_Pipeline',
                                 parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
+                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTest}"),
                                                                         context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
                                                                         context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                         context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
@@ -747,11 +744,11 @@ class Build {
                         }
                     } else {
                         context.catchError {
-                            remoteTriggeredBuilds["${targetTests}"] = context.triggerRemoteJob abortTriggeredJob: true,
+                            remoteTriggeredBuilds["${targetTest}"] = context.triggerRemoteJob abortTriggeredJob: true,
                                 blockBuildUntilComplete: false,
                                 job: 'AQA_Test_Pipeline',
                                 parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
+                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTest}"),
                                                                         context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
                                                                         context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                                                                         context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
@@ -2309,52 +2306,52 @@ def buildScriptsAssemble(
     }
 
     def waitForJckStatus(remoteTriggeredBuilds) {
-      def stageName = ""
-      remoteTriggeredBuilds.each{ testTargets, jobHandle ->
-        if (stageName == "") {
-          stageName = testTargets
-        } else {
-          stageName += ",${testTargets}"
-        }
-      }
+        def completedJckJobs = ""
+        def completedJckJobCount = 0
+        def remoteJobTargets = remoteTriggeredBuilds.keySet() as String[]
 
-      def completedJckJobs = ""
-      context.stage("${stageName}") {
-        def waitingForRemoteJck = true
-        while( waitingForRemoteJck ) {
-            waitingForRemoteJck = false
-            remoteTriggeredBuilds.each{ testTargets, jobHandle ->
-                    def remoteJobStatus = ""
-                    if ( jobHandle == null ) {
-                        context.println "Failed, remote job ${testTargets} was not triggered"
+        while (true) {
+            for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
+                String testTarget = remoteJobTargets[testIndex]
+                def jobHandle = remoteTriggeredBuilds[testTarget]
+                if ( completedJckJobs.contains(testTarget) ) {
+                    // This job has already finished, so we don't want to see more "waiting" output.'
+                    continue
+                }
+                def remoteJobStatus = ""
+                if ( jobHandle == null ) {
+                    context.println "Failed, remote job ${testTarget} was not triggered"
+                    remoteJobStatus = "FAILURE"
+                } else {
+                    jobHandle.updateBuildStatus()
+                    if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
+                        context.println "Failed, remote job ${testTarget} status is NOT_TRIGGERED"
                         remoteJobStatus = "FAILURE"
                     } else {
-                        jobHandle.updateBuildStatus()
-                        if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
-                            context.println "Failed, remote job ${testTargets} status is NOT_TRIGGERED"
-                            remoteJobStatus = "FAILURE"
+                        if ( !jobHandle.isFinished() ) {
+                            context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
                         } else {
-                            if ( !jobHandle.isFinished() ) {
-                                waitingForRemoteJck = true
-                                context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
-                            } else {
-                                remoteJobStatus = jobHandle.getBuildResult().toString()
-                                context.println "Current ${testTargets} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
-                            }
+                            remoteJobStatus = jobHandle.getBuildResult().toString()
+                            context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
                         }
                     }
-                    if ( remoteJobStatus != "" && !completedJckJobs.contains(testTargets)) {
-                        setStageResult("${testTargets}", remoteJobStatus);
-                        completedJckJobs += ",${testTargets}"
+                }
+                if ( remoteJobStatus != "" ) {
+                    context.stage("${testTarget}") {
+                        setStageResult("${testTarget}", remoteJobStatus)
                     }
+                    completedJckJobs += ",${testTarget}"
+                    completedJckJobCount++
+                }
             }
-            if (waitingForRemoteJck) {
+            if (remoteTriggeredBuilds.size() > completedJckJobCount) {
                 def sleepTimeMins = 20
                 context.println "Waiting for remote jck jobs, sleeping for ${sleepTimeMins} minutes..."
                 sleep (sleepTimeMins * 60 * 1000)
+            } else {
+                break
             }
         }
-      }
     }
 
     /*
@@ -2823,7 +2820,7 @@ def buildScriptsAssemble(
 
                                 // Asynchronously get the remote JCK job status and set as the stage status.
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
-                                  waitForJckStatus(remoteTriggeredBuilds)
+                                    waitForJckStatus(remoteTriggeredBuilds)
                                 }
                             } else {
                                 context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
