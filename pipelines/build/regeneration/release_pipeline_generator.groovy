@@ -77,7 +77,9 @@ node('worker') {
                     JAVA_VERSION                : javaVersion,
                     JOB_NAME                    : "release-openjdk${javaVersion}-pipeline",
                     SCRIPT                      : "${scriptFolderPath}/openjdk_pipeline.groovy",
-                    adoptScripts                : true // USE_ADOPT_SHELL_SCRIPTS
+                    adoptScripts                : true, // USE_ADOPT_SHELL_SCRIPTS
+                    enableInstallers            : true,
+                    enableSigner                : true
                 ]
 
                 def target
@@ -100,6 +102,13 @@ node('worker') {
                 }
 
                 config.put('targetConfigurations', target.targetConfigurations)
+
+                if (DEFAULTS_JSON.containsKey('enableInstallers')) {
+                    config.put('enableInstallers', DEFAULTS_JSON['enableInstallers'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('enableSigner')) {
+                    config.put('enableSigner', DEFAULTS_JSON['enableSigner'] as Boolean)
+                }
 
                 config.put('defaultsJson', DEFAULTS_JSON)
                 config.put('adoptDefaultsJson', ADOPT_DEFAULTS_JSON)

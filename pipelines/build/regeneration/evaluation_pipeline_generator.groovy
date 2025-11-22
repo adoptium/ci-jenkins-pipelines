@@ -163,7 +163,9 @@ node('worker') {
                         disableJob          : false,
                         pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
                         adoptScripts        : false,
-                        releaseType         : 'Nightly Without Publish'
+                        releaseType         : 'Nightly Without Publish',
+                        enableInstallers    : true,
+                        enableSigner        : true
                     ]
                 
                     /* logic of creating evaluation pipeline start*/
@@ -225,6 +227,13 @@ node('worker') {
                     config.put('enableTestDynamicParallel', DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean)
                     config.put('defaultsJson', DEFAULTS_JSON)
                     config.put('adoptDefaultsJson', ADOPT_DEFAULTS_JSON)
+
+                    if (DEFAULTS_JSON.containsKey('enableInstallers')) {
+                        config.put('enableInstallers', DEFAULTS_JSON['enableInstallers'] as Boolean)
+                    }
+                    if (DEFAULTS_JSON.containsKey('enableSigner')) {
+                        config.put('enableSigner', DEFAULTS_JSON['enableSigner'] as Boolean)
+                    }
 
                     // genereate pipeline
                     println "[INFO] FINAL CONFIG FOR EVALUATION JDK${javaVersion}"
