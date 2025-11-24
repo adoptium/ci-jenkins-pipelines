@@ -79,7 +79,9 @@ node('worker') {
                     SCRIPT                      : "${scriptFolderPath}/openjdk_pipeline.groovy",
                     adoptScripts                : true, // USE_ADOPT_SHELL_SCRIPTS
                     enableInstallers            : true,
-                    enableSigner                : true
+                    enableSigner                : true,
+                    cleanWorkspaceBeforeBuild   : true,
+                    cleanWorkspaceAfterBuild    : true
                 ]
 
                 def target
@@ -108,6 +110,12 @@ node('worker') {
                 }
                 if (DEFAULTS_JSON.containsKey('enableSigner')) {
                     config.put('enableSigner', DEFAULTS_JSON['enableSigner'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('cleanReleaseWorkspaceBeforeBuild')) {
+                    config.put('cleanWorkspaceBeforeBuild', DEFAULTS_JSON['cleanReleaseWorkspaceBeforeBuild'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('cleanReleaseWorkspaceAfterBuild')) {
+                    config.put('cleanWorkspaceAfterBuild', DEFAULTS_JSON['cleanReleaseWorkspaceAfterBuild'] as Boolean)
                 }
 
                 config.put('defaultsJson', DEFAULTS_JSON)
