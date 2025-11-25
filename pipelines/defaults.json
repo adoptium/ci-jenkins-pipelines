@@ -79,5 +79,9 @@
     },
     "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json",
     "enableInstallers"       : true,
-    "enableSigner"           : true
+    "enableSigner"           : true,
+    "cleanWorkspaceBeforeBuild" : false,
+    "cleanWorkspaceAfterBuild"  : false,
+    "cleanReleaseWorkspaceBeforeBuild" : true,
+    "cleanReleaseWorkspaceAfterBuild"  : false
 }

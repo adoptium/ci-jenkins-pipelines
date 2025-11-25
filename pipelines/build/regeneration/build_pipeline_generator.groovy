@@ -171,7 +171,9 @@ node('worker') {
                     adoptScripts        : false,
                     releaseType         : 'Nightly Without Publish',
                     enableInstallers    : true,
-                    enableSigner        : true
+                    enableSigner        : true,
+                    cleanWorkspaceBeforeBuild   : true,
+                    cleanWorkspaceAfterBuild    : true
                 ]
 
                 def target
@@ -232,6 +234,12 @@ node('worker') {
                 }
                 if (DEFAULTS_JSON.containsKey('enableSigner')) {
                     config.put('enableSigner', DEFAULTS_JSON['enableSigner'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('cleanWorkspaceBeforeBuild')) {
+                    config.put('cleanWorkspaceBeforeBuild', DEFAULTS_JSON['cleanWorkspaceBeforeBuild'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('cleanWorkspaceAfterBuild')) {
+                    config.put('cleanWorkspaceAfterBuild', DEFAULTS_JSON['cleanWorkspaceAfterBuild'] as Boolean)
                 }
 
                 println "[INFO] JDK${javaVersion}: nightly pipelineSchedule = ${config.pipelineSchedule}"

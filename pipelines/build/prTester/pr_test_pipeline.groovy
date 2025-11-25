@@ -56,7 +56,9 @@ class PullRequestTestPipeline implements Serializable {
                 enableTestDynamicParallel : false,
                 releaseType         : "pr-tester",
                 enableInstallers    : true,
-                enableSigner        : true
+                enableSigner        : true,
+                cleanWorkspaceBeforeBuild   : true,
+                cleanWorkspaceAfterBuild    : true
         ]
     }
 

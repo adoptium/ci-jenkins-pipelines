@@ -5,8 +5,10 @@ Boolean propagateFailures = true
 Boolean runReproducibleCompare = false
 Boolean runTests = true
 Boolean runParallel = true
-Boolean runInstaller = true
-Boolean runSigner = true
+Boolean runInstaller = enableInstallers
+Boolean runSigner = enableSigner
+Boolean cleanWorkspaceBeforeBuild = cleanWorkspaceBeforeBuild
+Boolean cleanWorkspaceAfterBuild  = cleanWorkspaceAfterBuild
 Boolean cleanWsBuildOutput = true
 Boolean isLightweight = false  // since this is to checkout on a releaseTag, better to use false or might not found tag/SHA1 on the tip
 
@@ -140,8 +142,8 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         booleanParam('enableSigner', runSigner, 'If set to true the signer pipeline will be executed')
         stringParam('additionalBuildArgs', '', 'Additional arguments to be passed to <code>makejdk-any-platform.sh</code>')
         stringParam('overrideFileNameVersion', '', "When forming the filename, ignore the part of the filename derived from the publishName or timestamp and override it.<br/>For instance if you set this to 'FOO' the final file name will be of the form: <code>OpenJDK8U-jre_ppc64le_linux_openj9_FOO.tar.gz</code>")
-        booleanParam('cleanWorkspaceBeforeBuild', true, 'Clean out the workspace before the build')
-        booleanParam('cleanWorkspaceAfterBuild', false, 'Clean out the workspace after the build')
+        booleanParam('cleanWorkspaceBeforeBuild', cleanWorkspaceBeforeBuild, 'Clean out the workspace before the build')
+        booleanParam('cleanWorkspaceAfterBuild', cleanWorkspaceAfterBuild, 'Clean out the workspace after the build')
         booleanParam('cleanWorkspaceBuildOutputAfterBuild', cleanWsBuildOutput, 'Clean out the workspace/build/src/build and workspace/target output only, after the build')
         booleanParam('propagateFailures', propagateFailures, 'If true, a failure of <b>ANY</b> downstream build will cause the whole build to fail')
         booleanParam('keepTestReportDir', false, 'If true, test report dir (including core files where generated) will be kept even when the testcase passes, failed testcases always keep the report dir. Does not apply to JUnit jobs which are always kept, eg.openjdk.')

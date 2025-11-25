@@ -7,6 +7,8 @@ runTests = enableTests
 runParallel = enableTestDynamicParallel
 runInstaller = enableInstallers
 runSigner = enableSigner
+cleanWorkspaceBeforeBuild = cleanWorkspaceBeforeBuild
+cleanWorkspaceAfterBuild  = cleanWorkspaceAfterBuild
 cleanWsBuildOutput = true
 jdkVersion = "${JAVA_VERSION}"
 isLightweight = true
@@ -165,8 +167,8 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         stringParam('additionalBuildArgs', '', 'Additional arguments to be passed to <code>makejdk-any-platform.sh</code>')
         stringParam('overrideFileNameVersion', '', "When forming the filename, ignore the part of the filename derived from the publishName or timestamp and override it.<br/>For instance if you set this to 'FOO' the final file name will be of the form: <code>OpenJDK8U-jre_ppc64le_linux_openj9_FOO.tar.gz</code>")
         booleanParam('useAdoptBashScripts', adoptScripts, "If enabled, the downstream job will pull and execute <code>make-adopt-build-farm.sh</code> from adoptium/temurin-build. If disabled, it will use whatever the job is running inside of at the time, usually it's the default repository in the configuration.")
-        booleanParam('cleanWorkspaceBeforeBuild', false, 'Clean out the workspace before the build')
-        booleanParam('cleanWorkspaceAfterBuild', false, 'Clean out the workspace after the build')
+        booleanParam('cleanWorkspaceBeforeBuild', cleanWorkspaceBeforeBuild, 'Clean out the workspace before the build')
+        booleanParam('cleanWorkspaceAfterBuild', cleanWorkspaceAfterBuild, 'Clean out the workspace after the build')
         booleanParam('cleanWorkspaceBuildOutputAfterBuild', cleanWsBuildOutput, 'Clean out the workspace/build/src/build and workspace/target output only, after the build')
         booleanParam('propagateFailures', propagateFailures, 'If true, a failure of <b>ANY</b> downstream build will cause the whole build to fail')
         booleanParam('keepTestReportDir', false, 'If true, test report dir (including core files where generated) will be kept even when the testcase passes, failed testcases always keep the report dir. Does not apply to JUnit jobs which are always kept, eg.openjdk.')

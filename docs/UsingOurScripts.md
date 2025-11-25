@@ -133,7 +133,15 @@ This file contains the default constants and paths used in the build scripts for
     // Whether to enable creation of the "installers" for the pipeline job
     "enableInstallers"       : true,
     // Whether to enable the signing of binaries for the pipeline job
-    "enableSigner"           : true
+    "enableSigner"           : true,
+    // Whether to clean the build workspace before a "standard" build
+    "cleanWorkspaceBeforeBuild" : false,
+    // Whether to clean the build workspace after a "standard" build
+    "cleanWorkspaceAfterBuild"  : false,
+    // Whether to clean the build workspace before a "release" build
+    "cleanReleaseWorkspaceBeforeBuild" : true,
+    // Whether to clean the build workspace after a "release" build
+    "cleanReleaseWorkspaceAfterBuild"  : false
 }
 ```
 
