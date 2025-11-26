@@ -1283,7 +1283,7 @@ class Build {
     ) {
         return context.stage('build') {
             // Create the repo handler with the user's defaults to ensure a temurin-build checkout is not null
-            def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS)
+            def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS, context)
             repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON['defaultsUrl'])
 
             /*
@@ -1732,7 +1732,7 @@ class Build {
                             if (buildConfig.DOCKER_FILE) {
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_CHECKOUT_TIMEOUT, unit: 'HOURS') {
-                                        def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS)
+                                        def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS, context)
                                         repoHandler.setUserDefaultsJson(context, DEFAULTS_JSON)
                                         if (useAdoptShellScripts) {
                                             repoHandler.checkoutAdoptPipelines(context)
