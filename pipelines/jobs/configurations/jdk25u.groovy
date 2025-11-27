@@ -43,6 +43,9 @@ targetConfigurations = [
                 'temurin',
                 'hotspot'
         ],
+        'arm32Linux'  : [
+                'hotspot'
+        ],
         'riscv64Linux': [
                 'temurin',
                 'hotspot'
