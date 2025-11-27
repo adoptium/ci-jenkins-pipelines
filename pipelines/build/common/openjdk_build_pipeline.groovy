@@ -1846,8 +1846,22 @@ def postBuildWSclean(
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 if (cleanWorkspaceAfter) {
                                     try {
-                                        context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
-                                        context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
+                                        context.println "Cleaning workspace non-hidden files: ${context.WORKSPACE}/*"
+                                        if (context.isUnix()) {
+                                          // Linux/macOS cleanup
+                                          context.sh(script: "rm -rf \"${context.WORKSPACE}\"/*")
+                                        } else {
+                                          // Cleanup Using Robocopy MS recommended solution
+                                          // For Removing Files With Corrupted ACLs
+                                          // https://learn.microsoft.com/en-us/troubleshoot/windows-server/backup-and-storage/cannot-delete-file-folder-on-ntfs-file-system
+                                          context.bat """
+                                            mkdir C:\\emptydir >NUL 2>&1
+                                            robocopy C:\\emptydir "${context.WORKSPACE}" /MIR /R:0 /W:0 /NFL /NDL /NJH /NJS /NC /NS /NP >NUL 2>&1
+                                            set RC=%ERRORLEVEL%
+                                            if %RC% LEQ 3 ( exit /b 0 ) else ( exit /b %RC% )
+                                            rmdir C:\\emptydir >NUL 2>&1
+                                          """
+                                        }
                                     } catch (e) {
                                         context.println "Warning: Failed to clean workspace non-hidden files ${e}"
                                     }
@@ -2019,9 +2033,12 @@ def buildScriptsAssemble(
                             // Issue: https://issues.jenkins.io/browse/JENKINS-64779
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
+                                context.println 'Debug SF02: ' + context.WORKSPACE + '/*'
                                 batOrSh(script: 'rm -rf ' + context.WORKSPACE + '/*')
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
+                                context.println 'Debug SF02E: ' + context.WORKSPACE + '/*'
+
                             }
 
                             // Clean remaining hidden files using cleanWs
