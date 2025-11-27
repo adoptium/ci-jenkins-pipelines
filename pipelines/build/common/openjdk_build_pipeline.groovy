@@ -1844,29 +1844,81 @@ def postBuildWSclean(
                             // Note: Underlying org.apache DirectoryScanner used by cleanWs has a bug scanning where it misses files containing ".." so use rm -rf instead
                             // Issue: https://issues.jenkins.io/browse/JENKINS-64779
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
-                                if (cleanWorkspaceAfter) {
-                                    try {
-                                        context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
-                                        context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
-                                    } catch (e) {
-                                        context.println "Warning: Failed to clean workspace non-hidden files ${e}"
-                                    }
-
-                                    // Clean remaining hidden files using cleanWs
-                                    try {
-                                        context.println 'Cleaning workspace hidden files using cleanWs: ' + context.WORKSPACE
-                                        context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
-                                    } catch (e) {
-                                        context.println "Warning: Failed to clean ${e}"
-                                    }
-                                } else if (cleanWorkspaceBuildOutputAfter) {
-                                    try {
-                                      context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
-                                      batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
-                                    } catch (e) {
-                                        context.println "Warning: Failed to clean workspace build output files ${e}"
-                                    }
+                            if (cleanWorkspaceAfter) {
+                            try {
+                                context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
+                                if (!context.isUnix()) {
+                                // Windows-safe cleanup using Cygwin bash for the actual deletion
+                                context.dir(context.WORKSPACE) {
+                                // Debug: environment, directories, contents
+                                context.bat("""
+                                  echo ===== DEBUG: WINDOWS CLEANUP START =====
+                                  echo Current directory:
+                                  cd
+                                  echo.
+                                  echo WORKSPACE = "${context.WORKSPACE}"
+                                  echo.
+                                  echo Listing WORKSPACE before cleanup:
+                                  dir /a "${context.WORKSPACE}"
+                                  echo.
+                                  echo File attributes before cleanup:
+                                  attrib "${context.WORKSPACE}\\*" 2>nul
+                                  echo =========================================
+                                """)
+                                // Debug: show common locking processes
+                                context.bat("""
+                                  echo ===== DEBUG: COMMON LOCKING PROCESSES =====
+                                  tasklist | findstr /i "git.exe bash.exe sh.exe msys ssh.exe" || echo No common locking processes found.
+                                  echo ============================================
+                                """)
+                                //
+                                // *** Cygwin cleanup ***
+                                // We convert C:\workspace\openjdk-build → /cygdrive/c/workspace/openjdk-build
+                                //
+                                context.bat("""
+                                  echo ===== CLEANING USING CYGWIN BASH =====
+                                  setlocal enabledelayedexpansion
+                                  set "WS_WIN=${context.WORKSPACE}"
+                                  set "WS_UNIX=/cygdrive/!WS_WIN::=/!"
+                                  echo Calling: bash -lc "rm -rf '!WS_UNIX!'/*"
+                                  bash -lc "rm -rf '!WS_UNIX!'/*" || echo (Ignoring rm errors)
+                                  endlocal
+                                  echo ======================================
+                                """)
+                                // Recreate workspace + final listing
+                                context.bat("""
+                                  echo ===== RECREATE + FINAL STATE =====
+                                  if not exist "${context.WORKSPACE}" mkdir "${context.WORKSPACE}"
+                                  dir /a "${context.WORKSPACE}"
+                                  echo ==================================
+                                """)
+                              }
+                                } else {
+                                  // Original behaviour
+                                  context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
                                 }
+                              } catch (e) {
+                                context.println "Warning: Failed to clean workspace non-hidden files ${e}"
+                              }
+
+                              // Clean remaining hidden files using cleanWs
+                              try {
+                                context.println 'Cleaning workspace hidden files using cleanWs: ' + context.WORKSPACE
+                                context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
+                              } catch (e) {
+                                context.println "Warning: Failed to clean ${e}"
+                              }
+                            } else if (cleanWorkspaceBuildOutputAfter) {
+                              try {
+                                context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
+                                batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build '
+                                + context.WORKSPACE + '/workspace/target '
+                                + context.WORKSPACE + '/workspace/build/devkit '
+                                + context.WORKSPACE + '/workspace/build/straceOutput')
+                              } catch (e) {
+                                context.println "Warning: Failed to clean workspace build output files ${e}"
+                                }
+                              }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
                             }
