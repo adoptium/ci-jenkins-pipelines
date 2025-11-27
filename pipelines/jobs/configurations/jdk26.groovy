@@ -33,6 +33,9 @@ targetConfigurations = [
         'aarch64Mac': [
                 'temurin'
         ],
+        'arm32Linux'  : [
+                'hotspot'
+        ],
         'riscv64Linux': [
                 'temurin'
         ]
