@@ -2372,7 +2372,7 @@ def buildScriptsAssemble(
 
                 // Gather parameters.
                 String jdk_Version = getJavaVersionNumber() as String
-                String source_tag = "scm_not_specified"
+                String source_tag = ""
                 if (!buildConfig.SCM_REF.isEmpty()){
                     source_tag = buildConfig.SCM_REF
                 }
