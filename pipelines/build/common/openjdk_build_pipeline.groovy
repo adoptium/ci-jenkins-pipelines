@@ -2033,12 +2033,9 @@ def buildScriptsAssemble(
                             // Issue: https://issues.jenkins.io/browse/JENKINS-64779
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
-                                context.println 'Debug SF02: ' + context.WORKSPACE + '/*'
                                 batOrSh(script: 'rm -rf ' + context.WORKSPACE + '/*')
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
-                                context.println 'Debug SF02E: ' + context.WORKSPACE + '/*'
-
                             }
 
                             // Clean remaining hidden files using cleanWs
