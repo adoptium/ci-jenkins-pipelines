@@ -3,7 +3,6 @@ targetConfigurations = [
         'x64Linux'      : [    'temurin',    'hotspot',    'dragonwell',    'corretto',    'bisheng',    'fast_startup'],
         'x64AlpineLinux': [    'temurin'                            ],
         'x64Windows'    : [    'temurin',    'openj9',    'dragonwell'            ],
-        'x32Windows'    : [    'temurin'                            ],
         'ppc64Aix'      : [    'temurin',    'hotspot'                   ],
         'ppc64leLinux'  : [    'temurin',    'openj9'                    ],
         's390xLinux'    : [    'temurin',    'hotspot'                   ],

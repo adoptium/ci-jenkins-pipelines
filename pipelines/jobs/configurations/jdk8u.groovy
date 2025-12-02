@@ -13,10 +13,6 @@ targetConfigurations = [
         'x64AlpineLinux' : [
                 'temurin'
         ],
-        'x32Windows'    : [
-                'temurin',
-                'openj9'
-        ],
         'x64Windows'    : [
                 'temurin',
                 'openj9',

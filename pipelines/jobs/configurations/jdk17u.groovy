@@ -14,9 +14,6 @@ targetConfigurations = [
                 'temurin',
                 'openj9'
         ],
-        'x32Windows'  : [
-                'temurin'
-        ],
         'ppc64Aix'    : [
                 'temurin',
                 'hotspot'
