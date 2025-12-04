@@ -2337,17 +2337,22 @@ def buildScriptsAssemble(
                     context.println "Failed, remote job ${testTarget} was not triggered"
                     remoteJobStatus = "FAILURE"
                 } else {
-                    jobHandle.updateBuildStatus()
-                    if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
-                        context.println "Failed, remote job ${testTarget} status is NOT_TRIGGERED"
-                        remoteJobStatus = "FAILURE"
-                    } else {
-                        if ( !jobHandle.isFinished() ) {
-                            context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
+                    try {
+                        jobHandle.updateBuildStatus()
+                        if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
+                            context.println "Failed, remote job ${testTarget} status is NOT_TRIGGERED"
+                            remoteJobStatus = "FAILURE"
                         } else {
-                            remoteJobStatus = jobHandle.getBuildResult().toString()
-                            context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
+                            if ( !jobHandle.isFinished() ) {
+                                context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
+                            } else {
+                                remoteJobStatus = jobHandle.getBuildResult().toString()
+                                context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
+                            }
                         }
+                    } catch (e) {
+                        // parameterized-remote-trigger-plugin probably threw an exception trying to get BuildStatus...
+                        context.println("Failed to updateBuildStatus for remoteJobTargets ${testTarget} : ${e}")
                     }
                 }
                 if ( remoteJobStatus != "" ) {
