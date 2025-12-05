@@ -1,18 +1,22 @@
 targetConfigurations = [
         'x64Mac'      : [
                 'temurin',
-                'openj9'
+                'hotspot'
         ],
         'x64Linux'    : [
                 'temurin',
                 'hotspot'
         ],
         'x64AlpineLinux' : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'x64Windows'  : [
                 'temurin',
-                'openj9'
+                'hotspot'
+        ],
+        'x32Windows'  : [
+                'hotspot'
         ],
         'ppc64Aix'    : [
                 'temurin',
@@ -20,7 +24,7 @@ targetConfigurations = [
         ],
         'ppc64leLinux': [
                 'temurin',
-                'openj9'
+                'hotspot'
         ],
         's390xLinux'  : [
                 'temurin',
@@ -28,17 +32,19 @@ targetConfigurations = [
         ],
         'aarch64Linux': [
                 'temurin',
-                'openj9',
-                'bisheng'
+                'hotspot'
         ],
         'aarch64Mac': [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'arm32Linux'  : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'riscv64Linux': [
-                'temurin'
+                'temurin',
+                'hotspot'
         ]
 ]
 

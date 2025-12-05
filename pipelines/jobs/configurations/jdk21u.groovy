@@ -1,43 +1,51 @@
 targetConfigurations = [
         'x64Mac'      : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'x64Linux'    : [
                 'temurin',
                 'hotspot'
         ],
         'x64AlpineLinux' : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'aarch64AlpineLinux' : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'x64Windows'  : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'aarch64Windows' : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'ppc64Aix'    : [
                 'temurin',
                 'hotspot'
         ],
         'ppc64leLinux': [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         's390xLinux'  : [
                 'temurin',
                 'hotspot'
         ],
         'aarch64Linux': [
-                'hotspot',
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'aarch64Mac': [
-                'temurin'
+                'temurin',
+                'hotspot'
         ],
         'riscv64Linux': [
-                'temurin'
+                'temurin',
+                'hotspot'
         ]
 ]
 

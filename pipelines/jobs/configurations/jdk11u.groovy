@@ -1,14 +1,15 @@
 targetConfigurations = [
-        'x64Mac'        : [    'temurin',    'openj9'                    ],
-        'x64Linux'      : [    'temurin',    'hotspot',    'dragonwell',    'corretto',    'bisheng',    'fast_startup'],
-        'x64AlpineLinux': [    'temurin'                            ],
-        'x64Windows'    : [    'temurin',    'openj9',    'dragonwell'            ],
-        'ppc64Aix'      : [    'temurin',    'hotspot'                   ],
-        'ppc64leLinux'  : [    'temurin',    'openj9'                    ],
-        's390xLinux'    : [    'temurin',    'hotspot'                   ],
-        'aarch64Linux'  : [    'temurin',    'openj9',    'dragonwell',                   'bisheng'    ],
-        'aarch64Mac'    : [    'temurin',                           ],
-        'arm32Linux'    : [    'temurin'                            ]
+        'x64Mac'        : [ 'temurin', 'hotspot' ],
+        'x64Linux'      : [ 'temurin', 'hotspot',    'dragonwell',    'corretto',    'bisheng',    'fast_startup'],
+        'x64AlpineLinux': [ 'temurin', 'hotspot' ],
+        'x64Windows'    : [ 'temurin', 'hotspot' ],
+        'x32Windows'    : [            'hotspot' ],
+        'ppc64Aix'      : [ 'temurin', 'hotspot' ],
+        'ppc64leLinux'  : [ 'temurin', 'hotspot' ],
+        's390xLinux'    : [ 'temurin', 'hotspot' ],
+        'aarch64Linux'  : [ 'temurin', 'hotspot' ],
+        'aarch64Mac'    : [ 'temurin', 'hotspot' ],
+        'arm32Linux'    : [ 'temurin', 'hotspot' ]
 ]
 
 // scmReferences to use for weekly release build
