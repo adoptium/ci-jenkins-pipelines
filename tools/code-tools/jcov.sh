@@ -63,7 +63,7 @@ function getAsmDeps() {
     local asm_manual="false"
   fi
   local tools="asm asm-tree asm-util"
-  local main_url="https://repository.ow2.org/nexus/content/repositories/releases/org/ow2/asm"
+  local main_url="https://repo1.maven.org/maven2/org/ow2/asm"
   ASM_TITLE="Built against '$tools' tools in version '$asm_version'"
   ASM_URLS=""
   ASM_JARS=""

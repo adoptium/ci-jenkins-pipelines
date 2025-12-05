@@ -14,7 +14,6 @@ targetConfigurations = [
                 'temurin'
         ],
         'x32Windows'    : [
-                'temurin',
                 'hotspot'
         ],
         'x64Windows'    : [

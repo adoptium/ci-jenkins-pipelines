@@ -706,7 +706,7 @@ class Build {
                         EXTRA_OPTIONS: "${extra_options}",
                         SETUP_JCK_RUN: "${setupJCKRun}"
                     ]
-                    if (("${platform}" == 'x86-64_windows' || "${platform}" == 'x86-32_windows') && "${targetTests}" == 'dev.jck') {
+                    if (("${platform}" == 'x86-64_windows' || "${platform}" == 'x86-32_windows') && "${targetTest}" == 'dev.jck') {
                         paramList["LABEL"] = 'ci.role.test.interactive'
                     }
                     def queryString = paramList.collect { k, v -> "${URLEncoder.encode(k, 'UTF-8')}=${URLEncoder.encode(v, 'UTF-8')}"}.join('&')
@@ -1846,8 +1846,22 @@ def postBuildWSclean(
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 if (cleanWorkspaceAfter) {
                                     try {
-                                        context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
-                                        context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
+                                        context.println "Cleaning workspace non-hidden files: ${context.WORKSPACE}/*"
+                                        if (context.isUnix()) {
+                                          // Linux/macOS cleanup
+                                          context.sh(script: "rm -rf \"${context.WORKSPACE}\"/*")
+                                        } else {
+                                          // Cleanup Using Robocopy MS recommended solution
+                                          // For Removing Files With Corrupted ACLs
+                                          // https://learn.microsoft.com/en-us/troubleshoot/windows-server/backup-and-storage/cannot-delete-file-folder-on-ntfs-file-system
+                                          context.bat """
+                                            mkdir C:\\emptydir >NUL 2>&1
+                                            robocopy C:\\emptydir "${context.WORKSPACE}" /MIR /R:0 /W:0 /NFL /NDL /NJH /NJS /NC /NS /NP >NUL 2>&1
+                                            set RC=%ERRORLEVEL%
+                                            if %RC% LEQ 3 ( exit /b 0 ) else ( exit /b %RC% )
+                                            rmdir C:\\emptydir >NUL 2>&1
+                                          """
+                                        }
                                     } catch (e) {
                                         context.println "Warning: Failed to clean workspace non-hidden files ${e}"
                                     }
@@ -2323,17 +2337,22 @@ def buildScriptsAssemble(
                     context.println "Failed, remote job ${testTarget} was not triggered"
                     remoteJobStatus = "FAILURE"
                 } else {
-                    jobHandle.updateBuildStatus()
-                    if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
-                        context.println "Failed, remote job ${testTarget} status is NOT_TRIGGERED"
-                        remoteJobStatus = "FAILURE"
-                    } else {
-                        if ( !jobHandle.isFinished() ) {
-                            context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
+                    try {
+                        jobHandle.updateBuildStatus()
+                        if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
+                            context.println "Failed, remote job ${testTarget} status is NOT_TRIGGERED"
+                            remoteJobStatus = "FAILURE"
                         } else {
-                            remoteJobStatus = jobHandle.getBuildResult().toString()
-                            context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
+                            if ( !jobHandle.isFinished() ) {
+                                context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
+                            } else {
+                                remoteJobStatus = jobHandle.getBuildResult().toString()
+                                context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
+                            }
                         }
+                    } catch (e) {
+                        // parameterized-remote-trigger-plugin probably threw an exception trying to get BuildStatus...
+                        context.println("Failed to updateBuildStatus for remoteJobTargets ${testTarget} : ${e}")
                     }
                 }
                 if ( remoteJobStatus != "" ) {
@@ -2372,7 +2391,7 @@ def buildScriptsAssemble(
 
                 // Gather parameters.
                 String jdk_Version = getJavaVersionNumber() as String
-                String source_tag = "scm_not_specified"
+                String source_tag = ""
                 if (!buildConfig.SCM_REF.isEmpty()){
                     source_tag = buildConfig.SCM_REF
                 }

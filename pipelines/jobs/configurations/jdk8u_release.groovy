@@ -8,9 +8,6 @@ targetConfigurations = [
         'x64AlpineLinux' : [
                 'temurin'
         ],
-        'x32Windows'    : [
-                'temurin'
-        ],
         'x64Windows'    : [
                 'temurin'
         ],
