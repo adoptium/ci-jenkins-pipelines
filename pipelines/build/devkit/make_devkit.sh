@@ -51,7 +51,6 @@ else
 fi
 # Something I tested didn't work with uname -p, so switching to uname -m
 patch -p1 < "../Makefile.${VERSION}.patch"
-cat make/devkit/Tools.gmk
 
 devkit_target="${ARCH}-linux-gnu"
 

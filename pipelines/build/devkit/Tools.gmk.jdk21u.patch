@@ -1,5 +1,5 @@
 diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
-index 5c29ee4db75..eb01364b1e2 100644
+index 5c29ee4db75..6c167ef77f6 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
 @@ -62,13 +62,30 @@ ifeq ($(BASE_OS), OL)
@@ -34,7 +34,7 @@ index 5c29ee4db75..eb01364b1e2 100644
    else
      DEFAULT_OS_VERSION := 27
      LATEST_ARCHIVED_OS_VERSION := 35
-@@ -95,6 +112,22 @@ endif
+@@ -95,8 +112,24 @@ endif
  ##########################################################################################
  # Define external dependencies
  
@@ -55,8 +55,11 @@ index 5c29ee4db75..eb01364b1e2 100644
 +GDB_SIG := sig
 +
  # Latest that could be made to work.
- GCC_VER := 13.2.0
+-GCC_VER := 13.2.0
++GCC_VER := 11.3.0
  ifeq ($(GCC_VER), 13.2.0)
+   gcc_ver := gcc-13.2.0
+   binutils_ver := binutils-2.41
 @@ -108,12 +141,19 @@ ifeq ($(GCC_VER), 13.2.0)
    REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
  else ifeq ($(GCC_VER), 11.3.0)
