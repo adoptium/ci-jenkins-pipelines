@@ -1,5 +1,5 @@
 diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
-index 1b9240df49c..2d76388ac9b 100644
+index 1b9240df49c..f3b62f372e9 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
 @@ -64,13 +64,30 @@ ifeq ($(BASE_OS), OL)
@@ -14,9 +14,9 @@ index 1b9240df49c..2d76388ac9b 100644
 +  BASE_OS_MAJOR_VERSION := $(shell echo $(BASE_OS_VERSION) | cut -d'.' -f1)
 +  CENTOS_MIRROR := vault.centos.org
 +  ifeq ($(ARCH), x86_64)
-+    BASE_URL := http://$(CENTOS_MIRROR)/centos/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
++    BASE_URL := https://$(CENTOS_MIRROR)/centos/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
 +  else
-+    BASE_URL := http://$(CENTOS_MIRROR)/altarch/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
++    BASE_URL := https://$(CENTOS_MIRROR)/altarch/$(BASE_OS_VERSION)/os/$(ARCH)/Packages/
 +  endif
 +  LINUX_VERSION := Centos$(BASE_OS_VERSION)
  else ifeq ($(BASE_OS), Fedora)
@@ -29,17 +29,16 @@ index 1b9240df49c..2d76388ac9b 100644
 +    ifeq ($(BASE_OS_VERSION), 28)
 +      BASE_URL := https://secondary.fedoraproject.org/pub/alt/risc-v/archive/RPMS/riscv64
 +    else
-+      BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
++      BASE_URL := https://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
 +    endif
    else
      LATEST_ARCHIVED_OS_VERSION := 35
      ifeq ($(filter x86_64 armhfp, $(ARCH)), )
-@@ -102,12 +119,38 @@ gmp_ver_only := 6.3.0
+@@ -102,17 +119,42 @@ gmp_ver_only := 6.3.0
  mpc_ver_only := 1.3.1
  gdb_ver_only := 15.2
  
 -dependencies := gcc binutils ccache mpfr gmp mpc gdb
-+#GCC_GPG_KEY := 7F74F97C103468EE5D750B583AB00996FC26A641 #gitleaks:allow
 +GCC_GPG_KEY := 09B5FA62 #gitleaks:allow
 +BINUTILS_GPG_KEY := 3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F #gitleaks:allow
 +CCACHE_GPG_KEY := 5A939A71A46792CF57866A51996DDA075594ADB8 #gitleaks:allow
@@ -75,8 +74,16 @@ index 1b9240df49c..2d76388ac9b 100644
 +BINUTILS := https://sourceware.org/pub/binutils/releases/$(binutils_ver).tar.gz
  CCACHE := https://github.com/ccache/ccache/releases/download/v$(ccache_ver_only)/$(ccache_ver).tar.xz
  MPFR := https://www.mpfr.org/$(mpfr_ver)/$(mpfr_ver).tar.bz2
- GMP := http://ftp.gnu.org/pub/gnu/gmp/$(gmp_ver).tar.bz2
-@@ -147,7 +190,8 @@ RPM_LIST := \
+-GMP := http://ftp.gnu.org/pub/gnu/gmp/$(gmp_ver).tar.bz2
+-MPC := http://ftp.gnu.org/pub/gnu/mpc/$(mpc_ver).tar.gz
+-GDB := http://ftp.gnu.org/gnu/gdb/$(gdb_ver).tar.xz
++GMP := https://ftp.gnu.org/pub/gnu/gmp/$(gmp_ver).tar.bz2
++MPC := https://ftp.gnu.org/pub/gnu/mpc/$(mpc_ver).tar.gz
++GDB := https://ftp.gnu.org/gnu/gdb/$(gdb_ver).tar.xz
+ 
+ REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
+ ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
+@@ -147,7 +189,8 @@ RPM_LIST := \
      libffi libffi-devel \
      fontconfig fontconfig-devel \
      systemtap-sdt-devel \
@@ -86,7 +93,7 @@ index 1b9240df49c..2d76388ac9b 100644
  
  ################################################################################
  # Define common directories and files
-@@ -181,7 +225,18 @@ download-rpms:
+@@ -181,7 +224,18 @@ download-rpms:
          # Only run this if rpm dir is empty.
          ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
  	  cd $(DOWNLOAD_RPMS) && \
@@ -106,7 +113,7 @@ index 1b9240df49c..2d76388ac9b 100644
          endif
  
  ################################################################################
-@@ -214,6 +269,16 @@ define Download
+@@ -214,6 +268,16 @@ define Download
  
    $$($(1)_FILE) :
  	wget -P $(DOWNLOAD) $$($(1))
@@ -123,7 +130,7 @@ index 1b9240df49c..2d76388ac9b 100644
  endef
  
  # Download and unpack all source packages
-@@ -266,6 +331,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
+@@ -266,6 +330,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
  # have it anyway, but just to make sure...
  # Patch libc.so and libpthread.so to force linking against libraries in sysroot
  # and not the ones installed on the build machine.
@@ -133,7 +140,7 @@ index 1b9240df49c..2d76388ac9b 100644
  $(libs) : $(rpms)
  	@echo Patching libc and pthreads
  	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-@@ -275,6 +343,7 @@ $(libs) : $(rpms)
+@@ -275,6 +342,7 @@ $(libs) : $(rpms)
  	      -e 's|/lib/||g' ) > $$f.tmp ; \
  	  mv $$f.tmp $$f ; \
  	done)
@@ -141,7 +148,7 @@ index 1b9240df49c..2d76388ac9b 100644
  	@mkdir -p $(SYSROOT)/usr/lib
  	@touch $@
  
-@@ -369,6 +438,7 @@ $(gcc) \
+@@ -369,6 +437,7 @@ $(gcc) \
      $(mpc) \
      $(bfdmakes) \
      $(ccache) : ENVS += $(TOOLS)
@@ -149,7 +156,7 @@ index 1b9240df49c..2d76388ac9b 100644
  
  # libdir to work around hateful bfd stuff installing into wrong dirs...
  # ensure we have 64 bit bfd support in the HOST library. I.e our
-@@ -377,12 +447,12 @@ $(gcc) \
+@@ -377,12 +446,12 @@ $(gcc) \
  # wants.
  $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
  
@@ -168,7 +175,7 @@ index 1b9240df49c..2d76388ac9b 100644
  
  # Makefile creation. Simply run configure in build dir.
  # Setting CFLAGS to -O2 generates a much faster ld.
-@@ -400,6 +470,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
+@@ -400,6 +469,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
  	      --with-sysroot=$(SYSROOT) \
  	      --disable-nls \
  	      --program-prefix=$(TARGET)- \
@@ -176,7 +183,7 @@ index 1b9240df49c..2d76388ac9b 100644
  	      --enable-multilib \
  	      --enable-threads \
  	      --enable-plugins \
-@@ -494,6 +565,7 @@ $(BUILDDIR)/$(gcc_ver)/Makefile \
+@@ -494,6 +564,7 @@ $(BUILDDIR)/$(gcc_ver)/Makefile \
  	      --with-mpfr=$(PREFIX) \
  	      --with-gmp=$(PREFIX) \
  	      --with-mpc=$(PREFIX) \
