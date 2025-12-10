@@ -621,7 +621,7 @@ class Builder implements Serializable {
     * Builds up additional test params
     * @param configuration
     * @param variant
-    * @return params
+    * @return params Map
     */                      
     def formAdditionalTestParams(Map<String, ?> configuration, String variant) {
         def params = [:]
@@ -629,11 +629,7 @@ class Builder implements Serializable {
         if (configuration.containsKey('additionalTestParams')) {
             def additionalTestParams
         
-            if (isMap(configuration.additionalTestParams)) {
-                additionalTestParams = (configuration.additionalTestParams as Map<String, ?>).get(variant)
-            } else {
-                additionalTestParams = configuration.additionalTestParams
-            }
+            additionalTestParams = (configuration.additionalTestParams as Map<String, ?>).get(variant)
         
             if (additionalTestParams != null) {
                 params = additionalTestParams
