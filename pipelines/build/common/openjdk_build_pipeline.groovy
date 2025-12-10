@@ -400,9 +400,6 @@ class Build {
             useTestEnvProperties = true
         }
 
-        def aqaTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
-        context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${aqaTestParams}"
-
         def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
         def parallel = 'None'
         def numMachinesPerTest = ''
@@ -542,6 +539,21 @@ class Build {
                         if (jobParams.any{mapEntry -> mapEntry.key.equals("TIME_LIMIT")}) {
                             testJobParams.add(context.string(name: 'TIME_LIMIT', value: jobParams["TIME_LIMIT"]))
                         }
+
+                        // Are there any additional test params specified?
+                        def additionalTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
+                        if (Map.isInstance(additionalTestParams)) {
+                            context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${additionalTestParams}"
+                            additionalTestParams.each { additionalParam, additionalParamValue ->
+                                def valueStr = additionalParamValue.toString()
+                                if (valueStr == 'true' || valueStr == 'false') {
+                                    testJobParams << context.booleanParam(name: additionalParam, value: valueStr.toBoolean())
+                                } else {
+                                    testJobParams << context.string(name: additionalParam, value: valueStr)
+                                }
+                            }
+                        }
+                        echo "testJobParams = ${testJobParams}"
 
                         def testJob = context.build job: jobName,
                                         propagate: false,
@@ -2480,9 +2492,6 @@ def buildScriptsAssemble(
                     }
                     if (buildConfig.DOCKER_IMAGE) {
                         context.println "openjdk_build_pipeline: preparing to use docker image"
-
-        def aqaTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
-        context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${aqaTestParams}"
 
                         // Docker build environment
                         def label = buildConfig.NODE_LABEL + '&&dockerBuild'
