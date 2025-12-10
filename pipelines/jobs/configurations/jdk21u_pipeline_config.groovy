@@ -32,7 +32,7 @@ class Config21 {
                         temurin     : '!sw.tool.glibc.2_12'
                 ],
                 additionalTestParams: [
-                        temurin     : [CLOUD_PROVIDER: 'azure']
+                        temurin     : [CLOUD_PROVIDER: 'azure', RERUN_ITERATIONS: "6", GENERATE_JOBS: true]
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
