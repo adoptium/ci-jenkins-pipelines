@@ -400,6 +400,9 @@ class Build {
             useTestEnvProperties = true
         }
 
+        def aqaTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
+        context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${aqaTestParams}"
+
         def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
         def parallel = 'None'
         def numMachinesPerTest = ''

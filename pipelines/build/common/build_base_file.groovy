@@ -106,6 +106,8 @@ class Builder implements Serializable {
 
         def additionalTestLabels = formAdditionalTestLabels(platformConfig, variant)
 
+        def additionalTestParams = formAdditionalTestParams(platformConfig, variant)
+
         def archLabel = getArchLabel(platformConfig, variant)
 
         def dockerImage = getDockerImage(platformConfig, variant)
@@ -176,6 +178,7 @@ class Builder implements Serializable {
             BUILD_ARGS: buildArgs,
             NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${archLabel}",
             ADDITIONAL_TEST_LABEL: "${additionalTestLabels}",
+            ADDITIONAL_TEST_PARAMS: additionalTestParams,
             KEEP_TEST_REPORTDIR: keepTestReportDir,
             ACTIVE_NODE_TIMEOUT: activeNodeTimeout,
             CODEBUILD: platformConfig.codebuild as Boolean,
@@ -613,6 +616,32 @@ class Builder implements Serializable {
 
         return labels
     }
+
+    /**
+    * Builds up additional test params
+    * @param configuration
+    * @param variant
+    * @return params
+    */                      
+    def formAdditionalTestParams(Map<String, ?> configuration, String variant) {
+        def params = [:]
+        
+        if (configuration.containsKey('additionalTestParams')) {
+            def additionalTestParams
+        
+            if (isMap(configuration.additionalTestParams)) {
+                additionalTestParams = (configuration.additionalTestParams as Map<String, ?>).get(variant)
+            } else {
+                additionalTestParams = configuration.additionalTestParams
+            }
+        
+            if (additionalTestParams != null) {
+                params = additionalTestParams
+            }   
+        }
+                
+        return params
+    }  
 
     /*
     Retrieves the configureArgs attribute from the build configurations.
