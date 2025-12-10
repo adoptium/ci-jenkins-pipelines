@@ -2492,7 +2492,6 @@ def buildScriptsAssemble(
                     }
                     if (buildConfig.DOCKER_IMAGE) {
                         context.println "openjdk_build_pipeline: preparing to use docker image"
-
                         // Docker build environment
                         def label = buildConfig.NODE_LABEL + '&&dockerBuild'
                         if (buildConfig.DOCKER_NODE) {
