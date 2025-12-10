@@ -2480,6 +2480,10 @@ def buildScriptsAssemble(
                     }
                     if (buildConfig.DOCKER_IMAGE) {
                         context.println "openjdk_build_pipeline: preparing to use docker image"
+
+        def aqaTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
+        context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${aqaTestParams}"
+
                         // Docker build environment
                         def label = buildConfig.NODE_LABEL + '&&dockerBuild'
                         if (buildConfig.DOCKER_NODE) {
