@@ -25,6 +25,9 @@ class Config11 {
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
                 ],
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
+                ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto',
                         'temurin'     : '--enable-dtrace=auto --disable-ccache',
