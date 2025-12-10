@@ -553,7 +553,7 @@ class Build {
                                 }
                             }
                         }
-                        context.echo "testJobParams = ${testJobParams}"
+                        context.println "testJobParams = ${testJobParams}"
 
                         def testJob = context.build job: jobName,
                                         propagate: false,
