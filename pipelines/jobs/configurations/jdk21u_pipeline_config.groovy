@@ -32,14 +32,14 @@ class Config21 {
                         temurin     : '!sw.tool.glibc.2_12'
                 ],
                 additionalTestParams: [
-                        temurin     : [CLOUD_PROVIDER: 'azure', RERUN_ITERATIONS: "6", GENERATE_JOBS: true]
+                        temurin     : [CLOUD_PROVIDER: 'azure']
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
+                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b04'
                 ]
         ],
 
