@@ -134,7 +134,6 @@ node(params.DEVKIT_BUILD_NODE) {
         build()
     }
   } finally { 
-sh("cat /home/jenkins/workspace/build-scripts/utils/devkit/gcc-11.3.0/devkit-gcc-11.3.0-linux-ppc64le/pipelines/build/devkit/jdk21u/build/devkit/ppc64le-linux-gnu/ppc64le-linux-gnu/gdb-11.2/log.build")
     cleanWs notFailBuild: true
   } 
 }
