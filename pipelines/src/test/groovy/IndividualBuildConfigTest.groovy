@@ -27,6 +27,7 @@ class IndividualBuildConfigTest {
                 BUILD_ARGS                 : 'g',
                 NODE_LABEL                 : 'h',
                 ADDITIONAL_TEST_LABEL      : 't',
+                ADDITIONAL_TEST_PARAMS     : [p: 'v'],
                 KEEP_TEST_REPORTDIR        : false,
                 ACTIVE_NODE_TIMEOUT        : 'r',
                 CODEBUILD                  : false,
