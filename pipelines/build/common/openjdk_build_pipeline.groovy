@@ -2359,6 +2359,7 @@ def buildScriptsAssemble(
                     context.stage("${testTarget}") {
                         setStageResult("${testTarget}", remoteJobStatus)
                     }
+                    context.println "Build ${testTarget} completed: ${remoteJobStatus}"
                     completedJckJobs += ",${testTarget}"
                     completedJckJobCount++
                 }
