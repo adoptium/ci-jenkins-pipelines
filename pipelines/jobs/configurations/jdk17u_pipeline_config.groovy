@@ -31,6 +31,9 @@ class Config17 {
                 additionalTestLabels: [
                         openj9      : '!sw.tool.glibc.2_12'
                 ],
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
+                ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace'

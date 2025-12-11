@@ -540,6 +540,20 @@ class Build {
                             testJobParams.add(context.string(name: 'TIME_LIMIT', value: jobParams["TIME_LIMIT"]))
                         }
 
+                        // Are there any additional test params specified?
+                        def additionalTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
+                        if (Map.isInstance(additionalTestParams)) {
+                            context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${additionalTestParams}"
+                            additionalTestParams.each { additionalParam, additionalParamValue ->
+                                def valueStr = additionalParamValue.toString()
+                                if (valueStr == 'true' || valueStr == 'false') {
+                                    testJobParams << context.booleanParam(name: additionalParam, value: valueStr.toBoolean())
+                                } else {
+                                    testJobParams << context.string(name: additionalParam, value: valueStr)
+                                }
+                            }
+                        }
+
                         def testJob = context.build job: jobName,
                                         propagate: false,
                                         parameters: testJobParams,
