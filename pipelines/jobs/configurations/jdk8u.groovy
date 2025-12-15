@@ -13,10 +13,12 @@ targetConfigurations = [
         'x64AlpineLinux' : [
                 'temurin'
         ],
+        'x32Windows'    : [
+                'hotspot'
+        ],
         'x64Windows'    : [
                 'temurin',
-                'openj9',
-                'dragonwell'
+                'hotspot'
         ],
         'ppc64Aix'      : [
                 'temurin',
@@ -24,19 +26,18 @@ targetConfigurations = [
         ],
         'ppc64leLinux'  : [
                 'temurin',
-                'openj9'
+                'hotspot'
         ],
         's390xLinux'    : [
                 'openj9'
         ],
         'aarch64Linux'  : [
                 'temurin',
-                'openj9',
-                'dragonwell',
-                'bisheng'
+                'hotspot'
         ],
         'arm32Linux'  : [
-                'temurin'
+                'temurin',
+                'hotspot'
         ]
 ]
 
