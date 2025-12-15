@@ -790,6 +790,7 @@ class Build {
                 context.println "Failed to remote trigger jck tests: ${e.message}"
             }
         }
+        context.println "Triggering remote JCK tests."
         context.parallel remoteTargets
         jckRerunSummary.appendText('</ul>', false)
         return remoteTriggeredBuilds
