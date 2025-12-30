@@ -17,8 +17,8 @@ documentation.
 
 For those who prefer diagrams, there is an overview of the information below
 including its interactions with the scripts in other repositories in our
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) file and specific ones on the pipeline types in
-[docs/diagram.md](docs/diagram.md). If you want to set up these pipelines in your own jenkins
+[Architecture](docs/ARCHITECTURE.md) file and specific ones on the pipeline types in
+[Architecture diagram](docs/diagram.md). If you want to set up these pipelines in your own jenkins
 instance, see
 [this guide](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/docs/UsingOurScripts.md).
 
