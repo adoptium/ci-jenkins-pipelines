@@ -43,8 +43,7 @@ which is its default behaviour - but is now run each time there is a new
 tag in the upstream openjdk codebase.  These are triggered by the
 `betaTrigger_XXea` jobs in the
 [build-scripts/utils](https://ci.adoptium.net/job/build-scripts/job/utils/)
-folder.  Note that JDK8 for, which comes from a separate codebase and
-therefore is tagged separately, is triggered via a separate
+folder.  Note that JDK8 for Linux ARM32 comes from a separate codebase, is tagged separately, and is triggered via a separate
 [betaTrigger_8ea_arm32Linux](https://ci.adoptium.net/job/build-scripts/job/utils/job/betaTrigger_8ea_arm32Linux/)
 job.
 
