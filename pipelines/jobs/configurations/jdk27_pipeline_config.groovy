@@ -1,4 +1,4 @@
-class Config25 {
+class Config27 {
 
     final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
@@ -138,8 +138,7 @@ class Config25 {
                         'temurin'   : '--enable-dtrace --with-jobs=4'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.6.1810-b01',
-                        'hotspot'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-14.2.0-Centos7.6.1810-b01'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.6.1810-b01'
                 ]
         ],
 
@@ -201,5 +200,5 @@ class Config25 {
 
 }
 
-Config25 config = new Config25()
+Config27 config = new Config27()
 return config.buildConfigurations
