@@ -179,6 +179,22 @@ class Config27 {
                 buildArgs       : [
                         'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
+        ],
+
+        arm32Linux    : [
+                os                  : 'linux',
+                arch                : 'arm',
+                crossCompile        : 'aarch64',
+                dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
+                dockerArgs          : '--platform linux/arm/v7',
+                test                : 'default',
+                configureArgs       : [
+                        'openj9'    : '--enable-dtrace',
+                        'temurin'   : '--enable-dtrace --with-jobs=4'
+                ],
+                buildArgs           : [
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
+                ]
         ]
   ]
 
