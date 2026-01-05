@@ -40,7 +40,8 @@ class Config26 {
                         'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01'
+                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01',
+                        'hotspot'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01'
                 ]
         ],
 
@@ -138,7 +139,8 @@ class Config26 {
                         'temurin'   : '--enable-dtrace --with-jobs=4'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.6.1810-b01'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.6.1810-b01',
+                        'hotspot'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-14.2.0-Centos7.6.1810-b01'
                 ]
         ],
 
