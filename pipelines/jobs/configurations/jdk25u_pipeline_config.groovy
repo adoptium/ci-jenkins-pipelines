@@ -40,7 +40,8 @@ class Config25 {
                         'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01'
+                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01',
+                        'hotspot'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01'
                 ]
         ],
 
