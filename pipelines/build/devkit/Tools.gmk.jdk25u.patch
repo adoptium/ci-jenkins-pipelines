@@ -1,5 +1,5 @@
 diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
-index 1b9240df4..ce6d3cfc6 100644
+index 1b9240df4..b0a9b1d7c 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
 @@ -64,13 +64,30 @@ ifeq ($(BASE_OS), OL)
@@ -115,13 +115,12 @@ index 1b9240df4..ce6d3cfc6 100644
  
  ################################################################################
  # Define common directories and files
-@@ -181,7 +228,18 @@ download-rpms:
+@@ -181,7 +228,17 @@ download-rpms:
          # Only run this if rpm dir is empty.
          ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
  	  cd $(DOWNLOAD_RPMS) && \
 -	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
 +	    wget -e robots=off -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
-+	    echo SXAEC: $(ARCH)
 +	    gpg --keyserver keyserver.ubuntu.com --recv-keys \
 +	      $($(BASE_OS)_$(BASE_OS_MAJOR_VERSION)_GPG_KEY_$(ARCH))
 +	    gpg --keyserver keyserver.ubuntu.com --recv-keys \
@@ -135,15 +134,15 @@ index 1b9240df4..ce6d3cfc6 100644
          endif
  
  ################################################################################
-@@ -214,6 +272,16 @@ define Download
+@@ -214,6 +271,16 @@ define Download
  
    $$($(1)_FILE) :
  	wget -P $(DOWNLOAD) $$($(1))
 +        ifeq ($(1),MPFR)
-+	  echo SXAEC: $(1) / $($(1)_SHA256) $$@ THIS ONLY GIVES ONE FIELD ON THE SCREEN SO sha256sum -c does not work
++	  echo $(1) / $($(1)_SHA256) $$@ THIS ONLY GIVES ONE FIELD ON THE SCREEN SO sha256sum -c does not work
 +	  echo "$($(1)_SHA256) $$@" | sha256sum -c
 +        else
-+	  echo SXAEC2: $(1) / $$($(1)).$($(1)_SIG)
++	  echo $(1) / $$($(1)).$($(1)_SIG)
 +	  wget -P $(DOWNLOAD) $$($(1)).$($(1)_SIG)
 +	  gpg --keyserver keyserver.ubuntu.com --recv-keys $($(1)_GPG_KEY)
 +	  echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $($(1)_GPG_KEY) trust;
@@ -152,7 +151,7 @@ index 1b9240df4..ce6d3cfc6 100644
  endef
  
  # Download and unpack all source packages
-@@ -266,6 +334,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
+@@ -266,6 +333,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
  # have it anyway, but just to make sure...
  # Patch libc.so and libpthread.so to force linking against libraries in sysroot
  # and not the ones installed on the build machine.
@@ -162,7 +161,7 @@ index 1b9240df4..ce6d3cfc6 100644
  $(libs) : $(rpms)
  	@echo Patching libc and pthreads
  	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-@@ -275,6 +346,7 @@ $(libs) : $(rpms)
+@@ -275,6 +345,7 @@ $(libs) : $(rpms)
  	      -e 's|/lib/||g' ) > $$f.tmp ; \
  	  mv $$f.tmp $$f ; \
  	done)
@@ -170,15 +169,7 @@ index 1b9240df4..ce6d3cfc6 100644
  	@mkdir -p $(SYSROOT)/usr/lib
  	@touch $@
  
-@@ -369,6 +441,7 @@ $(gcc) \
-     $(mpc) \
-     $(bfdmakes) \
-     $(ccache) : ENVS += $(TOOLS)
-+#SXA#    $(ccache) : ENVS += $(TOOLS)
- 
- # libdir to work around hateful bfd stuff installing into wrong dirs...
- # ensure we have 64 bit bfd support in the HOST library. I.e our
-@@ -377,12 +450,12 @@ $(gcc) \
+@@ -377,12 +448,12 @@ $(gcc) \
  # wants.
  $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
  
@@ -197,7 +188,7 @@ index 1b9240df4..ce6d3cfc6 100644
  
  # Makefile creation. Simply run configure in build dir.
  # Setting CFLAGS to -O2 generates a much faster ld.
-@@ -400,6 +473,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
+@@ -400,6 +471,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
  	      --with-sysroot=$(SYSROOT) \
  	      --disable-nls \
  	      --program-prefix=$(TARGET)- \
@@ -205,7 +196,7 @@ index 1b9240df4..ce6d3cfc6 100644
  	      --enable-multilib \
  	      --enable-threads \
  	      --enable-plugins \
-@@ -494,6 +568,7 @@ $(BUILDDIR)/$(gcc_ver)/Makefile \
+@@ -494,6 +566,7 @@ $(BUILDDIR)/$(gcc_ver)/Makefile \
  	      --with-mpfr=$(PREFIX) \
  	      --with-gmp=$(PREFIX) \
  	      --with-mpc=$(PREFIX) \
