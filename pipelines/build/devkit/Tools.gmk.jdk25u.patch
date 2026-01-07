@@ -1,5 +1,5 @@
 diff --git a/make/devkit/Tools.gmk b/make/devkit/Tools.gmk
-index 1b9240df49c..f3b62f372e9 100644
+index 1b9240df4..ce6d3cfc6 100644
 --- a/make/devkit/Tools.gmk
 +++ b/make/devkit/Tools.gmk
 @@ -64,13 +64,30 @@ ifeq ($(BASE_OS), OL)
@@ -34,7 +34,29 @@ index 1b9240df49c..f3b62f372e9 100644
    else
      LATEST_ARCHIVED_OS_VERSION := 35
      ifeq ($(filter x86_64 armhfp, $(ARCH)), )
-@@ -102,17 +119,42 @@ gmp_ver_only := 6.3.0
+@@ -85,7 +102,7 @@ else ifeq ($(BASE_OS), Fedora)
+       BASE_URL := https://archives.fedoraproject.org/pub/archive/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
+     endif
+   endif
+-  LINUX_VERSION := Fedora_$(BASE_OS_VERSION)
++  LINUX_VERSION := Fedora$(BASE_OS_VERSION)
+ else
+   $(error Unknown base OS $(BASE_OS))
+ endif
+@@ -94,7 +111,11 @@ endif
+ # Define external dependencies
+ 
+ gcc_ver_only := 14.2.0
+-binutils_ver_only := 2.43
++ifeq ($(ARCH), riscv64)
++  binutils_ver_only := 2.39
++else
++  binutils_ver_only := 2.43
++endif
+ ccache_ver_only := 4.10.2
+ CCACHE_CMAKE_BASED := 1
+ mpfr_ver_only := 4.2.1
+@@ -102,17 +123,42 @@ gmp_ver_only := 6.3.0
  mpc_ver_only := 1.3.1
  gdb_ver_only := 15.2
  
@@ -83,7 +105,7 @@ index 1b9240df49c..f3b62f372e9 100644
  
  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
  ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
-@@ -147,7 +189,8 @@ RPM_LIST := \
+@@ -147,7 +193,8 @@ RPM_LIST := \
      libffi libffi-devel \
      fontconfig fontconfig-devel \
      systemtap-sdt-devel \
@@ -93,7 +115,7 @@ index 1b9240df49c..f3b62f372e9 100644
  
  ################################################################################
  # Define common directories and files
-@@ -181,7 +224,18 @@ download-rpms:
+@@ -181,7 +228,18 @@ download-rpms:
          # Only run this if rpm dir is empty.
          ifeq ($(wildcard $(DOWNLOAD_RPMS)/*.rpm), )
  	  cd $(DOWNLOAD_RPMS) && \
@@ -113,7 +135,7 @@ index 1b9240df49c..f3b62f372e9 100644
          endif
  
  ################################################################################
-@@ -214,6 +268,16 @@ define Download
+@@ -214,6 +272,16 @@ define Download
  
    $$($(1)_FILE) :
  	wget -P $(DOWNLOAD) $$($(1))
@@ -130,7 +152,7 @@ index 1b9240df49c..f3b62f372e9 100644
  endef
  
  # Download and unpack all source packages
-@@ -266,6 +330,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
+@@ -266,6 +334,9 @@ $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
  # have it anyway, but just to make sure...
  # Patch libc.so and libpthread.so to force linking against libraries in sysroot
  # and not the ones installed on the build machine.
@@ -140,7 +162,7 @@ index 1b9240df49c..f3b62f372e9 100644
  $(libs) : $(rpms)
  	@echo Patching libc and pthreads
  	@(for f in `find $(SYSROOT) -name libc.so -o -name libpthread.so`; do \
-@@ -275,6 +342,7 @@ $(libs) : $(rpms)
+@@ -275,6 +346,7 @@ $(libs) : $(rpms)
  	      -e 's|/lib/||g' ) > $$f.tmp ; \
  	  mv $$f.tmp $$f ; \
  	done)
@@ -148,7 +170,7 @@ index 1b9240df49c..f3b62f372e9 100644
  	@mkdir -p $(SYSROOT)/usr/lib
  	@touch $@
  
-@@ -369,6 +437,7 @@ $(gcc) \
+@@ -369,6 +441,7 @@ $(gcc) \
      $(mpc) \
      $(bfdmakes) \
      $(ccache) : ENVS += $(TOOLS)
@@ -156,7 +178,7 @@ index 1b9240df49c..f3b62f372e9 100644
  
  # libdir to work around hateful bfd stuff installing into wrong dirs...
  # ensure we have 64 bit bfd support in the HOST library. I.e our
-@@ -377,12 +446,12 @@ $(gcc) \
+@@ -377,12 +450,12 @@ $(gcc) \
  # wants.
  $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
  
@@ -175,7 +197,7 @@ index 1b9240df49c..f3b62f372e9 100644
  
  # Makefile creation. Simply run configure in build dir.
  # Setting CFLAGS to -O2 generates a much faster ld.
-@@ -400,6 +469,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
+@@ -400,6 +473,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
  	      --with-sysroot=$(SYSROOT) \
  	      --disable-nls \
  	      --program-prefix=$(TARGET)- \
@@ -183,7 +205,7 @@ index 1b9240df49c..f3b62f372e9 100644
  	      --enable-multilib \
  	      --enable-threads \
  	      --enable-plugins \
-@@ -494,6 +564,7 @@ $(BUILDDIR)/$(gcc_ver)/Makefile \
+@@ -494,6 +568,7 @@ $(BUILDDIR)/$(gcc_ver)/Makefile \
  	      --with-mpfr=$(PREFIX) \
  	      --with-gmp=$(PREFIX) \
  	      --with-mpc=$(PREFIX) \
