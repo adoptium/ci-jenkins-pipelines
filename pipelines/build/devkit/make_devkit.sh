@@ -80,14 +80,14 @@ BOOTSTRAP_DEVKIT="$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}"
 BOOTSTRAP_DOWNLOADED_RPMS="$(pwd)/build/bootstrap_rpms_${devkit_target}-to-${devkit_target}"
 
 mv build/devkit/result/${devkit_target}-to-${devkit_target} "${BOOTSTRAP_DEVKIT}"
-mv build/devkit/download/rpms/${ARCH}-linux-gnu-Centos${BASE_OS_VERSION} "${BOOTSTRAP_DOWNLOADED_RPMS}"
+mv build/devkit/download/rpms/${ARCH}-linux-gnu-${BASE_OS}${BASE_OS_VERSION} "${BOOTSTRAP_DOWNLOADED_RPMS}"
 
 # Make final "DevKit" using the bootstrap devkit
 rm -rf build/devkit
 
 # Move saved bootstrap rpm downloads to final build folder
 mkdir -p build/devkit/download/rpms
-mv ${BOOTSTRAP_DOWNLOADED_RPMS} build/devkit/download/rpms/${ARCH}-linux-gnu-Centos${BASE_OS_VERSION}
+mv ${BOOTSTRAP_DOWNLOADED_RPMS} build/devkit/download/rpms/${ARCH}-linux-gnu-${BASE_OS}${BASE_OS_VERSION}
 
 echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in ${BOOTSTRAP_DEVKIT}"
 cd make/devkit && pwd && \
