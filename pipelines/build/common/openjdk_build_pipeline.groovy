@@ -148,7 +148,7 @@ class Build {
         jobParams.put('GROUPS', 'functional')
         jobParams.put('TEST_JOB_NAME', "${env.JOB_NAME}_SmokeTests")
         if ( "${jobParams.ARCH_OS_LIST}" == "x86-64_mac") {
-            jobParams.put('LABEL', 'ci.role.test&&hw.arch.x86&&sw.os.osx&&macos14')
+            jobParams.put('LABEL', 'ci.role.test&&hw.arch.x86&&sw.os.osx&&macos15')
         }
         jobParams.put('BUILD_LIST', 'functional/buildAndPackage')
         def vendorTestRepos = ((String)ADOPT_DEFAULTS_JSON['repository']['build_url']) - ('.git')
