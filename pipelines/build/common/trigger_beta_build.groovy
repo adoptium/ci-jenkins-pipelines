@@ -63,9 +63,9 @@ def isDuringReleasePeriod() {
         def releaseTuesday = day1st.with(TemporalAdjusters.dayOfWeekInMonth(3, DayOfWeek.TUESDAY))
         echo "Release Tuesday for this month is: "+releaseTuesday 
 
-        // Release period no trigger from prior week previous Saturday to following Sunday
+        // Release period no "testing" trigger, 10 days prior to 10 days after "release tuesday"
         def days = ChronoUnit.DAYS.between(releaseTuesday, now)
-        if (days >= -10 && days <= 5) {
+        if (days >= -10 && days <= 10) {
             releasePeriod = true
         }
     } else {
