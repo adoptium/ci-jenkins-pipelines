@@ -231,6 +231,11 @@ node('worker') {
         echo "FORCE triggering specified builds.."
         triggerMainBuild = params.FORCE_MAIN
         triggerEvaluationBuild = params.FORCE_EVALUATION
+        if (params.BUILD_HEAD) {
+            echo "FORCE building HEAD"
+            latestAdoptTag = ""
+            publishJobTag = ""
+        } 
     }
 
     // If we are going to trigger, then load the targetConfigurations
@@ -339,9 +344,10 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                         jobParams.add(text(name: 'targetConfigurations',   value: JsonOutput.prettyPrint(evaluationTargetConfigurations)))
                     }
 
-                    def job = build job: "${pipeline}", propagate: true, parameters: jobParams
+                    #######def job = build job: "${pipeline}", propagate: true, parameters: jobParams
 
-                    echo "Triggered ${pipeline} build result = "+ job.getResult()
+                    ######echo "Triggered ${pipeline} build result = "+ job.getResult()
+echo "TRIGGER"
                 }
             }
         }
