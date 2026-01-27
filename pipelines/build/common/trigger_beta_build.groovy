@@ -347,7 +347,7 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                     //#######def job = build job: "${pipeline}", propagate: true, parameters: jobParams
 
                     //######echo "Triggered ${pipeline} build result = "+ job.getResult()
-echo "TRIGGER"
+echo "TRIGGER: build job: ${pipeline}, propagate: true, parameters: ${jobParams}"
                 }
             }
         }
