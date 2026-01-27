@@ -231,6 +231,11 @@ node('worker') {
         echo "FORCE triggering specified builds.."
         triggerMainBuild = params.FORCE_MAIN
         triggerEvaluationBuild = params.FORCE_EVALUATION
+        if (params.BUILD_HEAD) {
+            echo "FORCE building HEAD rather than latest tag"
+            latestAdoptTag = ""
+            publishJobTag = ""
+        } 
     }
 
     // If we are going to trigger, then load the targetConfigurations
