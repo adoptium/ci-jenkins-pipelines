@@ -1131,8 +1131,7 @@ class Build {
                 if (buildConfig.TARGET_OS == "windows") {
                     verifyNode = "ci.role.test&&sw.os.windows"
                 } else {
-                    // Must run on Orka node to workaround issue https://github.com/adoptium/infrastructure/issues/3957
-                    verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)&&sw.os.osx.10_15_plus&&orka"
+                    verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)"
                 }
                 if (buildConfig.ARCHITECTURE == "aarch64") {
                     verifyNode = verifyNode + "&&hw.arch.aarch64"

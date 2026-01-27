@@ -6,8 +6,7 @@ class Config27 {
                 arch                : 'x64',
                 additionalNodeLabels: 'xcode15.0.1',
                 additionalTestLabels: [
-                        openj9      : '!sw.os.osx.10_11',
-                        temurin     : 'sw.os.osx.10_15_plus'
+                        openj9      : '!sw.os.osx.10_11'
                 ],
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
