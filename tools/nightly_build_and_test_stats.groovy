@@ -1132,8 +1132,8 @@ node('worker') {
                         }
                     }
 
-//!failedTestSummary.contains(noAqaTestsRunString()) &&
-                    if (reproducibleBuilds.containsKey(featureRelease)) {
+                    // If AQA tests run, then find reproducible build results...
+                    if (!failedTestSummary.contains(noAqaTestsRunString()) && reproducibleBuilds.containsKey(featureRelease)) {
                         def reproDetailSummary = ""
 
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
