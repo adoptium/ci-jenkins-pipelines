@@ -1129,12 +1129,16 @@ node('worker') {
                             }
                         }
 
-                        if (!failedTestSummary.contains(noAqaTestsRunString) && reproducibleBuilds.containsKey(featureRelease)) {
+//!failedTestSummary.contains(noAqaTestsRunString) &&
+echo "HERE"
+                        if (reproducibleBuilds.containsKey(featureRelease)) {
+echo "HERE2"
                             def reproDetailSummary = ""
 
                             def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
                             def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, [])
                             if (reproBuildUrls.size() > 0) {
+echo "HERE3"
                                 reproBuildUrls.each { reproBuildTuple ->
                                     (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildTuple
                                     echo "Checking for reproducibility results in pipeline: ${reproBuildUrl}"
