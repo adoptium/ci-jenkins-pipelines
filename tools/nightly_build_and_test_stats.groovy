@@ -1130,59 +1130,61 @@ node('worker') {
                                 }
                             }
                         }
+                    }
 
 //!failedTestSummary.contains(noAqaTestsRunString()) &&
-echo "HERE"
-                        if (reproducibleBuilds.containsKey(featureRelease)) {
-echo "HERE2"
-                            def reproDetailSummary = ""
+                    if (reproducibleBuilds.containsKey(featureRelease)) {
+                        def reproDetailSummary = ""
 
-                            def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
-                            def reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, [])
-                            if (reproBuildUrls.size() > 0) {
-echo "HERE3"
-                                reproBuildUrls.each { reproBuildTuple ->
-                                    (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildTuple
-                                    echo "Checking for reproducibility results in pipeline: ${reproBuildUrl}"
-                                    echo "This pipeline's current status is ${reproBuildStatus}"
+                        def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
+                        def reproBuildUrls
+                        if (nonTagBuildReleases.contains(featureRelease)) {
+                            reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, "", "", true, [])
+                        } else {
+                            reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, [])
+                        }
+                        if (reproBuildUrls.size() > 0) {
+                            reproBuildUrls.each { reproBuildTuple ->
+                                (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildTuple
+                                echo "Checking for reproducibility results in pipeline: ${reproBuildUrl}"
+                                echo "This pipeline's current status is ${reproBuildStatus}"
 
-                                    getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
-                                }
-
-                                if ( ! reproducibleBuilds[featureRelease][0].startsWith("100") ) {
-
-                                    if (!slackColor.equals('danger')) {
-                                        slackColor = 'warning'
-                                    }
-                                    health = "Unhealthy"
-                                    def summaryOfRepros = ""
-                                    echo "Build reproducibility percentages for " + featureRelease + " did not add up to 100%. Breakdown: "
-                                    reproducibleBuilds[featureRelease][1].each{ key, value ->
-                                        if (!value.equals("NA")) {
-                                            echo key+": "+value
-                                            if(value ==~ /[0-9]+\.?[0-9]* %/) {
-                                                summaryOfRepros+=" "+key+"("+value+"),"
-                                            } else {
-                                                summaryOfRepros+=" "+key+"(?%),"
-                                            }
-                                        } else {
-                                            echo key+": NA - Reproducibility testing has not yet been implimented for this presumed reproducible build."
-                                        }
-                                    }
-
-                                    //Remove trailing comma.
-                                    summaryOfRepros = summaryOfRepros.substring(0, summaryOfRepros.length() - 1)
-
-                                    reproDetailSummary = "\n${featureRelease} Reproducibility: "+summaryOfRepros
-                                }
-                            } else {
-                                // Ignore if we cannot find a likely pipeline job.
-                                reproducibleBuilds[featureRelease][0] = "N/A"
-                                echo "This pipeline is blank string"
+                                getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
                             }
 
-                            reproSummary = "\n${reproDetailSummary}\nOverall Reproducibility: "+reproducibleBuilds[featureRelease][0]
+                            if ( ! reproducibleBuilds[featureRelease][0].startsWith("100") ) {
+
+                                if (!slackColor.equals('danger')) {
+                                    slackColor = 'warning'
+                                }
+                                health = "Unhealthy"
+                                def summaryOfRepros = ""
+                                echo "Build reproducibility percentages for " + featureRelease + " did not add up to 100%. Breakdown: "
+                                reproducibleBuilds[featureRelease][1].each{ key, value ->
+                                    if (!value.equals("NA")) {
+                                        echo key+": "+value
+                                        if(value ==~ /[0-9]+\.?[0-9]* %/) {
+                                            summaryOfRepros+=" "+key+"("+value+"),"
+                                        } else {
+                                            summaryOfRepros+=" "+key+"(?%),"
+                                        }
+                                    } else {
+                                        echo key+": NA - Reproducibility testing has not yet been implimented for this presumed reproducible build."
+                                    }
+                                }
+
+                                //Remove trailing comma.
+                                summaryOfRepros = summaryOfRepros.substring(0, summaryOfRepros.length() - 1)
+
+                                reproDetailSummary = "\n${featureRelease} Reproducibility: "+summaryOfRepros
+                            }
+                        } else {
+                            // Ignore if we cannot find a likely pipeline job.
+                            reproducibleBuilds[featureRelease][0] = "N/A"
+                            echo "This pipeline is blank string"
                         }
+
+                        reproSummary = "\n${reproDetailSummary}\nOverall Reproducibility: "+reproducibleBuilds[featureRelease][0]
                     }
 
                     // Verify if any artifacts missing?
