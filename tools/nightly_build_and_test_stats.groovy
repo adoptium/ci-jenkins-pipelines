@@ -21,7 +21,9 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
-def noAqaTestsRunString = "No AQA tests run"
+def noAqaTestsRunString() {
+    return "No AQA tests run"
+}
 
 def getPlatformConversionMap() {
     // A map to convert from a standard platform format to the variants used by builds, tests, and assets.
@@ -769,7 +771,7 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     }
 
     if (testJobTotal == 0) {
-        return " _"+noAqaTestsRunString+"._"
+        return " _"+noAqaTestsRunString()+"._"
     } else if ((failedTestJobNum + failedTestTargetNum) == 0) {
         return "\n_AQA tests successful: "+testJobTotal+" jobs & "+testTargetTotal+" targets run._"
     } else {
@@ -1129,7 +1131,7 @@ node('worker') {
                             }
                         }
 
-//!failedTestSummary.contains(noAqaTestsRunString) &&
+//!failedTestSummary.contains(noAqaTestsRunString()) &&
 echo "HERE"
                         if (reproducibleBuilds.containsKey(featureRelease)) {
 echo "HERE2"
