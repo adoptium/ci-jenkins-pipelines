@@ -2337,6 +2337,18 @@ def buildScriptsAssemble(
         def completedJckJobCount = 0
         def remoteJobTargets = remoteTriggeredBuilds.keySet() as String[]
 
+        def poll_count = 0
+        def currentStatus = [:]
+        def currentResult = [:]
+        def remoteBuildUrl = [:]
+
+        // Initialize statuses to UNKNOWN..
+        for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
+            currentStatus[remoteJobTargets[testIndex]] = "UNKNOWN"
+            currentResult[remoteJobTargets[testIndex]] = "UNKNOWN"
+            remoteBuildUrl[remoteJobTargets[testIndex]] = "UNKNOWN"
+        }
+
         while (true) {
             for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
                 String testTarget = remoteJobTargets[testIndex]
@@ -2349,23 +2361,24 @@ def buildScriptsAssemble(
                 if ( jobHandle == null ) {
                     context.println "Failed, remote job ${testTarget} was not triggered"
                     remoteJobStatus = "FAILURE"
+                    currentStatus[testTarget] = remoteJobStatus
                 } else {
                     try {
                         jobHandle.updateBuildStatus()
+                        currentStatus[testTarget]  = jobHandle.getBuildStatus().toString()
+                        currentResult[testTarget]  = jobHandle.getBuildResult().toString()
+                        remoteBuildUrl[testTarget] = jobHandle.getBuildUrl()
                         if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
                             context.println "Failed, remote job ${testTarget} status is NOT_TRIGGERED"
                             remoteJobStatus = "FAILURE"
                         } else {
-                            if ( !jobHandle.isFinished() ) {
-                                context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Remote build URL: " + jobHandle.getBuildUrl();
-                            } else {
+                            if ( jobHandle.isFinished() ) {
                                 remoteJobStatus = jobHandle.getBuildResult().toString()
-                                context.println "Current ${testTarget} Status: " + jobHandle.getBuildStatus().toString() + " Build status: ${remoteJobStatus}" + " Remote build URL: " + jobHandle.getBuildUrl();
                             }
                         }
                     } catch (e) {
                         // parameterized-remote-trigger-plugin probably threw an exception trying to get BuildStatus...
-                        context.println("Failed to updateBuildStatus for remoteJobTargets ${testTarget} : ${e}")
+                        context.println("Failed to updateBuildStatus for remoteJobTargets ${testTarget} : "+jobHandle.getBuildUrl()+" : ${e}")
                     }
                 }
                 if ( remoteJobStatus != "" ) {
@@ -2377,13 +2390,22 @@ def buildScriptsAssemble(
                     completedJckJobCount++
                 }
             }
+            // Issue current status every 6 polls (24 mins) or when all finished, so as not to clutter the console..
+            if ( (poll_count % 6) == 0 || completedJckJobCount == remoteTriggeredBuilds.size() ) {
+                for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
+                    context.println "Current " + remoteJobTargets[testIndex] + " Status: " + currentStatus[remoteJobTargets[testIndex]] + " Build result: " + currentResult[remoteJobTargets[testIndex]] + " Remote build URL: " + remoteBuildUrl[remoteJobTargets[testIndex]];
+                }
+                if ( completedJckJobCount < remoteTriggeredBuilds.size() ) {
+                    context.println "Waiting for remote jck jobs to complete..."
+                }
+            }
             if (remoteTriggeredBuilds.size() > completedJckJobCount) {
-                def sleepTimeMins = 20
-                context.println "Waiting for remote jck jobs, sleeping for ${sleepTimeMins} minutes..."
+                def sleepTimeMins = 4 // Must not be longer due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
                 sleep (sleepTimeMins * 60 * 1000)
             } else {
                 break
             }
+            poll_count += 1
         }
     }
 
