@@ -622,7 +622,7 @@ class Build {
         }
 
         def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
-        if (configureArguments.contains('--enable-headless-only=yes')) {
+        if (configureArguments.contains('--enable-headless-only=yes') || configureArguments.contains('--disable-headful')) {
             // Headless platforms have no auto-manuals, so do not exclude any tests
             appOptions=""
         }
@@ -636,7 +636,8 @@ class Build {
         if ("${platform}" == 'ppc64_aix'
                 || "${platform}" == 'sparcv9_solaris'
                 || "${platform}" == 'x86-64_solaris'
-                || configureArguments.contains('--enable-headless-only=yes')) {
+                || configureArguments.contains('--enable-headless-only=yes')
+                || configureArguments.contains('--disable-headful')) {
             targets.replace("dev.jck", "disabled")
         }
 
