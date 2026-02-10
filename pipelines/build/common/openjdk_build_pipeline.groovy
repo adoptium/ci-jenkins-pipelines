@@ -2395,6 +2395,9 @@ def buildScriptsAssemble(
                 for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
                     context.println "Current " + remoteJobTargets[testIndex] + " Status: " + currentStatus[remoteJobTargets[testIndex]] + " Build result: " + currentResult[remoteJobTargets[testIndex]] + " Remote build URL: " + remoteBuildUrl[remoteJobTargets[testIndex]];
                 }
+                if ( completedJckJobCount < remoteTriggeredBuilds.size() ) {
+                    context.println "Waiting for remote jck jobs to complete..."
+                }
             }
             if (remoteTriggeredBuilds.size() > completedJckJobCount) {
                 def sleepTimeMins = 4 // Must not be longer due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
