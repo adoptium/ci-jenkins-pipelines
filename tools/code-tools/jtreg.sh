@@ -2,7 +2,6 @@
 
 ###################################################################
 # Script to build jtreg test suite harness
-# currently builds tip, 5.1, 6, 6.1, 7, 7.1.1, 7.2, 7.3, 7.3.1, 7.4, 7.5.1
 ###################################################################
 
 # shellcheck disable=SC2035,SC2116
@@ -22,6 +21,7 @@ readonly JTREG_7_5_1='jtreg-7.5.1+1'
 readonly JTREG_7_5_2='jtreg-7.5.2+1'
 readonly JTREG_8='jtreg-8+2'
 readonly JTREG_8_1='jtreg-8.1+1'
+readonly JTREG_8_2_1='jtreg-8.2.1+1'
 
 function checkJdks() {
   jvm_dir="/usr/lib/jvm/"
@@ -109,6 +109,10 @@ buildJTReg()
       export JTREG_BUILD_NUMBER="1"
       export BUILD_VERSION="8.1"
       export JAVA_HOME=/usr/lib/jvm/jdk17
+    elif [ "$1" == "$JTREG_8_2_1" ]; then
+      export JTREG_BUILD_NUMBER="1"
+      export BUILD_VERSION="8.2.1"
+      export JAVA_HOME=/usr/lib/jvm/jdk17
     fi
     git checkout $version
   else
@@ -192,5 +196,6 @@ buildJTReg "$JTREG_7_5_1"
 buildJTReg "$JTREG_7_5_2"
 buildJTReg "$JTREG_8"
 buildJTReg "$JTREG_8_1"
+buildJTReg "$JTREG_8_2_1"
 buildJTReg
 echo '...finished with build process.'
