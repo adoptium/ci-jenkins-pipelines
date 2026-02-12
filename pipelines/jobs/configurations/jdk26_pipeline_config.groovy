@@ -88,7 +88,7 @@ class Config26 {
                 os                  : 'aix',
                 arch                : 'ppc64',
                 additionalNodeLabels: [
-                        temurin: 'openxl17&&aix720',
+                        temurin: 'openxl17&&aix720&&build_jdk26',
                         openj9:  'xlc16&&aix715'
                 ],
                 test                : 'default',
