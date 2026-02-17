@@ -2380,6 +2380,7 @@ def buildScriptsAssemble(
                     } catch (e) {
                         // parameterized-remote-trigger-plugin probably threw an exception trying to get BuildStatus...
                         context.println("Failed to updateBuildStatus for remoteJobTargets ${testTarget} : "+jobHandle.getBuildUrl()+" : ${e}")
+                        remoteJobStatus = "FAILURE"
                     }
                 }
                 if ( remoteJobStatus != "" ) {
