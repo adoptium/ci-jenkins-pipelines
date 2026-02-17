@@ -2876,7 +2876,6 @@ def buildScriptsAssemble(
                                 def testStages = [:]
                                 if (buildConfig.TEST_LIST.size() > 0) {
                                     testStages = runAQATests(testStages)
-                                    context.parallel testStages
                                 }
 
                                 // Asynchronously get the remote JCK job status and set as the stage status.
