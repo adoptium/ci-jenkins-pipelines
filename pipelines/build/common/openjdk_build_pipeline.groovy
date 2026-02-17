@@ -386,8 +386,7 @@ class Build {
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
     If a test job doesn't exist, it will be created dynamically.
     */
-    def runAQATests() {
-        def testStages = [:]
+    def runAQATests(testStages) {
         def jdkBranch = getJDKBranch()
         def jdkRepo = getJDKRepo()
         def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == 'openj9') ? buildConfig.SCM_REF : 'master'
@@ -2333,7 +2332,8 @@ def buildScriptsAssemble(
         context.currentBuild.description = tmpDesc + "<a href=${context.JENKINS_URL}computer/${context.NODE_NAME}>${context.NODE_NAME}</a>"
     }
 
-    def waitForJckStatus(remoteTriggeredBuilds) {
+    def waitForJckStatus(remoteTriggeredBuilds, testStages) {
+      testStages["waitForJckStatus"] = {
         def completedJckJobs = ""
         def completedJckJobCount = 0
         def remoteJobTargets = remoteTriggeredBuilds.keySet() as String[]
@@ -2392,7 +2392,7 @@ def buildScriptsAssemble(
                     completedJckJobCount++
                 }
             }
-            // Issue current status every 6 polls (24 mins) or when all finished, so as not to clutter the console..
+            // Issue current status every 6 polls (18 mins) or when all finished, so as not to clutter the console..
             if ( (poll_count % 6) == 0 || completedJckJobCount == remoteTriggeredBuilds.size() ) {
                 for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
                     context.println "Current " + remoteJobTargets[testIndex] + " Status: " + currentStatus[remoteJobTargets[testIndex]] + " Build result: " + currentResult[remoteJobTargets[testIndex]] + " Remote build URL: " + remoteBuildUrl[remoteJobTargets[testIndex]];
@@ -2402,13 +2402,16 @@ def buildScriptsAssemble(
                 }
             }
             if (remoteTriggeredBuilds.size() > completedJckJobCount) {
-                def sleepTimeMins = 4 // Must not be longer due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
+                def sleepTimeMins = 3 // Must not be longer due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
                 sleep (sleepTimeMins * 60 * 1000)
             } else {
                 break
             }
             poll_count += 1
         }
+      }
+
+      return testStages
     }
 
     /*
@@ -2870,14 +2873,20 @@ def buildScriptsAssemble(
                                     }
                                 }
 
+                                def testStages = [:]
                                 if (buildConfig.TEST_LIST.size() > 0) {
-                                    def testStages = runAQATests()
+                                    testStages = runAQATests(testStages)
                                     context.parallel testStages
                                 }
 
                                 // Asynchronously get the remote JCK job status and set as the stage status.
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
-                                    waitForJckStatus(remoteTriggeredBuilds)
+                                    testStages = waitForJckStatus(remoteTriggeredBuilds, testStages)
+                                }
+
+                                // Run the testStages in parallel
+                                if (!testStages.isEmpty()) {
+                                    context.parallel testStages
                                 }
                             } else {
                                 context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
