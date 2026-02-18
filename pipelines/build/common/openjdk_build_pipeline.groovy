@@ -2405,7 +2405,13 @@ def buildScriptsAssemble(
                 // Must not be longer due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
                 def sleepTimeSecs = 180
                 // Note: use sh() so Jenkins parallel CPS-aware, and shell sleep so not verbose..
+context.println "sleep ${sleepTimeSecs}"
+try {
                 context.sh(script: "sleep ${sleepTimeSecs}")
+        } catch (e) {
+            context.println("EXCEPT  ${e}")
+        }
+
             } else {
                 break
             }
