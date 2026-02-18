@@ -442,22 +442,23 @@ class Build {
                             }
                         }
 
-                        // Eclipse Adoptium Temurin label special requirements for special.system which run the Reproducible build tests
+                        def testLabel = ''
+
+                        // Eclipse Adoptium Temurin label special requirements for special.system which runs the Reproducible build tests
                         if (testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
-                            context.println "${testType} need extra label ci.role.test.repro for reproducible build tests"
-                            if (additionalTestLabel == '') {
-                                additionalTestLabel = 'ci.role.test.repro'
+                            context.println "${testType} needs to use ci.role.test.repro for reproducible build tests"
+                            def arch = buildConfig.ARCHITECTURE
+                            if (arch == 'x64') {
+                                arch = 'x86'
+                            }
+                            if (jobName.contains('x86-64_mac')) {
+                                // x64 mac required to run on aarch64 mac
+                                testLabel = "ci.role.test.repro&&hw.arch.aarch64&&(sw.os.osx||sw.os.mac)"
                             } else {
-                                additionalTestLabel += '&&ci.role.test.repro'
+                                testLabel = "ci.role.test.repro&&hw.arch.${arch}&&sw.os.${buildConfig.TARGET_OS}"
                             }
                         }
 
-                        def testLabel = ''
-                        // Eclipse Adoptium Temurin reproducible comparing on x64 mac required to run on aarch64 mac
-                        if (testType  == 'special.system' && jobName.contains('x86-64_mac') && buildConfig.VARIANT == 'temurin') {
-                            testLabel = testLabel.minus("hw.arch.x86&&")
-                            testLabel += '&&hw.arch.aarch64'
-                        }
                         def vendorTestRepos = ''
                         def vendorTestBranches = ''
                         def vendorTestDirs = ''
