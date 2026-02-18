@@ -433,13 +433,22 @@ class Build {
                             DYNAMIC_COMPILE = true
                         }
                         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-                        // Eclipse Adoptium Temurin label speciall requirements for special.system on linux
-                        if (testType  == 'dev.openjdk' || (testType  == 'special.system' && jobName.contains('linux') && buildConfig.VARIANT == 'temurin')) {
+                        if (testType  == 'dev.openjdk') {
                             context.println "${testType} need extra label sw.tool.docker"
                             if (additionalTestLabel == '') {
                                 additionalTestLabel = 'sw.tool.docker'
                             } else {
                                 additionalTestLabel += '&&sw.tool.docker'
+                            }
+                        }
+
+                        // Eclipse Adoptium Temurin label special requirements for special.system which run the Reproducible build tests
+                        if (testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
+                            context.println "${testType} need extra label ci.role.test.repro for reproducible build tests"
+                            if (additionalTestLabel == '') {
+                                additionalTestLabel = 'ci.role.test.repro'
+                            } else {
+                                additionalTestLabel += '&&ci.role.test.repro'
                             }
                         }
 
@@ -545,11 +554,15 @@ class Build {
                         if (Map.isInstance(additionalTestParams)) {
                             context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${additionalTestParams}"
                             additionalTestParams.each { additionalParam, additionalParamValue ->
-                                def valueStr = additionalParamValue.toString()
-                                if (valueStr == 'true' || valueStr == 'false') {
-                                    testJobParams << context.booleanParam(name: additionalParam, value: valueStr.toBoolean())
+                                if (additionalParam == "CLOUD_PROVIDER" && testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
+                                    context.println "${testType} ignoring CLOUD_PROVIDER param for reproducible build tests"
                                 } else {
-                                    testJobParams << context.string(name: additionalParam, value: valueStr)
+                                    def valueStr = additionalParamValue.toString()
+                                    if (valueStr == 'true' || valueStr == 'false') {
+                                        testJobParams << context.booleanParam(name: additionalParam, value: valueStr.toBoolean())
+                                    } else {
+                                        testJobParams << context.string(name: additionalParam, value: valueStr)
+                                    }
                                 }
                             }
                         }
