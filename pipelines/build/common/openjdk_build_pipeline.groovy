@@ -2402,16 +2402,9 @@ def buildScriptsAssemble(
                 }
             }
             if (remoteTriggeredBuilds.size() > completedJckJobCount) {
-                // Must not be longer due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
-                def sleepTimeSecs = 180
-                // Note: use sh() so Jenkins parallel CPS-aware, and shell sleep so not verbose..
-context.println "sleep ${sleepTimeSecs}"
-try {
-                context.sh(script: "sleep ${sleepTimeSecs}")
-        } catch (e) {
-            context.println("EXCEPT  ${e}")
-        }
-
+                // Must be under 5 mins due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
+                // Note: CPS-aware sleep is "verbose", it is not possible to sleep quietly within a Flyweight Executor context
+                context.sleep time: 4, unit: 'MINUTES'
             } else {
                 break
             }
