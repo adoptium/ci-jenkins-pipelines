@@ -2402,8 +2402,8 @@ def buildScriptsAssemble(
                 }
             }
             if (remoteTriggeredBuilds.size() > completedJckJobCount) {
-                def sleepTimeMins = 3 // Must not be longer due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
-                sleep (sleepTimeMins * 60 * 1000)
+                // Must not be longer due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
+                context.sleep(time: 3, unit: 'MINUTES')
             } else {
                 break
             }
