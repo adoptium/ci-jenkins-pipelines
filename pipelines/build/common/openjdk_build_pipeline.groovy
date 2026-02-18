@@ -555,7 +555,7 @@ class Build {
                             context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${additionalTestParams}"
                             additionalTestParams.each { additionalParam, additionalParamValue ->
                                 if (additionalParam == "CLOUD_PROVIDER" && testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
-                                    context.println "${testType} ignoring CLOUD_PROVIDER param for reproducible build tests"
+                                    context.println "${testType} ignoring CLOUD_PROVIDER param for reproducible build tests as must not run in container"
                                 } else {
                                     def valueStr = additionalParamValue.toString()
                                     if (valueStr == 'true' || valueStr == 'false') {
