@@ -455,7 +455,8 @@ class Build {
                         def testLabel = ''
                         // Eclipse Adoptium Temurin reproducible comparing on x64 mac required to run on aarch64 mac
                         if (testType  == 'special.system' && jobName.contains('x86-64_mac') && buildConfig.VARIANT == 'temurin') {
-                            testLabel = 'ci.role.test&&hw.arch.aarch64&&(sw.os.osx||sw.os.mac)'
+                            testLabel = testLabel.minus("hw.arch.x86&&")
+                            testLabel += '&&hw.arch.aarch64'
                         }
                         def vendorTestRepos = ''
                         def vendorTestBranches = ''
