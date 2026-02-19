@@ -2392,7 +2392,7 @@ def buildScriptsAssemble(
                     completedJckJobCount++
                 }
             }
-            // Issue current status every 6 polls (18 mins) or when all finished, so as not to clutter the console..
+            // Issue current status every 6 polls (24 mins) or when all finished, so as not to clutter the console..
             if ( (poll_count % 6) == 0 || completedJckJobCount == remoteTriggeredBuilds.size() ) {
                 for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
                     context.println "Current " + remoteJobTargets[testIndex] + " Status: " + currentStatus[remoteJobTargets[testIndex]] + " Build result: " + currentResult[remoteJobTargets[testIndex]] + " Remote build URL: " + remoteBuildUrl[remoteJobTargets[testIndex]];
