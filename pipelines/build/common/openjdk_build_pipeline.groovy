@@ -386,8 +386,7 @@ class Build {
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
     If a test job doesn't exist, it will be created dynamically.
     */
-    def runAQATests() {
-        def testStages = [:]
+    def runAQATests(testStages) {
         def jdkBranch = getJDKBranch()
         def jdkRepo = getJDKRepo()
         def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == 'openj9') ? buildConfig.SCM_REF : 'master'
@@ -2348,7 +2347,8 @@ def buildScriptsAssemble(
         context.currentBuild.description = tmpDesc + "<a href=${context.JENKINS_URL}computer/${context.NODE_NAME}>${context.NODE_NAME}</a>"
     }
 
-    def waitForJckStatus(remoteTriggeredBuilds) {
+    def waitForJckStatus(remoteTriggeredBuilds, testStages) {
+      testStages["waitForJckStatus"] = {
         def completedJckJobs = ""
         def completedJckJobCount = 0
         def remoteJobTargets = remoteTriggeredBuilds.keySet() as String[]
@@ -2395,6 +2395,7 @@ def buildScriptsAssemble(
                     } catch (e) {
                         // parameterized-remote-trigger-plugin probably threw an exception trying to get BuildStatus...
                         context.println("Failed to updateBuildStatus for remoteJobTargets ${testTarget} : "+jobHandle.getBuildUrl()+" : ${e}")
+                        remoteJobStatus = "FAILURE"
                     }
                 }
                 if ( remoteJobStatus != "" ) {
@@ -2416,13 +2417,17 @@ def buildScriptsAssemble(
                 }
             }
             if (remoteTriggeredBuilds.size() > completedJckJobCount) {
-                def sleepTimeMins = 4 // Must not be longer due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
-                sleep (sleepTimeMins * 60 * 1000)
+                // Must be under 5 mins due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
+                // Note: CPS-aware sleep is "verbose", it is not possible to sleep quietly within a Flyweight Executor context
+                context.sleep time: 4, unit: 'MINUTES'
             } else {
                 break
             }
             poll_count += 1
         }
+      }
+
+      return testStages
     }
 
     /*
@@ -2884,14 +2889,19 @@ def buildScriptsAssemble(
                                     }
                                 }
 
+                                def testStages = [:]
                                 if (buildConfig.TEST_LIST.size() > 0) {
-                                    def testStages = runAQATests()
-                                    context.parallel testStages
+                                    testStages = runAQATests(testStages)
                                 }
 
                                 // Asynchronously get the remote JCK job status and set as the stage status.
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
-                                    waitForJckStatus(remoteTriggeredBuilds)
+                                    testStages = waitForJckStatus(remoteTriggeredBuilds, testStages)
+                                }
+
+                                // Run the testStages in parallel
+                                if (!testStages.isEmpty()) {
+                                    context.parallel testStages
                                 }
                             } else {
                                 context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
