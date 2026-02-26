@@ -432,8 +432,7 @@ class Build {
                             DYNAMIC_COMPILE = true
                         }
                         def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-                        // Eclipse Adoptium Temurin label speciall requirements for special.system on linux
-                        if (testType  == 'dev.openjdk' || (testType  == 'special.system' && jobName.contains('linux') && buildConfig.VARIANT == 'temurin')) {
+                        if (testType  == 'dev.openjdk') {
                             context.println "${testType} need extra label sw.tool.docker"
                             if (additionalTestLabel == '') {
                                 additionalTestLabel = 'sw.tool.docker'
@@ -443,10 +442,22 @@ class Build {
                         }
 
                         def testLabel = ''
-                        // Eclipse Adoptium Temurin reproducible comparing on x64 mac required to run on aarch64 mac
-                        if (testType  == 'special.system' && jobName.contains('x86-64_mac') && buildConfig.VARIANT == 'temurin') {
-                            testLabel = 'ci.role.test&&hw.arch.aarch64&&(sw.os.osx||sw.os.mac)'
+
+                        // Eclipse Adoptium Temurin label special requirements for special.system which runs the Reproducible build tests
+                        if (testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
+                            context.println "${testType} needs to use ci.role.test.repro for reproducible build tests"
+                            def arch = buildConfig.ARCHITECTURE
+                            if (arch == 'x64') {
+                                arch = 'x86'
+                            }
+                            if (jobName.contains('x86-64_mac')) {
+                                // x64 mac required to run on aarch64 mac
+                                testLabel = "ci.role.test.repro&&hw.arch.aarch64&&(sw.os.osx||sw.os.mac)"
+                            } else {
+                                testLabel = "ci.role.test.repro&&hw.arch.${arch}&&sw.os.${buildConfig.TARGET_OS}"
+                            }
                         }
+
                         def vendorTestRepos = ''
                         def vendorTestBranches = ''
                         def vendorTestDirs = ''
@@ -544,11 +555,15 @@ class Build {
                         if (Map.isInstance(additionalTestParams)) {
                             context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${additionalTestParams}"
                             additionalTestParams.each { additionalParam, additionalParamValue ->
-                                def valueStr = additionalParamValue.toString()
-                                if (valueStr == 'true' || valueStr == 'false') {
-                                    testJobParams << context.booleanParam(name: additionalParam, value: valueStr.toBoolean())
+                                if (additionalParam == "CLOUD_PROVIDER" && testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
+                                    context.println "${testType} ignoring CLOUD_PROVIDER param for reproducible build tests as must not run in container"
                                 } else {
-                                    testJobParams << context.string(name: additionalParam, value: valueStr)
+                                    def valueStr = additionalParamValue.toString()
+                                    if (valueStr == 'true' || valueStr == 'false') {
+                                        testJobParams << context.booleanParam(name: additionalParam, value: valueStr.toBoolean())
+                                    } else {
+                                        testJobParams << context.string(name: additionalParam, value: valueStr)
+                                    }
                                 }
                             }
                         }
