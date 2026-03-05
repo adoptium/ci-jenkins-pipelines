@@ -1747,16 +1747,26 @@ class Build {
                                 } catch (FlowInterruptedException e) {
                                     throw new Exception("[ERROR] Controller docker file scm checkout timeout (${buildTimeouts.DOCKER_CHECKOUT_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
-
-                                context.docker.build('build-image', "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
-                                    buildScripts(
-                                        cleanWorkspace,
-                                        cleanWorkspaceAfter,
-                                        cleanWorkspaceBuildOutputAfter,
-                                        filename,
-                                        useAdoptShellScripts
-                                    )
-                                }
+                                context.withCredentials([
+                                    [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aiextpk', accessKeyVariable: 'PKID', secretKeyVariable: 'AIEXTPK'],
+                                    [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aiextsk', accessKeyVariable: 'SKID', secretKeyVariable: 'AIEXTSK']]) {
+                                        context.docker.build('build-image', "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
+                                            context.sh """
+                                                echo "${context.AIEXTSK}" > sk
+                                                echo "${context.AIEXTPK}" > pk
+                                                base64 -d sk > ~/sk.bin
+                                                base64 -d pk > ~/pk.bin
+                                                rm -rf sk pk
+                                            """
+                                            buildScripts(
+                                                cleanWorkspace,
+                                                cleanWorkspaceAfter,
+                                                cleanWorkspaceBuildOutputAfter,
+                                                filename,
+                                                useAdoptShellScripts
+                                            )
+                                        }
+                                    }
                             } else {
                                 context.withCredentials([
                                     [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aiextpk', accessKeyVariable: 'PKID', secretKeyVariable: 'AIEXTPK'],
