@@ -2353,7 +2353,7 @@ def buildScriptsAssemble(
         def completedJckJobCount = 0
         def remoteJobTargets = remoteTriggeredBuilds.keySet() as String[]
 
-        def poll_count = 0
+        def poll_count = 1
         def currentStatus = [:]
         def currentResult = [:]
         def remoteBuildUrl = [:]
@@ -2411,6 +2411,17 @@ def buildScriptsAssemble(
             if ( (poll_count % 6) == 0 || completedJckJobCount == remoteTriggeredBuilds.size() ) {
                 for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
                     context.println "Current " + remoteJobTargets[testIndex] + " Status: " + currentStatus[remoteJobTargets[testIndex]] + " Build result: " + currentResult[remoteJobTargets[testIndex]] + " Remote build URL: " + remoteBuildUrl[remoteJobTargets[testIndex]];
+
+                    // If Status is still in "QUEUED", and we have no remoteBuildUrl, then remote trigger plugin has probably lost track of job... https://github.com/adoptium/ci-jenkins-pipelines/issues/1377
+                    if (currentStatus[remoteJobTargets[testIndex]] == "QUEUED" && remoteBuildUrl[remoteJobTargets[testIndex]] == null) {
+                      context.println "Failing " + remoteJobTargets[testIndex] + " as remote trigger plugin has probably lost track of job.. please check remote result manually."
+                      context.stage(remoteJobTargets[testIndex]) {
+                          setStageResult(remoteJobTargets[testIndex], "FAILURE")
+                      }
+                      context.println "Build " + remoteJobTargets[testIndex] + " completed: FAILURE"
+                      completedJckJobs += ","+remoteJobTargets[testIndex]
+                      completedJckJobCount++
+                    }
                 }
                 if ( completedJckJobCount < remoteTriggeredBuilds.size() ) {
                     context.println "Waiting for remote jck jobs to complete..."
