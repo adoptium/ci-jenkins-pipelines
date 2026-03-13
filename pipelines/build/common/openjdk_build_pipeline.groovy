@@ -459,7 +459,7 @@ class Build {
                         }
 
                         // Eclipse Adoptium Temerin needs more time to complete the full suite of extended.openjdk for jdk25+, as we're limited to one machine.'
-                        if (testType  == 'extended.openjdk' && buildConfig.VARIANT == 'temurin' && jobName.contains('ppc64_aix') $$ jobParams.get('JDK_VERSIONS') >= 25) {
+                        if (testType  == 'extended.openjdk' && buildConfig.VARIANT == 'temurin' && jobName.contains('ppc64_aix') && jobParams.get('JDK_VERSIONS') >= 25) {
                             context.println "${testType} needs a longer TIME_LIMIT to run to completion on aix."
                             def newTimeLimit = 30
                             if(jobParams.containsKey('TIME_LIMIT')) {
