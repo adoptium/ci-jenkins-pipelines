@@ -459,15 +459,17 @@ class Build {
                         }
 
                         // Eclipse Adoptium Temerin needs more time to complete the full suite of extended.openjdk for jdk25+, as we're limited to one machine.'
-                        if (testType  == 'extended.openjdk' && buildConfig.VARIANT == 'temurin' && jobName.contains('ppc64_aix') && jobParams.get('JDK_VERSIONS') >= 25) {
-                            context.println "${testType} needs a longer TIME_LIMIT to run to completion on aix."
-                            def newTimeLimit = 30
-                            if(jobParams.containsKey('TIME_LIMIT')) {
-                                if(jobParams.get('TIME_LIMIT') < newTimeLimit) {
+                        if (testType  == 'extended.openjdk' && buildConfig.VARIANT == 'temurin' && jobName.contains('ppc64_aix')) {
+                            if (jobParams.JDK_VERSIONS.isInteger() && jobParams.JDK_VERSIONS.toInteger() >= 25) {
+                                context.println "${testType} needs a longer TIME_LIMIT to run to completion on aix."
+                                def newTimeLimit = 30
+                                if(jobParams.containsKey('TIME_LIMIT')) {
+                                    if(jobParams.get('TIME_LIMIT') < newTimeLimit) {
+                                        jobParams.put('TIME_LIMIT', newTimeLimit)
+                                    }
+                                } else {
                                     jobParams.put('TIME_LIMIT', newTimeLimit)
                                 }
-                            } else {
-                                jobParams.put('TIME_LIMIT', newTimeLimit)
                             }
                         }
 
@@ -2870,7 +2872,7 @@ def buildScriptsAssemble(
                 }
 
                 // Validate the SBOM.
-                if (buildConfig.BUILD_ARGS.contains('--create-sbom')) {
+                if (!buildConfig.BUILD_ARGS.contains('--create-sbom')) {
                     try {
                         if (validateSbom() == 'SUCCESS') {
                             context.println "openjdk_build_pipeline: SBOMs created by this build passed validation."
