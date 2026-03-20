@@ -458,8 +458,33 @@ class Build {
                             }
                         }
 
+                        context.println "Debug 1"
+                        if (testType  == 'extended.openjdk') {
+                            context.println "Debug 2"
+                            if (buildConfig.VARIANT == 'temurin') {
+                                context.println "Debug 3"
+                                if (jobName.contains('ppc64_aix')) {
+                                    context.println "Debug 4"
+                                    if (jobParams.JDK_VERSIONS.isInteger()) {
+                                        context.println "Debug 5"
+                                        if (jobParams.JDK_VERSIONS.toInteger() >= 25) {
+                                            context.println "Debug 6"
+                                            if(jobParams.containsKey('TIME_LIMIT')) {
+                                                context.println "Debug 7"
+                                                if(jobParams.get('TIME_LIMIT') < newTimeLimit) {
+                                                    context.println "Debug 8"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        context.println "Debug 9"
                         // Eclipse Adoptium Temerin needs more time to complete the full suite of extended.openjdk for jdk25+, as we're limited to one machine.'
                         if (testType  == 'extended.openjdk' && buildConfig.VARIANT == 'temurin' && jobName.contains('ppc64_aix')) {
+                            context.println "Debug 10"
                             if (jobParams.JDK_VERSIONS.isInteger() && jobParams.JDK_VERSIONS.toInteger() >= 25) {
                                 context.println "${testType} needs a longer TIME_LIMIT to run to completion on aix."
                                 def newTimeLimit = 30
