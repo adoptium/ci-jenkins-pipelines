@@ -472,8 +472,11 @@ class Build {
                                             if(jobParams.containsKey('TIME_LIMIT')) {
                                                 context.println "Debug 7"
                                                 def newTimeLimit = 30
-                                                if(jobParams.get('TIME_LIMIT') < newTimeLimit) {
-                                                    context.println "Debug 8"
+                                                if(jobParams.get('TIME_LIMIT').isInteger()) {
+                                                    context.println "Debug 7.5"
+                                                    if(jobParams.get('TIME_LIMIT').toInteger() < newTimeLimit) {
+                                                        context.println "Debug 8"
+                                                    }
                                                 }
                                             }
                                         }
@@ -490,8 +493,10 @@ class Build {
                                 context.println "${testType} needs a longer TIME_LIMIT to run to completion on aix."
                                 def newTimeLimit = 30
                                 if(jobParams.containsKey('TIME_LIMIT')) {
-                                    if(jobParams.get('TIME_LIMIT') < newTimeLimit) {
-                                        jobParams.put('TIME_LIMIT', newTimeLimit)
+                                    if(jobParams.get('TIME_LIMIT').isInteger()) {
+                                        if(jobParams.get('TIME_LIMIT').toInteger() < newTimeLimit) {
+                                            jobParams.put('TIME_LIMIT', newTimeLimit)
+                                        }
                                     }
                                 } else {
                                     jobParams.put('TIME_LIMIT', newTimeLimit)
