@@ -471,6 +471,7 @@ class Build {
                                             context.println "Debug 6"
                                             if(jobParams.containsKey('TIME_LIMIT')) {
                                                 context.println "Debug 7"
+                                                def newTimeLimit = 30
                                                 if(jobParams.get('TIME_LIMIT') < newTimeLimit) {
                                                     context.println "Debug 8"
                                                 }
