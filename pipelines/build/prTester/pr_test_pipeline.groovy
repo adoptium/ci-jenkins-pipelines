@@ -197,19 +197,7 @@ class PullRequestTestPipeline implements Serializable {
 }
 
 Map<String, ?> defaultTestConfigurations = [
-    'x64Linux': [
-        'temurin'
-    ],
-    'x64AlpineLinux' : [
-        'temurin'
-    ],
-    'aarch64Linux': [
-        'temurin'
-    ],
-    'x64Windows': [
-        'temurin'
-    ],
-    'x64Mac': [
+    'ppc64Aix': [
         'temurin'
     ]
 ]
