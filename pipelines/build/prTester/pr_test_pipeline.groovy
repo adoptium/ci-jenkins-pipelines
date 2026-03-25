@@ -197,12 +197,24 @@ class PullRequestTestPipeline implements Serializable {
 }
 
 Map<String, ?> defaultTestConfigurations = [
-    'ppc64Aix': [
+    'x64Linux': [
+        'temurin'
+    ],
+    'x64AlpineLinux' : [
+        'temurin'
+    ],
+    'aarch64Linux': [
+        'temurin'
+    ],
+    'x64Windows': [
+        'temurin'
+    ],
+    'x64Mac': [
         'temurin'
     ]
 ]
 
-List<Integer> defaultJavaVersions = [25]
+List<Integer> defaultJavaVersions = [8, 11, 17, 21]
 
 return {
     String branch,
