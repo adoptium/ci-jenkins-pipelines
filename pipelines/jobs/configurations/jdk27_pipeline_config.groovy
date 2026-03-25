@@ -98,6 +98,9 @@ class Config27 {
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
+                ],
+                additionalTestParams: [
+                        temurin     : [TIME_LIMIT: '30']
                 ]
         ],
 

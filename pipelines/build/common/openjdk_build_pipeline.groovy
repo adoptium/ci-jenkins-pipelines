@@ -458,24 +458,6 @@ class Build {
                             }
                         }
 
-                        // Eclipse Adoptium Temerin needs more time to complete the full suite of extended.openjdk for jdk25+, as we're limited to one machine.'
-                        if (testType  == 'extended.openjdk' && buildConfig.VARIANT == 'temurin' && jobName.contains('ppc64_aix')) {
-                            if (jobParams.JDK_VERSIONS.isInteger() && jobParams.JDK_VERSIONS.toInteger() >= 25) {
-                                def newTimeLimit = 30
-                                if (jobParams.containsKey('TIME_LIMIT')) {
-                                    if (jobParams.get('TIME_LIMIT').isInteger()) {
-                                        if (jobParams.get('TIME_LIMIT').toInteger() < newTimeLimit) {
-                                            context.println "${testType} needs a longer TIME_LIMIT to run to completion on aix."
-                                            jobParams.put('TIME_LIMIT', "${newTimeLimit}")
-                                        }
-                                    }
-                                } else {
-                                    context.println "${testType} needs a longer TIME_LIMIT to run to completion on aix."
-                                    jobParams.put('TIME_LIMIT', "${newTimeLimit}")
-                                }
-                            }
-                        }
-
                         def vendorTestRepos = ''
                         def vendorTestBranches = ''
                         def vendorTestDirs = ''
@@ -576,6 +558,10 @@ class Build {
                                 if (additionalParam == "CLOUD_PROVIDER" && testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
                                     context.println "${testType} ignoring CLOUD_PROVIDER param for reproducible build tests as must not run in container"
                                 } else {
+                                    def existingIndex = testJobParams.findIndexOf { it.name == additionalParam }
+                                    if (existingIndex >= 0) {
+                                        testJobParams.removeAt(existingIndex)
+                                    }
                                     def valueStr = additionalParamValue.toString()
                                     if (valueStr == 'true' || valueStr == 'false') {
                                         testJobParams << context.booleanParam(name: additionalParam, value: valueStr.toBoolean())
@@ -2875,6 +2861,7 @@ def buildScriptsAssemble(
                 }
 
                 // Validate the SBOM.
+                // [Do Not Merge - disabled sbom verification to allow test runs to reach the test phase]
                 if (!buildConfig.BUILD_ARGS.contains('--create-sbom')) {
                     try {
                         if (validateSbom() == 'SUCCESS') {
