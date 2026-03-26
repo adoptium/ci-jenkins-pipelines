@@ -2319,12 +2319,6 @@ def buildScriptsAssemble(
         this function should only be used in pr-tester
     */
     def updateGithubCommitStatus(STATE, MESSAGE) {
-		// Temporary change. Remove before merge.
-			return
-			
-			
-			
-			
         // workaround https://issues.jenkins-ci.org/browse/JENKINS-38674
         // get repourl from job's DEFAULTS_JSON  points to upstream repo
         String repoUrl = DEFAULTS_JSON['repository']['pipeline_url'] // USER_REMOTE_CONFIGS['remotes']['url']
