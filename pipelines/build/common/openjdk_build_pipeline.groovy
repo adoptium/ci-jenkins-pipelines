@@ -2861,7 +2861,6 @@ def buildScriptsAssemble(
                 }
 
                 // Validate the SBOM.
-                // [Do Not Merge - disabled sbom verification to allow test runs to reach the test phase]
                 if (buildConfig.BUILD_ARGS.contains('--create-sbom')) {
                     try {
                         if (validateSbom() == 'SUCCESS') {
