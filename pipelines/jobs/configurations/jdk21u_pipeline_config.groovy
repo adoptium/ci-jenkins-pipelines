@@ -14,9 +14,6 @@ class Config21 {
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
-                ],
-                additionalTestParams: [
-                        temurin     : [TIME_LIMIT: '30']
                 ]
         ],
 
