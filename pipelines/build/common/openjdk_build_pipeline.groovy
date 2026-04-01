@@ -519,35 +519,35 @@ class Build {
                             }
                         }
 
-                        def testJobParams = [
-                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                        context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                        context.string(name: 'JDK_REPO', value: jdkRepo),
-                        context.string(name: 'JDK_BRANCH', value: jdkBranch),
-                        context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-                        context.string(name: 'LABEL', value:  testLabel),
-                        context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                        context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
-                        context.string(name: 'PARALLEL', value: parallel),
-                        context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
-                        context.string(name: 'TEST_TIME', value: testTime),
-                        context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
-                        context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
-                        context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
-                        context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                        context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE),
-                        context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
-                        context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
-                        context.string(name: 'VENDOR_TEST_DIRS', value: vendorTestDirs),
-                        context.booleanParam(name: 'RERUN_FAILURE', value: true),
-                        context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}"),
-                        context.string(name: 'BUILD_LIST', value: jobParams["BUILD_LIST"])
+                        def testJobParamsMap = [
+                        UPSTREAM_JOB_NUMBER: "${env.BUILD_NUMBER}",
+                        UPSTREAM_JOB_NAME: "${env.JOB_NAME}",
+                        SDK_RESOURCE: 'upstream',
+                        JDK_REPO: "${jdkRepo}",
+                        JDK_BRANCH: "${jdkBranch}",
+                        OPENJ9_BRANCH: "${openj9Branch}",
+                        LABEL: "${testLabel}",
+                        LABEL_ADDITION: "${additionalTestLabel}",
+                        KEEP_REPORTDIR: "${keep_test_reportdir}",
+                        PARALLEL: "${parallel}",
+                        NUM_MACHINES: "${numMachinesPerTest}",
+                        TEST_TIME: "${testTime}",
+                        USE_TESTENV_PROPERTIES: "${useTestEnvProperties}",
+                        GENERATE_JOBS: "${aqaAutoGen}",
+                        ADOPTOPENJDK_BRANCH: "${aqaBranch}",
+                        ACTIVE_NODE_TIMEOUT: "${buildConfig.ACTIVE_NODE_TIMEOUT}",
+                        DYNAMIC_COMPILE: "${DYNAMIC_COMPILE}",
+                        VENDOR_TEST_REPOS: "${vendorTestRepos}",
+                        VENDOR_TEST_BRANCHES: "${vendorTestBranches}",
+                        VENDOR_TEST_DIRS: "${vendorTestDirs}",
+                        RERUN_FAILURE: "true",
+                        RERUN_ITERATIONS: "${rerunIterations}",
+                        BUILD_LIST: jobParams["BUILD_LIST"]
                         ]
 
                         // If TIME_LIMIT is set, override target job default TIME_LIMIT value.
                         if (jobParams.any{mapEntry -> mapEntry.key.equals("TIME_LIMIT")}) {
-                            testJobParams.add(context.string(name: 'TIME_LIMIT', value: jobParams["TIME_LIMIT"]))
+                            testJobParamsMap[TIME_LIMIT] = jobParams["TIME_LIMIT"]
                         }
 
                         // Are there any additional test params specified?
@@ -558,17 +558,17 @@ class Build {
                                 if (additionalParam == "CLOUD_PROVIDER" && testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
                                     context.println "${testType} ignoring CLOUD_PROVIDER param for reproducible build tests as must not run in container"
                                 } else {
-                                    def existingIndex = testJobParams.findIndexOf { it.name == additionalParam }
-                                    if (existingIndex >= 0) {
-                                        testJobParams.removeAt(existingIndex)
-                                    }
-                                    def valueStr = additionalParamValue.toString()
-                                    if (valueStr == 'true' || valueStr == 'false') {
-                                        testJobParams << context.booleanParam(name: additionalParam, value: valueStr.toBoolean())
-                                    } else {
-                                        testJobParams << context.string(name: additionalParam, value: valueStr)
-                                    }
+                                    testJobParamsMap[(additionalParam)] = additionalParamValue.toString()
                                 }
+                            }
+                        }
+
+                        def testJobParams = [:]
+                        testJobParamsMap.each { paramKey, paramValue ->
+                            if (paramValue == 'true' || paramValue == 'false') {
+                                testJobParams << context.booleanParam(name: paramKey, value: paramValue.toBoolean())
+                            } else {
+                                testJobParams << context.string(name: paramKey, value: paramValue)
                             }
                         }
 
