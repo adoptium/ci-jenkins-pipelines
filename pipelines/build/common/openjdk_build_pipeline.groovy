@@ -547,7 +547,7 @@ class Build {
 
                         // If TIME_LIMIT is set, override target job default TIME_LIMIT value.
                         if (jobParams.any{mapEntry -> mapEntry.key.equals("TIME_LIMIT")}) {
-                            testJobParamsMap[TIME_LIMIT] = jobParams["TIME_LIMIT"]
+                            testJobParamsMap["TIME_LIMIT"] = jobParams["TIME_LIMIT"]
                         }
 
                         // Are there any additional test params specified?
