@@ -563,7 +563,7 @@ class Build {
                             }
                         }
 
-                        def testJobParams = [:]
+                        def testJobParams = []
                         testJobParamsMap.each { paramKey, paramValue ->
                             if (paramValue == 'true' || paramValue == 'false') {
                                 testJobParams << context.booleanParam(name: paramKey, value: paramValue.toBoolean())
