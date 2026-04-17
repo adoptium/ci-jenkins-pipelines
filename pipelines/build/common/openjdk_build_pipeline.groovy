@@ -659,6 +659,10 @@ class Build {
             targets.replace("dev.jck", "disabled")
         }
 
+        if ("${platform}" == 'x86-64_windows') {
+            // Temporarily disable dev.jck on windows for April Release until we can investigate and fix the rm permission issues
+            targets.replace("dev.jck", "disabled")
+        }
         if ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') {
             // Primary platforms run extended.jck in Parallel
             targets.replace("extended.jck", "parallel")
