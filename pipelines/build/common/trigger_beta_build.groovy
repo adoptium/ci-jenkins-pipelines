@@ -15,12 +15,6 @@ limitations under the License.
 
 import java.nio.file.NoSuchFileException
 import groovy.json.JsonOutput
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.Month
-import java.time.DayOfWeek
-import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalAdjusters
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
@@ -33,6 +27,10 @@ def variant="${params.VARIANT}"
 def mirrorRepo="${params.MIRROR_REPO}"
 def version="${params.JDK_VERSION}".toInteger()
 def binariesRepo="${params.BINARIES_REPO}"
+
+// GitHub issue configuration for release status checking
+def releaseStatusGithubRepo = "adoptium/temurin"
+def releaseStatusSearchPhrase = "Release Status per Platform"
 
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
@@ -47,34 +45,43 @@ def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
 def latestAdoptTag
 def publishJobTag
 
-// Is the current day within the release period of from the previous Saturday to the following Sunday
-// from the release Tuesday ?
-// Release Tuesday is now the 3rd Tuesday of the month
-def isDuringReleasePeriod() {
-    def releasePeriod = false
-    def now = ZonedDateTime.now(ZoneId.of('UTC'))
-    def month = now.getMonth()
+// Check if a GitHub issue containing the configured search phrase is open
+// Returns true if such an issue is open (release ongoing), false otherwise
+def isReleaseOngoing() {
+    def releaseOngoing = false
 
-    // Is it a release month? CPU updates in Jan, Apr, Jul, Oct
-    // New major versions are released in Mar and Sept
-    if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
-        // Yes, calculate release Tuesday, which is the 3rd Tuesday of the month
-        def day1st = now.withDayOfMonth(1)
-        def releaseTuesday = day1st.with(TemporalAdjusters.dayOfWeekInMonth(3, DayOfWeek.TUESDAY))
-        echo "Release Tuesday for this month is: "+releaseTuesday 
+    try {
+        echo "Checking GitHub ${releaseStatusGithubRepo} for open issue containing: '${releaseStatusSearchPhrase}'"
 
-        // Release period no "testing" trigger, 10 days prior to 10 days after "release tuesday"
-        def days = ChronoUnit.DAYS.between(releaseTuesday, now)
-        if (days >= -10 && days <= 10) {
-            releasePeriod = true
+        // Use GitHub API to search for issues containing the phrase in the title
+        def encodedQuery = URLEncoder.encode("repo:${releaseStatusGithubRepo} is:open is:issue in:title \"${releaseStatusSearchPhrase}\"", "UTF-8")
+        def searchUrl = "https://api.github.com/search/issues?q=${encodedQuery}"
+
+        // Fetch the search results
+        def rc = sh(script: "curl -s -o issue_search.json '${searchUrl}'", returnStatus: true)
+
+        if (rc == 0) {
+            // Parse the JSON response to check if any issues were found
+            def issueCount = sh(script: "cat issue_search.json | grep '\"total_count\"' | head -1 | sed 's/.*: \\([0-9]*\\).*/\\1/'", returnStdout: true).trim()
+
+            if (issueCount.isInteger() && issueCount.toInteger() > 0) {
+                echo "Found ${issueCount} open issue(s) containing '${releaseStatusSearchPhrase}' in ${releaseStatusGithubRepo}"
+                // Also log the issue title(s) for visibility
+                sh(script: "cat issue_search.json | grep '\"title\"' | head -3", returnStatus: true)
+                releaseOngoing = true
+            } else {
+                echo "No open issues found containing '${releaseStatusSearchPhrase}' in ${releaseStatusGithubRepo}"
+            }
+        } else {
+            echo "Warning: Failed to query GitHub API for issue status. Assuming release is NOT ongoing."
         }
-    } else {
-        echo "No releases this month"
+    } catch (Exception e) {
+        echo "Error checking GitHub issue status: ${e.message}"
+        echo "Assuming release is NOT ongoing due to error."
     }
 
-    echo "Is within release period? "+releasePeriod
-
-    return releasePeriod
+    echo "Is release ongoing (based on GitHub issue)? ${releaseOngoing}"
+    return releaseOngoing
 }
 
 // Load the given targetConfigurations from the pipeline config
@@ -187,8 +194,9 @@ node('worker') {
     // binariesRepoTag is the resulting published github binaries release tag created by the Adoptium "publish job"
     def binariesRepoTag = publishJobTag + "-beta"
 
-    if (isDuringReleasePeriod()) {
-        echo "We are within a release period (prior week previous Saturday to the following Sunday around the release Tuesday), so testing is disabled."
+    // Check if release is ongoing by querying for GitHub issue
+    if (isReleaseOngoing()) {
+        echo "Release is ongoing (GitHub issue containing '${releaseStatusSearchPhrase}' is open in ${releaseStatusGithubRepo}), so testing is disabled."
         enableTesting = false
     }
 
