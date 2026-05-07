@@ -32,10 +32,6 @@ def binariesRepo="${params.BINARIES_REPO}"
 def releaseStatusGithubRepo = "adoptium/temurin"
 def releaseStatusSearchPhrase = "Release Status per Platform"
 
-// GitHub issue configuration for release status checking
-def releaseStatusGithubRepo = "adoptium/temurin"
-def releaseStatusSearchPhrase = "Release Status per Platform"
-
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
 def enableTesting = true
