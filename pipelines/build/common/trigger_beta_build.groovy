@@ -32,6 +32,10 @@ def binariesRepo="${params.BINARIES_REPO}"
 def releaseStatusGithubRepo = "adoptium/temurin"
 def releaseStatusSearchPhrase = "Release Status per Platform"
 
+// GitHub issue configuration for release status checking
+def releaseStatusGithubRepo = "adoptium/temurin"
+def releaseStatusSearchPhrase = "Release Status per Platform"
+
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
 def enableTesting = true
@@ -47,14 +51,14 @@ def publishJobTag
 
 // Check if a GitHub issue containing the configured search phrase is open
 // Returns true if such an issue is open (release ongoing), false otherwise
-def isReleaseOngoing() {
+def isReleaseOngoing(String githubRepo, String searchPhrase) {
     def releaseOngoing = false
 
     try {
-        echo "Checking GitHub ${releaseStatusGithubRepo} for open issue containing: '${releaseStatusSearchPhrase}'"
+        echo "Checking GitHub ${githubRepo} for open issue containing: '${searchPhrase}'"
 
         // Use GitHub API to search for issues containing the phrase in the title
-        def encodedQuery = URLEncoder.encode("repo:${releaseStatusGithubRepo} is:open is:issue in:title \"${releaseStatusSearchPhrase}\"", "UTF-8")
+        def encodedQuery = URLEncoder.encode("repo:${githubRepo} is:open is:issue in:title \"${searchPhrase}\"", "UTF-8")
         def searchUrl = "https://api.github.com/search/issues?q=${encodedQuery}"
 
         // Fetch the search results
@@ -65,12 +69,12 @@ def isReleaseOngoing() {
             def issueCount = sh(script: "cat issue_search.json | grep '\"total_count\"' | head -1 | sed 's/.*: \\([0-9]*\\).*/\\1/'", returnStdout: true).trim()
 
             if (issueCount.isInteger() && issueCount.toInteger() > 0) {
-                echo "Found ${issueCount} open issue(s) containing '${releaseStatusSearchPhrase}' in ${releaseStatusGithubRepo}"
+                echo "Found ${issueCount} open issue(s) containing '${searchPhrase}' in ${githubRepo}"
                 // Also log the issue title(s) for visibility
                 sh(script: "cat issue_search.json | grep '\"title\"' | head -3", returnStatus: true)
                 releaseOngoing = true
             } else {
-                echo "No open issues found containing '${releaseStatusSearchPhrase}' in ${releaseStatusGithubRepo}"
+                echo "No open issues found containing '${searchPhrase}' in ${githubRepo}"
             }
         } else {
             echo "Warning: Failed to query GitHub API for issue status. Assuming release is NOT ongoing."
@@ -195,7 +199,7 @@ node('worker') {
     def binariesRepoTag = publishJobTag + "-beta"
 
     // Check if release is ongoing by querying for GitHub issue
-    if (isReleaseOngoing()) {
+    if (isReleaseOngoing(releaseStatusGithubRepo, releaseStatusSearchPhrase)) {
         echo "Release is ongoing (GitHub issue containing '${releaseStatusSearchPhrase}' is open in ${releaseStatusGithubRepo}), so testing is disabled."
         enableTesting = false
     }
