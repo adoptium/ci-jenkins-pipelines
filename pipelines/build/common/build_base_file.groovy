@@ -82,6 +82,17 @@ class Builder implements Serializable {
         PUBLISH_ARTIFACTS_TIMEOUT : 3
     ]
 
+    // Workaround to handle different versions of Badge plugin
+    def appendSummaryText(summary, text) {
+        try {
+                def currentText = summary.getText() ?: ""
+                summary.setText(currentText + text)
+        } catch (Exception e) {
+                echo "setText failed, trying deprecated appendText: ${e.message}"
+                summary.appendText(text, false)
+        }
+    }
+
     /*
     Returns an IndividualBuildConfig that is passed down to the downstream job.
     It uses several helper functions to pull in and parse the build configuration for the job.
@@ -883,9 +894,9 @@ class Builder implements Serializable {
                         currentBuild.setKeepLog(keepReleaseLogs)
                         currentBuild.setDisplayName(publishName)
                     }
-                    releaseSummary.appendText('<b>RELEASE PUBLISH BINARIES:</b><ul>', false)
+                    appendSummaryText(releaseSummary, '<b>RELEASE PUBLISH BINARIES:</b><ul>')
                 } else {
-                    releaseSummary.appendText('<b>NIGHTLY PUBLISH BINARIES:</b><ul>', false)
+                    appendSummaryText(releaseSummary, '<b>NIGHTLY PUBLISH BINARIES:</b><ul>')
                 }
             }
 
@@ -1015,7 +1026,7 @@ class Builder implements Serializable {
                                         copyArtifactSuccess = true
                                         if (release) {
                                             def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
-                                            releaseSummary.appendText("<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
+                                            appendSummaryText(releaseSummary, "<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
                                         }
                                     }
                             }
@@ -1077,11 +1088,11 @@ class Builder implements Serializable {
                 if (release) {
                     context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
                     if (generatedTapsCollection) {
-                        releaseSummary.appendText('</ul>', false)
-                        releaseSummary.appendText("<b>TAP files COLLECTION and RELEASE:</b><ul>")
+                        appendSummaryText(releaseSummary, '</ul>')
+                        appendSummaryText(releaseSummary, "<b>TAP files COLLECTION and RELEASE:</b><ul>")
                         def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
                         def tapCollectionUrl = "${context.JENKINS_URL}job/TAP_Collection/parambuild?Release_PipelineJob_Name=${urlJobName}"
-                        releaseSummary.appendText("<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
+                        appendSummaryText(releaseSummary, "<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
                         String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
                         def tag = publishName
                         tag = URLEncoder.encode(tag, 'UTF-8')
@@ -1089,19 +1100,19 @@ class Builder implements Serializable {
                         artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
                         def javaVersion=determineReleaseToolRepoVersion()
                         releaseToolUrl += "&VERSION=${javaVersion}&TAG=${tag}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
-                        releaseSummary.appendText("<li><a href=${releaseToolUrl}> RELEASE TEST RESULTS TAPs Link</a></li>")
+                        appendSummaryText(releaseSummary, "<li><a href=${releaseToolUrl}> RELEASE TEST RESULTS TAPs Link</a></li>")
                     }
                 } else {
                     try {
                         context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
                             def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(null, currentBuild.result, "${context.BUILD_URL}")
-                            releaseSummary.appendText("<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
+                            appendSummaryText(releaseSummary, "<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
                         }
                     } catch (FlowInterruptedException e) {
                         throw new Exception("[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")
                     }
                 }
-                releaseSummary.appendText('</ul>', false)
+                appendSummaryText(releaseSummary, '</ul>')
             }
         }
     }

@@ -106,6 +106,17 @@ class Build {
         this.env = env
     }
 
+    // Workaround to handle different versions of Badge plugin
+    def appendSummaryText(summary, text) {
+        try {
+                def currentText = summary.getText() ?: ""
+                summary.setText(currentText + text)
+        } catch (Exception e) {
+                echo "setText failed, trying deprecated appendText: ${e.message}"
+                summary.appendText(text, false)
+        }
+    }
+
     /*
     Returns the java version number for this job (e.g. 8, 11, 17, ...)
     */
@@ -667,7 +678,7 @@ class Build {
         def weekly = ''
         if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
         def jckRerunSummary = context.manager.createSummary('info.gif')
-        jckRerunSummary.appendText('<b>RERUN JCK TESTS:</b><ul>', false)
+        appendSummaryText(jckRerunSummary, '<b>RERUN JCK TESTS:</b><ul>')
         def aqa_test_pipeline_BaseURL = "https://ci.adoptium.net/view/Test_grinder/job/AQA_Test_Pipeline/parambuild"
         targets.each { targetTest, targetMode ->
             if (targetMode == "disabled") {
@@ -744,7 +755,7 @@ class Build {
                     }
                     def queryString = paramList.collect { k, v -> "${URLEncoder.encode(k, 'UTF-8')}=${URLEncoder.encode(v, 'UTF-8')}"}.join('&')
                     def aqa_test_pipeline_FullURL = "${aqa_test_pipeline_BaseURL}?${queryString}&MODE=RELAY"
-                    jckRerunSummary.appendText("<li><a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
+                    appendSummaryText(jckRerunSummary, "<li><a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
 
                    if ("${platform}" == 'x86-64_windows' && "${targetTest}" == 'dev.jck') {
                         context.catchError {
@@ -810,7 +821,7 @@ class Build {
             }
         }
         context.parallel remoteTargets
-        jckRerunSummary.appendText('</ul>', false)
+        appendSummaryText(jckRerunSummary,'</ul>')
         return remoteTriggeredBuilds
     }
 
