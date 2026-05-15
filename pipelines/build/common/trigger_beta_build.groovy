@@ -83,11 +83,16 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
 
         if (rc == 0) {
             // Filter issues by title containing the search phrase using jq
-            // This returns an array of matching issues
-            def matchingIssuesJson = sh(script: "jq '[.[] | select(.title | contains(\"${searchPhrase}\"))]' issue_search.json", returnStdout: true).trim()
+            // Save to file to avoid shell variable issues with control characters in JSON
+            def rcFilter = sh(script: "jq '[.[] | select(.title | contains(\"${searchPhrase}\"))]' issue_search.json > matching_issues.json", returnStatus: true)
+            
+            if (rcFilter != 0) {
+                echo "ERROR: Failed to filter issues. Assuming release IS ongoing (fail-safe)."
+                return true
+            }
 
-            // Count matching issues
-            def issueCount = sh(script: "echo '${matchingIssuesJson}' | jq 'length'", returnStdout: true).trim()
+            // Count matching issues from the file
+            def issueCount = sh(script: "jq 'length' matching_issues.json", returnStdout: true).trim()
 
             // Check if issueCount is valid (not null, not empty, and is a number)
             if (issueCount == "" || issueCount == "null" || !issueCount.isInteger()) {
@@ -99,8 +104,8 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
                 echo "Found ${issueCount} open issue(s) containing '${searchPhrase}' in ${githubRepo}"
 
                 // Check all matching issues to see if any were created by an authorized user
-                // Extract all issue creators using jq from the filtered results
-                def allCreators = sh(script: "echo '${matchingIssuesJson}' | jq -r '.[].user.login'", returnStdout: true).trim()
+                // Extract all issue creators using jq from the file
+                def allCreators = sh(script: "jq -r '.[].user.login' matching_issues.json", returnStdout: true).trim()
 
                 if (allCreators != "") {
                     def creators = allCreators.split('\n')
@@ -108,7 +113,7 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
 
                     for (int i = 0; i < creators.size(); i++) {
                         def issueCreator = creators[i].trim()
-                        def issueTitle = sh(script: "echo '${matchingIssuesJson}' | jq -r '.[${i}].title'", returnStdout: true).trim()
+                        def issueTitle = sh(script: "jq -r '.[${i}].title' matching_issues.json", returnStdout: true).trim()
 
                         echo "Issue ${i + 1}: '${issueTitle}' created by '${issueCreator}'"
 
