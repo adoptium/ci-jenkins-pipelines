@@ -15,12 +15,6 @@ limitations under the License.
 
 import java.nio.file.NoSuchFileException
 import groovy.json.JsonOutput
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.Month
-import java.time.DayOfWeek
-import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalAdjusters
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
@@ -33,6 +27,10 @@ def variant="${params.VARIANT}"
 def mirrorRepo="${params.MIRROR_REPO}"
 def version="${params.JDK_VERSION}".toInteger()
 def binariesRepo="${params.BINARIES_REPO}"
+
+// GitHub issue configuration for release status checking
+def releaseStatusGithubRepo = "adoptium/temurin"
+def releaseStatusSearchPhrase = "Release Status per Platform"
 
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
@@ -47,34 +45,112 @@ def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
 def latestAdoptTag
 def publishJobTag
 
-// Is the current day within the release period of from the previous Saturday to the following Sunday
-// from the release Tuesday ?
-// Release Tuesday is now the 3rd Tuesday of the month
-def isDuringReleasePeriod() {
-    def releasePeriod = false
-    def now = ZonedDateTime.now(ZoneId.of('UTC'))
-    def month = now.getMonth()
+// Check if a GitHub issue containing the configured search phrase is open
+// and was created by an authorized user from release-managers.json
+// Returns true if such an issue is open (release ongoing), false otherwise
+// NOTE: On any error or failure, assumes release IS ongoing (fail-safe to disable tests)
+def isReleaseOngoing(String githubRepo, String searchPhrase) {
+    def releaseOngoing = false
 
-    // Is it a release month? CPU updates in Jan, Apr, Jul, Oct
-    // New major versions are released in Mar and Sept
-    if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
-        // Yes, calculate release Tuesday, which is the 3rd Tuesday of the month
-        def day1st = now.withDayOfMonth(1)
-        def releaseTuesday = day1st.with(TemporalAdjusters.dayOfWeekInMonth(3, DayOfWeek.TUESDAY))
-        echo "Release Tuesday for this month is: "+releaseTuesday 
+    try {
+        echo "Checking GitHub ${githubRepo} for open issue containing: '${searchPhrase}'"
 
-        // Release period no "testing" trigger, 10 days prior to 10 days after "release tuesday"
-        def days = ChronoUnit.DAYS.between(releaseTuesday, now)
-        if (days >= -10 && days <= 10) {
-            releasePeriod = true
+        // First, fetch the list of authorized users from release-managers.json
+        def authUsersUrl = "https://raw.githubusercontent.com/adoptium/temurin/main/.github/workflows/release-managers.json"
+        def rcAuth = sh(script: "curl -s -o release-managers.json '${authUsersUrl}'", returnStatus: true)
+
+        if (rcAuth != 0) {
+            echo "ERROR: Failed to fetch authorized users list. Assuming release IS ongoing (fail-safe)."
+            return true
         }
-    } else {
-        echo "No releases this month"
+
+        // Extract the authorized_users array from the JSON using jq
+        def authorizedUsers = sh(script: "jq -r '.authorized_users[]' release-managers.json | tr '\\n' ' '", returnStdout: true).trim()
+
+        if (authorizedUsers == "") {
+            echo "ERROR: No authorized users found in release-managers.json. Assuming release IS ongoing (fail-safe)."
+            return true
+        }
+
+        echo "Authorized users: ${authorizedUsers}"
+
+        // Use GitHub Issues API directly (better rate limits than Search API)
+        // List open issues and filter by title locally
+        def issuesUrl = "https://api.github.com/repos/${githubRepo}/issues?state=open&per_page=100"
+
+        // Fetch the open issues
+        def rc = sh(script: "curl -s -o issue_search.json '${issuesUrl}'", returnStatus: true)
+
+        if (rc == 0) {
+            // Filter issues by title containing the search phrase using jq
+            // Save to file to avoid shell variable issues with control characters in JSON
+            def rcFilter = sh(script: "jq '[.[] | select(.title | contains(\"${searchPhrase}\"))]' issue_search.json > matching_issues.json", returnStatus: true)
+            
+            if (rcFilter != 0) {
+                echo "ERROR: Failed to filter issues. Assuming release IS ongoing (fail-safe)."
+                return true
+            }
+
+            // Count matching issues from the file
+            def issueCount = sh(script: "jq 'length' matching_issues.json", returnStdout: true).trim()
+
+            // Check if issueCount is valid (not null, not empty, and is a number)
+            if (issueCount == "" || issueCount == "null" || !issueCount.isInteger()) {
+                echo "ERROR: Could not parse issue count from filtered results. Assuming release IS ongoing (fail-safe)."
+                return true
+            }
+
+            if (issueCount.toInteger() > 0) {
+                echo "Found ${issueCount} open issue(s) containing '${searchPhrase}' in ${githubRepo}"
+
+                // Check all matching issues to see if any were created by an authorized user
+                // Extract all issue creators using jq from the file
+                def allCreators = sh(script: "jq -r '.[].user.login' matching_issues.json", returnStdout: true).trim()
+
+                if (allCreators != "") {
+                    def creators = allCreators.split('\n')
+                    echo "Checking ${creators.size()} issue(s) for authorized creators..."
+
+                    for (int i = 0; i < creators.size(); i++) {
+                        def issueCreator = creators[i].trim()
+                        def issueTitle = sh(script: "jq -r '.[${i}].title' matching_issues.json", returnStdout: true).trim()
+
+                        echo "Issue ${i + 1}: '${issueTitle}' created by '${issueCreator}'"
+
+                        // Check if the creator is in the authorized users list
+                        def isAuthorized = sh(script: "echo '${authorizedUsers}' | grep -w '${issueCreator}'", returnStatus: true)
+
+                        if (isAuthorized == 0) {
+                            echo "Issue creator '${issueCreator}' is authorized. Release is ongoing."
+                            releaseOngoing = true
+                            break  // Found an authorized issue, no need to check further
+                        } else {
+                            echo "Issue creator '${issueCreator}' is NOT in the authorized users list."
+                        }
+                    }
+
+                    if (!releaseOngoing) {
+                        echo "None of the matching issues were created by authorized users. Release is NOT ongoing."
+                    }
+                } else {
+                    echo "ERROR: Could not determine issue creators. Assuming release IS ongoing (fail-safe)."
+                    return true
+                }
+            } else {
+                echo "No open issues found containing '${searchPhrase}' in ${githubRepo}"
+            }
+        } else {
+            echo "ERROR: Failed to query GitHub API for issue status. Assuming release IS ongoing (fail-safe)."
+            return true
+        }
+    } catch (Exception e) {
+        echo "ERROR: Exception checking GitHub issue status: ${e.message}"
+        echo "Assuming release IS ongoing due to error (fail-safe)."
+        return true
     }
 
-    echo "Is within release period? "+releasePeriod
-
-    return releasePeriod
+    echo "Is release ongoing (based on GitHub issue and authorized user)? ${releaseOngoing}"
+    return releaseOngoing
 }
 
 // Load the given targetConfigurations from the pipeline config
@@ -187,8 +263,9 @@ node('worker') {
     // binariesRepoTag is the resulting published github binaries release tag created by the Adoptium "publish job"
     def binariesRepoTag = publishJobTag + "-beta"
 
-    if (isDuringReleasePeriod()) {
-        echo "We are within a release period (prior week previous Saturday to the following Sunday around the release Tuesday), so testing is disabled."
+    // Check if release is ongoing by querying for GitHub issue
+    if (isReleaseOngoing(releaseStatusGithubRepo, releaseStatusSearchPhrase)) {
+        echo "Release is ongoing (GitHub issue containing '${releaseStatusSearchPhrase}' is open in ${releaseStatusGithubRepo}), so testing is disabled."
         enableTesting = false
     }
 
