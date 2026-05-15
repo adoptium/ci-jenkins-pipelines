@@ -74,12 +74,12 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
 
         echo "Authorized users: ${authorizedUsers}"
 
-        // Use GitHub API to search for issues containing the phrase in the title
-        def encodedQuery = URLEncoder.encode("repo:${githubRepo} is:open is:issue in:title \"${searchPhrase}\"", "UTF-8")
-        def searchUrl = "https://api.github.com/search/issues?q=${encodedQuery}"
+        // Use GitHub Issues API directly (better rate limits than Search API)
+        // List open issues and filter by title locally
+        def issuesUrl = "https://api.github.com/repos/${githubRepo}/issues?state=open&per_page=100"
 
-        // Fetch the search results
-        def rc = sh(script: "curl -s -o issue_search.json '${searchUrl}'", returnStatus: true)
+        // Fetch the open issues
+        def rc = sh(script: "curl -s -o issue_search.json '${issuesUrl}'", returnStatus: true)
 
         if (rc == 0) {
             // Parse the JSON response to check if any issues were found using jq
@@ -97,8 +97,8 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
                 echo "Found ${issueCount} open issue(s) containing '${searchPhrase}' in ${githubRepo}"
 
                 // Check all matching issues to see if any were created by an authorized user
-                // Extract all issue creators using jq
-                def allCreators = sh(script: "jq -r '.items[].user.login' issue_search.json", returnStdout: true).trim()
+                // Extract all issue creators using jq from the filtered results
+                def allCreators = sh(script: "echo '${matchingIssuesJson}' | jq -r '.[].user.login'", returnStdout: true).trim()
 
                 if (allCreators != "") {
                     def creators = allCreators.split('\n')
@@ -106,7 +106,7 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
 
                     for (int i = 0; i < creators.size(); i++) {
                         def issueCreator = creators[i].trim()
-                        def issueTitle = sh(script: "jq -r '.items[${i}].title' issue_search.json", returnStdout: true).trim()
+                        def issueTitle = sh(script: "echo '${matchingIssuesJson}' | jq -r '.[${i}].title'", returnStdout: true).trim()
 
                         echo "Issue ${i + 1}: '${issueTitle}' created by '${issueCreator}'"
 
