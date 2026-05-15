@@ -88,6 +88,7 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
             // Check if issueCount is valid (not null, not empty, and is a number)
             if (issueCount == "" || issueCount == "null" || !issueCount.isInteger()) {
                 echo "ERROR: Could not parse issue count from GitHub API response. Assuming release IS ongoing (fail-safe)."
+                echo "issueCount: ${issueCount}"
                 return true
             }
 
