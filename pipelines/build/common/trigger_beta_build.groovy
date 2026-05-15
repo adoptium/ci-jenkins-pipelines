@@ -82,14 +82,16 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
         def rc = sh(script: "curl -s -o issue_search.json '${issuesUrl}'", returnStatus: true)
 
         if (rc == 0) {
-            // Parse the JSON response to check if any issues were found using jq
-            def issueCount = sh(script: "jq -r '.total_count' issue_search.json", returnStdout: true).trim()
+            // Filter issues by title containing the search phrase using jq
+            // This returns an array of matching issues
+            def matchingIssuesJson = sh(script: "jq '[.[] | select(.title | contains(\"${searchPhrase}\"))]' issue_search.json", returnStdout: true).trim()
+
+            // Count matching issues
+            def issueCount = sh(script: "echo '${matchingIssuesJson}' | jq 'length'", returnStdout: true).trim()
 
             // Check if issueCount is valid (not null, not empty, and is a number)
             if (issueCount == "" || issueCount == "null" || !issueCount.isInteger()) {
-                echo "ERROR: Could not parse issue count from GitHub API response. Assuming release IS ongoing (fail-safe)."
-                echo "issueCount: ${issueCount}"
-                sh(script: "cat issue_search.json")
+                echo "ERROR: Could not parse issue count from filtered results. Assuming release IS ongoing (fail-safe)."
                 return true
             }
 
