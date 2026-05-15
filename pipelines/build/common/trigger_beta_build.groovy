@@ -85,7 +85,13 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
             // Parse the JSON response to check if any issues were found using jq
             def issueCount = sh(script: "jq -r '.total_count' issue_search.json", returnStdout: true).trim()
 
-            if (issueCount.isInteger() && issueCount.toInteger() > 0) {
+            // Check if issueCount is valid (not null, not empty, and is a number)
+            if (issueCount == "" || issueCount == "null" || !issueCount.isInteger()) {
+                echo "ERROR: Could not parse issue count from GitHub API response. Assuming release IS ongoing (fail-safe)."
+                return true
+            }
+
+            if (issueCount.toInteger() > 0) {
                 echo "Found ${issueCount} open issue(s) containing '${searchPhrase}' in ${githubRepo}"
 
                 // Check all matching issues to see if any were created by an authorized user
