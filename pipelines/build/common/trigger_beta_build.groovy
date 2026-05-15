@@ -268,7 +268,6 @@ node('worker') {
         echo "Release is ongoing (GitHub issue containing '${releaseStatusSearchPhrase}' is open in ${releaseStatusGithubRepo}), so testing is disabled."
         enableTesting = false
     }
-exit
 
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         // Determine this versions potential GA tag, so as to not build and publish a GA version
