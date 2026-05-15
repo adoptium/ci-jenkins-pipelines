@@ -80,7 +80,7 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
 
         // Fetch the search results
         def rc = sh(script: "curl -s -o issue_search.json '${searchUrl}'", returnStatus: true)
-cat issue_search.json
+sh('cat issue_search.json')
         if (rc == 0) {
             // Parse the JSON response to check if any issues were found using jq
             def issueCount = sh(script: "jq -r '.total_count' issue_search.json", returnStdout: true).trim()
