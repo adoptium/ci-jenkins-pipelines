@@ -84,7 +84,7 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
         if (rc == 0) {
             // Parse the JSON response to check if any issues were found using jq
             def issueCount = sh(script: "jq -r '.total_count' issue_search.json", returnStdout: true).trim()
-
+echo "count: "+issueCount
             if (issueCount.isInteger() && issueCount.toInteger() > 0) {
                 echo "Found ${issueCount} open issue(s) containing '${searchPhrase}' in ${githubRepo}"
 
