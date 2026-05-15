@@ -46,12 +46,33 @@ def latestAdoptTag
 def publishJobTag
 
 // Check if a GitHub issue containing the configured search phrase is open
+// and was created by an authorized user from release-managers.json
 // Returns true if such an issue is open (release ongoing), false otherwise
+// NOTE: On any error or failure, assumes release IS ongoing (fail-safe to disable tests)
 def isReleaseOngoing(String githubRepo, String searchPhrase) {
     def releaseOngoing = false
 
     try {
         echo "Checking GitHub ${githubRepo} for open issue containing: '${searchPhrase}'"
+
+        // First, fetch the list of authorized users from release-managers.json
+        def authUsersUrl = "https://raw.githubusercontent.com/adoptium/temurin/main/.github/workflows/release-managers.json"
+        def rcAuth = sh(script: "curl -s -o release-managers.json '${authUsersUrl}'", returnStatus: true)
+
+        if (rcAuth != 0) {
+            echo "ERROR: Failed to fetch authorized users list. Assuming release IS ongoing (fail-safe)."
+            return true
+        }
+
+        // Extract the authorized_users array from the JSON using jq
+        def authorizedUsers = sh(script: "jq -r '.authorized_users[]' release-managers.json | tr '\\n' ' '", returnStdout: true).trim()
+
+        if (authorizedUsers == "") {
+            echo "ERROR: No authorized users found in release-managers.json. Assuming release IS ongoing (fail-safe)."
+            return true
+        }
+
+        echo "Authorized users: ${authorizedUsers}"
 
         // Use GitHub API to search for issues containing the phrase in the title
         def encodedQuery = URLEncoder.encode("repo:${githubRepo} is:open is:issue in:title \"${searchPhrase}\"", "UTF-8")
@@ -61,26 +82,59 @@ def isReleaseOngoing(String githubRepo, String searchPhrase) {
         def rc = sh(script: "curl -s -o issue_search.json '${searchUrl}'", returnStatus: true)
 
         if (rc == 0) {
-            // Parse the JSON response to check if any issues were found
-            def issueCount = sh(script: "cat issue_search.json | grep '\"total_count\"' | head -1 | sed 's/.*: \\([0-9]*\\).*/\\1/'", returnStdout: true).trim()
+            // Parse the JSON response to check if any issues were found using jq
+            def issueCount = sh(script: "jq -r '.total_count' issue_search.json", returnStdout: true).trim()
 
             if (issueCount.isInteger() && issueCount.toInteger() > 0) {
                 echo "Found ${issueCount} open issue(s) containing '${searchPhrase}' in ${githubRepo}"
-                // Also log the issue title(s) for visibility
-                sh(script: "cat issue_search.json | grep '\"title\"' | head -3", returnStatus: true)
-                releaseOngoing = true
+
+                // Check all matching issues to see if any were created by an authorized user
+                // Extract all issue creators using jq
+                def allCreators = sh(script: "jq -r '.items[].user.login' issue_search.json", returnStdout: true).trim()
+
+                if (allCreators != "") {
+                    def creators = allCreators.split('\n')
+                    echo "Checking ${creators.size()} issue(s) for authorized creators..."
+
+                    for (int i = 0; i < creators.size(); i++) {
+                        def issueCreator = creators[i].trim()
+                        def issueTitle = sh(script: "jq -r '.items[${i}].title' issue_search.json", returnStdout: true).trim()
+
+                        echo "Issue ${i + 1}: '${issueTitle}' created by '${issueCreator}'"
+
+                        // Check if the creator is in the authorized users list
+                        def isAuthorized = sh(script: "echo '${authorizedUsers}' | grep -w '${issueCreator}'", returnStatus: true)
+
+                        if (isAuthorized == 0) {
+                            echo "Issue creator '${issueCreator}' is authorized. Release is ongoing."
+                            releaseOngoing = true
+                            break  // Found an authorized issue, no need to check further
+                        } else {
+                            echo "Issue creator '${issueCreator}' is NOT in the authorized users list."
+                        }
+                    }
+
+                    if (!releaseOngoing) {
+                        echo "None of the matching issues were created by authorized users. Release is NOT ongoing."
+                    }
+                } else {
+                    echo "ERROR: Could not determine issue creators. Assuming release IS ongoing (fail-safe)."
+                    return true
+                }
             } else {
                 echo "No open issues found containing '${searchPhrase}' in ${githubRepo}"
             }
         } else {
-            echo "Warning: Failed to query GitHub API for issue status. Assuming release is NOT ongoing."
+            echo "ERROR: Failed to query GitHub API for issue status. Assuming release IS ongoing (fail-safe)."
+            return true
         }
     } catch (Exception e) {
-        echo "Error checking GitHub issue status: ${e.message}"
-        echo "Assuming release is NOT ongoing due to error."
+        echo "ERROR: Exception checking GitHub issue status: ${e.message}"
+        echo "Assuming release IS ongoing due to error (fail-safe)."
+        return true
     }
 
-    echo "Is release ongoing (based on GitHub issue)? ${releaseOngoing}"
+    echo "Is release ongoing (based on GitHub issue and authorized user)? ${releaseOngoing}"
     return releaseOngoing
 }
 
@@ -199,6 +253,7 @@ node('worker') {
         echo "Release is ongoing (GitHub issue containing '${releaseStatusSearchPhrase}' is open in ${releaseStatusGithubRepo}), so testing is disabled."
         enableTesting = false
     }
+exit
 
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         // Determine this versions potential GA tag, so as to not build and publish a GA version
