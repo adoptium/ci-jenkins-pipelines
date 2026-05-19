@@ -173,23 +173,24 @@ def getLatestBinariesTag(String version) {
 
 // Calls wget with the given URL and returns the output.
 // Returns an empty string if fails.
-def callWgetSafely(String url) {
-    def testOutputRC = sh(returnStatus : true, returnStdout: false, script: "wget --spider -q ${url} 2> /dev/null")
+// Uses JSESSIONID cookie from the running Jenkins job to authenticate requests
+def callWgetSafely(String url, String cookieJar) {
+    def testOutputRC = sh(returnStatus : true, returnStdout: false, script: "wget --load-cookies '${cookieJar}' --spider -q ${url} 2> /dev/null")
     if ( testOutputRC != 0 ) {
         echo "Warning: This URL's data could not be found, and is likely expired: ${url}"
         return ""
     }
-    return sh(returnStdout: true, script: "wget -q -O - ${url}")
+    return sh(returnStdout: true, script: "wget --load-cookies '${cookieJar}' -q -O - ${url}")
 }
 
 // Return our best guess at the build TRSS IDs for the latest successful build+publish of a specific set of platforms for a specific build tag.
 // Takes a jdk major version, a tag, and an array of platform names (standard platform format).
-def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map platformsList) {
+def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map platformsList, String cookieJar) {
     // First we gather a list of the latest pipelines for this jdkVersion.
     echo "Gathering Build IDs by platform."
     def jdkVersionMinusTheU = jdkVersion.endsWith("u") ? jdkVersion.substring(0, jdkVersion.length() - 1) : jdkVersion
     def pipelineName = "open${jdkVersionMinusTheU}-pipeline"
-    def pipelines = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+    def pipelines = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}", cookieJar)
     def pipelineJson = new JsonSlurper().parseText(pipelines)
     String srcTagLocal = srcTag.replaceAll("-beta","")
 
@@ -212,7 +213,7 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
             continue
         }
 
-        def pipelineBuilds = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}")
+        def pipelineBuilds = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}", cookieJar)
         def pipelineBuildsJson = new JsonSlurper().parseText(pipelineBuilds)
 
         if (pipelineBuildsJson.size() == 0) {
@@ -248,8 +249,8 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
                     if (onePipelineBuild.buildOutputId != null) {
                         wgetUrlForReleaseTool = "${trssURL}/api/getOutputById?id=${onePipelineBuild.buildOutputId}"
                     }
+def releaseToolOutput = callWgetSafely(wgetUrlForReleaseTool, cookieJar)
 
-                    def releaseToolOutput = callWgetSafely(wgetUrlForReleaseTool)
 
                     if ((releaseToolOutput.length() <= 2) || (!releaseToolOutput.contains("Finished: SUCCESS"))) {
                         echo "Warning: The refactor_openjdk_release_tool job in this pipeline has not completed successfully: ${wgetUrlForReleaseTool}"
@@ -299,11 +300,11 @@ def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map 
 // Return our best guess at the urls for the Weekly EA pipelines that generated builds from a specific tag.
 // Optionally only return the "latest".
 // This pipeline is expected to have attempted to build JDKs for all supported platforms.
-def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, List requiredStatus) {
+def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, List requiredStatus, String cookieJar) {
     def functionBuildUrls = []
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
-    def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+    def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}", cookieJar)
     def pipelineJson = new JsonSlurper().parseText(pipeline)
 
     if (latestOnly) {
@@ -544,7 +545,7 @@ def extractVersNum(String jdkVers) {
 
 // For a given pipeline, tell us how reproducible the builds were.
 // Note: Will limit itself to jdk versions and platforms in the results Map.
-def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, String srcTag, Map results) {
+def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, String srcTag, Map results, String cookieJar) {
     echo "Called repro method with trssID:"+trssId
 
     def platformConversionMap = getPlatformConversionMap()
@@ -558,8 +559,8 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
         results[jdkVersion][1].each { onePlatform, valueNotUsed ->
             mapOfMoreRecentBuildIDs[onePlatform] = ""
         }
+getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs, cookieJar)
 
-        getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs)
 
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
@@ -582,7 +583,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 pipelineLink = "${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
             }
 
-            def trssBuildJobNames = callWgetSafely("${pipelineLink}")
+            def trssBuildJobNames = callWgetSafely("${pipelineLink}", cookieJar)
             results[jdkVersion][1][onePlatform] = "???% - Build not found. Pipeline link: " + pipelineLink
 
             // Does this platform have a build in this pipeline? If not, skip to next platform.
@@ -601,7 +602,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 def reproTestName=platformReproTestMap[onePlatform][1]+"_0"
                 def reproTestBucket=platformReproTestMap[onePlatform][0]
                 def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
-                def trssTestJobNames = callWgetSafely("${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
+                def trssTestJobNames = callWgetSafely("${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$", cookieJar)
                 // Did this build have tests? If not, skip to next build job.
                 if ( trssTestJobNames.length() <= 2 ) {
                     continue buildIterator
@@ -624,8 +625,8 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                             wgetUrl = "${trssURL}/api/getOutputById?id=${testTarget.testOutputId}"
                         }
                     }
+def testOutput = callWgetSafely(wgetUrl, cookieJar)
 
-                    def testOutput = callWgetSafely(wgetUrl)
 
                     // If we can find it, then we look for the anticipated percentage.
                     if ( !testOutput.contains("Running test "+reproTestName) ) {
@@ -670,7 +671,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 }
 
 // Get the Pipeline Test job results...
-def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineUrl, String pipeline_id, String buildVariant, String testVariant) {
+def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineUrl, String pipeline_id, String buildVariant, String testVariant, String cookieJar) {
     def buildJobComplete = 0
     def buildJobFailure = 0
     def testJobSuccess = 0
@@ -683,7 +684,7 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
     def buildJobNumber = 0
 
     // Get all child Test jobs for this pipeline job
-    def pipelineTestJobs = callWgetSafely("${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*")
+    def pipelineTestJobs = callWgetSafely("${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*", cookieJar)
     def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
     if (pipelineTestJobsJson.size() > 0) {
         testJobNumber = pipelineTestJobsJson.size()
@@ -703,7 +704,7 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
         }
     }
     // Get all child Build jobs for this pipeline job
-    def pipelineBuildJobs = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
+    def pipelineBuildJobs = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}", cookieJar)
     def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
     buildJobNumber = 0
     pipelineBuildJobsJson.each { buildJob ->
@@ -734,7 +735,7 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
 }
 
 // Generate a test summary string for the total of failed test targets & jobs for the given EA build
-def getFailedTestSummary(String trssUrl, String variant, String featureRelease, String releaseName, String tag) {
+def getFailedTestSummary(String trssUrl, String variant, String featureRelease, String releaseName, String tag, String cookieJar) {
     def buildVariant = variant
     def testVariant
     if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
@@ -754,15 +755,15 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     def buildUrls
     if (tag == "") {
         // Non-tag release builds, just find the last build
-        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true, ["Done","Streaming"])
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true, ["Done","Streaming"], cookieJar)
     } else {
         // Tag build, find all pipeline jobs matching the tag
-        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false, ["Done","Streaming"])
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false, ["Done","Streaming"], cookieJar)
     }
     if (buildUrls.size() > 0) {
         buildUrls.each { buildUrlTuple ->
             (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrlTuple
-            def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant)
+            def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant, cookieJar)
             failedTestJobNum    += testResults.testJobFailure
             testJobTotal        += testResults.testJobNumber
             failedTestTargetNum += testResults.testTargetFailed
@@ -790,6 +791,41 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
 
 node('worker') {
     try{
+        // Create a cookie jar file with the current Jenkins session cookie
+        // This allows wget to authenticate using the running job's session
+        def cookieJar = "${WORKSPACE}/.jenkins-cookies"
+        def jenkinsUrl = "${env.JENKINS_URL}"
+        def buildUrl = "${env.BUILD_URL}"
+        
+        // Extract JSESSIONID from the current session
+        // The Jenkins job has access to its own session cookie
+        sh """
+            # Create cookie jar with JSESSIONID from current session
+            # Format: domain, flag, path, secure, expiration, name, value
+            echo '# HTTP Cookie File' > '${cookieJar}'
+            echo '# This file was generated by Jenkins. Edit at your own risk.' >> '${cookieJar}'
+            
+            # Extract domain from JENKINS_URL
+            DOMAIN=\$(echo '${jenkinsUrl}' | sed -e 's|^[^/]*//||' -e 's|/.*\$||' -e 's|:.*\$||')
+            
+            # Get JSESSIONID from environment or cookies
+            if [ -n "\${JSESSIONID}" ]; then
+                echo "\${DOMAIN}\tFALSE\t/\tFALSE\t0\tJSESSIONID\t\${JSESSIONID}" >> '${cookieJar}'
+            elif [ -f "\${HOME}/.jenkins-cli-cookies" ]; then
+                grep JSESSIONID "\${HOME}/.jenkins-cli-cookies" >> '${cookieJar}' || true
+            fi
+            
+            # If we still don't have a cookie, try to extract from current request
+            # This works when the script is running within Jenkins
+            if ! grep -q JSESSIONID '${cookieJar}'; then
+                # Try to get cookie from Jenkins environment
+                COOKIE_VALUE=\$(curl -s -c - '${buildUrl}api/json' 2>/dev/null | grep JSESSIONID | awk '{print \$NF}')
+                if [ -n "\${COOKIE_VALUE}" ]; then
+                    echo "\${DOMAIN}\tFALSE\t/\tFALSE\t0\tJSESSIONID\t\${COOKIE_VALUE}" >> '${cookieJar}'
+                fi
+            fi
+        """
+        
         def variant = "${params.VARIANT}"
         def trssUrl    = "${params.TRSS_URL}"
         def apiUrl    = "${params.API_URL}"
@@ -849,7 +885,7 @@ node('worker') {
                         extraFilter = "architecture=x64&os=alpine-linux&"
                     }
 
-                    def assets = callWgetSafely("'${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?${extraFilter}image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
+                    def assets = callWgetSafely("'${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?${extraFilter}image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'", cookieJar)
                     def assetsJson = new JsonSlurper().parseText(assets)
 
                     def status = []
@@ -932,7 +968,7 @@ node('worker') {
             }
 
             // Get top level builds names
-            def trssBuildNames = callWgetSafely("${trssUrl}/api/getTopLevelBuildNames?type=Test")
+            def trssBuildNames = callWgetSafely("${trssUrl}/api/getTopLevelBuildNames?type=Test", cookieJar)
             def buildNamesJson = new JsonSlurper().parseText(trssBuildNames)
             buildNamesJson.each { build ->
                 // Is it a build Pipeline?
@@ -943,7 +979,7 @@ node('worker') {
                     // Are we interested in this pipeline?
                     if (pipelinesOfInterest.contains(pipelineName)) {
                         // Find all the "Done" pipeline builds in the last 7 days, started by "timer", or upstream project "build-scripts/utils/betaTrigger_"
-                        def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+                        def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}", cookieJar)
                         def pipelineJson = new JsonSlurper().parseText(pipeline)
                         if (pipelineJson.size() > 0) {
                             // Find first in list started by "timer", "build-scripts/utils/betaTrigger_" or "build-scripts/utils/releaseTrigger_"
@@ -979,7 +1015,7 @@ node('worker') {
                                 }
                                 // Was job a "match"?
                                 if (pipeline_id != null) {
-                                    def testResults = getPipelineTestResults(trssUrl, pipelineName, pipelineUrl, pipeline_id, buildVariant, testVariant)
+                                    def testResults = getPipelineTestResults(trssUrl, pipelineName, pipelineUrl, pipeline_id, buildVariant, testVariant, cookieJar)
                                     testStats.add(testResults)
                                 }
                             }
@@ -1090,7 +1126,7 @@ node('worker') {
 
                     // Is it a non-tag triggered build? eg.Oracle STS version
                     if (nonTagBuildReleases.contains(featureRelease)) {
-                        failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, "", "")
+                        failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, "", "", cookieJar)
 
                         // Check for stale published build
                         def days = status['actualDays'] as int
@@ -1106,11 +1142,11 @@ node('worker') {
                         }
                     } else {
                         // Get failed AQA test summary for the current published featureRelease
-                        failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-ea-beta", "")+"_adopt")
+                        failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-ea-beta", "")+"_adopt", cookieJar)
 
                         // Get latest build, in case we need to report current build status when assets are missing or not the latest tag
                         (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
-                        def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, [])
+                        def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, [], cookieJar)
                         if (buildUrls.size() > 0) {
                             (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
                         }
@@ -1139,9 +1175,9 @@ node('worker') {
                         def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
                         def reproBuildUrls
                         if (nonTagBuildReleases.contains(featureRelease)) {
-                            reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, "", "", true, [])
+                            reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, "", "", true, [], cookieJar)
                         } else {
-                            reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, [])
+                            reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, [], cookieJar)
                         }
                         if (reproBuildUrls.size() > 0) {
                             reproBuildUrls.each { reproBuildTuple ->
@@ -1149,7 +1185,7 @@ node('worker') {
                                 echo "Checking for reproducibility results in pipeline: ${reproBuildUrl}"
                                 echo "This pipeline's current status is ${reproBuildStatus}"
 
-                                getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds)
+                                getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds, cookieJar)
                             }
 
                             if ( ! reproducibleBuilds[featureRelease][0].startsWith("100") ) {
@@ -1237,6 +1273,8 @@ node('worker') {
             }
         }
     } finally {
+        // Clean up cookie jar
+        sh "rm -f '${WORKSPACE}/.jenkins-cookies' || true"
         cleanWs notFailBuild: true
     }
 }
