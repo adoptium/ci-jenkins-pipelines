@@ -2915,19 +2915,26 @@ def buildScriptsAssemble(
                                     }
                                 }
 
-                                def testStages = [:]
+                                def aqaTestStages = [:]
                                 if (buildConfig.TEST_LIST.size() > 0) {
-                                    testStages = runAQATests(testStages)
+                                    aqaTestStages = runAQATests(aqaTestStages)
                                 }
 
-                                // Asynchronously get the remote JCK job status and set as the stage status.
+                                // Create jckWaitTestStages to get the remote JCK job status and set as the stage status.
+                                def jckWaitTestStages = [:]
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
-                                    testStages = waitForJckStatus(remoteTriggeredBuilds, testStages)
+                                    jckWaitTestStages = waitForJckStatus(remoteTriggeredBuilds, jckWaitTestStages)
                                 }
 
-                                // Run the testStages in parallel
-                                if (!testStages.isEmpty()) {
-                                    context.parallel testStages
+                                // Run the aqaTestStages in parallel
+                                if (!aqaTestStages.isEmpty()) {
+                                    context.parallel aqaTestStages
+                                }
+
+                                // Now run jckWaitTestStages
+                                // We cannot run this in parallel with aqaTestStages as it likely blows Jenkins CPS orchestration JVM Heap Memory
+                                if (!jckWaitTestStages.isEmpty()) {
+                                    context.parallel jckWaitTestStages
                                 }
                             } else {
                                 context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
