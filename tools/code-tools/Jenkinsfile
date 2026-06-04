@@ -8,7 +8,7 @@ pipeline {
         cron(CRON_SETTINGS)
     }
     options {
-        buildDiscarder logRotator(daysToKeepStr: '30', numToKeepStr: '10')
+        buildDiscarder logRotator(daysToKeepStr: '30', numToKeepStr: '10', removeLastBuild: true)
     }
     stages {
         stage('Build') {

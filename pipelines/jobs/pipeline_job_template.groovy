@@ -55,8 +55,10 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
     disabled(disableJob)
 
     logRotator {
+        daysToKeep(365)
         numToKeep(60)
         artifactNumToKeep(2)
+        removeLastBuild(true)
     }
 
     properties {

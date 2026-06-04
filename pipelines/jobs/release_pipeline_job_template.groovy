@@ -38,6 +38,7 @@ pipelineJob("${BUILD_FOLDER}/${JOB_NAME}") {
         artifactNumToKeep(60)
         daysToKeep(250)
         artifactDaysToKeep(250)
+        removeLastBuild(true)
     }
 
     properties {

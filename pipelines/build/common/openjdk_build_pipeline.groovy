@@ -866,6 +866,7 @@ class Build {
                                     artifactNumToKeep(10)
                                     daysToKeep(60)
                                     artifactDaysToKeep(10)
+                                    removeLastBuild(true)
                                 }
                             }
                         }
