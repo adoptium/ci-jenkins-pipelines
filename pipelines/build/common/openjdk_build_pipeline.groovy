@@ -2888,76 +2888,53 @@ def buildScriptsAssemble(
                     context.println('openjdk_build_pipeline: Skipping sbom validation because --create-sbom was not found in BUILD_ARGS.')
                 }
 
-                // Run Smoke Tests - ALWAYS run when build is successful (independent of enableTests flag)
-                // Smoke tests validate the basic functionality of the JDK build artifact
-                // They act as a gatekeeper: if smoke tests fail, no further tests (AQA/TCK) will run
-                def smokeTestResult = null
+                // Run Smoke Tests and AQA Tests
+                // Smoke tests always run when build succeeds (independent of enableTests)
+                // AQA and TCK tests only run if enableTests=true AND smoke tests pass
                 if (currentBuild.currentResult != "SUCCESS") {
-                    // Build failed, so skip all tests including smoke tests
                     context.println('[ERROR] Build stages were not successful, not running any tests')
                 } else {
-                    // Build succeeded, run smoke tests to validate the JDK artifact
                     try {
                         context.println "openjdk_build_pipeline: running smoke tests"
-                        // Execute smoke tests and capture the result
-                        smokeTestResult = runSmokeTests()
-                        if (smokeTestResult != 'SUCCESS') {
-                            // Smoke tests failed - log error message
-                            // AQA and TCK tests will be blocked regardless of enableTests setting
-                            context.println('[ERROR] Smoke tests are not successful! AQA and Tck tests are blocked ')
+                        if (runSmokeTests() == 'SUCCESS') {
+                            context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
+                            // Remote trigger Eclipse Temurin JCK tests
+                            if (enableTests) {
+                                def remoteTriggeredBuilds = [:]
+                                if (buildConfig.VARIANT == 'temurin' && enableTCK) {
+                                    def platform = ''
+                                    if (buildConfig.ARCHITECTURE.contains('x64')) {
+                                        platform = 'x86-64_' + buildConfig.TARGET_OS
+                                    } else {
+                                        platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
+                                    }
+                                    if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
+                                        context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
+                                        //def remoteTargets = remoteTriggerJckTests(platform, filename)
+                                        //context.parallel remoteTargets
+                                        remoteTriggeredBuilds = remoteTriggerJckTests(platform, filename)
+                                    }
+                                }
+
+                                def testStages = [:]
+                                if (buildConfig.TEST_LIST.size() > 0) {
+                                    testStages = runAQATests(testStages)
+                                }
+
+                                // Asynchronously get the remote JCK job status and set as the stage status.
+                                if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
+                                    testStages = waitForJckStatus(remoteTriggeredBuilds, testStages)
+                                }
+
+                                // Run the testStages in parallel
+                                if (!testStages.isEmpty()) {
+                                    context.parallel testStages
+                                }
+                            }
+                        } else {
+                            context.println('[ERROR] Smoke tests are not successful! AQA and TCK tests are blocked')
                         }
                     } catch (Exception e) {
-                        // Handle any exceptions during smoke test execution
-                        context.println(e.message)
-                        currentBuild.result = 'FAILURE'
-                    }
-                }
-
-                // Run AQA Tests - ONLY run when enableTests=true AND smoke tests passed
-                // This includes: AQA test suite, JCK tests (for Temurin variant), and TCK tests
-                if (enableTests && smokeTestResult == 'SUCCESS') {
-                    try {
-                        context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
-                        
-                        // Remote trigger Eclipse Temurin JCK tests (Java Compatibility Kit)
-                        // Only applicable for Temurin variant when TCK testing is enabled
-                        def remoteTriggeredBuilds = [:]
-                        if (buildConfig.VARIANT == 'temurin' && enableTCK) {
-                            // Determine the platform string for JCK test job
-                            def platform = ''
-                            if (buildConfig.ARCHITECTURE.contains('x64')) {
-                                platform = 'x86-64_' + buildConfig.TARGET_OS
-                            } else {
-                                platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
-                            }
-                            // Skip JCK tests for jdk8u on s390x_linux platform
-                            if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                // Trigger remote JCK test jobs and store the build references
-                                remoteTriggeredBuilds = remoteTriggerJckTests(platform, filename)
-                            }
-                        }
-
-                        // Run AQA (AdoptOpenJDK Quality Assurance) test suite
-                        // TEST_LIST contains the test types to run (e.g., sanity.openjdk, extended.functional)
-                        def testStages = [:]
-                        if (buildConfig.TEST_LIST.size() > 0) {
-                            // Populate testStages map with AQA test jobs to run in parallel
-                            testStages = runAQATests(testStages)
-                        }
-
-                        // Wait for remote JCK test jobs to complete and add their status to testStages
-                        // This allows JCK tests to run asynchronously while AQA tests are being set up
-                        if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
-                            testStages = waitForJckStatus(remoteTriggeredBuilds, testStages)
-                        }
-
-                        // Execute all test stages (AQA + JCK) in parallel for efficiency
-                        if (!testStages.isEmpty()) {
-                            context.parallel testStages
-                        }
-                    } catch (Exception e) {
-                        // Handle any exceptions during AQA/JCK test execution
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
                     }
