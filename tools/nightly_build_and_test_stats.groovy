@@ -545,7 +545,7 @@ def extractVersNum(String jdkVers) {
 
 // For a given pipeline, tell us how reproducible the builds were.
 // Note: Will limit itself to jdk versions and platforms in the results Map.
-def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, String srcTag, Map results, String cookieJar) {
+def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results, String cookieJar) {
     echo "Called repro method with trssID:"+trssId
 
     def platformConversionMap = getPlatformConversionMap()
@@ -1175,7 +1175,7 @@ node('worker') {
                                 echo "Checking for reproducibility results in pipeline: ${reproBuildUrl}"
                                 echo "This pipeline's current status is ${reproBuildStatus}"
 
-                                getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds, cookieJar)
+                                getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, reproducibleBuilds, cookieJar)
                             }
 
                             if ( ! reproducibleBuilds[featureRelease][0].startsWith("100") ) {
