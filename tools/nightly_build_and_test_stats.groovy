@@ -567,6 +567,12 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
                 continue platformIterator
             }
 
+            // If this platform already has a reproducibility test result, then we already have the "latest" result.
+            if (!results[jdkVersion][1][onePlatform].equals("?")) {
+                // We have the latest result, skip to the next platform.
+                continue platformIterator
+            }
+
             def pipelineLink = "${trssURL}/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
 
             def trssBuildJobNames = callWgetSafely("${pipelineLink}", cookieJar)
