@@ -2889,16 +2889,17 @@ def buildScriptsAssemble(
                 }
 
                 // Run Smoke Tests and AQA Tests
-                if (enableTests) {
-                    if (currentBuild.currentResult != "SUCCESS") {
-                        context.println('[ERROR] Build stages were not successful, not running AQA tests')
-                    } else {
-                        try {
-                            //Only smoke tests succeed TCK and AQA tests will be triggerred.
-                            context.println "openjdk_build_pipeline: running smoke tests"
-                            if (runSmokeTests() == 'SUCCESS') {
-                                context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
-                                // Remote trigger Eclipse Temurin JCK tests
+                // Smoke tests always run when build succeeds (independent of enableTests)
+                // AQA and TCK tests only run if enableTests=true AND smoke tests pass
+                if (currentBuild.currentResult != "SUCCESS") {
+                    context.println('[ERROR] Build stages were not successful, not running any tests')
+                } else {
+                    try {
+                        context.println "openjdk_build_pipeline: running smoke tests"
+                        if (runSmokeTests() == 'SUCCESS') {
+                            context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
+                            // Remote trigger Eclipse Temurin JCK tests
+                            if (enableTests) {
                                 def remoteTriggeredBuilds = [:]
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK) {
                                     def platform = ''
@@ -2929,13 +2930,13 @@ def buildScriptsAssemble(
                                 if (!testStages.isEmpty()) {
                                     context.parallel testStages
                                 }
-                            } else {
-                                context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
                             }
-                        } catch (Exception e) {
-                            context.println(e.message)
-                            currentBuild.result = 'FAILURE'
+                        } else {
+                            context.println('[ERROR] Smoke tests are not successful! AQA and TCK tests are blocked')
                         }
+                    } catch (Exception e) {
+                        context.println(e.message)
+                        currentBuild.result = 'FAILURE'
                     }
                 }
 
