@@ -54,7 +54,7 @@ def getPlatformReproTestMap() {
                                 x64Mac:             ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"],
                                 ppc64leLinux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 aarch64Linux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
-                                s390xLinux:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_s390x"],
+                                s390xLinux:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 aarch64Mac:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
                                ]
     return platformReproTestMap
@@ -545,7 +545,7 @@ def extractVersNum(String jdkVers) {
 
 // For a given pipeline, tell us how reproducible the builds were.
 // Note: Will limit itself to jdk versions and platforms in the results Map.
-def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, String srcTag, Map results, String cookieJar) {
+def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results, String cookieJar) {
     echo "Called repro method with trssID:"+trssId
 
     def platformConversionMap = getPlatformConversionMap()
@@ -553,14 +553,6 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 
     // We are only looking for reproducible percentages for the relevant jdk versions...
     if ( trssId != "" && results.containsKey(jdkVersion) ) {
-
-        // See if we can find a more recent build ID for each platform.
-        def mapOfMoreRecentBuildIDs = [:]
-        results[jdkVersion][1].each { onePlatform, valueNotUsed ->
-            mapOfMoreRecentBuildIDs[onePlatform] = ""
-        }
-getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs, cookieJar)
-
 
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
@@ -575,16 +567,15 @@ getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs, cook
                 continue platformIterator
             }
 
-            def pipelineLink = "${trssURL}/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
-            if (mapOfMoreRecentBuildIDs.containsKey(onePlatform) && !mapOfMoreRecentBuildIDs[onePlatform].equals("")) {
-                echo "Overriding the TRSS build ID for ${jdkVersion}, platform ${onePlatform}, tag ${srcTag}"
-                echo "Original TRSS pipeline link: ${pipelineLink}"
-                echo "New link: ${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
-                pipelineLink = "${trssURL}/api/getData?_id=${mapOfMoreRecentBuildIDs[onePlatform]}"
+            // If this platform already has a reproducibility test result, then we already have the "latest" result.
+            if (!results[jdkVersion][1][onePlatform].equals("?")) {
+                // We have the latest result, skip to the next platform.
+                continue platformIterator
             }
 
+            def pipelineLink = "${trssURL}/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
+
             def trssBuildJobNames = callWgetSafely("${pipelineLink}", cookieJar)
-            results[jdkVersion][1][onePlatform] = "???% - Build not found. Pipeline link: " + pipelineLink
 
             // Does this platform have a build in this pipeline? If not, skip to next platform.
             if ( trssBuildJobNames.length() <= 2 ) {
@@ -597,7 +588,7 @@ getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs, cook
             assert buildJobNamesJson instanceof List
             buildIterator:
             for ( Map buildJob in buildJobNamesJson ) {
-                results[jdkVersion][1][onePlatform] = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
+                echo "$jdkVersion : $onePlatform : Checking build for reproducibility tests. Build link: " + buildJob.buildUrl
                 def testPlatform = platformConversionMap[onePlatform][1]
                 def reproTestName=platformReproTestMap[onePlatform][1]+"_0"
                 def reproTestBucket=platformReproTestMap[onePlatform][0]
@@ -608,7 +599,7 @@ getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs, cook
                     continue buildIterator
                 }
 
-                results[jdkVersion][1][onePlatform] = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
+                echo "$jdkVersion : $onePlatform : Checking ${reproTestBucket} for ${reproTestName}. Build link: " + buildJob.buildUrl
                 def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
 
                 // For each test job (including testList subjobs), we now search for the reproducibility test.
@@ -625,8 +616,7 @@ getBuildIDsByPlatform(trssURL, jdkVersion, srcTag, mapOfMoreRecentBuildIDs, cook
                             wgetUrl = "${trssURL}/api/getOutputById?id=${testTarget.testOutputId}"
                         }
                     }
-def testOutput = callWgetSafely(wgetUrl, cookieJar)
-
+                    def testOutput = callWgetSafely(wgetUrl, cookieJar)
 
                     // If we can find it, then we look for the anticipated percentage.
                     if ( !testOutput.contains("Running test "+reproTestName) ) {
@@ -634,7 +624,7 @@ def testOutput = callWgetSafely(wgetUrl, cookieJar)
                         continue testIterator
                     }
 
-                    results[jdkVersion][1][onePlatform] = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
+                    echo "$jdkVersion : $onePlatform : ${reproTestName} ran, checking for reproducibility percentage. Test Link: " + testJob.buildUrl
                     // Now we know the test ran:
                     def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
                     if ( matcherObject ) {
@@ -1185,7 +1175,7 @@ node('worker') {
                                 echo "Checking for reproducibility results in pipeline: ${reproBuildUrl}"
                                 echo "This pipeline's current status is ${reproBuildStatus}"
 
-                                getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, releaseName, reproducibleBuilds, cookieJar)
+                                getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, reproducibleBuilds, cookieJar)
                             }
 
                             if ( ! reproducibleBuilds[featureRelease][0].startsWith("100") ) {
