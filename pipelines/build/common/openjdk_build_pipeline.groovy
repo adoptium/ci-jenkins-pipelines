@@ -415,7 +415,9 @@ class Build {
                 parameters: [
                     context.string(name: 'SDK_RESOURCE', value: 'customized'),
                     context.string(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                    context.string(name: 'ADOPTOPENJDK_BRANCH', value: "${aqaBranch}"),
+                    //TEST
+                    context.string(name: 'ADOPTOPENJDK_BRANCH', value: "temurin"),
+                    //context.string(name: 'ADOPTOPENJDK_BRANCH', value: "${aqaBranch}"),
                     context.string(name: 'VENDOR_TEST_REPOS', value: "${vendorTestRepos}"),
                     context.string(name: 'VENDOR_TEST_BRANCHES', value: "${vendorTestBranches}"),
                     context.string(name: 'VENDOR_TEST_DIRS', value: "${vendorTestDirs}"),
