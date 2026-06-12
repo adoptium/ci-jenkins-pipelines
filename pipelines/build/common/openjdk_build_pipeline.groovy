@@ -383,8 +383,8 @@ class Build {
         def aqaBranch = 'master'
         def build_type = 'nightly'
         def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
-        def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
-        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName} ${env.BUILD_URL}/artifact/workspace/target/${testImageName} ${env.BUILD_URL}/artifact/workspace/target/${staticLibName}" //passing
+       // def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
+        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName} ${env.BUILD_URL}/artifact/workspace/target/${testImageName}" //passing
         def aqaTestPipelineJobName = "AQA_Test_Pipeline_TESTING"
         def releaseAppendix = ''
         if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
