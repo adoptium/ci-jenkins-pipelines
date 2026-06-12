@@ -168,26 +168,6 @@ class Build {
         return jobParams
     }
 
-    def getAQATestJobParams(testType) {
-        def jobParams = getCommonTestJobParams()
-        def (level, group) = testType.tokenize('.')
-        jobParams.put('LEVELS', level)
-        jobParams.put('GROUPS', group)
-        jobParams.put('BUILD_LIST', group )
-        def variant
-        switch (buildConfig.VARIANT) {
-            case 'openj9': variant = 'j9'; break
-            case 'corretto': variant = 'corretto'; break
-            case 'dragonwell': variant = 'dragonwell'; break;
-            case 'fast_startup': variant = 'fast_startup'; break;
-            case 'bisheng': variant = 'bisheng'; break;
-            default: variant = 'hs'
-        }
-        def jobName = "Test_openjdk${jobParams['JDK_VERSIONS']}_${variant}_${testType}_${jobParams['ARCH_OS_LIST']}"
-        jobParams.put('TEST_JOB_NAME', jobName)
-        return jobParams
-    }
-
     def getCommonTestJobParams() {
         def jobParams = [:]
         String jdk_Version = getJavaVersionNumber() as String
@@ -405,7 +385,7 @@ class Build {
         def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
         def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName} ${env.BUILD_URL}/artifact/workspace/target/${testImageName} ${env.BUILD_URL}/artifact/workspace/target/${staticLibName}" //passing
-        def aqaTestPipleJobName = "AQA_Test_Pipeline_TESTING"
+        def aqaTestPipelineJobName = "AQA_Test_Pipeline_TESTING"
         def releaseAppendix = ''
         if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
             aqaBranch = buildConfig.AQA_REF  
@@ -413,7 +393,7 @@ class Build {
         }
         if (Boolean.valueOf(buildConfig.RELEASE)) {
             build_type = 'release'
-            aqaTestPipleJobName = "AQA_Test_Pipeline${releaseAppendix}"
+            aqaTestPipelineJobName = "AQA_Test_Pipeline${releaseAppendix}"
         } else if (Boolean.valueOf(buildConfig.WEEKLY)) {
             build_type = 'weekly'
         }
@@ -421,16 +401,16 @@ class Build {
         try {
             
             context.println "Running AQA-tests"            
-            def jobParams = getAQATestJobParams(testType)
+            def jobParams = getCommonTestJobParams()
             def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
             def vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
             def vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
-            defvendorTestRepos = vendorTestRepos - ('.git')
-            vendorTestDirs = '/test/system'
+            vendorTestRepos = vendorTestRepos - ('.git')
+            def vendorTestDirs = '/test/system'
             // Use BUILD_REF override if specified
             vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
 
-            def testPipelineJobParamsMap = [
+            def testPipelineJobParams = [
                 SDK_RESOURCE: 'customized',
                 CUSTOMIZED_SDK_URL:"${sdkUrl}", //double check
                 ADOPTOPENJDK_BRANCH: "${aqaBranch}",
@@ -444,7 +424,7 @@ class Build {
                 PIPELINE_DISPLAY_NAME: "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF} : ${jobParams.ARCH_OS_LIST}"
             ]
 
-            context.build job: "${aqaTestPipleJobName}",
+            context.build job: "${aqaTestPipelineJobName}",
                 propagate: false,
                 parameters: testPipelineJobParams,
                 wait: false
