@@ -410,23 +410,21 @@ class Build {
             // Use BUILD_REF override if specified
             vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
 
-            def testPipelineJobParams = [
-                SDK_RESOURCE: 'customized',
-                CUSTOMIZED_SDK_URL:"${sdkUrl}", //double check
-                ADOPTOPENJDK_BRANCH: "${aqaBranch}",
-                VENDOR_TEST_REPOS: "${vendorTestRepos}",
-                VENDOR_TEST_BRANCHES: "${vendorTestBranches}",
-                VENDOR_TEST_DIRS: "${vendorTestDirs}",
-                JDK_VERSIONS: "${jobParams.JDK_VERSIONS}",
-                BUILD_TYPE: "${build_type}",
-                VARIANT: "${buildConfig.VARIANT}",
-                PLATFORMS: "${jobParams.ARCH_OS_LIST}",
-                PIPELINE_DISPLAY_NAME: "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF} : ${jobParams.ARCH_OS_LIST}"
-            ]
-
             context.build job: "${aqaTestPipelineJobName}",
                 propagate: false,
-                parameters: testPipelineJobParams,
+                parameters: [
+                    context.string(name: 'SDK_RESOURCE', value: 'customized'),
+                    context.string(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                    context.string(name: 'ADOPTOPENJDK_BRANCH', value: "${aqaBranch}"),
+                    context.string(name: 'VENDOR_TEST_REPOS', value: "${vendorTestRepos}"),
+                    context.string(name: 'VENDOR_TEST_BRANCHES', value: "${vendorTestBranches}"),
+                    context.string(name: 'VENDOR_TEST_DIRS', value: "${vendorTestDirs}"),
+                    context.string(name: 'JDK_VERSIONS', value: "${jobParams.JDK_VERSIONS}"),
+                    context.string(name: 'BUILD_TYPE', value: "${build_type}"),
+                    context.string(name: 'VARIANT', value: "${buildConfig.VARIANT}"),
+                    context.string(name: 'PLATFORMS', value: "${jobParams.ARCH_OS_LIST}"),
+                    context.string(name: 'PIPELINE_DISPLAY_NAME', value: "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF} : ${jobParams.ARCH_OS_LIST}")
+                ],
                 wait: false
 
         } catch (Exception e) {
@@ -449,17 +447,16 @@ class Build {
 
             def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF}${weekly} : ${jobParams.ARCH_OS_LIST}"
 
-            def paramList = [
-                SDK_RESOURCE: 'customized',
-                CUSTOMIZED_SDK_URL: "${sdkUrl}",
-                JDK_VERSIONS: "${jobParams.JDK_VERSIONS}",
-                PLATFORMS: "${jobParams.ARCH_OS_LIST}",
-                PIPELINE_DISPLAY_NAME: "${displayName}",
-                BUILD_TYPE: "${build_type}"
-            ]
             context.build job: 'AQA_Test_Pipeline_JCK',
                 propagate: false,
-                parameters: paramList,
+                parameters: [
+                    context.string(name: 'SDK_RESOURCE', value: 'customized'),
+                    context.string(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                    context.string(name: 'JDK_VERSIONS', value: "${jobParams.JDK_VERSIONS}"),
+                    context.string(name: 'PLATFORMS', value: "${jobParams.ARCH_OS_LIST}"),
+                    context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
+                    context.string(name: 'BUILD_TYPE', value: "${build_type}")
+                ],
                 wait: false
 
         } catch (Exception e) {
