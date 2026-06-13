@@ -400,8 +400,8 @@ class Build {
 
         try {
             
-            context.println "Running AQA-tests"            
             def jobParams = getCommonTestJobParams()
+            def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF}${releaseAppendix} : ${jobParams.ARCH_OS_LIST}"
             def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
             def vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
             def vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
@@ -409,7 +409,7 @@ class Build {
             def vendorTestDirs = '/test/system'
             // Use BUILD_REF override if specified
             vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
-
+            context.echo " Temurin AQA_Test_Pipeline${releaseAppendix} job : ${displayName}"                                    
             context.build job: "${aqaTestPipelineJobName}",
                 propagate: false,
                 parameters: [
@@ -425,7 +425,7 @@ class Build {
                     context.string(name: 'BUILD_TYPE', value: "${build_type}"),
                     context.string(name: 'VARIANT', value: "${buildConfig.VARIANT}"),
                     context.string(name: 'PLATFORMS', value: "${jobParams.ARCH_OS_LIST}"),
-                    context.string(name: 'PIPELINE_DISPLAY_NAME', value: "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF} : ${jobParams.ARCH_OS_LIST}")
+                    context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}")
                 ],
                 wait: false
 
@@ -448,7 +448,7 @@ class Build {
         try {
 
             def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF}${weekly} : ${jobParams.ARCH_OS_LIST}"
-
+            context.echo " Temurin AQA_Test_Pipeline_JCK job : ${displayName}"                                    
             context.build job: 'AQA_Test_Pipeline_JCK',
                 propagate: false,
                 parameters: [
@@ -2540,13 +2540,9 @@ def buildScriptsAssemble(
                         //if (runSmokeTests() == 'SUCCESS') {
                             context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
                             // Remote trigger Eclipse Temurin JCK tests
-                            if (enableTests) {    
+                            if (enableTests) {
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK) {
-                                    if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                        context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                        //context.parallel remoteTargets
-                                        remoteTriggerJckTests(filename)
-                                    }
+                                    remoteTriggerJckTests(filename)
                                 }
                                 runAQATests(filename)
                             }
