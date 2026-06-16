@@ -80,8 +80,8 @@
     "defaultsUrl"            : "https://raw.githubusercontent.com/adoptium/ci-jenkins-pipelines/master/pipelines/defaults.json",
     "enableInstallers"       : true,
     "enableSigner"           : true,
-    "cleanWorkspaceBeforeBuild" : false,
-    "cleanWorkspaceAfterBuild"  : false,
+    "cleanWorkspaceBeforeBuild" : true,
+    "cleanWorkspaceAfterBuild"  : true,
     "cleanReleaseWorkspaceBeforeBuild" : true,
-    "cleanReleaseWorkspaceAfterBuild"  : false
+    "cleanReleaseWorkspaceAfterBuild"  : true
 }
