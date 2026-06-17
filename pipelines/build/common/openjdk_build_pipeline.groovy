@@ -410,7 +410,7 @@ class Build {
             // Use BUILD_REF override if specified
             vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
             context.echo " Temurin AQA_Test_Pipeline${releaseAppendix} job : ${displayName}"                                    
-            context.build job: "${aqaTestPipelineJobName}",
+            def aqaJob = context.build job: "${aqaTestPipelineJobName}",
                 propagate: false,
                 parameters: [
                     context.string(name: 'SDK_RESOURCE', value: 'customized'),
@@ -428,6 +428,7 @@ class Build {
                     context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}")
                 ],
                 wait: false
+            context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${aqaJob.absoluteUrl}'>${aqaTestPipelineJobName} #${aqaJob.number}</a>"
 
         } catch (Exception e) {
             context.println "Failed to execute test: ${e.message}"
@@ -449,7 +450,7 @@ class Build {
 
             def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF}${weekly} : ${jobParams.ARCH_OS_LIST}"
             context.echo " Temurin AQA_Test_Pipeline_JCK job : ${displayName}"                                    
-            context.build job: 'AQA_Test_Pipeline_JCK',
+            def jckJob = context.build job: 'AQA_Test_Pipeline_JCK',
                 propagate: false,
                 parameters: [
                     context.string(name: 'SDK_RESOURCE', value: 'customized'),
@@ -460,6 +461,7 @@ class Build {
                     context.string(name: 'BUILD_TYPE', value: "${build_type}")
                 ],
                 wait: false
+            context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${jckJob.absoluteUrl}'>AQA_Test_Pipeline_JCK #${jckJob.number}</a>"
 
         } catch (Exception e) {
             context.println "Failed to remote trigger jck tests: ${e.message}"
