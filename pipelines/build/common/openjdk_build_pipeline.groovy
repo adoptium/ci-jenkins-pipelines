@@ -427,8 +427,14 @@ class Build {
                     context.string(name: 'PLATFORMS', value: "${jobParams.ARCH_OS_LIST}"),
                     context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}")
                 ],
-                wait: false
-            context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${aqaJob.absoluteUrl}'>${aqaTestPipelineJobName} #${aqaJob.number}</a>"
+                wait: false,
+                waitForStart: true
+            if (aqaJob?.absoluteUrl && aqaJob?.number) {
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${aqaJob.absoluteUrl}'>${aqaTestPipelineJobName} #${aqaJob.number}</a>"
+            } else {
+                def aqaJobUrl = "${context.JENKINS_URL}job/${aqaTestPipelineJobName}/"
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${aqaJobUrl}'>${aqaTestPipelineJobName} (no build number available)</a>"
+            }
 
         } catch (Exception e) {
             context.println "Failed to execute test: ${e.message}"
@@ -440,7 +446,7 @@ class Build {
     def remoteTriggerJckTests(String jdkFileName) {
         def jobParams = getCommonTestJobParams()
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName}"
-        def weekly = '_weekly'
+        def weekly = 'weekly'
         def build_type = 'weekly'
         if (Boolean.valueOf(buildConfig.RELEASE)) {
             build_type = 'release'
@@ -460,8 +466,14 @@ class Build {
                     context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
                     context.string(name: 'BUILD_TYPE', value: "${build_type}")
                 ],
-                wait: false
-            context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${jckJob.absoluteUrl}'>AQA_Test_Pipeline_JCK #${jckJob.number}</a>"
+                wait: false,
+                waitForStart: true
+            if (jckJob?.absoluteUrl && jckJob?.number) {
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${jckJob.absoluteUrl}'>AQA_Test_Pipeline_JCK #${jckJob.number}</a>"
+            } else {
+                def jckJobUrl = "${context.JENKINS_URL}job/AQA_Test_Pipeline_JCK/"
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${jckJobUrl}'>AQA_Test_Pipeline_JCK (no build number available)</a>"
+            }
 
         } catch (Exception e) {
             context.println "Failed to remote trigger jck tests: ${e.message}"
