@@ -192,118 +192,7 @@ class Build {
         jobParams.put('LIGHT_WEIGHT_CHECKOUT', true)
         return jobParams
     }
-    /*
-    Retrieve the corresponding OpenJDK source code repository branch. This is used the downstream tests to determine what source code branch the tests should run against.
-    */
-    private getJDKBranch() {
-        def jdkBranch
-
-        if (buildConfig.SCM_REF) {
-            // We need to override the SCM ref on jdk8 arm builds change aarch64-shenandoah-jdk8u282-b08 to jdk8u282-b08
-            if (buildConfig.JAVA_TO_BUILD == 'jdk8u' &&  buildConfig.VARIANT == 'temurin' && (buildConfig.ARCHITECTURE == 'aarch64' || buildConfig.ARCHITECTURE == 'arm')) {
-                jdkBranch = buildConfig.OVERRIDE_FILE_NAME_VERSION
-            } else {
-                jdkBranch = buildConfig.SCM_REF
-            }
-        } else {
-            if (buildConfig.VARIANT == 'corretto') {
-                jdkBranch = 'develop'
-            } else if (buildConfig.VARIANT == 'openj9') {
-                jdkBranch = 'openj9'
-            } else if (buildConfig.VARIANT == 'hotspot') {
-                jdkBranch = 'master'
-            } else if (buildConfig.VARIANT == 'temurin') {
-                // jdk(head) now contains version branched stabilisation branches, eg.dev_jdk23
-                if (getJavaVersionNumber() >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u') && buildConfig.JAVA_TO_BUILD != "jdk") {
-                    jdkBranch = 'dev_'+buildConfig.JAVA_TO_BUILD
-                } else {
-                    jdkBranch = 'dev'
-                }
-            } else if (buildConfig.VARIANT == 'dragonwell') {
-                jdkBranch = 'master'
-            } else if (buildConfig.VARIANT == 'fast_startup') {
-                jdkBranch = 'master'
-            } else if (buildConfig.VARIANT == 'bisheng') {
-                jdkBranch = 'master'
-            } else {
-                throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
-            }
-        }
-
-        return jdkBranch
-    }
-
-    /*
-    Retrieve the corresponding OpenJDK source code repository. This is used the downstream tests to determine what source code the tests should run against.
-    */
-    private getJDKRepo() {
-        def jdkRepo
-        def suffix
-        def javaNumber = getJavaVersionNumber()
-
-        switch(buildConfig.VARIANT) {
-            case 'corretto':
-                suffix = "corretto/corretto-${javaNumber}"
-                break
-            case 'openj9':
-                def openj9JavaToBuild = buildConfig.JAVA_TO_BUILD
-                if (openj9JavaToBuild.endsWith('u')) {
-                    // OpenJ9 extensions repo does not use the "u" suffix
-                    openj9JavaToBuild = openj9JavaToBuild.substring(0, openj9JavaToBuild.length() - 1)
-                }
-                suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
-                break
-            case 'temurin':
-                if (buildConfig.ARCHITECTURE == 'arm' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
-                    suffix = 'adoptium/aarch32-jdk8u'
-                } else if (buildConfig.TARGET_OS == 'alpine-linux' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
-                    suffix = 'adoptium/alpine-jdk8u'
-                } else if (buildConfig.ARCHITECTURE == 'riscv64' && buildConfig.JAVA_TO_BUILD == 'jdk11u') {
-                    suffix = 'adoptium/riscv-port-jdk11u'
-                } else {
-                    // jdk(head) repo now contains the version branched stabilisation branches, eg.dev_jdk23
-                    if (javaNumber >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u')) {
-                        suffix = "adoptium/jdk"
-                    } else {
-                        suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
-                    }
-                }
-                break
-            case 'hotspot':
-                if (buildConfig.ARCHITECTURE == "riscv64"
-                     && (buildConfig.JAVA_TO_BUILD == "jdk8u"
-                        || buildConfig.JAVA_TO_BUILD == "jdk11u")) {
-                    suffix = "openjdk/riscv-port-${buildConfig.JAVA_TO_BUILD}";
-                } else {
-                    // jdk(head) repo now contains the version branched stabilisation branches, eg.jdk23
-                    if (javaNumber >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u')) {
-                        suffix = "openjdk/jdk"
-                    } else {
-                        suffix = "openjdk/${buildConfig.JAVA_TO_BUILD}"
-                    }
-                }
-                break
-            case 'dragonwell':
-                suffix = "alibaba/dragonwell${javaNumber}"
-                break
-            case 'fast_startup':
-                suffix = 'adoptium/jdk11u-fast-startup-incubator'
-                break
-            case 'bisheng':
-                suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
-                break
-            default:
-                throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
-        }
-
-        jdkRepo = "https://github.com/${suffix}"
-        if (buildConfig.BUILD_ARGS.count('--ssh') > 0) {
-            jdkRepo = "git@github.com:${suffix}"
-        }
-
-        return jdkRepo
-    }
-
+    
     /*
       If the given result is not SUCCESS then set the current stage result and build result accordingly
     */
@@ -378,8 +267,6 @@ class Build {
     If a test job doesn't exist, it will be created dynamically.
     */
     def runAQATests(jdkFileName) {
-        def jdkBranch = getJDKBranch()
-        def jdkRepo = getJDKRepo()
         def aqaBranch = 'master'
         def build_type = 'nightly'
         def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
