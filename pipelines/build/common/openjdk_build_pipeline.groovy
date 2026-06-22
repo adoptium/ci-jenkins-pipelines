@@ -2352,7 +2352,7 @@ def buildScriptsAssemble(
                                 runAQATests(filename)
                             }
                         } else {
-                            context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
+                            context.println('[ERROR]Smoke tests are not successful! AQA and TCK tests are blocked ')
                         }
                     } catch (Exception e) {
                         context.println(e.message)
