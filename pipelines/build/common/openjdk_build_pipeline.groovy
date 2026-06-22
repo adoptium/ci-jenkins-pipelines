@@ -271,8 +271,8 @@ class Build {
         def build_type = 'nightly'
         def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
        // def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
-        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName} ${env.BUILD_URL}/artifact/workspace/target/${testImageName}" //passing
-        def aqaTestPipelineJobName = "AQA_Test_Pipeline_TESTING"
+        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName} ${env.BUILD_URL}/artifact/workspace/target/${testImageName}"
+        def aqaTestPipelineJobName = "AQA_Test_Pipeline"
         def releaseAppendix = ''
         if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
             aqaBranch = buildConfig.AQA_REF  
@@ -302,9 +302,7 @@ class Build {
                 parameters: [
                     context.string(name: 'SDK_RESOURCE', value: 'customized'),
                     context.string(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                    //TEST
-                    context.string(name: 'ADOPTOPENJDK_BRANCH', value: "temurin"),
-                    //context.string(name: 'ADOPTOPENJDK_BRANCH', value: "${aqaBranch}"),
+                    context.string(name: 'ADOPTOPENJDK_BRANCH', value: "${aqaBranch}"),
                     context.string(name: 'VENDOR_TEST_REPOS', value: "${vendorTestRepos}"),
                     context.string(name: 'VENDOR_TEST_BRANCHES', value: "${vendorTestBranches}"),
                     context.string(name: 'VENDOR_TEST_DIRS', value: "${vendorTestDirs}"),
@@ -2344,7 +2342,7 @@ def buildScriptsAssemble(
                     try {
                         //Only smoke tests succeed TCK and AQA tests will be triggerred.
                         context.println "openjdk_build_pipeline: running smoke tests"
-                        //if (runSmokeTests() == 'SUCCESS') {
+                        if (runSmokeTests() == 'SUCCESS') {
                             context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
                             // Remote trigger Eclipse Temurin JCK tests
                             if (enableTests) {
@@ -2353,9 +2351,9 @@ def buildScriptsAssemble(
                                 }
                                 runAQATests(filename)
                             }
-                      //  } else {
-                      //      context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
-                       // }
+                        } else {
+                            context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
+                        }
                     } catch (Exception e) {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
