@@ -5,7 +5,6 @@ class Config15 {
                 os                  : 'mac',
                 arch                : 'x64',
                 additionalNodeLabels: 'macos10.14',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
 
@@ -13,7 +12,6 @@ class Config15 {
                 os                   : 'mac',
                 arch                 : 'x64',
                 additionalNodeLabels : 'macos10.14',
-                test                 : 'default',
                 additionalFileNameTag: 'macosXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace'
         ],
@@ -28,10 +26,6 @@ class Config15 {
                 dockerFile: [
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
-                test                : 'default',
-                additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
-                ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace --enable-jitserver',
                         'hotspot'     : '--enable-dtrace'
@@ -45,10 +39,6 @@ class Config15 {
                 dockerFile: [
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
-                test                : 'default',
-                additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
-                ],
                 additionalFileNameTag: 'linuxXL',
                 configureArgs       : '--with-noncompressedrefs --enable-dtrace --enable-jitserver'
         ],
@@ -57,14 +47,12 @@ class Config15 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012&&vs2017',
-                test                : 'default'
         ],
 
         x64WindowsXL: [
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012&&vs2017',
-                test                : 'default',
                 additionalFileNameTag: 'windowsXL',
                 configureArgs        : '--with-noncompressedrefs'
         ],
@@ -76,7 +64,6 @@ class Config15 {
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
                 ],
-                test                : 'default'
         ],
 
         ppc64Aix    : [
@@ -86,20 +73,17 @@ class Config15 {
                         hotspot: 'xlc16&&aix710',
                         openj9:  'xlc16&&aix715'
                 ],
-                test                : 'default'
         ],
 
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
 
         s390xLinuxXL  : [
                 os                   : 'linux',
                 arch                 : 's390x',
-                test                 : 'default',
                 additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace'
         ],
@@ -108,7 +92,6 @@ class Config15 {
                 os                  : 'linux',
                 arch                : 'ppc64le',
                 additionalNodeLabels: 'centos7',
-                test                : 'default',
                 configureArgs       : [
                         'hotspot'     : '--enable-dtrace',
                         'openj9'      : '--enable-dtrace --enable-jitserver'
@@ -119,7 +102,6 @@ class Config15 {
                 os                   : 'linux',
                 arch                 : 'ppc64le',
                 additionalNodeLabels : 'centos7',
-                test                 : 'default',
                 additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace'
         ],
@@ -127,7 +109,6 @@ class Config15 {
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
 
@@ -135,7 +116,6 @@ class Config15 {
                 os                  : 'linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
 
@@ -143,7 +123,6 @@ class Config15 {
                 os                   : 'linux',
                 dockerImage          : 'adoptopenjdk/centos7_build_image',
                 arch                 : 'aarch64',
-                test                 : 'default',
                 additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace'
         ],

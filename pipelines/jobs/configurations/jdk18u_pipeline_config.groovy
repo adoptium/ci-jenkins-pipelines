@@ -5,10 +5,6 @@ class Config18 {
                 os                  : 'mac',
                 arch                : 'x64',
                 additionalNodeLabels: 'macos10.14',
-                additionalTestLabels: [
-                        openj9      : '!sw.os.osx.10_11'
-                ],
-                test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -25,10 +21,6 @@ class Config18 {
                 dockerFile: [
                         openj9      : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
-                test                : 'default',
-                additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
-                ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace --enable-jitserver',
                         'temurin'   : '--enable-dtrace'
@@ -42,7 +34,6 @@ class Config18 {
                 os                  : 'alpine-linux',
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -53,7 +44,6 @@ class Config18 {
                 os                  : 'alpine-linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -64,7 +54,6 @@ class Config18 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012&&vs2019',
-                test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -74,7 +63,6 @@ class Config18 {
                 os                  : 'windows',
                 arch                : 'x86-32',
                 additionalNodeLabels: 'win2012&&vs2019',
-                test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom'
                 ]
@@ -87,7 +75,6 @@ class Config18 {
                         temurin: 'xlc16&&aix710',
                         openj9:  'xlc16&&aix715'
                 ],
-                test                : 'default',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -97,7 +84,6 @@ class Config18 {
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -108,7 +94,6 @@ class Config18 {
                 os                  : 'linux',
                 arch                : 'ppc64le',
                 additionalNodeLabels: 'centos7',
-                test                : 'default',
                 configureArgs       : [
                         'temurin'     : '--enable-dtrace',
                         'openj9'      : '--enable-dtrace --enable-jitserver'
@@ -122,7 +107,6 @@ class Config18 {
                 os                  : 'linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
-                test                : 'default',
                 configureArgs : '--enable-dtrace',
                 testDynamic          : false,
                 buildArgs           : [
@@ -134,7 +118,6 @@ class Config18 {
                 os                  : 'mac',
                 arch                : 'aarch64',
                 additionalNodeLabels: 'macos11',
-                test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -146,7 +129,6 @@ class Config18 {
                 crossCompile        : 'aarch64',
                 dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
                 dockerArgs          : '--platform linux/arm/v7',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'

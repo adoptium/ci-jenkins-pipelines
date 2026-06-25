@@ -5,7 +5,6 @@ class Config16 {
                 os                  : 'mac',
                 arch                : 'x64',
                 additionalNodeLabels: 'macos10.14',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
 
@@ -19,10 +18,6 @@ class Config16 {
                 dockerFile: [
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
-                test                : 'default',
-                additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)'
-                ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace --enable-jitserver',
                         'hotspot'     : '--enable-dtrace'
@@ -33,7 +28,6 @@ class Config16 {
                 os                  : 'alpine-linux',
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
                 configureArgs       : '--enable-headless-only=yes'
         ],
 
@@ -41,7 +35,6 @@ class Config16 {
                 os                  : 'alpine-linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
                 configureArgs       : '--enable-headless-only=yes'
         ],
 
@@ -49,7 +42,6 @@ class Config16 {
                 os                  : 'windows',
                 arch                : 'x64',
                 additionalNodeLabels: 'win2012&&vs2017',
-                test                : 'default'
         ],
 
         x32Windows: [
@@ -59,7 +51,6 @@ class Config16 {
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
                 ],
-                test                : 'default'
         ],
 
         ppc64Aix    : [
@@ -69,14 +60,12 @@ class Config16 {
                         hotspot: 'xlc16&&aix710',
                         openj9:  'xlc16&&aix715'
                 ],
-                test                : 'default',
                 cleanWorkspaceAfterBuild: true
         ],
 
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ],
 
@@ -84,7 +73,6 @@ class Config16 {
                 os                  : 'linux',
                 arch                : 'ppc64le',
                 additionalNodeLabels: 'centos7',
-                test                : 'default',
                 configureArgs       : [
                         'hotspot'     : '--enable-dtrace',
                         'openj9'      : '--enable-dtrace --enable-jitserver'
@@ -96,7 +84,6 @@ class Config16 {
                 os                  : 'linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 testDynamic          : false
         ],
@@ -104,7 +91,6 @@ class Config16 {
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace'
         ]
   ]

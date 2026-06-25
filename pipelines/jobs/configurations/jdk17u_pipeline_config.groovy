@@ -5,10 +5,6 @@ class Config17 {
                 os                  : 'mac',
                 arch                : 'x64',
                 additionalNodeLabels: 'xcode15.0.1',
-                additionalTestLabels: [
-                        openj9      : '!sw.os.osx.10_11'
-                ],
-                test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -25,15 +21,6 @@ class Config17 {
                 dockerFile: [
                         openj9      : 'pipelines/build/dockerFiles/cuda.dockerfile'
                 ],
-                test: [
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
-                ],
-                additionalTestLabels: [
-                        openj9      : '!sw.tool.glibc.2_12'
-                ],
-                additionalTestParams: [
-                        temurin     : [CLOUD_PROVIDER: 'azure']
-                ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace'
@@ -47,7 +34,6 @@ class Config17 {
                 os                  : 'alpine-linux',
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
                 configureArgs       : '--enable-headless-only=yes',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
@@ -58,7 +44,6 @@ class Config17 {
                 os                  : 'alpine-linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-headless-only=yes',
                         'temurin'   : '--enable-headless-only=yes --with-jobs=4'
@@ -75,7 +60,6 @@ class Config17 {
                 dockerRegistry      : 'https://adoptium.azurecr.io',
                 dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022&&vs2022',
-                test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
@@ -88,7 +72,6 @@ class Config17 {
                 dockerRegistry      : 'https://adoptium.azurecr.io',
                 dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022&&vs2022',
-                test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--jvm-variant client,server --create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
@@ -98,8 +81,6 @@ class Config17 {
                 os                  : 'aix',
                 arch                : 'ppc64',
                 additionalNodeLabels: 'xlc13&&aix720',
-                test                : 'default',
-                additionalTestLabels: 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -110,7 +91,6 @@ class Config17 {
                 os                  : 'linux',
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
-                test                : 'default',
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
@@ -121,7 +101,6 @@ class Config17 {
                 os                  : 'linux',
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
-                test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
@@ -131,7 +110,6 @@ class Config17 {
                 os                  : 'linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
-                test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace --with-jobs=4'
@@ -146,7 +124,6 @@ class Config17 {
                 os                  : 'mac',
                 arch                : 'aarch64',
                 additionalNodeLabels: 'xcode15.0.1',
-                test                : 'default',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -159,7 +136,6 @@ class Config17 {
                 crossCompile        : 'aarch64',
                 dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
                 dockerArgs          : '--platform linux/arm/v7',
-                test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace --with-jobs=4'
@@ -175,7 +151,6 @@ class Config17 {
                 crossCompile        : 'qemustatic',
                 dockerImage         : 'adoptopenjdk/ubuntu2004_build_image:linux-riscv64',
                 dockerArgs          : '--platform linux/riscv64',
-                test                : 'default',
                 configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-14.2.0-Fedora_28-b00'
@@ -190,7 +165,6 @@ class Config17 {
                 dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
-                test                : 'default',
                 buildArgs       : [
                         'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]

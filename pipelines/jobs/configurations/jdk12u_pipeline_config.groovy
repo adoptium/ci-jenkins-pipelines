@@ -5,10 +5,6 @@ class Config12 {
                 os                  : 'mac',
                 arch                : 'x64',
                 additionalNodeLabels : 'macos10.12',
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
-                        weekly : []
-                ],
                 configureArgs       : '--enable-dtrace=auto'
         ],
 
@@ -16,10 +12,6 @@ class Config12 {
                 os                   : 'mac',
                 arch                 : 'x64',
                 additionalNodeLabels : 'macos10.12',
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
-                        weekly : []
-                ],
                 additionalFileNameTag: 'macosXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
         ],
@@ -28,10 +20,6 @@ class Config12 {
                 os                  : 'linux',
                 arch                : 'x64',
                 additionalNodeLabels: 'centos6',
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.external'],
-                        weekly : ['special.functional']
-                ],
                 configureArgs        : '--disable-ccache --enable-dtrace=auto'
         ],
 
@@ -46,20 +34,12 @@ class Config12 {
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
                 ],
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
-                        weekly : []
-                ]
         ],
 
         x64WindowsXL    : [
                 os                   : 'windows',
                 arch                 : 'x64',
                 additionalNodeLabels : 'win2012&&vs2017',
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
-                        weekly : []
-                ],
                 additionalFileNameTag: 'windowsXL',
                 configureArgs        : '--with-noncompressedrefs'
         ],
@@ -74,45 +54,28 @@ class Config12 {
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
                 ],
-                test                : [
-                        nightly: ['sanity.openjdk'],
-                        weekly : []
-                ]
         ],
 
         ppc64Aix    : [
                 os                  : 'aix',
                 arch                : 'ppc64',
-                test                : [
-                        nightly: [],
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system']
-                ]
         ],
 
         s390xLinux    : [
                 os                  : 'linux',
                 arch                : 's390x',
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
-                        weekly : []
-                ],
                 configureArgs        : '--disable-ccache --enable-dtrace=auto'
         ],
 
         sparcv9Solaris    : [
                 os                  : 'solaris',
                 arch                : 'sparcv9',
-                test                : false,
                 configureArgs       : '--enable-dtrace=auto'
         ],
 
         ppc64leLinux    : [
                 os                  : 'linux',
                 arch                : 'ppc64le',
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
-                        weekly : []
-                ],
                 configureArgs       : '--disable-ccache --enable-dtrace=auto'
 
         ],
@@ -120,10 +83,6 @@ class Config12 {
         arm32Linux    : [
                 os                  : 'linux',
                 arch                : 'arm',
-                test                : [
-                        nightly: ['sanity.openjdk'],
-                        weekly : []
-                ],
                 configureArgs       : '--enable-dtrace=auto'
         ],
 
@@ -131,10 +90,6 @@ class Config12 {
                 os                  : 'linux',
                 arch                : 'aarch64',
                 additionalNodeLabels: 'centos7',
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf'],
-                        weekly : []
-                ],
                 configureArgs       : '--enable-dtrace=auto'
         ],
 
@@ -143,17 +98,12 @@ class Config12 {
                 os                 : 'windows',
                 arch               : 'x86-32',
                 additionalNodeLabels: 'win2012&&x86-32',
-                test                : false
         ],
         */
         x64LinuxXL    : [
                 os                   : 'linux',
                 additionalNodeLabels : 'centos6',
                 arch                 : 'x64',
-                test                : [
-                        nightly: ['sanity.openjdk', 'sanity.system', 'extended.system'],
-                        weekly : []
-                ],
                 additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace=auto'
         ],

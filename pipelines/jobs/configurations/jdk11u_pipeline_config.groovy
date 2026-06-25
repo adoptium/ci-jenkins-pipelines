@@ -4,7 +4,6 @@ class Config11 {
         x64Mac    : [
                 os                  : 'mac',
                 arch                : 'x64',
-                test                : 'default',
                 additionalNodeLabels: 'xcode15.0.1',
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto --with-cmake',
@@ -21,12 +20,6 @@ class Config11 {
                 dockerImage         : 'adoptopenjdk/centos6_build_image',
                 dockerFile: [
                         openj9  : 'pipelines/build/dockerFiles/cuda.dockerfile'
-                ],
-                test: [
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
-                ],
-                additionalTestParams: [
-                        temurin     : [CLOUD_PROVIDER: 'azure']
                 ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto',
@@ -46,7 +39,6 @@ class Config11 {
                 os                  : 'alpine-linux',
                 arch                : 'x64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-headless-only=yes',
                         'temurin'   : '--enable-headless-only=yes --disable-ccache'
@@ -60,7 +52,6 @@ class Config11 {
                 os                  : 'alpine-linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/alpine3_build_image',
-                test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-headless-only=yes',
                         'temurin'   : '--enable-headless-only=yes --disable-ccache --with-jobs=4'
@@ -87,7 +78,6 @@ class Config11 {
                 buildArgs : [
                         'temurin' : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ],
-                test                : 'default'
         ],
 
         x32Windows: [
@@ -103,15 +93,12 @@ class Config11 {
                 buildArgs : [
                         'temurin' : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ],
-                test                : 'default'
         ],
 
         ppc64Aix    : [
                 os                  : 'aix',
                 arch                : 'ppc64',
                 additionalNodeLabels: 'xlc13&&aix720',
-                test                : 'default',
-                additionalTestLabels: 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
@@ -125,7 +112,6 @@ class Config11 {
                 os                  : 'linux',
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
-                test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace=auto',
                         'temurin'   : '--enable-dtrace=auto --disable-ccache'
@@ -138,7 +124,6 @@ class Config11 {
         sparcv9Solaris    : [
                 os                  : 'solaris',
                 arch                : 'sparcv9',
-                test                : false,
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace=auto',
                         'temurin'   : '--enable-dtrace=auto --disable-ccache'
@@ -152,7 +137,6 @@ class Config11 {
                 os                  : 'linux',
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
-                test                : 'default',
                 configureArgs       : [
                         'temurin'     : '--enable-dtrace=auto --disable-ccache',
                         'openj9'      : '--enable-dtrace=auto'
@@ -166,7 +150,6 @@ class Config11 {
         aarch64Mac: [
                 os                  : 'mac',
                 arch                : 'aarch64',
-                test                : 'default',
                 additionalNodeLabels: 'xcode15.0.1',
                 configureArgs       : '--disable-ccache',
                 buildArgs           : [
@@ -180,7 +163,6 @@ class Config11 {
                 crossCompile        : 'aarch64',
                 dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
                 dockerArgs          : '--platform linux/arm/v7',
-                test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace=auto',
                         'temurin'   : '--enable-dtrace=auto --disable-ccache --with-jobs=4'
@@ -194,11 +176,7 @@ class Config11 {
                 os                  : 'linux',
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
-                test                : 'default',
                 additionalNodeLabels: [
-                        dragonwell: 'armv8.2'
-                ],
-                additionalTestLabels: [
                         dragonwell: 'armv8.2'
                 ],
                 configureArgs       : [
@@ -239,17 +217,6 @@ class Config11 {
                         'openj9'     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
                         'bisheng'    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
                 ],
-                test                : [
-                        'temurin'   : 'default',
-                        'openj9'    : [
-                                nightly: ['sanity.openjdk'],
-                                weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
-                        ],
-                        'bisheng'   : [
-                                nightly: ['sanity.openjdk'],
-                                weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf']
-                        ]
-                ],
         ],
 
         aarch64Windows: [
@@ -260,7 +227,6 @@ class Config11 {
                 dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
-                test                : 'default',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ], 
