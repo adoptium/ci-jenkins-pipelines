@@ -6,6 +6,9 @@ class Config11 {
                 arch                : 'x64',
                 test                : 'default',
                 additionalNodeLabels: 'xcode15.0.1',
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'gha']
+                ],
                 configureArgs       : [
                         'openj9'      : '--enable-dtrace=auto --with-cmake',
                         'temurin'     : '--enable-dtrace=auto --disable-ccache'
@@ -80,6 +83,9 @@ class Config11 {
                         temurin:    'win2022&&vs2022',
                         openj9:     'win2012&&vs2017',
                         dragonwell: 'win2012'
+                ],
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
                 ],
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
