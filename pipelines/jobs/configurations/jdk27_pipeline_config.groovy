@@ -73,7 +73,7 @@ class Config27 {
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
-                ],
+                ]
         ],
 
         s390xLinux    : [

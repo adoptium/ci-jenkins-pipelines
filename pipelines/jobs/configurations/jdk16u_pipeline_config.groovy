@@ -41,7 +41,7 @@ class Config16 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2017',
+                additionalNodeLabels: 'win2012&&vs2017'
         ],
 
         x32Windows: [
@@ -50,7 +50,7 @@ class Config16 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
-                ],
+                ]
         ],
 
         ppc64Aix    : [

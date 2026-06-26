@@ -46,7 +46,7 @@ class Config15 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2012&&vs2017',
+                additionalNodeLabels: 'win2012&&vs2017'
         ],
 
         x64WindowsXL: [
@@ -63,7 +63,7 @@ class Config15 {
                 additionalNodeLabels: 'win2012&&vs2017',
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
-                ],
+                ]
         ],
 
         ppc64Aix    : [
@@ -72,7 +72,7 @@ class Config15 {
                 additionalNodeLabels: [
                         hotspot: 'xlc16&&aix710',
                         openj9:  'xlc16&&aix715'
-                ],
+                ]
         ],
 
         s390xLinux    : [
@@ -125,7 +125,7 @@ class Config15 {
                 arch                 : 'aarch64',
                 additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace'
-        ],
+        ]
   ]
 
 }

@@ -142,7 +142,7 @@ class Config19 {
                 configureArgs        : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
-                ],
+                ]
         ],
 
         aarch64Windows: [

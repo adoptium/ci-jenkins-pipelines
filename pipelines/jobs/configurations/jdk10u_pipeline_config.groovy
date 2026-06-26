@@ -21,12 +21,12 @@ class Config10 {
                 additionalNodeLabels: [
                         hotspot: 'win2012',
                         openj9:  'win2012&&mingw-cygwin'
-                ],
+                ]
         ],
 
         ppc64Aix    : [
                 os                  : 'aix',
-                arch                : 'ppc64',
+                arch                : 'ppc64'
         ],
 
         s390xLinux    : [
@@ -67,7 +67,7 @@ class Config10 {
         "x86-32Windows"    : [
                 os                 : 'windows',
                 arch               : 'x86-32',
-                additionalNodeLabels: 'win2012&&x86-32',
+                additionalNodeLabels: 'win2012&&x86-32'
         ],
         */
         x64LinuxXL    : [
@@ -76,7 +76,7 @@ class Config10 {
                 arch                 : 'x64',
                 additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --enable-dtrace=auto'
-        ],
+        ]
   ]
 
 }

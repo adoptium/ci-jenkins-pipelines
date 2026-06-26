@@ -33,7 +33,7 @@ class Config12 {
                 ],
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
-                ],
+                ]
         ],
 
         x64WindowsXL    : [
@@ -53,12 +53,12 @@ class Config12 {
                 ],
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
-                ],
+                ]
         ],
 
         ppc64Aix    : [
                 os                  : 'aix',
-                arch                : 'ppc64',
+                arch                : 'ppc64'
         ],
 
         s390xLinux    : [
@@ -97,7 +97,7 @@ class Config12 {
         "x86-32Windows"    : [
                 os                 : 'windows',
                 arch               : 'x86-32',
-                additionalNodeLabels: 'win2012&&x86-32',
+                additionalNodeLabels: 'win2012&&x86-32'
         ],
         */
         x64LinuxXL    : [
@@ -106,7 +106,7 @@ class Config12 {
                 arch                 : 'x64',
                 additionalFileNameTag: 'linuxXL',
                 configureArgs        : '--with-noncompressedrefs --disable-ccache --enable-dtrace=auto'
-        ],
+        ]
   ]
 
 }

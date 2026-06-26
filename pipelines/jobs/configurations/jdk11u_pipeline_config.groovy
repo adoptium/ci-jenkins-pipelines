@@ -77,7 +77,7 @@ class Config11 {
                 ],
                 buildArgs : [
                         'temurin' : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
-                ],
+                ]
         ],
 
         x32Windows: [
@@ -92,7 +92,7 @@ class Config11 {
                 ],
                 buildArgs : [
                         'temurin' : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
-                ],
+                ]
         ],
 
         ppc64Aix    : [
@@ -216,7 +216,7 @@ class Config11 {
                         'temurin'    : '--enable-headless-only=yes --enable-dtrace --disable-ccache',
                         'openj9'     : '--disable-ddr --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root',
                         'bisheng'    : '--openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=/opt/fedora28_riscv_root --with-jvm-features=shenandoahgc'
-                ],
+                ]
         ],
 
         aarch64Windows: [

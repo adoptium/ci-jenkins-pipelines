@@ -50,7 +50,7 @@ class Config14 {
                 ],
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
-                ],
+                ]
         ],
 
         x64WindowsXL    : [
@@ -69,7 +69,7 @@ class Config14 {
                 ],
                 buildArgs : [
                         hotspot : '--jvm-variant client,server'
-                ],
+                ]
         ],
 
         ppc64Aix    : [
@@ -78,7 +78,7 @@ class Config14 {
                 additionalNodeLabels: [
                         hotspot: 'xlc16&&aix710',
                         openj9:  'xlc16&&aix715'
-                ],
+                ]
         ],
 
         s390xLinux    : [
@@ -121,7 +121,7 @@ class Config14 {
                 arch                : 'aarch64',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 configureArgs       : '--enable-dtrace=auto'
-        ],
+        ]
   ]
 
 }
