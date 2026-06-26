@@ -331,15 +331,13 @@ class Build {
     def remoteTriggerJckTests(String jdkFileName) {
         def jobParams = getCommonTestJobParams()
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName}"
-        def weekly = 'weekly'
         def build_type = 'weekly'
         if (Boolean.valueOf(buildConfig.RELEASE)) {
             build_type = 'release'
-            weekly = ''
         }
         try {
 
-            def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF}${weekly} : ${jobParams.ARCH_OS_LIST}"
+            def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF} : ${build_type} : ${jobParams.ARCH_OS_LIST}"
             context.echo " Temurin AQA_Test_Pipeline_JCK job : ${displayName}"                                    
             def jckJob = context.build job: 'AQA_Test_Pipeline_JCK',
                 propagate: false,
