@@ -266,12 +266,36 @@ class Build {
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
     If a test job doesn't exist, it will be created dynamically.
     */
+    String getSbomFileName(String jdkFileName) {
+        def sbomFileName = jdkFileName.replace('-jdk_', '-sbom_')
+
+        for (def extension : ['.tar.gz', '.zip', '.msi', '.pkg', '.deb', '.rpm']) {
+            if (sbomFileName.endsWith(extension)) {
+                return sbomFileName[0..<(sbomFileName.length() - extension.length())] + '.json'
+            }
+        }
+
+        return sbomFileName.replaceFirst(/(\.[^.]+)?$/, '.json')
+    }
+
+    String getAqaCustomizedSdkUrl(String jdkFileName) {
+        def artifactNames = [
+            jdkFileName,
+            jdkFileName.replace('-jdk_', '-testimage_')
+        ]
+
+        if (buildConfig.BUILD_ARGS?.contains('--create-sbom')) {
+            artifactNames << getSbomFileName(jdkFileName)
+        }
+
+        return artifactNames.collect { "${env.BUILD_URL}/artifact/workspace/target/${it}" }.join(' ')
+    }
+
     def runAQATests(jdkFileName) {
         def aqaBranch = 'master'
         def build_type = 'nightly'
-        def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
-       // def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
-        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName} ${env.BUILD_URL}/artifact/workspace/target/${testImageName}"
+        // def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
+        def sdkUrl = getAqaCustomizedSdkUrl(jdkFileName)
         def aqaTestPipelineJobName = "AQA_Test_Pipeline"
         def releaseAppendix = ''
         if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
