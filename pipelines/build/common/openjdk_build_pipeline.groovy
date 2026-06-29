@@ -165,6 +165,16 @@ class Build {
         jobParams.put('VENDOR_TEST_REPOS', vendorTestRepos)
         jobParams.put('VENDOR_TEST_DIRS', vendorTestDirs)
         jobParams.put('VENDOR_TEST_BRANCHES', vendorTestBranches)
+
+        // Are there any additional test params specified?
+        def additionalTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
+        if (Map.isInstance(additionalTestParams)) { 
+            context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${additionalTestParams}"
+            additionalTestParams.each { additionalParam, additionalParamValue ->
+                jobParams.put( additionalParam, additionalParamValue.toString() )
+            }
+        }
+
         return jobParams
     }
 
