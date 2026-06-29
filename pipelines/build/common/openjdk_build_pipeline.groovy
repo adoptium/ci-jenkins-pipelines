@@ -178,26 +178,6 @@ class Build {
         return jobParams
     }
 
-    def getAQATestJobParams(testType) {
-        def jobParams = getCommonTestJobParams()
-        def (level, group) = testType.tokenize('.')
-        jobParams.put('LEVELS', level)
-        jobParams.put('GROUPS', group)
-        jobParams.put('BUILD_LIST', group )
-        def variant
-        switch (buildConfig.VARIANT) {
-            case 'openj9': variant = 'j9'; break
-            case 'corretto': variant = 'corretto'; break
-            case 'dragonwell': variant = 'dragonwell'; break;
-            case 'fast_startup': variant = 'fast_startup'; break;
-            case 'bisheng': variant = 'bisheng'; break;
-            default: variant = 'hs'
-        }
-        def jobName = "Test_openjdk${jobParams['JDK_VERSIONS']}_${variant}_${testType}_${jobParams['ARCH_OS_LIST']}"
-        jobParams.put('TEST_JOB_NAME', jobName)
-        return jobParams
-    }
-
     def getCommonTestJobParams() {
         def jobParams = [:]
         String jdk_Version = getJavaVersionNumber() as String
@@ -222,118 +202,7 @@ class Build {
         jobParams.put('LIGHT_WEIGHT_CHECKOUT', true)
         return jobParams
     }
-    /*
-    Retrieve the corresponding OpenJDK source code repository branch. This is used the downstream tests to determine what source code branch the tests should run against.
-    */
-    private getJDKBranch() {
-        def jdkBranch
-
-        if (buildConfig.SCM_REF) {
-            // We need to override the SCM ref on jdk8 arm builds change aarch64-shenandoah-jdk8u282-b08 to jdk8u282-b08
-            if (buildConfig.JAVA_TO_BUILD == 'jdk8u' &&  buildConfig.VARIANT == 'temurin' && (buildConfig.ARCHITECTURE == 'aarch64' || buildConfig.ARCHITECTURE == 'arm')) {
-                jdkBranch = buildConfig.OVERRIDE_FILE_NAME_VERSION
-            } else {
-                jdkBranch = buildConfig.SCM_REF
-            }
-        } else {
-            if (buildConfig.VARIANT == 'corretto') {
-                jdkBranch = 'develop'
-            } else if (buildConfig.VARIANT == 'openj9') {
-                jdkBranch = 'openj9'
-            } else if (buildConfig.VARIANT == 'hotspot') {
-                jdkBranch = 'master'
-            } else if (buildConfig.VARIANT == 'temurin') {
-                // jdk(head) now contains version branched stabilisation branches, eg.dev_jdk23
-                if (getJavaVersionNumber() >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u') && buildConfig.JAVA_TO_BUILD != "jdk") {
-                    jdkBranch = 'dev_'+buildConfig.JAVA_TO_BUILD
-                } else {
-                    jdkBranch = 'dev'
-                }
-            } else if (buildConfig.VARIANT == 'dragonwell') {
-                jdkBranch = 'master'
-            } else if (buildConfig.VARIANT == 'fast_startup') {
-                jdkBranch = 'master'
-            } else if (buildConfig.VARIANT == 'bisheng') {
-                jdkBranch = 'master'
-            } else {
-                throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
-            }
-        }
-
-        return jdkBranch
-    }
-
-    /*
-    Retrieve the corresponding OpenJDK source code repository. This is used the downstream tests to determine what source code the tests should run against.
-    */
-    private getJDKRepo() {
-        def jdkRepo
-        def suffix
-        def javaNumber = getJavaVersionNumber()
-
-        switch(buildConfig.VARIANT) {
-            case 'corretto':
-                suffix = "corretto/corretto-${javaNumber}"
-                break
-            case 'openj9':
-                def openj9JavaToBuild = buildConfig.JAVA_TO_BUILD
-                if (openj9JavaToBuild.endsWith('u')) {
-                    // OpenJ9 extensions repo does not use the "u" suffix
-                    openj9JavaToBuild = openj9JavaToBuild.substring(0, openj9JavaToBuild.length() - 1)
-                }
-                suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
-                break
-            case 'temurin':
-                if (buildConfig.ARCHITECTURE == 'arm' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
-                    suffix = 'adoptium/aarch32-jdk8u'
-                } else if (buildConfig.TARGET_OS == 'alpine-linux' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
-                    suffix = 'adoptium/alpine-jdk8u'
-                } else if (buildConfig.ARCHITECTURE == 'riscv64' && buildConfig.JAVA_TO_BUILD == 'jdk11u') {
-                    suffix = 'adoptium/riscv-port-jdk11u'
-                } else {
-                    // jdk(head) repo now contains the version branched stabilisation branches, eg.dev_jdk23
-                    if (javaNumber >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u')) {
-                        suffix = "adoptium/jdk"
-                    } else {
-                        suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
-                    }
-                }
-                break
-            case 'hotspot':
-                if (buildConfig.ARCHITECTURE == "riscv64"
-                     && (buildConfig.JAVA_TO_BUILD == "jdk8u"
-                        || buildConfig.JAVA_TO_BUILD == "jdk11u")) {
-                    suffix = "openjdk/riscv-port-${buildConfig.JAVA_TO_BUILD}";
-                } else {
-                    // jdk(head) repo now contains the version branched stabilisation branches, eg.jdk23
-                    if (javaNumber >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u')) {
-                        suffix = "openjdk/jdk"
-                    } else {
-                        suffix = "openjdk/${buildConfig.JAVA_TO_BUILD}"
-                    }
-                }
-                break
-            case 'dragonwell':
-                suffix = "alibaba/dragonwell${javaNumber}"
-                break
-            case 'fast_startup':
-                suffix = 'adoptium/jdk11u-fast-startup-incubator'
-                break
-            case 'bisheng':
-                suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
-                break
-            default:
-                throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
-        }
-
-        jdkRepo = "https://github.com/${suffix}"
-        if (buildConfig.BUILD_ARGS.count('--ssh') > 0) {
-            jdkRepo = "git@github.com:${suffix}"
-        }
-
-        return jdkRepo
-    }
-
+    
     /*
       If the given result is not SUCCESS then set the current stage result and build result accordingly
     */
@@ -407,432 +276,101 @@ class Build {
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
     If a test job doesn't exist, it will be created dynamically.
     */
-    def runAQATests(testStages) {
-        def jdkBranch = getJDKBranch()
-        def jdkRepo = getJDKRepo()
-        def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == 'openj9') ? buildConfig.SCM_REF : 'master'
-        List testList = buildConfig.TEST_LIST
-        def enableTestDynamicParallel = Boolean.valueOf(buildConfig.ENABLE_TESTDYNAMICPARALLEL)
+    def runAQATests(jdkFileName) {
         def aqaBranch = 'master'
-        def useTestEnvProperties = false
+        def build_type = 'nightly'
+        def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
+       // def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
+        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName} ${env.BUILD_URL}/artifact/workspace/target/${testImageName}"
+        def aqaTestPipelineJobName = "AQA_Test_Pipeline"
+        def releaseAppendix = ''
         if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
-            aqaBranch = buildConfig.AQA_REF
-            useTestEnvProperties = true
+            aqaBranch = buildConfig.AQA_REF  
+            releaseAppendix = "_RELEASE" 
+        }
+        if (Boolean.valueOf(buildConfig.RELEASE)) {
+            build_type = 'release'
+            aqaTestPipelineJobName = "AQA_Test_Pipeline${releaseAppendix}"
+        } else if (Boolean.valueOf(buildConfig.WEEKLY)) {
+            build_type = 'weekly'
         }
 
-        def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
-        def parallel = 'None'
-        def numMachinesPerTest = ''
-        def testTime = ''
-        // Enable time based parallel. Set expected completion time to 120 mins
-        if (enableTestDynamicParallel) {
-            testTime = '120'
-            parallel = 'Dynamic'
-        }
-
-        testList.each { testType ->
-            // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
-            try {
-                testStages["${testType}"] = {
-                    context.println "Running test: ${testType}"
-                    context.stage("${testType}") {
-                        def jobParams = getAQATestJobParams(testType)
-                        def jobName = jobParams.TEST_JOB_NAME
-                        def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
-                        def rerunIterations = '1'
-                        if ("${testType}".contains('dev') || "${testType}".contains('external')) {
-                            rerunIterations = '0'
-                        }
-                        if (("${testType}".contains('openjdk')) || ("${testType}".contains('jck')) || (testType  == 'dev.functional')) {
-                            // Keep test reportdir always for JUnit targets
-                            keep_test_reportdir = true
-                        }
-
-                        def DYNAMIC_COMPILE = false
-                        if (("${testType}".contains('functional')) || ("${testType}".contains('external'))) {
-                            DYNAMIC_COMPILE = true
-                        }
-                        def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-                        if (testType  == 'dev.openjdk') {
-                            context.println "${testType} need extra label sw.tool.docker"
-                            if (additionalTestLabel == '') {
-                                additionalTestLabel = 'sw.tool.docker'
-                            } else {
-                                additionalTestLabel += '&&sw.tool.docker'
-                            }
-                        }
-
-                        def testLabel = ''
-
-                        // Eclipse Adoptium Temurin label special requirements for special.system which runs the Reproducible build tests
-                        if (testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
-                            context.println "${testType} needs to use ci.role.test.repro for reproducible build tests"
-                            def arch = buildConfig.ARCHITECTURE
-                            if (arch == 'x64') {
-                                arch = 'x86'
-                            }
-                            if (jobName.contains('x86-64_mac')) {
-                                // x64 mac required to run on aarch64 mac
-                                testLabel = "ci.role.test.repro&&hw.arch.aarch64&&(sw.os.osx||sw.os.mac)"
-                            } else {
-                                testLabel = "ci.role.test.repro&&hw.arch.${arch}&&sw.os.${buildConfig.TARGET_OS}"
-                            }
-                        }
-
-                        def vendorTestRepos = ''
-                        def vendorTestBranches = ''
-                        def vendorTestDirs = ''
-                        if (testType  == 'special.system' || testType  == 'dev.system') {
-                            def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
-                            vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
-                            vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
-                            vendorTestRepos = vendorTestRepos - ('.git')
-                            vendorTestDirs = '/test/system'
-                            // Use BUILD_REF override if specified
-                            vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
-                        }
-
-                        String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
-                        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
-
-                        // Create test job if AQA_AUTO_GEN is set to true, the job doesn't exist or is not runnable
-                        if (aqaAutoGen || !JobHelper.jobIsRunnable(jobName as String)) {
-                            // use Test_Job_Auto_Gen if it is runnable. Otherwise, use testJobTemplate from aqa-tests repo
-                            if (JobHelper.jobIsRunnable('Test_Job_Auto_Gen')) {
-                                def updatedParams = []
-                                // loop through all the params and set string and boolean accordingly
-                                jobParams.each { param ->
-                                    def value = param.value.toString()
-                                    if (value == 'true' || value == 'false') {
-                                        updatedParams << context.booleanParam(name: param.key, value: value.toBoolean())
-                                    } else {
-                                        updatedParams << context.string(name: param.key, value: value)
-                                    }
-                                }
-                                context.println "Use Test_Job_Auto_Gen to generate AQA test job with parameters: ${updatedParams}"
-                                int autogenBuildAttempts = 3
-                                int autogenRetryDelayInMins = 5
-                                while ( autogenBuildAttempts > 0 ) {
-                                    autogenBuildAttempts--
-                                    def autogenResult = "BLANK"
-                                    context.catchError {
-                                        def testJob = context.build job: 'Test_Job_Auto_Gen', propagate: false, parameters: updatedParams
-                                        autogenResult = testJob.getResult()
-                                    }
-                                    if ( !autogenResult.equals("SUCCESS") && autogenBuildAttempts > 0 ) {
-                                        context.println "This script will now pause for ${autogenRetryDelayInMins} minutes before retrying."
-                                        sleep(autogenRetryDelayInMins*60*1000)
-                                    } else {
-                                        break
-                                    }
-                                }
-                            } else {
-                                context.node('worker') {
-                                    context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
-                                    def templatePath = 'testJobTemplate'
-                                    if (!JobHelper.jobIsRunnable(jobName as String)) {
-                                        context.println "AQA test job: ${jobName} doesn't exist, use testJobTemplate to generate job : ${jobName}"
-                                    } else {
-                                        context.println "Use testJobTemplate to regenerate job: ${jobName}, note: default job parameters may change."
-                                    }
-                                    context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
-                                }
-                            }
-                        }
-
-                        def testJobParamsMap = [
-                        UPSTREAM_JOB_NUMBER: "${env.BUILD_NUMBER}",
-                        UPSTREAM_JOB_NAME: "${env.JOB_NAME}",
-                        SDK_RESOURCE: 'upstream',
-                        JDK_REPO: "${jdkRepo}",
-                        JDK_BRANCH: "${jdkBranch}",
-                        OPENJ9_BRANCH: "${openj9Branch}",
-                        LABEL: "${testLabel}",
-                        LABEL_ADDITION: "${additionalTestLabel}",
-                        KEEP_REPORTDIR: "${keep_test_reportdir}",
-                        PARALLEL: "${parallel}",
-                        NUM_MACHINES: "${numMachinesPerTest}",
-                        TEST_TIME: "${testTime}",
-                        USE_TESTENV_PROPERTIES: "${useTestEnvProperties}",
-                        GENERATE_JOBS: "${aqaAutoGen}",
-                        ADOPTOPENJDK_BRANCH: "${aqaBranch}",
-                        ACTIVE_NODE_TIMEOUT: "${buildConfig.ACTIVE_NODE_TIMEOUT}",
-                        DYNAMIC_COMPILE: "${DYNAMIC_COMPILE}",
-                        VENDOR_TEST_REPOS: "${vendorTestRepos}",
-                        VENDOR_TEST_BRANCHES: "${vendorTestBranches}",
-                        VENDOR_TEST_DIRS: "${vendorTestDirs}",
-                        RERUN_FAILURE: "true",
-                        RERUN_ITERATIONS: "${rerunIterations}",
-                        BUILD_LIST: jobParams["BUILD_LIST"]
-                        ]
-
-                        // If TIME_LIMIT is set, override target job default TIME_LIMIT value.
-                        if (jobParams.any{mapEntry -> mapEntry.key.equals("TIME_LIMIT")}) {
-                            testJobParamsMap["TIME_LIMIT"] = jobParams["TIME_LIMIT"]
-                        }
-
-                        // Are there any additional test params specified?
-                        def additionalTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
-                        if (Map.isInstance(additionalTestParams)) {
-                            context.println "buildConfig.ADDITIONAL_TEST_PARAMS = ${additionalTestParams}"
-                            additionalTestParams.each { additionalParam, additionalParamValue ->
-                                if (additionalParam == "CLOUD_PROVIDER" && testType  == 'special.system' && buildConfig.VARIANT == 'temurin') {
-                                    context.println "${testType} ignoring CLOUD_PROVIDER param for reproducible build tests as must not run in container"
-                                } else {
-                                    testJobParamsMap[(additionalParam)] = additionalParamValue.toString()
-                                }
-                            }
-                        }
-
-                        def testJobParams = []
-                        testJobParamsMap.each { paramKey, paramValue ->
-                            if (paramValue == 'true' || paramValue == 'false') {
-                                testJobParams << context.booleanParam(name: paramKey, value: paramValue.toBoolean())
-                            } else {
-                                testJobParams << context.string(name: paramKey, value: paramValue)
-                            }
-                        }
-
-                        def testJob = context.build job: jobName,
-                                        propagate: false,
-                                        parameters: testJobParams,
-                                        wait: true
-                        currentBuild.result = testJob.getResult()
-                        setStageResult("${testType}", testJob.getResult())
-                        context.node('worker') {
-                            //Copy Taps files from downstream test jobs if files available.
-                            context.sh 'rm -f workspace/target/AQAvitTaps/*.tap'
-                            try {
-                                context.timeout(time: 2, unit: 'HOURS') {
-                                    context.copyArtifacts(
-                                        projectName:jobName,
-                                        selector:context.specific("${testJob.getNumber()}"),
-                                        filter: "**/${jobName}*.tap",
-                                        target: 'workspace/target/AQAvitTaps/',
-                                        fingerprintArtifacts: true,
-                                        flatten: true
-                                    )
-                                }
-                            } catch (Exception e) {
-                                context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
-                            }
-                            context.archiveArtifacts allowEmptyArchive: true, artifacts: 'workspace/target/AQAvitTaps/*.tap', fingerprint: true
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                context.println "Failed to execute test: ${e.message}"
-                currentBuild.result = 'FAILURE'
+        try {
+            
+            def jobParams = getCommonTestJobParams()
+            def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF}${releaseAppendix} : ${jobParams.ARCH_OS_LIST}"
+            def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
+            def vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
+            def vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
+            vendorTestRepos = vendorTestRepos - ('.git')
+            def vendorTestDirs = '/test/system'
+            // Use BUILD_REF override if specified
+            vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
+            context.echo " Temurin AQA_Test_Pipeline${releaseAppendix} job : ${displayName}"                                    
+            def aqaJob = context.build job: "${aqaTestPipelineJobName}",
+                propagate: false,
+                parameters: [
+                    context.string(name: 'SDK_RESOURCE', value: 'customized'),
+                    context.string(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                    context.string(name: 'ADOPTOPENJDK_BRANCH', value: "${aqaBranch}"),
+                    context.string(name: 'VENDOR_TEST_REPOS', value: "${vendorTestRepos}"),
+                    context.string(name: 'VENDOR_TEST_BRANCHES', value: "${vendorTestBranches}"),
+                    context.string(name: 'VENDOR_TEST_DIRS', value: "${vendorTestDirs}"),
+                    context.string(name: 'JDK_VERSIONS', value: "${jobParams.JDK_VERSIONS}"),
+                    context.string(name: 'BUILD_TYPE', value: "${build_type}"),
+                    context.string(name: 'VARIANT', value: "${buildConfig.VARIANT}"),
+                    context.string(name: 'PLATFORMS', value: "${jobParams.ARCH_OS_LIST}"),
+                    context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}")
+                ],
+                wait: false,
+                waitForStart: true
+            if (aqaJob?.absoluteUrl && aqaJob?.number) {
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${aqaJob.absoluteUrl}'>${aqaTestPipelineJobName} #${aqaJob.number}</a>"
+            } else {
+                def aqaJobUrl = "${context.JENKINS_URL}job/${aqaTestPipelineJobName}/"
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${aqaJobUrl}'>${aqaTestPipelineJobName} (no build number available)</a>"
             }
+
+        } catch (Exception e) {
+            context.println "Failed to execute test: ${e.message}"
+            currentBuild.result = 'FAILURE'
         }
-        return testStages
     }
 
     // Temurin remote jck trigger
-    def remoteTriggerJckTests(String platform, String jdkFileName) {
-        def jdkVersion = getJavaVersionNumber()
-        // We just need the JDK for Jck tests
+    def remoteTriggerJckTests(String jdkFileName) {
+        def jobParams = getCommonTestJobParams()
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName}"
-        context.echo "sdkUrl is ${sdkUrl}"
-        def remoteTargets = [:]
-        def remoteTriggeredBuilds = [:]
-        def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-        def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
-        def setupJCKRun = false
-        if (buildConfig.SCM_REF && buildConfig.AQA_REF && sdkUrl.contains("release")) {
-            setupJCKRun = true
+        def build_type = 'weekly'
+        if (Boolean.valueOf(buildConfig.RELEASE)) {
+            build_type = 'release'
         }
-        // Determine from the platform the Jck jtx exclude platform
-        def excludePlat
-        def excludeRoot = "/home"
-        if (platform.contains("aix")) {
-            excludePlat = "aix"
-        } else if (platform.contains("mac")) {
-            excludePlat = "mac"
-            excludeRoot = "/Users"
-        } else if (platform.contains("windows")) {
-            excludePlat = "windows"
-            excludeRoot = "c:/Users"
-        } else if (platform.contains("solaris")) {
-            excludePlat = "solaris"
-            excludeRoot = "/export/home"
-        } else {
-            excludePlat = "linux"
-        }
+        try {
 
-        def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
-        if (configureArguments.contains('--enable-headless-only=yes') || configureArguments.contains('--disable-headful')) {
-            // Headless platforms have no auto-manuals, so do not exclude any tests
-            appOptions=""
-        }
-
-        Map<String, String> targets = new HashMap<>()
-        targets.put("sanity.jck", "serial")
-        targets.put("extended.jck", "serial")
-        targets.put("special.jck", "serial")
-        targets.put("dev.jck", "serial")
-
-        if ("${platform}" == 'ppc64_aix'
-                || "${platform}" == 'sparcv9_solaris'
-                || "${platform}" == 'x86-64_solaris'
-                || configureArguments.contains('--enable-headless-only=yes')
-                || configureArguments.contains('--disable-headful')) {
-            targets.replace("dev.jck", "disabled")
-        }
-
-        if ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') {
-            // Primary platforms run extended.jck in Parallel
-            targets.replace("extended.jck", "parallel")
-        }
-
-        def weekly = ''
-        if ( Boolean.valueOf(buildConfig.WEEKLY) ) { weekly = '_weekly'}
-        def jckRerunSummary = context.manager.createSummary('info.gif')
-        appendSummaryText(jckRerunSummary, '<b>RERUN JCK TESTS:</b><ul>')
-        def aqa_test_pipeline_BaseURL = "https://ci.adoptium.net/view/Test_grinder/job/AQA_Test_Pipeline/parambuild"
-        targets.each { targetTest, targetMode ->
-            if (targetMode == "disabled") {
-                return // Skip to the next target.
+            def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF} : ${build_type} : ${jobParams.ARCH_OS_LIST}"
+            context.echo " Temurin AQA_Test_Pipeline_JCK job : ${displayName}"                                    
+            def jckJob = context.build job: 'AQA_Test_Pipeline_JCK',
+                propagate: false,
+                parameters: [
+                    context.string(name: 'SDK_RESOURCE', value: 'customized'),
+                    context.string(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                    context.string(name: 'JDK_VERSIONS', value: "${jobParams.JDK_VERSIONS}"),
+                    context.string(name: 'PLATFORMS', value: "${jobParams.ARCH_OS_LIST}"),
+                    context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
+                    context.string(name: 'BUILD_TYPE', value: "${build_type}")
+                ],
+                wait: false,
+                waitForStart: true
+            if (jckJob?.absoluteUrl && jckJob?.number) {
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${jckJob.absoluteUrl}'>AQA_Test_Pipeline_JCK #${jckJob.number}</a>"
+            } else {
+                def jckJobUrl = "${context.JENKINS_URL}job/AQA_Test_Pipeline_JCK/"
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${jckJobUrl}'>AQA_Test_Pipeline_JCK (no build number available)</a>"
             }
-            try {
-                remoteTargets["${targetTest}"] = {
-                    context.println "Remote trigger: ${targetTest}"
-                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF}${weekly} : ${platform} : ${targetTest}"
-                    def parallel = 'None'
-                    def num_machines = '1'
-                    if (targetMode == "parallel") {
-                        parallel = 'Dynamic'
-                        num_machines = '2'
-                    }
 
-                    def extra_options = ""
-                    if ("${platform}" == 's390x_linux' && targetTest.equals('extended.jck')) {
-                        extra_options += " -Xss4m"
-                    }
-
-                    if (platform.contains("windows") && jdkVersion >= 24) {
-                        // Required since jdk-24 with https://bugs.openjdk.org/browse/JDK-8185862 due to Windows headless detection
-                        // changes default headless from being false in Jenkins process to being true breaking java_awt tests
-                        extra_options += " -Djava.awt.headless=false"
-                    }
-
-                    if (platform.contains("windows")) {
-                        // Required on windows as some java_lang tests run into virtual memory issues
-                        extra_options += " -Xmx512m"
-                    }
-
-                    def extra_app_options = ""
-                    if ("${platform}" == 'ppc64_aix' && targetTest.equals('special.jck')) {
-                        extra_app_options += " customJvmOpts=-Djava.net.preferIPv4Stack=true"
-                    }
-                    if ("${platform}" == 'ppc64_aix') {
-                        // TC aix nodes struggle using the default cpus+1 concurrency, limit to 3
-                        extra_app_options += " concurrency=3"
-                    }
-
-                    def additionalTestLabel_param = additionalTestLabel
-                    if ("${platform}" == 'aarch64_mac') {
-                        // extended java_awt tests won't all run on the osx12 node, split extended from sanity/special across nodes
-                        def osxLabel = (targetTest.equals('extended.jck')) ? '!sw.os.osx.12' : 'sw.os.osx.12'
-                        if (additionalTestLabel_param == '') {
-                            additionalTestLabel_param = "${osxLabel}"
-                        } else {
-                            additionalTestLabel_param += "&&${osxLabel}"
-                        }
-                    }
-
-                    def paramList = [
-                        SDK_RESOURCE: 'customized',
-                        TARGETS: "${targetTest}",
-                        JCK_GIT_REPO: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git",
-                        CUSTOMIZED_SDK_URL: "${sdkUrl}",
-                        JDK_VERSIONS: "${jdkVersion}",
-                        PARALLEL: parallel,
-                        NUM_MACHINES: "${num_machines}",
-                        PLATFORMS: "${platform}",
-                        PIPELINE_DISPLAY_NAME: "${displayName}",
-                        APPLICATION_OPTIONS: "${appOptions} ${extra_app_options}",
-                        LABEL_ADDITION: additionalTestLabel_param,
-                        cause: "Remote triggered by job ${env.BUILD_URL}", // Label is lowercase on purpose to map to the Jenkins target reporting system
-                        AUTO_AQA_GEN: "${aqaAutoGen}",
-                        RERUN_ITERATIONS: "1",
-                        RERUN_FAILURE: "true",
-                        EXTRA_OPTIONS: "${extra_options}",
-                        SETUP_JCK_RUN: "${setupJCKRun}"
-                    ]
-                    if (("${platform}" == 'x86-64_windows' || "${platform}" == 'x86-32_windows') && "${targetTest}" == 'dev.jck') {
-                        paramList["LABEL"] = 'ci.role.test.interactive'
-                    }
-                    def queryString = paramList.collect { k, v -> "${URLEncoder.encode(k, 'UTF-8')}=${URLEncoder.encode(v, 'UTF-8')}"}.join('&')
-                    def aqa_test_pipeline_FullURL = "${aqa_test_pipeline_BaseURL}?${queryString}&MODE=RELAY"
-                    appendSummaryText(jckRerunSummary, "<li><a href=${aqa_test_pipeline_FullURL}> ${displayName}</a></li>")
-
-                   if ("${platform}" == 'x86-64_windows' && "${targetTest}" == 'dev.jck') {
-                        context.catchError {
-                            remoteTriggeredBuilds["${targetTest}"] = context.triggerRemoteJob abortTriggeredJob: true,
-                                blockBuildUntilComplete: false,
-                                job: 'AQA_Test_Pipeline',
-                                parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTest}"),
-                                                                        context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
-                                                                        context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                        context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                        context.MapParameter(name: 'PARALLEL', value: parallel),
-                                                                        context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                        context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                        context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                        context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions} ${extra_app_options}"),
-                                                                        context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel_param),
-                                                                        context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
-                                                                        context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
-                                                                        context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
-                                                                        context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
-                                                                        context.MapParameter(name: 'EXTRA_OPTIONS', value: "${extra_options}"),
-                                                                        context.MapParameter(name: 'LABEL', value: "ci.role.test.interactive"),
-                                                                        context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
-                                remoteJenkinsName: 'temurin-compliance',
-                                shouldNotFailBuild: true,
-                                token: 'RemoteTrigger',
-                                useCrumbCache: true,
-                                useJobInfoCache: true
-                        }
-                    } else {
-                        context.catchError {
-                            remoteTriggeredBuilds["${targetTest}"] = context.triggerRemoteJob abortTriggeredJob: true,
-                                blockBuildUntilComplete: false,
-                                job: 'AQA_Test_Pipeline',
-                                parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                        context.MapParameter(name: 'TARGETS', value: "${targetTest}"),
-                                                                        context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
-                                                                        context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                        context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                        context.MapParameter(name: 'PARALLEL', value: parallel),
-                                                                        context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                        context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                        context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                        context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions} ${extra_app_options}"),
-                                                                        context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel_param),
-                                                                        context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
-                                                                        context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
-                                                                        context.MapParameter(name: 'RERUN_ITERATIONS', value: "1"),
-                                                                        context.MapParameter(name: 'RERUN_FAILURE', value: "true"),
-                                                                        context.MapParameter(name: 'EXTRA_OPTIONS', value: "${extra_options}"),
-                                                                        context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
-                                remoteJenkinsName: 'temurin-compliance',
-                                shouldNotFailBuild: true,
-                                token: 'RemoteTrigger',
-                                useCrumbCache: true,
-                                useJobInfoCache: true
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                context.println "Failed to remote trigger jck tests: ${e.message}"
-            }
+        } catch (Exception e) {
+            context.println "Failed to remote trigger jck tests: ${e.message}"
         }
-        context.parallel remoteTargets
-        appendSummaryText(jckRerunSummary,'</ul>')
-        return remoteTriggeredBuilds
     }
 
     def compareReproducibleBuild(String nonDockerNodeName) {
@@ -1169,7 +707,7 @@ class Build {
                 // Determine suitable node to run on
                 def verifyNode
                 if (buildConfig.TARGET_OS == "windows") {
-                    verifyNode = "ci.role.test&&sw.os.windows"
+                    verifyNode = "((ci.role.test&&sw.os.windows)||(ci.agent.dynamic&&sw.os.windows.2022))"
                 } else {
                     verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)"
                 }
@@ -2372,100 +1910,6 @@ def buildScriptsAssemble(
         context.currentBuild.description = tmpDesc + "<a href=${context.JENKINS_URL}computer/${context.NODE_NAME}>${context.NODE_NAME}</a>"
     }
 
-    def waitForJckStatus(remoteTriggeredBuilds, testStages) {
-      testStages["waitForJckStatus"] = {
-        def completedJckJobs = ""
-        def completedJckJobCount = 0
-        def remoteJobTargets = remoteTriggeredBuilds.keySet() as String[]
-
-        def poll_count = 1
-        def currentStatus = [:]
-        def currentResult = [:]
-        def remoteBuildUrl = [:]
-
-        // Initialize statuses to UNKNOWN..
-        for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
-            currentStatus[remoteJobTargets[testIndex]] = "UNKNOWN"
-            currentResult[remoteJobTargets[testIndex]] = "UNKNOWN"
-            remoteBuildUrl[remoteJobTargets[testIndex]] = "UNKNOWN"
-        }
-
-        while (true) {
-            for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
-                String testTarget = remoteJobTargets[testIndex]
-                def jobHandle = remoteTriggeredBuilds[testTarget]
-                if ( completedJckJobs.contains(testTarget) ) {
-                    // This job has already finished, so we don't want to see more "waiting" output.'
-                    continue
-                }
-                def remoteJobStatus = ""
-                if ( jobHandle == null ) {
-                    context.println "Failed, remote job ${testTarget} was not triggered"
-                    remoteJobStatus = "FAILURE"
-                    currentStatus[testTarget] = remoteJobStatus
-                } else {
-                    try {
-                        jobHandle.updateBuildStatus()
-                        currentStatus[testTarget]  = jobHandle.getBuildStatus().toString()
-                        currentResult[testTarget]  = jobHandle.getBuildResult().toString()
-                        remoteBuildUrl[testTarget] = jobHandle.getBuildUrl()
-                        if ( jobHandle.getBuildStatus().toString().equals("NOT_TRIGGERED") ) {
-                            context.println "Failed, remote job ${testTarget} status is NOT_TRIGGERED"
-                            remoteJobStatus = "FAILURE"
-                        } else {
-                            if ( jobHandle.isFinished() ) {
-                                remoteJobStatus = jobHandle.getBuildResult().toString()
-                            }
-                        }
-                    } catch (e) {
-                        // parameterized-remote-trigger-plugin probably threw an exception trying to get BuildStatus...
-                        context.println("Failed to updateBuildStatus for remoteJobTargets ${testTarget} : "+jobHandle.getBuildUrl()+" : ${e}")
-                        remoteJobStatus = "FAILURE"
-                    }
-                }
-                if ( remoteJobStatus != "" ) {
-                    context.stage("${testTarget}") {
-                        setStageResult("${testTarget}", remoteJobStatus)
-                    }
-                    context.println "Build ${testTarget} completed: ${remoteJobStatus}"
-                    completedJckJobs += ",${testTarget}"
-                    completedJckJobCount++
-                }
-            }
-            // Issue current status every 6 polls (24 mins) or when all finished, so as not to clutter the console..
-            if ( (poll_count % 6) == 0 || completedJckJobCount == remoteTriggeredBuilds.size() ) {
-                for (int testIndex = 0; testIndex < remoteJobTargets.length; testIndex++) {
-                    context.println "Current " + remoteJobTargets[testIndex] + " Status: " + currentStatus[remoteJobTargets[testIndex]] + " Build result: " + currentResult[remoteJobTargets[testIndex]] + " Remote build URL: " + remoteBuildUrl[remoteJobTargets[testIndex]];
-
-                    // If Status is still in "QUEUED", and we have no remoteBuildUrl, then remote trigger plugin has probably lost track of job... https://github.com/adoptium/ci-jenkins-pipelines/issues/1377
-                    if (currentStatus[remoteJobTargets[testIndex]] == "QUEUED" && remoteBuildUrl[remoteJobTargets[testIndex]] == null) {
-                      context.println "Failing " + remoteJobTargets[testIndex] + " as remote trigger plugin has probably lost track of job.. please check remote result manually."
-                      context.stage(remoteJobTargets[testIndex]) {
-                          setStageResult(remoteJobTargets[testIndex], "FAILURE")
-                      }
-                      context.println "Build " + remoteJobTargets[testIndex] + " completed: FAILURE"
-                      completedJckJobs += ","+remoteJobTargets[testIndex]
-                      completedJckJobCount++
-                    }
-                }
-                if ( completedJckJobCount < remoteTriggeredBuilds.size() ) {
-                    context.println "Waiting for remote jck jobs to complete..."
-                }
-            }
-            if (remoteTriggeredBuilds.size() > completedJckJobCount) {
-                // Must be under 5 mins due to Jenkins design issue https://github.com/jenkinsci/jenkins/issues/21493
-                // Note: CPS-aware sleep is "verbose", it is not possible to sleep quietly within a Flyweight Executor context
-                context.sleep time: 4, unit: 'MINUTES'
-            } else {
-                break
-            }
-            poll_count += 1
-        }
-      }
-
-      return testStages
-    }
-
     /*
     This method validates all SBOMs produced by this build.
     */
@@ -2899,56 +2343,31 @@ def buildScriptsAssemble(
                 }
 
                 // Run Smoke Tests and AQA Tests
-                // Smoke tests always run when build succeeds (independent of enableTests)
-                // AQA and TCK tests only run if enableTests=true AND smoke tests pass
+
                 if (currentBuild.currentResult != "SUCCESS") {
-                    context.println('[ERROR] Build stages were not successful, not running any tests')
+                    context.println('[ERROR] Build stages were not successful, not running Smoke tests')
                 } else {
                     try {
+                        //Only smoke tests succeed TCK and AQA tests will be triggerred.
                         context.println "openjdk_build_pipeline: running smoke tests"
                         if (runSmokeTests() == 'SUCCESS') {
                             context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
                             // Remote trigger Eclipse Temurin JCK tests
                             if (enableTests) {
-                                def remoteTriggeredBuilds = [:]
                                 if (buildConfig.VARIANT == 'temurin' && enableTCK) {
-                                    def platform = ''
-                                    if (buildConfig.ARCHITECTURE.contains('x64')) {
-                                        platform = 'x86-64_' + buildConfig.TARGET_OS
-                                    } else {
-                                        platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
-                                    }
-                                    if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                        context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                        //def remoteTargets = remoteTriggerJckTests(platform, filename)
-                                        //context.parallel remoteTargets
-                                        remoteTriggeredBuilds = remoteTriggerJckTests(platform, filename)
-                                    }
+                                    remoteTriggerJckTests(filename)
                                 }
-
-                                def testStages = [:]
-                                if (buildConfig.TEST_LIST.size() > 0) {
-                                    testStages = runAQATests(testStages)
-                                }
-
-                                // Asynchronously get the remote JCK job status and set as the stage status.
-                                if (buildConfig.VARIANT == 'temurin' && enableTCK && remoteTriggeredBuilds.asBoolean()) {
-                                    testStages = waitForJckStatus(remoteTriggeredBuilds, testStages)
-                                }
-
-                                // Run the testStages in parallel
-                                if (!testStages.isEmpty()) {
-                                    context.parallel testStages
-                                }
+                                runAQATests(filename)
                             }
                         } else {
-                            context.println('[ERROR] Smoke tests are not successful! AQA and TCK tests are blocked')
+                            context.println('[ERROR]Smoke tests are not successful! AQA and TCK tests are blocked ')
                         }
                     } catch (Exception e) {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
                     }
                 }
+                
 
                 // Compare reproducible build if needed
                 if (enableReproducibleCompare) {
