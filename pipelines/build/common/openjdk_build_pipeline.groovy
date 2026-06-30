@@ -272,6 +272,18 @@ class Build {
         def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
        // def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName} ${env.BUILD_URL}/artifact/workspace/target/${testImageName}"
+
+        // If SBOM created then need to pass to aqa-tests for special.system reproducible verification test
+        if (buildConfig.BUILD_ARGS?.contains('--create-sbom')) {
+            def sbomName = jdkFileName.replace('-jdk_', '-sbom_')
+            if (buildConfig.TARGET_OS == 'windows') {
+                sbomName = sbomName.replace('.zip', '.json')
+            } else {
+                sbomName = sbomName.replace('.tar.gz', '.json')
+            }
+            sdkUrl += " ${env.BUILD_URL}/artifact/workspace/target/${sbomName}"
+        }
+
         def aqaTestPipelineJobName = "AQA_Test_Pipeline"
         def releaseAppendix = ''
         if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
