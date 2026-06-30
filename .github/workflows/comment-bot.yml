@@ -25,7 +25,7 @@ jobs:
             Please check out the information below if you have not made a pull request here before (or if you need a reminder how things work).
 
             ## Code Quality and Contributing Guidelines
-            If you have not done so already, please familiarise yourself with our [Contributing Guidelines](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/CONTRIBUTING.md) and [Code Of Conduct](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/CODE_OF_CONDUCT.md), even if you have contributed before.
+            If you have not done so already, please familiarise yourself with our [Contributing Guidelines](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/CONTRIBUTING.md) and [Code Of Conduct](https://github.com/adoptium/.github/blob/main/CODE_OF_CONDUCT.md), even if you have contributed before.
 
             ## Tests
             Github actions will run a set of jobs against your PR that will lint and unit test your changes. Keep an eye out for the results from these on the latest commit you submitted. For more information, please see our [testing documentation](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/prTester/README.md).
