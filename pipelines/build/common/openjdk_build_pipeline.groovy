@@ -237,21 +237,40 @@ class Build {
                     }
                 }
 
+                def testJobParamsMap = [
+                    UPSTREAM_JOB_NUMBER: "${env.BUILD_NUMBER}",
+                    UPSTREAM_JOB_NAME: "${env.JOB_NAME}",
+                    SDK_RESOURCE: 'upstream',
+                    JDK_VERSION: "${jobParams.JDK_VERSIONS}",
+                    LABEL_ADDITION: "${additionalTestLabel}",
+                    KEEP_REPORTDIR: "${buildConfig.KEEP_TEST_REPORTDIR}",
+                    ACTIVE_NODE_TIMEOUT: "${buildConfig.ACTIVE_NODE_TIMEOUT}",
+                    DYNAMIC_COMPILE: "true",
+                    VENDOR_TEST_REPOS: "${vendorTestRepos}",
+                    VENDOR_TEST_BRANCHES: "${vendorTestBranches}",
+                    TIME_LIMIT: '1'
+                ]
+
+                def additionalTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
+                if (Map.isInstance(additionalTestParams)) {
+                    additionalTestParams.each { additionalParam, additionalParamValue ->
+                        testJobParamsMap[(additionalParam)] = additionalParamValue.toString()
+                    }
+                }
+                
+                def testJobParams = []
+                testJobParamsMap.each { paramKey, paramValue ->
+                    if (paramValue == 'true' || paramValue == 'false') {
+                        testJobParams << context.booleanParam(name: paramKey, value: paramValue.toBoolean())
+                    } else {
+                        testJobParams << context.string(name: paramKey, value: paramValue)
+                    }
+                }
+
                 def testJob = context.build job: jobName,
                     propagate: false,
-                    parameters: [
-                            context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                            context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
-                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                            context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
-                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
-                            context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
-                            context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
-                            context.string(name: 'TIME_LIMIT', value: '1')
-                    ]
+                    parameters: testJobParams
+                    
                 currentBuild.result = testJob.getResult()
                 setStageResult("smoke test", testJob.getResult())
                 return testJob.getResult()

@@ -9,6 +9,9 @@ class Config8 {
                         openj9  : 'macos10.14'
                 ],
                 test                 : 'default',
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'gha']
+                ],
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ],
@@ -76,6 +79,9 @@ class Config8 {
                 dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                 : 'default',
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
+                ],
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ],
