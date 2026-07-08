@@ -288,9 +288,13 @@ class Build {
     def runAQATests(jdkFileName) {
         def aqaBranch = 'master'
         def build_type = 'nightly'
+        def jobParams = getCommonTestJobParams()
         def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
        // def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
-        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName} ${env.BUILD_URL}/artifact/workspace/target/${testImageName}"
+        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName}"
+        if (!(jobParams.JDK_VERSIONS == '8' && buildConfig.VARIANT == 'temurin')) {
+            sdkUrl += " ${env.BUILD_URL}/artifact/workspace/target/${testImageName}"
+        }
 
         // If SBOM created then need to pass to aqa-tests for special.system reproducible verification test
         if (buildConfig.BUILD_ARGS?.contains('--create-sbom')) {
@@ -318,7 +322,6 @@ class Build {
 
         try {
             
-            def jobParams = getCommonTestJobParams()
             def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF}${releaseAppendix} : ${jobParams.ARCH_OS_LIST}"
             def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
             def vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
