@@ -37,9 +37,9 @@ shadowJar {
 }
 
 dependencies {
-    // TODO This is the lib from 2017, probably need to use its replacement (2.432) from Nov 14 2023
+    // TODO Upgrade this 2017-era Jenkins core dependency to a currently supported release once the Groovy build compatibility is verified.
     compile group: 'org.jenkins-ci.main', name: 'jenkins-core', version: '2.85', ext: 'pom'
-    // TODO This is the lib from 2017, probably need to use its https://mvnrepository.com/artifact/org.jenkins-ci.plugins.workflow/workflow-step-api/650.v14346f713b_00
+    // TODO Upgrade workflow-step-api alongside jenkins-core after verifying a supported Jenkins dependency set for this Groovy build.
     compile group: 'org.jenkins-ci.plugins.workflow', name: 'workflow-step-api', version: '2.22', ext: 'jar'
     compile 'org.codehaus.groovy:groovy-all:3.0.20'
     testCompile('org.junit.jupiter:junit-jupiter-api:5.10.1')
