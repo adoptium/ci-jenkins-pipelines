@@ -292,7 +292,7 @@ class Build {
         def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
        // def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName}"
-        if (jobParams.JDK_VERSIONS != '8') {
+        if (!(jobParams.JDK_VERSIONS == '8' && buildConfig.VARIANT == 'temurin')) {
             sdkUrl += " ${env.BUILD_URL}/artifact/workspace/target/${testImageName}"
         }
 
