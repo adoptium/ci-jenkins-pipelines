@@ -14,6 +14,12 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 sourceSets {
+    jenkinsStub {
+        java {
+            srcDirs = ['src/jenkinsStub/java']
+        }
+    }
+
     main {
         groovy {
             srcDirs = ['build', 'src/main/groovy', 'jenkins-helper/src/common']
@@ -46,7 +52,13 @@ task checkoutJenkinsHelper {
     }
 }
 
+compileGroovy {
+    dependsOn jenkinsStubClasses
+    classpath += sourceSets.jenkinsStub.output
+}
+
 test {
     dependsOn checkoutJenkinsHelper
+    classpath += sourceSets.jenkinsStub.output
     useJUnitPlatform()
 }
