@@ -1024,13 +1024,14 @@ class Builder implements Serializable {
                                         }
 
                                         copyArtifactSuccess = true
-                                        if (release) {
-                                            def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
-                                            appendSummaryText(releaseSummary, "<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
-                                        }
                                     }
                             }
                             context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
+
+                            if (release && copyArtifactSuccess) {
+                                def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
+                                appendSummaryText(releaseSummary, "<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
+                            }
 
                             if (propagateFailures) {
                                 String previousPipelineStatus = currentBuild.result
