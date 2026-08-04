@@ -660,6 +660,30 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
     }
 }
 
+// Get the remote JCK test job results for an AQA_Test_Pipeline_JCK build.
+// Calls the TRSS getRemoteJckBuildInfo API which parses the Jenkins console log
+// to extract the status of each remotely-triggered JCK target.
+// Returns [failedCount, totalCount]. Both are 0 if the build is not found or the
+// API returns no data.
+def getRemoteJckResults(String trssUrl, String jenkinsBaseUrl, String buildName, def buildNum, String cookieJar) {
+    def jckJson = callWgetSafely("${trssUrl}/api/getRemoteJckBuildInfo?url=${jenkinsBaseUrl}&buildName=${buildName}&buildNum=${buildNum}", cookieJar)
+    if (!jckJson || jckJson.length() <= 2) {
+        return [0, 0]
+    }
+    try {
+        def parsed = new JsonSlurper().parseText(jckJson)
+        if (!(parsed instanceof List) || parsed.size() == 0) {
+            return [0, 0]
+        }
+        def total  = parsed.size()
+        def failed = parsed.count { it.buildResult != null && it.buildResult != 'SUCCESS' }
+        return [failed, total]
+    } catch (Exception e) {
+        echo "Warning: Failed to parse JCK results for ${buildName} #${buildNum}: ${e.message}"
+        return [0, 0]
+    }
+}
+
 // Get the Pipeline Test job results...
 def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineUrl, String pipeline_id, String buildVariant, String testVariant, String cookieJar) {
     def buildJobComplete = 0
@@ -672,6 +696,8 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
     def testTargetDisabled = 0
     def testJobNumber = 0
     def buildJobNumber = 0
+    def remoteTargetFailed = 0
+    def remoteTargetTotal  = 0
 
     // Get all child Test jobs for this pipeline job
     def pipelineTestJobs = callWgetSafely("${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*", cookieJar)
@@ -706,6 +732,13 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
             buildJobComplete += 1
             }
         }
+        // Detect remote JCK pipeline runs and collect remote target pass/fail counts
+        if (buildJob.buildName != null && buildJob.buildName.contains('AQA_Test_Pipeline_JCK')
+                && buildJob.url != null && buildJob.buildNum != null) {
+            def (jckFailed, jckTotal) = getRemoteJckResults(trssUrl, buildJob.url, buildJob.buildName, buildJob.buildNum, cookieJar)
+            remoteTargetFailed += jckFailed
+            remoteTargetTotal  += jckTotal
+        }
     }
 
     def testResult = [name: pipelineName, url: pipelineUrl,
@@ -718,7 +751,9 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
                       testTargetPassed:   testTargetPassed,
                       testTargetFailed:   testTargetFailed,
                       testTargetDisabled: testTargetDisabled,
-                      testJobNumber:      testJobNumber
+                      testJobNumber:      testJobNumber,
+                      remoteTargetFailed: remoteTargetFailed,
+                      remoteTargetTotal:  remoteTargetTotal
                      ]
 
         return testResult
@@ -740,6 +775,8 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
     def testJobTotal        = 0
     def failedTestTargetNum = 0
     def testTargetTotal     = 0
+    def remoteTargetFailed  = 0
+    def remoteTargetTotal   = 0
 
     // Find all "Done" or "Streaming" pipeline jobs for this release EA tag
     def buildUrls
@@ -758,6 +795,8 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
             testJobTotal        += testResults.testJobNumber
             failedTestTargetNum += testResults.testTargetFailed
             testTargetTotal     += (testResults.testTargetPassed + testResults.testTargetFailed)
+            remoteTargetFailed  += testResults.remoteTargetFailed
+            remoteTargetTotal   += testResults.remoteTargetTotal
         }
     }
 
@@ -772,6 +811,9 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
         }
         if (failedTestTargetNum > 0) {
             summary += " TestTargets="+failedTestTargetNum+"/"+testTargetTotal
+        }
+        if (remoteTargetTotal > 0) {
+            summary += " RemoteTargets="+remoteTargetFailed+"/"+remoteTargetTotal
         }
         summary += "._"
         return summary
