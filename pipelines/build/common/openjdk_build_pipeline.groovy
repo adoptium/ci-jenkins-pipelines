@@ -731,7 +731,11 @@ class Build {
                 // Determine suitable node to run on
                 def verifyNode
                 if (buildConfig.TARGET_OS == "windows") {
-                    verifyNode = "((ci.role.test&&sw.os.windows)||(ci.agent.dynamic&&sw.os.windows.2022))"
+                    if (buildConfig.ARCHITECTURE == "aarch64") {
+                        verifyNode = "((ci.role.test&&sw.os.windows)||(ci.agent.dynamic&&sw.os.windows.11))"
+                    } else {
+                        verifyNode = "((ci.role.test&&sw.os.windows)||(ci.agent.dynamic&&sw.os.windows.2022))"
+                    }
                 } else {
                     verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)"
                 }
