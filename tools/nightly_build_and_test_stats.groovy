@@ -877,7 +877,7 @@ node('worker') {
         def variant = "${params.VARIANT}"
         def trssUrl    = "${params.TRSS_URL}"
         def apiUrl    = "${params.API_URL}"
-        def slackChannel = "${params.SLACK_CHANNEL}"
+        def slackChannel = "${params.SLACK_CHANNEL}" // groovylint-disable-line UnusedVariable
         def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+") // feature versions
         def tipReleases     = "${params.TIP_RELEASES}".split("[, ]+") // Current jdk(head) versions
         def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
@@ -1136,13 +1136,13 @@ node('worker') {
             echo "======> Test Success Rating   = ${nightlyTestSuccessRating.intValue()} %"
             echo "======> Overall Latest Build & Test Success Rating = ${overallNightlySuccessRating} %"
 
-            def statusColor = 'good'
+            def statusColor = 'good' // groovylint-disable-line UnusedVariable
             if (nightlyBuildSuccessRating.intValue() < amberBuildAlertLevel || nightlyTestSuccessRating.intValue() < amberTestAlertLevel) {
                 statusColor = 'warning'
             }
 
             // Slack message:
-            slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall EA Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+            //slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall EA Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
 
             echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
         }
@@ -1315,7 +1315,7 @@ node('worker') {
                     def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
                     def fullMessage = "${featureRelease} EA: *${health}*. Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${missingMsg}${reproSummary}"
                     echo "===> ${fullMessage}"
-                    slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                    //slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
                 }
                 echo '----------------------------------------------------------------'
             }
