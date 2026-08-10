@@ -19,7 +19,7 @@ class RunAQATestsTest {
         }
 
         def echo(String message) {}
-        def println(String message) {}
+        def println(Object message) {}
     }
 
     @Test
@@ -58,6 +58,7 @@ class RunAQATestsTest {
 
         def params = context.buildInvocations[0].parameters.collectEntries { [(it.name): it.value] }
 
+        Assertions.assertEquals(8, params.size())
         Assertions.assertFalse(params.containsKey('VENDOR_TEST_REPOS'))
         Assertions.assertFalse(params.containsKey('VENDOR_TEST_BRANCHES'))
         Assertions.assertFalse(params.containsKey('VENDOR_TEST_DIRS'))
