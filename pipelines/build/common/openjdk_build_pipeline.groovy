@@ -323,13 +323,6 @@ class Build {
         try {
             
             def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF}${releaseAppendix} : ${jobParams.ARCH_OS_LIST}"
-            def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
-            def vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
-            def vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
-            vendorTestRepos = vendorTestRepos - ('.git')
-            def vendorTestDirs = '/test/system'
-            // Use BUILD_REF override if specified
-            vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
             context.echo " Temurin AQA_Test_Pipeline${releaseAppendix} job : ${displayName}"                                    
             def aqaJob = context.build job: "${aqaTestPipelineJobName}",
                 propagate: false,
@@ -337,9 +330,6 @@ class Build {
                     context.string(name: 'SDK_RESOURCE', value: 'customized'),
                     context.string(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
                     context.string(name: 'ADOPTOPENJDK_BRANCH', value: "${aqaBranch}"),
-                    context.string(name: 'VENDOR_TEST_REPOS', value: "${vendorTestRepos}"),
-                    context.string(name: 'VENDOR_TEST_BRANCHES', value: "${vendorTestBranches}"),
-                    context.string(name: 'VENDOR_TEST_DIRS', value: "${vendorTestDirs}"),
                     context.string(name: 'JDK_VERSIONS', value: "${jobParams.JDK_VERSIONS}"),
                     context.string(name: 'BUILD_TYPE', value: "${build_type}"),
                     context.string(name: 'VARIANT', value: "${buildConfig.VARIANT}"),
