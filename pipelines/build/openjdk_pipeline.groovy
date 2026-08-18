@@ -96,7 +96,10 @@ def resolveGaTag(String jdkVersion, String jdkBranch) {
         def foundRepo = resolveGaCommit.get(0)
         def foundSHA  = resolveGaCommit.get(1)
         // Find upstream target actual tag, ignore any other "-ga" tags, must be a real build tag
-        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${foundRepo} ${annotatedTagFilter} | grep \"${foundSHA}\" | grep -v \"${jdkBranch}\" | grep -v '\\-ga' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
+        // Use version prefix with "+" (e.g. "jdk-17.0.20+" from "jdk-17.0.20-ga") to avoid matching
+        // sibling tags on the same commit (e.g. jdk-17.0.20.1+0 shares the same commit as jdk-17.0.20+8)
+        def versionPrefix = jdkBranch.replaceAll('-ga$', '')
+        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${foundRepo} ${annotatedTagFilter} | grep \"${foundSHA}\" | grep -v \"${jdkBranch}\" | grep -v '\\-ga' | grep \"${versionPrefix}+\" | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
         if (upstreamTag != "") {
             println "[INFO] Resolved ${jdkBranch} to upstream build tag ${upstreamTag}"
             resolvedTag = upstreamTag
