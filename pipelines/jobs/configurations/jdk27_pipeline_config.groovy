@@ -186,6 +186,9 @@ class Config27 {
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
+                ],
                 buildArgs       : [
                         'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]

@@ -267,6 +267,9 @@ class Config11 {
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
+                ],
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ], 
