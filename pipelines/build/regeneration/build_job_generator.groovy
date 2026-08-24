@@ -211,7 +211,10 @@ node('worker') {
             checkoutUserPipelines()
         }
 
-        if (jenkinsCreds != '') {
+        if (targetConfigurations.size() == 0) {
+            println "[WARNING] No targetConfigurations to be generated for this version"
+        } else {
+          if (jenkinsCreds != '') {
             withCredentials([usernamePassword(
                 credentialsId: "${JENKINS_AUTH}",
                 usernameVariable: 'jenkinsUsername',
@@ -240,7 +243,7 @@ node('worker') {
                     jobType
                 ).regenerate()
             }
-        } else {
+          } else {
             println '[WARNING] No Jenkins API Credentials have been provided! If your server does not have anonymous read enabled, you may encounter 403 api request error code.'
             regenerationScript(
                 javaVersion,
@@ -263,6 +266,7 @@ node('worker') {
                 checkoutCreds,
                 jobType
             ).regenerate()
+          }
         }
         println '[SUCCESS] All done!'
     } finally {

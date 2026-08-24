@@ -9,6 +9,9 @@ class Config8 {
                         openj9  : 'macos10.14'
                 ],
                 test                 : 'default',
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'gha']
+                ],
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ],
@@ -27,6 +30,9 @@ class Config8 {
                 ],
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'sanity.external', 'dev.openjdk', 'dev.functional']
+                ],
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
                 ],
                 configureArgs       : [
                         'dragonwell'  : '--enable-unlimited-crypto --with-jvm-variants=server  --with-zlib=system',
@@ -68,25 +74,34 @@ class Config8 {
         x64Windows    : [
                 os                  : 'windows',
                 arch                : 'x64',
-                additionalNodeLabels: 'win2022&&vs2017',
+                dockerImage         : 'windows2022_build_image@sha256:0d0a3afb998c34df0277d6a5ed97c2d8d705012e6a93d358af25af638963ef6f',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
+                additionalNodeLabels: 'win2022&&vs2022',
                 test                 : 'default',
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
+                ],
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
         ],
 
         x32Windows    : [
                 os                  : 'windows',
                 arch                : 'x86-32',
+                dockerImage         : 'windows2022_build_image@sha256:0d0a3afb998c34df0277d6a5ed97c2d8d705012e6a93d358af25af638963ef6f',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022',
                 configureArgs       : [
                         'temurin'   : '--disable-ccache'
                 ],
                 buildArgs : [
-                        temurin : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        temurin : '--jvm-variant client,server --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ],
                 test                 : 'default'
         ],
@@ -166,9 +181,9 @@ class Config8 {
                 dockerImage: 'adoptopenjdk/ubuntu1604_build_image',
                 dockerArgs: '--platform linux/arm/v7',
                 test: 'default',
-                configureArgs       : [ 
+                configureArgs       : [
                         'temurin'   : '--disable-ccache --with-jobs=4'
-                ],    
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
                 ]

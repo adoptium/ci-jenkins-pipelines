@@ -37,9 +37,20 @@ openjdkRepo="https://github.com/openjdk/${VERSION}.git"
 git clone --depth 1 ${openjdkRepo} ${VERSION}
 cd ${VERSION}
 
-# Patch to support Centos7
-cp ../binutils-2.39.patch make/devkit/patches/${ARCH}-binutils-2.39.patch
-patch -p1 < ../Tools.gmk.patch
+# jdk21u devkit on Centos7 does not like binutils 2.39's build system (texinfo issue?)
+if [ "${VERSION}" = "jdk21u" ]; then
+  cp ../binutils-2.39.patch make/devkit/patches/${ARCH}-binutils-2.39.patch
+fi
+
+# Patch to support Centos, RHEL
+if [ "${ARCH}" = "s390x" -o "${ARCH}" = "riscv64" ] ; then
+  # No numa packages available
+  sed 's/numa.*\\/\\/g' < "../Tools.gmk.${VERSION}.patch" | patch -p1
+else
+  patch -p1 < "../Tools.gmk.${VERSION}.patch"
+fi
+# Something I tested didn't work with uname -p, so switching to uname -m
+patch -p1 < "../Makefile.${VERSION}.patch"
 
 devkit_target="${ARCH}-linux-gnu"
 
@@ -69,14 +80,14 @@ BOOTSTRAP_DEVKIT="$(pwd)/build/bootstrap_${devkit_target}-to-${devkit_target}"
 BOOTSTRAP_DOWNLOADED_RPMS="$(pwd)/build/bootstrap_rpms_${devkit_target}-to-${devkit_target}"
 
 mv build/devkit/result/${devkit_target}-to-${devkit_target} "${BOOTSTRAP_DEVKIT}"
-mv build/devkit/download/rpms/${ARCH}-linux-gnu-Centos${BASE_OS_VERSION} "${BOOTSTRAP_DOWNLOADED_RPMS}"
+mv build/devkit/download/rpms/${ARCH}-linux-gnu-${BASE_OS}${BASE_OS_VERSION} "${BOOTSTRAP_DOWNLOADED_RPMS}"
 
 # Make final "DevKit" using the bootstrap devkit
 rm -rf build/devkit
 
 # Move saved bootstrap rpm downloads to final build folder
 mkdir -p build/devkit/download/rpms
-mv ${BOOTSTRAP_DOWNLOADED_RPMS} build/devkit/download/rpms/${ARCH}-linux-gnu-Centos${BASE_OS_VERSION}
+mv ${BOOTSTRAP_DOWNLOADED_RPMS} build/devkit/download/rpms/${ARCH}-linux-gnu-${BASE_OS}${BASE_OS_VERSION}
 
 echo "Building 'final' DevKit toolchain, using 'bootstrap' toolchain in ${BOOTSTRAP_DEVKIT}"
 cd make/devkit && pwd && \

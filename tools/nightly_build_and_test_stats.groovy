@@ -15,31 +15,34 @@ limitations under the License.
 /* groovylint-disable NestedBlockDepth */
 
 import groovy.json.JsonSlurper
-import java.math.MathContext;
 import java.time.LocalDateTime
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
+def noAqaTestsRunString() {
+    return "No AQA tests run"
+}
+
 def getPlatformConversionMap() {
-    // A map to convert from a standard platform format to the variants used by build and test job names on Jenkins.
-    def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux"],
-                                 x64Windows:         ["windows-x64", "x86-64_windows"],
-                                 x64Mac:             ["mac-x64", "x86-64_mac"],
-                                 x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux"],
-                                 ppc64Aix:           ["aix-ppc64", "ppc64_aix"],
-                                 ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux"],
-                                 s390xLinux:         ["linux-s390x", "s390x_linux"],
-                                 aarch64Linux:       ["linux-aarch64", "aarch64_linux"],
-                                 aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux"],
-                                 aarch64Mac:         ["mac-aarch64", "aarch64_mac"],
-                                 aarch64Windows:     ["windows-aarch64", "aarch64_windows"],
-                                 arm32Linux:         ["linux-arm", "arm_linux"],
-                                 x32Windows:         ["windows-x86-32", "x86-32_windows"],
-                                 x64Solaris:         ["solaris-x64", "x64_solaris"],
-                                 sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris"],
-                                 riscv64Linux:       ["linux-riscv64", "riscv64_linux"]
+    // A map to convert from a standard platform format to the variants used by builds, tests, and assets.
+    def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux", "x64_linux"],
+                                 x64Windows:         ["windows-x64", "x86-64_windows", "x64_windows"],
+                                 x64Mac:             ["mac-x64", "x86-64_mac", "x64_mac"],
+                                 x64AlpineLinux:     ["alpine-linux-x64", "x86-64_alpine-linux", "x64_alpine-linux"],
+                                 ppc64Aix:           ["aix-ppc64", "ppc64_aix", "ppc64_aix"],
+                                 ppc64leLinux:       ["linux-ppc64le", "ppc64le_linux", "ppc64le_linux"],
+                                 s390xLinux:         ["linux-s390x", "s390x_linux", "s390x_linux"],
+                                 aarch64Linux:       ["linux-aarch64", "aarch64_linux", "aarch64_linux"],
+                                 aarch64AlpineLinux: ["alpine-linux-aarch64", "aarch64_alpine-linux", "aarch64_alpine-linux"],
+                                 aarch64Mac:         ["mac-aarch64", "aarch64_mac", "aarch64_mac"],
+                                 aarch64Windows:     ["windows-aarch64", "aarch64_windows", "aarch64_windows"],
+                                 arm32Linux:         ["linux-arm", "arm_linux", "arm_linux"],
+                                 x32Windows:         ["windows-x86-32", "x86-32_windows", "x86-32_windows"],
+                                 x64Solaris:         ["solaris-x64", "x64_solaris", "x64_solaris"],
+                                 sparcv9Solaris:     ["solaris-sparcv9", "sparcv9_solaris", "sparcv9_solaris"],
+                                 riscv64Linux:       ["linux-riscv64", "riscv64_linux", "riscv64_linux"]
                                 ]
     return platformConversionMap
 }
@@ -47,30 +50,40 @@ def getPlatformConversionMap() {
 def getPlatformReproTestMap() {
     // A map to return the test bucket and test name for the repducibile platforms
     def platformReproTestMap = [x64Linux:           ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
-                                x64Windows:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
-                                x64Mac:             ["NA", ""],
+                                x64Windows:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_win"],
+                                x64Mac:             ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"],
                                 ppc64leLinux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
                                 aarch64Linux:       ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
-                                aarch64Mac:         ["dev.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
+                                s390xLinux:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test"],
+                                aarch64Mac:         ["special.system", "Rebuild_Same_JDK_Reproducibility_Test_Mac"]
                                ]
     return platformReproTestMap
 }
 
 // Check if the given tag is a -ga tag ?
 def isGaTag(String version, String tag) {
-    if (version == "${params.TIP_RELEASE}".trim()) {
+    if ("${params.TIP_RELEASES}".contains(version)) {
         // Tip release has no GA tags
         return false
     }
 
-    def openjdkRepo = getUpstreamRepo(version) 
+    def openjdkRepo = getUpstreamRepo(version)
 
     def tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    if (tagCommitSHA == "") {
+       // Some repos eg.jdk8u-aarch32-port use Lightweight tagging...
+       tagCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${tag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
 
     def gaCheckTag = "unknown"
     if (version.contains("jdk8u")) {
         if (tag.indexOf("-") > 0) {
-            gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+            // Is this a jdk8u-aarch32 tag eg.jdk8u442-b06-aarch32-20250125
+            if (version == "aarch32-jdk8u"  && tag.indexOf("-", tag.indexOf("-")+1) > 0) {
+                gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"+tag.substring(tag.indexOf("-", tag.indexOf("-")+1))
+            } else {
+                gaCheckTag = tag.substring(0, tag.indexOf("-"))+"-ga"
+            }
         }
     } else {
         if (tag.indexOf("+") > 0) {
@@ -78,6 +91,10 @@ def isGaTag(String version, String tag) {
         }
     }
     def gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    if (gaCommitSHA == "") {
+        // Some repos eg.jdk8u-aarch32-port use Lightweight tagging...
+        gaCommitSHA = sh(returnStdout: true, script:"git ls-remote --tags ${openjdkRepo} | grep -v '\\^{}' | grep \"${gaCheckTag}\" | tr -s '\\t ' ' ' | cut -d' ' -f1 | tr -d '\\n'")
+    }
 
     if (gaCommitSHA != "" && tagCommitSHA == gaCommitSHA) {
         return true
@@ -92,9 +109,9 @@ def getUpstreamRepo(String version) {
 
     def versionInt = (version == "aarch32-jdk8u" || version == "alpine-jdk8u") ? 8 : version.replaceAll("[a-z]","").toInteger()
     def isUpdateVersion = version.endsWith("u")
-    
+
     if (versionInt >= 23 && !isUpdateVersion) {
-        // jdk-23+ stabalisation versions are now branches in jdk(head) repo
+        // jdk-23+ stabilisation versions are now branches in jdk(head) repo
         openjdkRepo = "https://github.com/openjdk/jdk.git"
     } else if (version == "aarch32-jdk8u") {
         openjdkRepo = "https://github.com/openjdk/aarch32-port-jdk8u.git"
@@ -112,6 +129,8 @@ def getLatestOpenjdkBuildTag(String version) {
     def openjdkRepo = getUpstreamRepo(version)
     def versionInt = (version == "aarch32-jdk8u" || version == "alpine-jdk8u") ? 8 : version.replaceAll("[a-z]","").toInteger()
 
+    echo "Finding latest upstream EA build tag for version "+version
+
     def tagFilter
     if (version == "aarch32-jdk8u") {
         tagFilter = "| grep 'jdk8u.*-aarch32-'"
@@ -122,7 +141,9 @@ def getLatestOpenjdkBuildTag(String version) {
     }
 
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${openjdkRepo} | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | grep -v '\\+0' | grep -v '\\-b00' | grep -v '\\-ga' ${tagFilter} | sort -V -r | head -1 | tr -d '\\n'")
-    echo "latest upstream openjdk/${version} tag = ${latestTag}"
+    echo "Found "+version+" tag: "+latestTag
+
+    echo "Latest upstream openjdk/${version} tag = ${latestTag}"
 
     return latestTag
 }
@@ -135,7 +156,7 @@ def getOpenjdkBuildTagAge(String version, String tag) {
 
     def tagTs = Instant.parse(date).atZone(ZoneId.of('UTC'))
     def now = ZonedDateTime.now(ZoneId.of('UTC'))
-    def days = ChronoUnit.DAYS.between(tagTs, now) 
+    def days = ChronoUnit.DAYS.between(tagTs, now)
 
     return days
 }
@@ -147,24 +168,159 @@ def getLatestBinariesTag(String version) {
     def latestTag = sh(returnStdout: true, script:"git ls-remote --sort=-v:refname --tags ${binariesRepo} | grep '\\-ea\\-beta' | grep -v '\\^{}' | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed 's,refs/tags/,,' | sort -V -r | head -1 | tr -d '\\n'")
     echo "latest jdk${version} binaries repo tag = ${latestTag}"
 
-    return latestTag    
+    return latestTag
 }
 
-// Return our best guess at the url that generated a specific build.
-def getBuildUrl(String trssUrl, String variant, String featureRelease, String publishName, String scmRef) {
-    def functionBuildUrl = ["", "", ""]
+// Calls wget with the given URL and returns the output.
+// Returns an empty string if fails.
+// Uses JSESSIONID cookie from the running Jenkins job to authenticate requests
+def callWgetSafely(String url, String cookieJar) {
+    def testOutputRC = sh(returnStatus : true, returnStdout: false, script: "wget --load-cookies '${cookieJar}' --spider -q ${url} 2> /dev/null")
+    if ( testOutputRC != 0 ) {
+        echo "Warning: This URL's data could not be found, and is likely expired: ${url}"
+        return ""
+    }
+    return sh(returnStdout: true, script: "wget --load-cookies '${cookieJar}' -q -O - ${url}")
+}
 
+// Return our best guess at the build TRSS IDs for the latest successful build+publish of a specific set of platforms for a specific build tag.
+// Takes a jdk major version, a tag, and an array of platform names (standard platform format).
+def getBuildIDsByPlatform(String trssUrl, String jdkVersion, String srcTag, Map platformsList, String cookieJar) {
+    // First we gather a list of the latest pipelines for this jdkVersion.
+    echo "Gathering Build IDs by platform."
+    def jdkVersionMinusTheU = jdkVersion.endsWith("u") ? jdkVersion.substring(0, jdkVersion.length() - 1) : jdkVersion
+    def pipelineName = "open${jdkVersionMinusTheU}-pipeline"
+    def pipelines = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}", cookieJar)
+    def pipelineJson = new JsonSlurper().parseText(pipelines)
+    String srcTagLocal = srcTag.replaceAll("-beta","")
+
+    if (pipelineJson.size() == 0) {
+        echo "WARNING: Cannot find pipelines for per-platform build job identification."
+        return
+    }
+
+    def platformConversionMap = getPlatformConversionMap()
+    Set platformKeys = platformsList.keySet()
+
+    // Then we iterate over the list of pipelines, seeking a pipeline that contains one of our platforms.
+    assert pipelineJson instanceof List
+
+    for (int i = 0 ; i < pipelineJson.size() ; i++ ) {
+        Map onePipeline = pipelineJson[i]
+        def jdksPublished = ""
+
+        if (!onePipeline.toString().contains(srcTagLocal)) {
+            continue
+        }
+
+        def pipelineBuilds = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${onePipeline._id}", cookieJar)
+        def pipelineBuildsJson = new JsonSlurper().parseText(pipelineBuilds)
+
+        if (pipelineBuildsJson.size() == 0) {
+            continue
+        }
+
+        boolean pipelinePublishBool = false
+        def onePipelinePlatformsMap = [:]
+
+        // For each build within a given pipeline:
+        assert pipelineBuildsJson instanceof List
+        for (int j = 0 ; j < pipelineBuildsJson.size() ; j++ ) {
+            Map onePipelineBuild = pipelineBuildsJson[j]
+
+            // - Is this platform in our platform list?
+            for (int k = 0 ; k < platformKeys.size() ; k++ ) {
+                String onePlatformKey = platformKeys[k]
+                String onePlatformValue = platformsList[onePlatformKey]
+                if (!onePlatformValue.isEmpty()) {
+                    continue
+                }
+
+                if (onePipelineBuild.buildName.contains("${jdkVersion}-${platformConversionMap[onePlatformKey][0]}")) {
+                    // - Does the build job for one of our listed platforms contain a successful build job?
+                    if (onePipelineBuild.status.equals("Done")) {
+                        onePipelinePlatformsMap[onePlatformKey] = onePipelineBuild._id
+                    }
+                }
+
+                // Also, check if the pipeline published any successful builds overall.
+                if (onePipelineBuild.buildName.contains("refactor_openjdk_release_tool") && onePipelineBuild.status.contains("Done")) {
+                    def wgetUrlForReleaseTool = "${onePipelineBuild.url}/job/${onePipelineBuild.buildName}/${onePipelineBuild.buildNum}/consoleText"
+                    if (onePipelineBuild.buildOutputId != null) {
+                        wgetUrlForReleaseTool = "${trssURL}/api/getOutputById?id=${onePipelineBuild.buildOutputId}"
+                    }
+def releaseToolOutput = callWgetSafely(wgetUrlForReleaseTool, cookieJar)
+
+
+                    if ((releaseToolOutput.length() <= 2) || (!releaseToolOutput.contains("Finished: SUCCESS"))) {
+                        echo "Warning: The refactor_openjdk_release_tool job in this pipeline has not completed successfully: ${wgetUrlForReleaseTool}"
+                        continue
+                    }
+
+                    // Now we identify the platforms that were successfully published.
+                    for (int n = 0 ; n < platformKeys.size() ; n++ ) {
+                        // Example: Uploading OpenJDK21U-jdk_x64_windows_hotspot_21.0.6_3-ea.zip
+                        platformUploadingString = "Uploading Open${srcTagLocal.toUpperCase}-jdk_${platformConversionMap[platformKeys[n]]}_hotspot_${srcTagLocal}"
+                        if (releaseToolOutput.contains(platformUploadingString + ".zip") || releaseToolOutput.contains(platformUploadingString + ".tar.gz")) {
+                            jdksPublished += ",${platformKeys[n]},"
+                        }
+                    }
+
+                    pipelinePublishBool = true
+                }
+            }
+        }
+
+        // If this pipeline successfully published, then we put the relevant TRSS ids into the platformsList Map.
+        if (pipelinePublishBool) {
+            def platformsWithAValue = 0
+            for (int m = 0 ; m < platformKeys.size() ; m++ ) {
+                String onePlatformKey = platformKeys[m]
+                if (platformsList[onePlatformKey].isEmpty() && jdksPublished.contains(",${onePlatformKey},")) {
+                    if (onePipelinePlatformsMap.containsKey(onePlatformKey)) {
+                        platformsList[onePlatformKey] = onePipelinePlatformsMap[onePlatformKey]
+                        platformsWithAValue++
+                        echo "Found new build ID for platform ${onePlatformKey}."
+                    }
+                } else {
+                    platformsWithAValue++
+                }
+            }
+
+            // If we have all the entries we need, we exit the loop and end this method.
+            if (platformsWithAValue == platformsList.size()) {
+                echo "Finished getting build IDs by platform."
+                return
+            }
+        }
+    }
+    echo "Finished getting build IDs by platform."
+}
+
+// Return our best guess at the urls for the Weekly EA pipelines that generated builds from a specific tag.
+// Optionally only return the "latest".
+// This pipeline is expected to have attempted to build JDKs for all supported platforms.
+def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, List requiredStatus, String cookieJar) {
+    def functionBuildUrls = []
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
-
-    def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
+    def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}", cookieJar)
     def pipelineJson = new JsonSlurper().parseText(pipeline)
+
+    if (latestOnly) {
+        echo "Finding the latest pipeline build URLs for: "+pipelineName+" "+publishName+" "+scmRef
+    } else {
+        echo "Finding all the pipeline build URLs for: "+pipelineName+" "+publishName+" "+scmRef
+    }
+
     if (pipelineJson.size() > 0) {
+        def foundBuildTimestamp = 0
         pipelineJson.each { job ->
             def overridePublishName = ""
             def buildScmRef = ""
             def containsX64AlpineLinux = false
             def containsVariant = false
+            def releaseType = ""
 
             job.buildParams.each { buildParam ->
                 if (buildParam.name == "overridePublishName") {
@@ -174,25 +330,42 @@ def getBuildUrl(String trssUrl, String variant, String featureRelease, String pu
                 } else if (buildParam.name == "targetConfigurations") {
                     containsX64AlpineLinux = (buildParam.value.contains("x64AlpineLinux"))
                     containsVariant        = (buildParam.value.contains(variant))
+                } else if (buildParam.name == "releaseType") {
+                    releaseType = buildParam.value
                 }
             }
 
             // Is there a job for the required tag?
-            if (containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null) {
+            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus.size() == 0 || requiredStatus.contains(job.status))) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
-                        functionBuildUrl = [job.buildUrl, job._id, job.status]
+                        if (job.timestamp > foundBuildTimestamp || !latestOnly) {
+                            if (latestOnly) {
+                                functionBuildUrls = [[job.buildUrl, job._id, job.status]]
+                            } else {
+                                functionBuildUrls.add([job.buildUrl, job._id, job.status])
+                            }
+                            foundBuildTimestamp = job.timestamp
+                            echo "Found "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                        }
                     }
                 } else {
-                    functionBuildUrl = [job.buildUrl, job._id, job.status]
-                    echo "Found "+featureRelease+" pipeline with this ID: "+job._id
+                    if (job.timestamp > foundBuildTimestamp || !latestOnly) {
+                        if (latestOnly) {
+                            functionBuildUrls = [[job.buildUrl, job._id, job.status]]
+                        } else {
+                            functionBuildUrls.add([job.buildUrl, job._id, job.status])
+                        }
+                        foundBuildTimestamp = job.timestamp
+                        echo "Found "+featureRelease+" pipeline with this ID: "+job._id+" buildNumber: "+job.buildNum
+                    }
                 }
             }
         }
     }
 
-    return functionBuildUrl
+    return functionBuildUrls
 }
 
 // Verify the given release contains all the expected assets
@@ -219,13 +392,14 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     if (rc == 0) {
         releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
     }
+
     if (releaseAssets == "") {
         echo "Error loading release assets list for ${releaseAssetsUrl}"
         status['assets'] = "Error loading ${releaseAssetsUrl}"
     } else {
         def configFile = "${configVersion}.groovy"
-
         targetConfigurations = null
+
         // aarch32-jdk8u and alpine-jdk8u are single configurations
         if (version == "aarch32-jdk8u") {
             targetConfigurations = [:]
@@ -248,24 +422,8 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 
         if (targetConfigurations) {
             // Map of config architecture to artifact name
-            def archToAsset = [x64Linux:       "x64_linux",
-                               x64Windows:     "x64_windows",
-                               aarch64Windows: "aarch64_windows",
-                               x64Mac:         "x64_mac",
-                               x64AlpineLinux: "x64_alpine-linux",
-                               ppc64Aix:       "ppc64_aix",
-                               ppc64leLinux:   "ppc64le_linux",
-                               s390xLinux:     "s390x_linux",
-                               aarch64Linux:   "aarch64_linux",
-                               aarch64AlpineLinux: "aarch64_alpine-linux",
-                               aarch64Mac:     "aarch64_mac",
-                               arm32Linux:     "arm_linux",
-                               x32Windows:     "x86-32_windows",
-                               x64Solaris:     "x64_solaris",
-                               sparcv9Solaris: "sparcv9_solaris",
-                               riscv64Linux:   "riscv64_linux"
-                              ]
-                               
+            def archToAsset = getPlatformConversionMap().collectEntries{key, value -> [key, value[2]]}
+
             def missingAssets = []
             def foundAtLeastOneAsset = false
             targetConfigurations.keySet().each { osarch ->
@@ -284,6 +442,11 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                 if (!version.contains("jdk8u")) {
                     imagetypes.add("static-libs")
                     imagetypes.add("testimage")
+                }
+                // jmods images only expected for JDK 24
+                def vNum = extractVersNum(version)
+                if (vNum > 0 && vNum >= 24) {
+                    imagetypes.add("jmods")
                 }
 
                 // Work out the filetypes
@@ -305,7 +468,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
 
                 imagetypes.each { image ->
                     // Find the file type for this image
-                    def ftypes                     
+                    def ftypes
                     if (image == "jdk" || image == "jre") {
                         ftypes = jdkjre_filetypes
                     } else if (image == "sbom") {
@@ -314,7 +477,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                         ftypes = filetypes
                     }
 
-                    // If static-libs image then append -glibc or -musl accordingly 
+                    // If static-libs image then append -glibc or -musl accordingly.
                     def file_image = image
                     if (image == "static-libs" && osarch.contains("Linux")) {
                         if (osarch.contains("Alpine")) {
@@ -362,9 +525,27 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     }
 }
 
+// Extract the version number from the version string, such as "jdk8u".
+//
+// "jdk25"  => 25
+// "jdk24u" => 24
+//
+// Returns -1 if no number got extracted
+def extractVersNum(String jdkVers) {
+    // Anything NOT a digit, followed by digits,
+    // followed by anything not a digit (optional)
+    def pattern = /[^\d]+(\d+)[^\d]?/
+    def matcher = jdkVers =~ pattern
+    if (matcher.matches()) {
+        // First group in the matcher is the digits we matched
+        return Integer.valueOf(matcher[0][1])
+    }
+    return -1
+}
+
 // For a given pipeline, tell us how reproducible the builds were.
 // Note: Will limit itself to jdk versions and platforms in the results Map.
-def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results) {
+def getReproducibilityPercentage(String jdkVersion, String trssId, String trssURL, Map results, String cookieJar) {
     echo "Called repro method with trssID:"+trssId
 
     def platformConversionMap = getPlatformConversionMap()
@@ -372,64 +553,96 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 
     // We are only looking for reproducible percentages for the relevant jdk versions...
     if ( trssId != "" && results.containsKey(jdkVersion) ) {
+
         def jdkVersionInt = jdkVersion.replaceAll("[a-z]", "")
 
-        // ...and platforms.
-        results[jdkVersion][1].each { onePlatform, valueNotUsed ->
+        platformIterator:
+        for ( String onePlatform in results[jdkVersion][1].keySet() ) {
+            echo "Searching for "+onePlatform+" reproducibility %"
+
             // If this platform doesn't have a reproducibility test yet, skip it.
             if (platformReproTestMap[onePlatform][0].equals("NA")) {
                 results[jdkVersion][1][onePlatform] = "NA"
                 // Then we exit this lambda and skip to the next platform.
-                return
+                continue platformIterator
             }
 
-            def pipelineLink = trssURL+"/api/getAllChildBuilds?parentId="+trssId+"\\&buildNameRegex=^"+jdkVersion+"\\-"+platformConversionMap[onePlatform][0]+"\\-temurin\$"
-            def trssBuildJobNames = sh(returnStdout: true, script: "wget -q -O - ${pipelineLink}")
-            def platformResult = "???% - Build not found. Pipeline link: " + pipelineLink
+            // If this platform already has a reproducibility test result, then we already have the "latest" result.
+            if (!results[jdkVersion][1][onePlatform].equals("?")) {
+                // We have the latest result, skip to the next platform.
+                continue platformIterator
+            }
 
-            // Does this platform have a build in this pipeline?
-            if ( trssBuildJobNames.length() > 2 ) {
-                def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
+            def pipelineLink = "${trssURL}/api/getAllChildBuilds?parentId=${trssId}\\&buildNameRegex=^${jdkVersion}\\-${platformConversionMap[onePlatform][0]}\\-temurin\$"
 
-                // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
-                buildJobNamesJson.each { buildJob ->
-                    platformResult = "???% - Build found, but no reproducibility tests. Build link: " + buildJob.buildUrl
-                    def testPlatform = platformConversionMap[onePlatform][1]
-                    def reproTestName=platformReproTestMap[onePlatform][1]
-                    def reproTestBucket=platformReproTestMap[onePlatform][0]
-                    def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
-                    def trssTestJobNames = sh(returnStdout: true, script: "wget -q -O - ${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$")
+            def trssBuildJobNames = callWgetSafely("${pipelineLink}", cookieJar)
 
-                    // Did this build have tests?
-                    if ( trssTestJobNames.length() > 2 ) {
-                        platformResult = "???% - Found ${reproTestBucket}, but did not find ${reproTestName}. Build Link: " + buildJob.buildUrl
-                        def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
+            // Does this platform have a build in this pipeline? If not, skip to next platform.
+            if ( trssBuildJobNames.length() <= 2 ) {
+                continue platformIterator
+            }
 
-                        // For each test job (including testList subjobs), we now search for the reproducibility test.
-                        testJobNamesJson.each { testJob ->
-                            def testOutput = sh(returnStdout: true, script: "wget -q -O - ${testJob.buildUrl}/consoleText")
+            def buildJobNamesJson = new JsonSlurper().parseText(trssBuildJobNames)
 
-                            // If we can find it, then we look for the anticipated percentage.
-                            if ( testOutput.contains("Running test "+reproTestName) ) {
-                                platformResult = "???% - ${reproTestName} ran but failed to produce a percentage. Test Link: " + testJob.buildUrl
-                                // Now we know the test ran, 
-                                def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
-                                if ( matcherObject ) {
-                                    platformResult = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
-                                }
-                            }
+            // For each build, search the test output for the unit test we need, then look for reproducibility percentage.
+            assert buildJobNamesJson instanceof List
+            buildIterator:
+            for ( Map buildJob in buildJobNamesJson ) {
+                echo "$jdkVersion : $onePlatform : Checking build for reproducibility tests. Build link: " + buildJob.buildUrl
+                def testPlatform = platformConversionMap[onePlatform][1]
+                def reproTestName=platformReproTestMap[onePlatform][1]+"_0"
+                def reproTestBucket=platformReproTestMap[onePlatform][0]
+                def testJobTitle="Test_openjdk${jdkVersionInt}_hs_${reproTestBucket}_${testPlatform}.*"
+                def trssTestJobNames = callWgetSafely("${trssURL}/api/getAllChildBuilds?parentId=${buildJob._id}\\&buildNameRegex=^${testJobTitle}\$", cookieJar)
+                // Did this build have tests? If not, skip to next build job.
+                if ( trssTestJobNames.length() <= 2 ) {
+                    continue buildIterator
+                }
+
+                echo "$jdkVersion : $onePlatform : Checking ${reproTestBucket} for ${reproTestName}. Build link: " + buildJob.buildUrl
+                def testJobNamesJson = new JsonSlurper().parseText(trssTestJobNames)
+
+                // For each test job (including testList subjobs), we now search for the reproducibility test.
+                assert testJobNamesJson instanceof List
+                testIterator:
+                for ( Map testJob in testJobNamesJson ) {
+                    // Default to Jenkins console
+                    def wgetUrl = "${testJob.buildUrl}/consoleText"
+
+                    // See if we can find the test in the tests list, to get the output from
+                    def tests = testJob.tests
+                    tests.each { testTarget ->
+                        if (testTarget.testName == reproTestName) {
+                            wgetUrl = "${trssURL}/api/getOutputById?id=${testTarget.testOutputId}"
                         }
+                    }
+                    def testOutput = callWgetSafely(wgetUrl, cookieJar)
+
+                    // If we can find it, then we look for the anticipated percentage.
+                    if ( !testOutput.contains("Running test "+reproTestName) ) {
+                        echo "The following test's output does not contain ${reproTestName}, so we are skipping it: ${wgetUrl}"
+                        continue testIterator
+                    }
+
+                    echo "$jdkVersion : $onePlatform : ${reproTestName} ran, checking for reproducibility percentage. Test Link: " + testJob.buildUrl
+                    // Now we know the test ran:
+                    def matcherObject = testOutput =~ /ReproduciblePercent = (100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/
+                    if ( matcherObject ) {
+                        reproResult = ((matcherObject[0] =~ /(100|[0-9][0-9]?\.?[0-9]?[0-9]?) %/)[0][0])
+                        results[jdkVersion][1][onePlatform] = reproResult
+                        echo "A reproducibility percentage of ${reproResult} was found for ${testPlatform}."
+                        continue platformIterator
                     }
                 }
             }
-            results[jdkVersion][1][onePlatform] = platformResult
         }
 
         // Now we have the percentages for each platform, we calculate the jdkVersion-specific average.
         BigDecimal overallAverage = 0.0
         // Ignoring the platforms where the test is not available yet.
         def naCount = 0
-        results[jdkVersion][1].each{key, value ->
+        for (String key in results[jdkVersion][1].keySet()) {
+            def value = results[jdkVersion][1][key]
             if (value.equals("NA")) {
                 naCount++
             } else if ( value ==~ /^[0-9]+\.?[0-9]* %/ ) {
@@ -437,392 +650,543 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
             }
             // else do nothing, as we presume non-integer and non-NA values are 0.
         }
+
         if (overallAverage != 0) {
             overallAverage = overallAverage / (results[jdkVersion][1].size() - naCount)
         }
+
         // This reduces the output to 2 decimal places.
         results[jdkVersion][0] = ((overallAverage.toString()) =~ /[0-9]+\.?[0-9]?[0-9]?/)[0]+" %"
     }
 }
 
+// Get the Pipeline Test job results...
+def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineUrl, String pipeline_id, String buildVariant, String testVariant, String cookieJar) {
+    def buildJobComplete = 0
+    def buildJobFailure = 0
+    def testJobSuccess = 0
+    def testJobUnstable = 0
+    def testJobFailure = 0
+    def testTargetPassed = 0
+    def testTargetFailed = 0
+    def testTargetDisabled = 0
+    def testJobNumber = 0
+    def buildJobNumber = 0
+
+    // Get all child Test jobs for this pipeline job
+    def pipelineTestJobs = callWgetSafely("${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*", cookieJar)
+    def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
+    if (pipelineTestJobsJson.size() > 0) {
+        testJobNumber = pipelineTestJobsJson.size()
+        pipelineTestJobsJson.each { testJob ->
+        if (testJob.buildResult.equals('SUCCESS')) {
+            testJobSuccess += 1
+        } else if (testJob.buildResult.equals('UNSTABLE')) {
+            testJobUnstable += 1
+        } else {
+            testJobFailure += 1
+        }
+        if (testJob.testSummary != null) {
+            testTargetPassed += testJob.testSummary.passed
+            testTargetFailed += testJob.testSummary.failed
+            testTargetDisabled += testJob.testSummary.disabled
+        }
+        }
+    }
+    // Get all child Build jobs for this pipeline job
+    def pipelineBuildJobs = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}", cookieJar)
+    def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
+    buildJobNumber = 0
+    pipelineBuildJobsJson.each { buildJob ->
+        if (buildJob.buildName.contains(buildVariant)) {
+            buildJobNumber += 1
+            if (buildJob.buildResult.equals('FAILURE')) {
+            buildJobFailure += 1
+            } else {
+            buildJobComplete += 1
+            }
+        }
+    }
+
+    def testResult = [name: pipelineName, url: pipelineUrl,
+                      buildJobNumber:     buildJobNumber,
+                      buildJobComplete:   buildJobComplete,
+                      buildJobFailure:    buildJobFailure,
+                      testJobSuccess:     testJobSuccess,
+                      testJobUnstable:    testJobUnstable,
+                      testJobFailure:     testJobFailure,
+                      testTargetPassed:   testTargetPassed,
+                      testTargetFailed:   testTargetFailed,
+                      testTargetDisabled: testTargetDisabled,
+                      testJobNumber:      testJobNumber
+                     ]
+
+        return testResult
+}
+
+// Generate a test summary string for the total of failed test targets & jobs for the given EA build
+def getFailedTestSummary(String trssUrl, String variant, String featureRelease, String releaseName, String tag, String cookieJar) {
+    def buildVariant = variant
+    def testVariant
+    if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
+        testVariant = '_hs_'
+    } else if (variant == 'openj9') {
+        testVariant = '_j9_'
+    } else {
+        testVariant = "_${variant}_"
+    }
+
+    def failedTestJobNum    = 0
+    def testJobTotal        = 0
+    def failedTestTargetNum = 0
+    def testTargetTotal     = 0
+
+    // Find all "Done" or "Streaming" pipeline jobs for this release EA tag
+    def buildUrls
+    if (tag == "") {
+        // Non-tag release builds, just find the last build
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, true, ["Done","Streaming"], cookieJar)
+    } else {
+        // Tag build, find all pipeline jobs matching the tag
+        buildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName, tag, false, ["Done","Streaming"], cookieJar)
+    }
+    if (buildUrls.size() > 0) {
+        buildUrls.each { buildUrlTuple ->
+            (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrlTuple
+            def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant, cookieJar)
+            failedTestJobNum    += testResults.testJobFailure
+            testJobTotal        += testResults.testJobNumber
+            failedTestTargetNum += testResults.testTargetFailed
+            testTargetTotal     += (testResults.testTargetPassed + testResults.testTargetFailed)
+        }
+    }
+
+    if (testJobTotal == 0) {
+        return " _"+noAqaTestsRunString()+"._"
+    } else if ((failedTestJobNum + failedTestTargetNum) == 0) {
+        return "\n_AQA tests successful: "+testJobTotal+" jobs & "+testTargetTotal+" targets run._"
+    } else {
+        def summary = "\n_AQA test failures:"
+        if (failedTestJobNum > 0) {
+            summary += " TestJobs="+failedTestJobNum+"/"+testJobTotal
+        }
+        if (failedTestTargetNum > 0) {
+            summary += " TestTargets="+failedTestTargetNum+"/"+testTargetTotal
+        }
+        summary += "._"
+        return summary
+    }
+}
+
+
 node('worker') {
-  try{
-    def variant = "${params.VARIANT}"
-    def trssUrl    = "${params.TRSS_URL}"
-    def apiUrl    = "${params.API_URL}"
-    def slackChannel = "${params.SLACK_CHANNEL}"
-    def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+") // feature versions 
-    def tipRelease      = "${params.TIP_RELEASE}".trim() // Current jdk(head) version
-    def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
-    def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
-    def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
-    def nonTagBuildReleases = "${params.NON_TAG_BUILD_RELEASES}".split("[, ]+")
+    try{
+        // Create a cookie jar file with the current Jenkins session cookie
+        // This allows wget to authenticate using the running job's session
+        def cookieJar = "${WORKSPACE}/.jenkins-cookies"
+        def jenkinsUrl = "${env.JENKINS_URL}"
+        def buildUrl = "${env.BUILD_URL}"
+        
+        // Extract JSESSIONID from the current session
+        // The Jenkins job has access to its own session cookie
+        sh """
+            # Create cookie jar with JSESSIONID from current session
+            # Format: domain, flag, path, secure, expiration, name, value
+            echo '# HTTP Cookie File' > '${cookieJar}'
+            echo '# This file was generated by Jenkins. Edit at your own risk.' >> '${cookieJar}'
+            
+            # Extract domain from JENKINS_URL
+            DOMAIN=\$(echo '${jenkinsUrl}' | sed -e 's|^[^/]*//||' -e 's|/.*\$||' -e 's|:.*\$||')
+            
+            # Get JSESSIONID from environment or cookies
+            if [ -n "\${JSESSIONID}" ]; then
+                echo "\${DOMAIN}\tFALSE\t/\tFALSE\t0\tJSESSIONID\t\${JSESSIONID}" >> '${cookieJar}'
+            elif [ -f "\${HOME}/.jenkins-cli-cookies" ]; then
+                grep JSESSIONID "\${HOME}/.jenkins-cli-cookies" >> '${cookieJar}' || true
+            fi
+            
+            # If we still don't have a cookie, try to extract from current request
+            # This works when the script is running within Jenkins
+            if ! grep -q JSESSIONID '${cookieJar}'; then
+                # Try to get cookie from Jenkins environment
+                COOKIE_VALUE=\$(curl -s -c - '${buildUrl}api/json' 2>/dev/null | grep JSESSIONID | awk '{print \$NF}')
+                if [ -n "\${COOKIE_VALUE}" ]; then
+                    echo "\${DOMAIN}\tFALSE\t/\tFALSE\t0\tJSESSIONID\t\${COOKIE_VALUE}" >> '${cookieJar}'
+                fi
+            fi
+        """
+        
+        def variant = "${params.VARIANT}"
+        def trssUrl    = "${params.TRSS_URL}"
+        def apiUrl    = "${params.API_URL}"
+        def slackChannel = "${params.SLACK_CHANNEL}"
+        def featureReleases = "${params.FEATURE_RELEASES}".split("[, ]+") // feature versions
+        def tipReleases     = "${params.TIP_RELEASES}".split("[, ]+") // Current jdk(head) versions
+        def nightlyStaleDays = "${params.MAX_NIGHTLY_STALE_DAYS}"
+        def amberBuildAlertLevel = params.AMBER_BUILD_ALERT_LEVEL ? params.AMBER_BUILD_ALERT_LEVEL as Integer : -99
+        def amberTestAlertLevel  = params.AMBER_TEST_ALERT_LEVEL  ? params.AMBER_TEST_ALERT_LEVEL as Integer : -99
+        def nonTagBuildReleases = "${params.NON_TAG_BUILD_RELEASES}".split("[, ]+")
 
-    def healthStatus = [:]
-    def testStats = []
+        def healthStatus = [:]
+        def testStats = []
 
-    // Specifies what JDK versions and platforms are expected to be reproducible.
-    // The "?" symbols will soon be replaced by reproducibility percentages.
-    // Layout: [jdkVersion: [Overall-reproducibility, [By-platform reproducibility breakdown]]]
-    def reproducibleBuilds = ["jdk21u": [ "?", ["x64Linux": "?", "aarch64Linux": "?", "ppc64leLinux": "?", "x64Windows": "?", "x64Mac": "?", "aarch64Mac": "?"]]]
+        // Specifies what JDK versions and platforms are expected to be reproducible.
+        // The "?" symbols will soon be replaced by reproducibility percentages.
+        // Layout: [jdkVersion: [Overall-reproducibility, [By-platform reproducibility breakdown]]]
+        def reproducibleBuilds = ["jdk21u": [ "?", ["x64Linux":     "?",
+                                                    "aarch64Linux": "?",
+                                                    "ppc64leLinux": "?",
+                                                    "s390xLinux":   "?",
+                                                    "x64Windows":   "?",
+                                                    "x64Mac":       "?",
+                                                    "aarch64Mac":   "?"]],
+                                  "jdk25u": [ "?", ["x64Linux":     "?",
+                                                    "aarch64Linux": "?",
+                                                    "ppc64leLinux": "?",
+                                                    "s390xLinux":   "?",
+                                                    "x64Windows":   "?",
+                                                    "x64Mac":       "?",
+                                                    "aarch64Mac":   "?"]]
+                                  ]
 
-    stage('getPipelineStatus') {
-        def apiVariant = variant
-        if (apiVariant == 'temurin') {
-            apiVariant = 'hotspot'
-        }
-        if (apiVariant == 'hotspot') { // hotspot only for now
-            // Determine nightly pipeline health by looking at published assets.
-            // In particular, look at first data set for latest published binaries.
-            // Check the binary is published
-            // The release asset list is also verified
-            def allNonTipReleases = []
-            allNonTipReleases.addAll(featureReleases)
-            if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
-                allNonTipReleases.addAll(nonTagBuildReleases)
+        stage('getPipelineStatus') {
+            def apiVariant = variant
+            if (apiVariant == 'temurin') {
+                apiVariant = 'hotspot'
             }
-            allNonTipReleases.each { featureRelease ->
-              def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
-
-              // Extra filter to find latest jdk8u port assets
-              def extraFilter = ""
-              if (featureRelease == "aarch32-jdk8u") {
-                  extraFilter = "architecture=arm&os=linux&"
-              } else if (featureRelease == "alpine-jdk8u") {
-                  extraFilter = "architecture=x64&os=alpine-linux&"
-              }
-
-              def assets = sh(returnStdout: true, script: "wget -q -O - '${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?${extraFilter}image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'")
-              def assetsJson = new JsonSlurper().parseText(assets)
-
-              def status = []
-              if (assetsJson.size() > 0) {
-                def releaseName = assetsJson[0].release_name
-                if (nonTagBuildReleases.contains(featureRelease)) {
-                  // A non tag build, eg.a scheduled build for Oracle managed STS versions
-                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
-                  def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
-                  def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
-                  def now = ZonedDateTime.now(ZoneId.of('UTC'))
-                  def days = ChronoUnit.DAYS.between(assetTs, now)
-                  status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days, upstreamTag: latestOpenjdkBuild]
-                } else {
-                  def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
-                  def expectedReleaseName = "${latestOpenjdkBuild}-ea-beta"
-                  if (featureRelease == "aarch32-jdk8u") {
-                      expectedReleaseName = latestOpenjdkBuild.substring(0, latestOpenjdkBuild.indexOf("-aarch32"))+"-ea-beta"
-                  }
-                  status = [releaseName: releaseName, expectedReleaseName: expectedReleaseName, upstreamTag: latestOpenjdkBuild]
+            if (apiVariant == 'hotspot') { // hotspot only for now
+                // Determine nightly pipeline health by looking at published assets.
+                // In particular, look at first data set for latest published binaries.
+                // Check the binary is published
+                // The release asset list is also verified
+                def allNonTipReleases = []
+                allNonTipReleases.addAll(featureReleases)
+                if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
+                    allNonTipReleases.addAll(nonTagBuildReleases)
                 }
+                allNonTipReleases.each { featureRelease ->
+                    def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
 
-                // Verify the given release contains all the expected assets
-                verifyReleaseContent(featureRelease, releaseName, variant, status)
-                echo "  ${featureRelease} release binaries verification: "+status['assets']
-                healthStatus[featureRelease] = status
-              } else {
-                status['assets'] = "Unable to find any releases"
-                echo "  ${featureRelease} release binaries verification: "+status['assets']
-              }
-            }
-
-            // Check tip_release status, by querying binaries repo as API does not server the "tip" dev release
-            if (tipRelease != "") {
-              def latestOpenjdkBuild = getLatestOpenjdkBuildTag(tipRelease)
-              def tipVersion = tipRelease.replaceAll("[a-z]","").toInteger()
-              def releaseName = getLatestBinariesTag("${tipVersion}")
-              status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTag: latestOpenjdkBuild]
-              verifyReleaseContent(tipRelease, releaseName, variant, status)
-              echo "  ${tipRelease} release binaries verification: "+status['assets']
-              healthStatus[tipRelease] = status
-            }
-        }
-    }
-
-    // Get the last Nightly build and test job & case stats
-    stage('getStats') {
-        // Determine build and test variant job name search strings
-        def buildVariant = variant
-        def testVariant
-        if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
-            testVariant = '_hs_'
-        } else if (variant == 'openj9') {
-            testVariant = '_j9_'
-        } else {
-            testVariant = "_${variant}_"
-        }
-
-        // Create list of build pipelines of interest based on the requests release versions
-        def pipelinesOfInterest = ""
-        def allReleases = []
-        allReleases.addAll(featureReleases)
-        if (tipRelease != "") {
-            allReleases.add(tipRelease)
-        }
-        if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
-           allReleases.addAll(nonTagBuildReleases)
-        }
-        allReleases.each { release ->
-           def featureReleaseStr = (release == "aarch32-jdk8u" || release == "alpine-jdk8u") ? "8" : release.replaceAll("[a-z]","")
-
-           // Only interested in triggered openjdkNN-pipeline's
-           if (!pipelinesOfInterest.contains(",openjdk${featureReleaseStr}-pipeline")) {
-               pipelinesOfInterest += ",openjdk${featureReleaseStr}-pipeline"
-           }
-        }
-
-        // Get top level builds names
-        def trssBuildNames = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getTopLevelBuildNames?type=Test")
-        def buildNamesJson = new JsonSlurper().parseText(trssBuildNames)
-        buildNamesJson.each { build ->
-            // Is it a build Pipeline?
-            if (build._id.buildName.contains('-pipeline')) {
-                echo "Pipeline ${build._id.buildName}"
-                def pipelineName = build._id.buildName
-
-                // Are we interested in this pipeline?
-                if (pipelinesOfInterest.contains(pipelineName)) {
-                  // Find all the "Done" pipeline builds in the last 7 days, started by "timer", or upstream project "build-scripts/utils/betaTrigger_"
-                  def pipeline = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildName=${pipelineName}")
-                  def pipelineJson = new JsonSlurper().parseText(pipeline)
-                  if (pipelineJson.size() > 0) {
-                    // Find first in list started by "timer", "build-scripts/utils/betaTrigger_" or "build-scripts/utils/releaseTrigger_"
-                    pipelineJson.each { job ->
-                            def pipeline_id = null
-                            def pipelineUrl
-                            def buildJobComplete = 0
-                            def buildJobFailure = 0
-                            def testJobSuccess = 0
-                            def testJobUnstable = 0
-                            def testJobFailure = 0
-                            def testCasePassed = 0
-                            def testCaseFailed = 0
-                            def testCaseDisabled = 0
-                            def testJobNumber = 0
-                            def buildJobNumber = 0
-
-                            // Determine when job ran?
-                            def build_time = LocalDateTime.ofInstant(Instant.ofEpochMilli(job.timestamp), ZoneId.of('UTC'))
-                            def now = LocalDateTime.now(ZoneId.of('UTC'))
-                            def days = ChronoUnit.DAYS.between(build_time, now)
-
-                            // Was job "Done"?
-                            // Report pipelines built within the last week
-                            if (job.status != null && job.status.equals('Done') && job.startBy != null && days <= 7) {
-                                if (job.startBy.startsWith('timer')) {
-                                    // Timer scheduled job
-                                    pipeline_id = job._id
-                                    pipelineUrl = job.buildUrl
-                                } else if (job.startBy.startsWith("upstream project \"build-scripts/utils/betaTrigger_")) {
-                                    // Beta build tag triggered build
-                                    pipeline_id = job._id
-                                    pipelineUrl = job.buildUrl
-                                } else if (job.startBy.startsWith("upstream project \"build-scripts/utils/releaseTrigger_")) {
-                                    // Release build tag triggered build
-                                    pipeline_id = job._id
-                                    pipelineUrl = job.buildUrl
-                                }
-                            }
-                            // Was job a "match"?
-                            if (pipeline_id != null) {
-                                // Get all child Test jobs for this pipeline job
-                                def pipelineTestJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getAllChildBuilds?parentId=${pipeline_id}\\&buildNameRegex=^Test_.*${testVariant}.*")
-                                def pipelineTestJobsJson = new JsonSlurper().parseText(pipelineTestJobs)
-                                if (pipelineTestJobsJson.size() > 0) {
-                                    testJobNumber = pipelineTestJobsJson.size()
-                                    pipelineTestJobsJson.each { testJob ->
-                                        if (testJob.buildResult.equals('SUCCESS')) {
-                                            testJobSuccess += 1
-                                        } else if (testJob.buildResult.equals('UNSTABLE')) {
-                                            testJobUnstable += 1
-                                        } else {
-                                            testJobFailure += 1
-                                        }
-                                        if (testJob.testSummary != null) {
-                                            testCasePassed += testJob.testSummary.passed
-                                            testCaseFailed += testJob.testSummary.failed
-                                            testCaseDisabled += testJob.testSummary.disabled
-                                        }
-                                    }
-                                }
-                                // Get all child Build jobs for this pipeline job
-                                def pipelineBuildJobs = sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getChildBuilds?parentId=${pipeline_id}")
-                                def pipelineBuildJobsJson = new JsonSlurper().parseText(pipelineBuildJobs)
-                                buildJobNumber = 0
-                                pipelineBuildJobsJson.each { buildJob ->
-                                        if (buildJob.buildName.contains(buildVariant)) {
-                                            buildJobNumber += 1
-                                            if (buildJob.buildResult.equals('FAILURE')) {
-                                                buildJobFailure += 1
-                                            } else {
-                                                buildJobComplete += 1
-                                            }
-                                        }
-                                }
-
-                                def testResult = [name: pipelineName, url: pipelineUrl,
-                                      buildJobNumber:   buildJobNumber,
-                                      buildJobComplete:  buildJobComplete,
-                                      buildJobFailure:  buildJobFailure,
-                                      testJobSuccess:   testJobSuccess,
-                                      testJobUnstable:  testJobUnstable,
-                                      testJobFailure:   testJobFailure,
-                                      testCasePassed:   testCasePassed,
-                                      testCaseFailed:   testCaseFailed,
-                                      testCaseDisabled: testCaseDisabled,
-                                      testJobNumber:    testJobNumber]
-                                testStats.add(testResult)
-                            }
+                    // Extra filter to find latest jdk8u port assets
+                    def extraFilter = ""
+                    if (featureRelease == "aarch32-jdk8u") {
+                        extraFilter = "architecture=arm&os=linux&"
+                    } else if (featureRelease == "alpine-jdk8u") {
+                        extraFilter = "architecture=x64&os=alpine-linux&"
                     }
-                  }
+
+                    def assets = callWgetSafely("'${apiUrl}/v3/assets/feature_releases/${featureReleaseInt}/ea?${extraFilter}image_type=jdk&sort_method=DATE&pages=1&jvm_impl=${apiVariant}'", cookieJar)
+                    def assetsJson = new JsonSlurper().parseText(assets)
+
+                    def status = []
+                    // Get latest published EA build
+                    def asset_index = 0
+                    if (asset_index < assetsJson.size()) {
+                        def releaseName = assetsJson[asset_index].release_name
+                        if (nonTagBuildReleases.contains(featureRelease)) {
+                            // A non tag build, eg.a scheduled build for Oracle managed STS versions
+                            def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
+                            def ts = assetsJson[0].timestamp // newest timestamp of a jdk asset
+                            def assetTs = Instant.parse(ts).atZone(ZoneId.of('UTC'))
+                            def now = ZonedDateTime.now(ZoneId.of('UTC'))
+                            def days = ChronoUnit.DAYS.between(assetTs, now)
+                            status = [releaseName: releaseName, maxStaleDays: nightlyStaleDays, actualDays: days, upstreamTag: latestOpenjdkBuild]
+                        } else {
+                            def latestOpenjdkBuild = getLatestOpenjdkBuildTag(featureRelease)
+                            def expectedReleaseName = "${latestOpenjdkBuild}-ea-beta"
+                            if (featureRelease == "aarch32-jdk8u") {
+                                expectedReleaseName = latestOpenjdkBuild.substring(0, latestOpenjdkBuild.indexOf("-aarch32"))+"-ea-beta"
+                            }
+                            status = [releaseName: releaseName, expectedReleaseName: expectedReleaseName, upstreamTag: latestOpenjdkBuild]
+                        }
+
+                        // Verify the given release contains all the expected assets
+                        verifyReleaseContent(featureRelease, releaseName, variant, status)
+                        echo "  ${featureRelease} release binaries verification: "+status['assets']
+                        healthStatus[featureRelease] = status
+                    } else {
+                        status['assets'] = "Unable to find any releases"
+                        echo "  ${featureRelease} release binaries verification: "+status['assets']
+                    }
+                }
+
+                // Check tip_releases status, by querying binaries repo as API does not server the "tip" dev releases
+                if ("${params.TIP_RELEASES}".trim() != "") {
+                    tipReleases.each { tipRelease ->
+                        def latestOpenjdkBuild = getLatestOpenjdkBuildTag(tipRelease)
+                        def tipVersion = tipRelease.replaceAll("[a-z]","").toInteger()
+                        def releaseName = getLatestBinariesTag("${tipVersion}")
+                        status = [releaseName: releaseName, expectedReleaseName: "${latestOpenjdkBuild}-ea-beta", upstreamTag: latestOpenjdkBuild]
+                        verifyReleaseContent(tipRelease, releaseName, variant, status)
+                        echo "  ${tipRelease} release binaries verification: "+status['assets']
+                        healthStatus[tipRelease] = status
+                    }
                 }
             }
         }
-    }
 
-    // Print the results of the nightly build/test stats
-    stage('printBuildTestStats') {
-        def buildFailures = 0
-        def nightlyTestSuccessRating = 0
-        def numTestPipelines = 0
-        def totalBuildJobs = 0
-        def totalTestJobs = 0
-        testStats.each { pipeline ->
-            echo "For Variant: ${variant}"
-            echo "  Pipeline : ${pipeline.name} : ${pipeline.url}"
-            echo "    => Number of Build jobs = ${pipeline.buildJobNumber}"
-            echo "    => Build job COMPLETE   = ${pipeline.buildJobComplete}"
-            echo "    => Build job FAILURE   = ${pipeline.buildJobFailure}"
-            echo "    => Number of Test jobs = ${pipeline.testJobNumber}"
-            echo "    => Test job SUCCESS    = ${pipeline.testJobSuccess}"
-            echo "    => Test job UNSTABLE   = ${pipeline.testJobUnstable}"
-            echo "    => Test job FAILURE    = ${pipeline.testJobFailure}"
-            echo "    => Test case Passed    = ${pipeline.testCasePassed}"
-            echo "    => Test case Failed    = ${pipeline.testCaseFailed}"
-            echo "    => Test case Disabled  = ${pipeline.testCaseDisabled}"
-            echo '==================================================================================='
-            totalBuildJobs += pipeline.buildJobNumber
-            buildFailures += pipeline.buildJobFailure
-            totalTestJobs += pipeline.testJobNumber
-            // Did test jobs run? (build may have failed)
-            if (pipeline.testJobNumber > 0) {
-                numTestPipelines += 1
-                // Pipeline Test % success rating: %(SucceededOrUnstable) - %(FailedTestCases)
-                nightlyTestSuccessRating += (((pipeline.testJobNumber - pipeline.testJobFailure) * 100 / pipeline.testJobNumber))
-                // Did test cases run?
-                if ((pipeline.testCasePassed + pipeline.testCaseFailed) > 0) {
-                    nightlyTestSuccessRating -= (pipeline.testCaseFailed * 100 / (pipeline.testCasePassed + pipeline.testCaseFailed))
-                }
+        // Get the last Nightly build and test job & target stats
+        stage('getStats') {
+            // Determine build and test variant job name search strings
+            def buildVariant = variant
+            def testVariant
+            if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
+                testVariant = '_hs_'
+            } else if (variant == 'openj9') {
+                testVariant = '_j9_'
+            } else {
+            testVariant = "_${variant}_"
             }
-        }
-        // Average test success rating across all pipelines
-        if (numTestPipelines > 0) {
-            nightlyTestSuccessRating = nightlyTestSuccessRating / numTestPipelines
-        } else {
-            // If no Tests were run assume 0% success
-            nightlyTestSuccessRating = 0
-        }
 
-        // Build % success rating: Successes as % of build total
-        def buildSuccesses = totalBuildJobs - buildFailures
-        def nightlyBuildSuccessRating = 0
-        if (totalBuildJobs > 0) {
-            nightlyBuildSuccessRating = ((buildSuccesses) * 100) / (totalBuildJobs)
-        } else {
-            // If no Builds were run assume 0% success
-            nightlyBuildSuccessRating = 0
-        }
-
-        // Overall % success rating: Average build & test % success rating
-        def overallNightlySuccessRating = ((nightlyBuildSuccessRating + nightlyTestSuccessRating) / 2).intValue()
-
-        echo "======> Latest pipeline build Success Rating for variant: ${variant}"
-        echo "======> Total number of Build jobs    = ${totalBuildJobs}"
-        echo "======> Total number of Test jobs     = ${totalTestJobs}"
-        echo "======> Build Success Rating  = ${nightlyBuildSuccessRating.intValue()} %"
-        echo "======> Test Success Rating   = ${nightlyTestSuccessRating.intValue()} %"
-        echo "======> Overall Latest Build & Test Success Rating = ${overallNightlySuccessRating} %"
-
-        def statusColor = 'good'
-        if (nightlyBuildSuccessRating.intValue() < amberBuildAlertLevel || nightlyTestSuccessRating.intValue() < amberTestAlertLevel) {
-            statusColor = 'warning'
-        }
-
-        // Slack message:
-        slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
-
-        echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
-    }
-
-    stage('printPublishStats') {
-        if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
-            echo '-------------- Latest pipeline health report ------------------'
+            // Create list of build pipelines of interest based on the requests release versions
+            def pipelinesOfInterest = ""
             def allReleases = []
             allReleases.addAll(featureReleases)
-            if (tipRelease != "") {
-                allReleases.add(tipRelease)
+            if ("${params.TIP_RELEASES}".trim() != "") {
+                allReleases.addAll(tipReleases)
             }
-            if (("${params.NON_TAG_BUILD_RELEASES}".trim() != "")) {
+            if ("${params.NON_TAG_BUILD_RELEASES}".trim() != "") {
                allReleases.addAll(nonTagBuildReleases)
             }
-            allReleases.each { featureRelease ->
-                def status = healthStatus[featureRelease]
+            allReleases.each { release ->
+                def featureReleaseStr = (release == "aarch32-jdk8u" || release == "alpine-jdk8u") ? "8" : release.replaceAll("[a-z]","")
 
-                def slackColor = 'good'
-                def health = "Healthy"
-                def errorMsg = ""
-                def releaseName = status['releaseName']
-                def lastPublishedMsg = ""
-                def probableBuildUrl = ""
-                def probableBuildStatus = ""
-                def probableBuildIdForTRSS = ""
+                // Only interested in triggered openjdkNN-pipeline's
+                if (!pipelinesOfInterest.contains(",openjdk${featureReleaseStr}-pipeline")) {
+                    pipelinesOfInterest += ",openjdk${featureReleaseStr}-pipeline"
+                }
+            }
 
-                // Is it a non-tag triggered build? eg.Oracle STS version
-                if (nonTagBuildReleases.contains(featureRelease)) {
-                    // Check for stale published build
-                    def days = status['actualDays'] as int
-                    lastPublishedMsg = "\nPublished: ${days} day(s) ago." // might actually be days + N hours, where N < 24
-                    if (status['actualDays'] == 0) {
-                        lastPublishedMsg = "\nPublished: less than 24 hours ago."
+            // Get top level builds names
+            def trssBuildNames = callWgetSafely("${trssUrl}/api/getTopLevelBuildNames?type=Test", cookieJar)
+            def buildNamesJson = new JsonSlurper().parseText(trssBuildNames)
+            buildNamesJson.each { build ->
+                // Is it a build Pipeline?
+                if (build._id.buildName.contains('-pipeline')) {
+                    echo "Pipeline ${build._id.buildName}"
+                    def pipelineName = build._id.buildName
+
+                    // Are we interested in this pipeline?
+                    if (pipelinesOfInterest.contains(pipelineName)) {
+                        // Find all the "Done" pipeline builds in the last 7 days, started by "timer", or upstream project "build-scripts/utils/betaTrigger_"
+                        def pipeline = callWgetSafely("${trssUrl}/api/getBuildHistory?buildName=${pipelineName}", cookieJar)
+                        def pipelineJson = new JsonSlurper().parseText(pipeline)
+                        if (pipelineJson.size() > 0) {
+                            // Find first in list started by "timer", "build-scripts/utils/betaTrigger_" or "build-scripts/utils/releaseTrigger_"
+                            pipelineJson.each { job ->
+                                def pipeline_id = null
+                                def pipelineUrl
+
+                                // Determine when job ran?
+                                def build_time = LocalDateTime.ofInstant(Instant.ofEpochMilli(job.timestamp), ZoneId.of('UTC'))
+                                def now = LocalDateTime.now(ZoneId.of('UTC'))
+                                def days = ChronoUnit.DAYS.between(build_time, now)
+
+                                // Was job "Done"?
+                                // Report pipelines built within the last week
+                                if (job.status != null && job.status.equals('Done') && job.startBy != null && days <= 27) {
+                                    if (job.startBy.startsWith('timer')) {
+                                        // Timer scheduled job
+                                        pipeline_id = job._id
+                                        pipelineUrl = job.buildUrl
+                                    } else if (job.startBy.startsWith("upstream project \"build-scripts/utils/betaTrigger_")) {
+                                        // Beta build tag triggered build
+                                        pipeline_id = job._id
+                                        pipelineUrl = job.buildUrl
+                                    } else if (job.startBy.startsWith("upstream project \"build-scripts/utils/releaseTrigger_")) {
+                                        // Release build tag triggered build
+                                        pipeline_id = job._id
+                                        pipelineUrl = job.buildUrl
+                                    } else if (job.startBy.startsWith("upstream project \"build-scripts/weekly-")) {
+                                        // Scheduled "weekly" job for Oracle managed versions
+                                        pipeline_id = job._id
+                                        pipelineUrl = job.buildUrl
+                                    }
+                                }
+                                // Was job a "match"?
+                                if (pipeline_id != null) {
+                                    def testResults = getPipelineTestResults(trssUrl, pipelineName, pipelineUrl, pipeline_id, buildVariant, testVariant, cookieJar)
+                                    testStats.add(testResults)
+                                }
+                            }
+                        }
                     }
-                    def maxDays = status['maxStaleDays'] as int
-                    if (maxDays <= days) {
-                        slackColor = 'warning'
-                        health = "Unhealthy"
-                        errorMsg = "\nStale threshold: ${maxDays} days."
-                    }
-                } else {
-                    // Check if build in-progress
-                    (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = getBuildUrl(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt")
+                }
+            }
+        }
 
-                    // Check latest published binaries are for the latest openjdk build tag, unless upstream is a GA tag
-                    if (status['releaseName'] != status['expectedReleaseName'] && !isGaTag(featureRelease, status['upstreamTag'])) {
-                        def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
-                        if (upstreamTagAge > 3 && probableBuildStatus == "Done") {
-                            slackColor = 'danger'
+        // Print the results of the nightly build/test stats
+        stage('printBuildTestStats') {
+            def buildFailures = 0
+            def nightlyTestSuccessRating = 0
+            def numTestPipelines = 0
+            def totalBuildJobs = 0
+            def totalTestJobs = 0
+            testStats.each { pipeline ->
+                echo "For Variant: ${variant}"
+                echo "  Pipeline : ${pipeline.name} : ${pipeline.url}"
+                echo "    => Number of Build jobs = ${pipeline.buildJobNumber}"
+                echo "    => Build job COMPLETE   = ${pipeline.buildJobComplete}"
+                echo "    => Build job FAILURE   = ${pipeline.buildJobFailure}"
+                echo "    => Number of Test jobs = ${pipeline.testJobNumber}"
+                echo "    => Test job SUCCESS    = ${pipeline.testJobSuccess}"
+                echo "    => Test job UNSTABLE   = ${pipeline.testJobUnstable}"
+                echo "    => Test job FAILURE    = ${pipeline.testJobFailure}"
+                echo "    => Test target Passed    = ${pipeline.testTargetPassed}"
+                echo "    => Test target Failed    = ${pipeline.testTargetFailed}"
+                echo "    => Test target Disabled  = ${pipeline.testTargetDisabled}"
+                echo '==================================================================================='
+                totalBuildJobs += pipeline.buildJobNumber
+                buildFailures += pipeline.buildJobFailure
+                totalTestJobs += pipeline.testJobNumber
+                // Did test jobs run? (build may have failed)
+                if (pipeline.testJobNumber > 0) {
+                    numTestPipelines += 1
+                    // Pipeline Test % success rating: %(SucceededOrUnstable) - %(FailedTestTargets)
+                    nightlyTestSuccessRating += (((pipeline.testJobNumber - pipeline.testJobFailure) * 100 / pipeline.testJobNumber))
+                    // Did test target run?
+                    if ((pipeline.testTargetPassed + pipeline.testTargetFailed) > 0) {
+                        nightlyTestSuccessRating -= (pipeline.testTargetFailed * 100 / (pipeline.testTargetPassed + pipeline.testTargetFailed))
+                    }
+                }
+            }
+            // Average test success rating across all pipelines
+            if (numTestPipelines > 0) {
+                nightlyTestSuccessRating = nightlyTestSuccessRating / numTestPipelines
+            } else {
+                // If no Tests were run assume 0% success
+                nightlyTestSuccessRating = 0
+            }
+
+            // Build % success rating: Successes as % of build total
+            def buildSuccesses = totalBuildJobs - buildFailures
+            def nightlyBuildSuccessRating = 0
+            if (totalBuildJobs > 0) {
+                nightlyBuildSuccessRating = ((buildSuccesses) * 100) / (totalBuildJobs)
+            } else {
+                // If no Builds were run assume 0% success
+                nightlyBuildSuccessRating = 0
+            }
+
+            // Overall % success rating: Average build & test % success rating
+            def overallNightlySuccessRating = ((nightlyBuildSuccessRating + nightlyTestSuccessRating) / 2).intValue()
+
+            echo "======> Latest pipeline build Success Rating for variant: ${variant}"
+            echo "======> Total number of Build jobs    = ${totalBuildJobs}"
+            echo "======> Total number of Test jobs     = ${totalTestJobs}"
+            echo "======> Build Success Rating  = ${nightlyBuildSuccessRating.intValue()} %"
+            echo "======> Test Success Rating   = ${nightlyTestSuccessRating.intValue()} %"
+            echo "======> Overall Latest Build & Test Success Rating = ${overallNightlySuccessRating} %"
+
+            def statusColor = 'good'
+            if (nightlyBuildSuccessRating.intValue() < amberBuildAlertLevel || nightlyTestSuccessRating.intValue() < amberTestAlertLevel) {
+                statusColor = 'warning'
+            }
+
+            // Slack message:
+            slackSend(channel: slackChannel, color: statusColor, message: 'Adoptium last 7 days Overall EA Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>')
+
+            echo 'Adoptium last 7 days Overall Build Success Rating : *' + variant + '* => *' + overallNightlySuccessRating + '* %\n  Build Job Rating: ' + totalBuildJobs + ' jobs (' + nightlyBuildSuccessRating.intValue() + '%)  Test Job Rating: ' + totalTestJobs + ' jobs (' + nightlyTestSuccessRating.intValue() + '%) <' + BUILD_URL + '/console|Detail>'
+        }
+
+        stage('printPublishStats') {
+            if (variant == 'temurin' || variant == 'hotspot') { //variant == "hotspot" should be enough for now. Keep temurin for later.
+                echo '-------------- Latest pipeline health report ------------------'
+                def allReleases = []
+                allReleases.addAll(featureReleases)
+                if ("${params.TIP_RELEASES}".trim() != "") {
+                    allReleases.addAll(tipReleases)
+                }
+                if (("${params.NON_TAG_BUILD_RELEASES}".trim() != "")) {
+                   allReleases.addAll(nonTagBuildReleases)
+                }
+                allReleases.each { featureRelease ->
+                    def status = healthStatus[featureRelease]
+
+                    def slackColor = 'good'
+                    def health = "Healthy"
+                    def errorMsg = ""
+                    def reproSummary = ""
+                    def releaseName = status['releaseName']
+                    def lastPublishedMsg = ""
+                    def probableBuildUrl = ""
+                    def probableBuildStatus = ""
+                    def probableBuildIdForTRSS = ""
+                    def failedTestSummary = ""
+
+                    // Is it a non-tag triggered build? eg.Oracle STS version
+                    if (nonTagBuildReleases.contains(featureRelease)) {
+                        failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, "", "", cookieJar)
+
+                        // Check for stale published build
+                        def days = status['actualDays'] as int
+                        lastPublishedMsg = "\nPublished: ${days} day(s) ago." // might actually be days + N hours, where N < 24
+                        if (status['actualDays'] == 0) {
+                            lastPublishedMsg = "\nPublished: less than 24 hours ago."
+                        }
+                        def maxDays = status['maxStaleDays'] as int
+                        if (maxDays <= days) {
+                            slackColor = 'warning'
                             health = "Unhealthy"
-                            errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *No build is in progress*."
-                        } else {
-                            if (probableBuildStatus == "Streaming") {
-                                errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. <" + probableBuildUrl + "|Build is in progress>."
+                            errorMsg = "\nStale threshold: ${maxDays} days."
+                        }
+                    } else {
+                        // Get failed AQA test summary for the current published featureRelease
+                        failedTestSummary = getFailedTestSummary(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-ea-beta", "")+"_adopt", cookieJar)
+
+                        // Get latest build, in case we need to report current build status when assets are missing or not the latest tag
+                        (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = ["", "", ""]
+                        def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, status['expectedReleaseName'].replaceAll("-beta", ""), status['upstreamTag']+"_adopt", true, [], cookieJar)
+                        if (buildUrls.size() > 0) {
+                            (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
+                        }
+
+                        // Check latest published binaries are for the latest openjdk EA build tag, if not check if build is in-progress..
+                        if (status['releaseName'] != status['expectedReleaseName']) {
+                            def upstreamTagAge    = getOpenjdkBuildTagAge(featureRelease, status['upstreamTag'])
+                            if (upstreamTagAge > 3 && (probableBuildStatus == "" || probableBuildStatus == "Done")) {
+                                slackColor = 'danger'
+                                health = "Unhealthy"
+                                errorMsg = "\nLatest Adoptium publish binaries "+status['releaseName']+" != latest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *No build is in progress*."
                             } else {
-                                errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *Build is awaiting 'trigger'*."
+                                if ( (probableBuildStatus == "Streaming") || (probableBuildStatus == "NotDone") ) {
+                                    errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. <" + probableBuildUrl + "|Build is in progress>."
+                                } else {
+                                    errorMsg = "\nLatest upstream openjdk build "+status['upstreamTag']+" published ${upstreamTagAge} days ago. *Build is awaiting 'trigger'*."
+                                }
                             }
                         }
                     }
 
-                    def testsShouldHaveRun = false
-                    if ( probableBuildUrl != "" && sh(returnStdout: true, script: "wget -q -O - ${trssUrl}/api/getBuildHistory?buildUrl=${probableBuildUrl}") ==~ /.*name.:.enableTests.,.value.:true.*/ ) {
-                        testsShouldHaveRun = true
-                    }
-                    if (reproducibleBuilds.containsKey(featureRelease)) {
-                        if (testsShouldHaveRun) {
-                            getReproducibilityPercentage(featureRelease, probableBuildIdForTRSS, trssUrl, reproducibleBuilds)
-                            if ( reproducibleBuilds[featureRelease][0] != "100%") {
-                                slackColor = 'danger'
+                    // If AQA tests run, then find reproducible build results...
+                    if (!failedTestSummary.contains(noAqaTestsRunString()) && reproducibleBuilds.containsKey(featureRelease)) {
+                        def reproDetailSummary = ""
+
+                        def (reproBuildUrl, reproBuildTrss, reproBuildStatus) = ["", "", ""]
+                        def reproBuildUrls
+                        if (nonTagBuildReleases.contains(featureRelease)) {
+                            reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, "", "", true, [], cookieJar)
+                        } else {
+                            reproBuildUrls = getBuildUrls(trssUrl, variant, featureRelease, releaseName.replaceAll("-beta", ""), releaseName.replaceAll("-beta", "").replaceAll("-ea", "")+"_adopt", false, [], cookieJar)
+                        }
+                        if (reproBuildUrls.size() > 0) {
+                            reproBuildUrls.each { reproBuildTuple ->
+                                (reproBuildUrl, reproBuildTrss, reproBuildStatus) = reproBuildTuple
+                                echo "Checking for reproducibility results in pipeline: ${reproBuildUrl}"
+                                echo "This pipeline's current status is ${reproBuildStatus}"
+
+                                getReproducibilityPercentage(featureRelease, reproBuildTrss, trssUrl, reproducibleBuilds, cookieJar)
+                            }
+
+                            if ( ! reproducibleBuilds[featureRelease][0].startsWith("100") ) {
+
+                                if (!slackColor.equals('danger')) {
+                                    slackColor = 'warning'
+                                }
                                 health = "Unhealthy"
                                 def summaryOfRepros = ""
                                 echo "Build reproducibility percentages for " + featureRelease + " did not add up to 100%. Breakdown: "
-                                reproducibleBuilds[featureRelease][1].each{ key, value -> 
+                                reproducibleBuilds[featureRelease][1].each{ key, value ->
                                     if (!value.equals("NA")) {
                                         echo key+": "+value
                                         if(value ==~ /[0-9]+\.?[0-9]* %/) {
@@ -836,27 +1200,27 @@ node('worker') {
                                 }
 
                                 //Remove trailing comma.
-                                summaryOfRepros = summaryOfRepros.substring(0, summaryOfRepros.length() - 1);
+                                summaryOfRepros = summaryOfRepros.substring(0, summaryOfRepros.length() - 1)
 
-                                errorMsg += "\nBuild repro summary: "+summaryOfRepros
+                                reproDetailSummary = "\n${featureRelease} Reproducibility: "+summaryOfRepros
                             }
                         } else {
-                            // Ignore test results if the tests for this pipeline were intentionally disabled.
-                            reproducibleBuilds[featureRelease][0] = "N/A - Tests disabled"
+                            // Ignore if we cannot find a likely pipeline job.
+                            reproducibleBuilds[featureRelease][0] = "N/A"
+                            echo "This pipeline is blank string"
                         }
-                    }
-                }
 
-                // Verify if any artifacts missing?
-                def missingMsg = ""
-                // Don't check if upstream tag is a GA, as the ea-beta will only be for evaluation platforms
-                if (!isGaTag(featureRelease, status['upstreamTag'])) {
+                        reproSummary = "\n${reproDetailSummary}\nOverall Reproducibility: "+reproducibleBuilds[featureRelease][0]
+                    }
+
+                    // Verify if any artifacts missing?
+                    def missingMsg = ""
                     def missingAssets = []
                     if (status['assets'] != 'Complete') {
                         slackColor = 'danger'
                         health = "Unhealthy"
                         errorMsg += "\nArtifact status: "+status['assets']
-                        if (probableBuildStatus == "Streaming") {
+                        if ( (probableBuildStatus == "Streaming") || (probableBuildStatus == "NotDone") ) {
                             errorMsg += ", <" + probableBuildUrl + "|Build is in progress>"
                         } else {
                             errorMsg += ", *No build is in progress*"
@@ -881,31 +1245,27 @@ node('worker') {
                                 archName = missingFile[0]
                                 missingFiles = missingFile[1]+missingFile[2]
                             } else {
-                               missingFiles += ", "+missingFile[1]+missingFile[2]
+                                missingFiles += ", "+missingFile[1]+missingFile[2]
                             }
-                        } 
+                        }
                         if (missingFiles != "") {
                             missingMsg += "\n    *${archName}*: ${missingFiles}"
                             echo "===> ${missingMsg}"
                         }
                     }
-                }
 
-                def reproducibilityText = ""
-                if (reproducibleBuilds.containsKey(featureRelease)) {
-                    reproducibilityText = " Reproducibility: "+reproducibleBuilds[featureRelease][0]
+                    def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
+                    def fullMessage = "${featureRelease} EA: *${health}*. Build: ${releaseLink}.${failedTestSummary}${lastPublishedMsg}${errorMsg}${missingMsg}${reproSummary}"
+                    echo "===> ${fullMessage}"
+                    slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
                 }
-
-                def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
-                def fullMessage = "${featureRelease} latest 'EA Build' publish status: *${health}*.${reproducibilityText} Build: ${releaseLink}.${lastPublishedMsg}${errorMsg}${missingMsg}"
-                echo "===> ${fullMessage}"
-                slackSend(channel: slackChannel, color: slackColor, message: fullMessage)
+                echo '----------------------------------------------------------------'
             }
-            echo '----------------------------------------------------------------'
         }
+    } finally {
+        // Clean up cookie jar
+        sh "rm -f '${WORKSPACE}/.jenkins-cookies' || true"
+        cleanWs notFailBuild: true
     }
-  } finally { 
-    cleanWs notFailBuild: true
-  } 
 }
 

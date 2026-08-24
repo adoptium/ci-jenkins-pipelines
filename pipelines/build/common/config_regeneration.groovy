@@ -43,7 +43,7 @@ class Regeneration implements Serializable {
     private final jobTemplatePath
 
     private final baseFilePath
-    private final scriptPath
+    private       scriptPath
     private final jenkinsBuildRoot
     private final jenkinsCreds
     private final checkoutCreds
@@ -516,10 +516,19 @@ class Regeneration implements Serializable {
         params.put('JOB_NAME', jobName)
         params.put('JOB_FOLDER', jobFolder)
         params.put('VARIANT', config.VARIANT)
-        params.put('SCRIPT_PATH', scriptPath)
 
-        params.put('GIT_URL', gitRemoteConfigs['url'])
-        params.put('GIT_BRANCH', gitBranch)
+        def scriptRepoUrl = gitRemoteConfigs['url']
+        def scriptRepoBranch = gitBranch
+        if (!context.fileExists(scriptPath)) {
+            context.println "[WARNING] ${scriptPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
+            scriptRepoUrl = ADOPT_DEFAULTS_JSON['repository']['pipeline_url']
+            scriptRepoBranch = ADOPT_DEFAULTS_JSON['repository']['pipeline_branch']
+            scriptPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['downstream']
+        }
+
+        params.put('SCRIPT_PATH', scriptPath)
+        params.put('GIT_URL',     scriptRepoUrl)
+        params.put('GIT_BRANCH',  scriptRepoBranch)
 
         // We have to use JsonSlurpers throughout the code for instantiating maps for consistancy and parsing reasons
         Map userRemoteConfigs = new JsonSlurper().parseText('{"branch" : "", "remotes": ""}') as Map
@@ -640,8 +649,12 @@ class Regeneration implements Serializable {
                     // Get all pipelines
                     def getPipelines = queryAPI("${jenkinsBuildRoot}/api/json?tree=jobs[name]&pretty=true&depth1")
 
-                    // Parse api response to only extract the relevant pipeline
-                    getPipelines.jobs.name.each { pipeline ->
+                    if (getPipelines == null) {
+                      // ${jenkinsBuildRoot}/api cannot be queried by API
+                      context.println "Unable to query ${jenkinsBuildRoot}/api/json?tree=jobs[name]&pretty=true&depth1"
+                    } else {
+                      // Parse api response to only extract the relevant pipeline
+                      getPipelines.jobs.name.each { pipeline ->
                         def pipelineName = (jobType != "evaluation" ? "openjdk${versionNumbers[0]}-pipeline" : "evaluation-openjdk${versionNumbers[0]}-pipeline")
                         if (pipeline == pipelineName) {
                             Boolean inProgress = true
@@ -677,6 +690,7 @@ class Regeneration implements Serializable {
 
                             context.println "[SUCCESS] ${pipeline} is idle. Running regeneration job..."
                         }
+                      }
                     }
                 }
             } // end check stage

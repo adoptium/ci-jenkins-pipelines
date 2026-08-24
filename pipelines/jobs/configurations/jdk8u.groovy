@@ -7,45 +7,37 @@ targetConfigurations = [
                 'openj9',
                 'corretto',
                 'dragonwell',
-                'bisheng'
+                'bisheng',
+                'hotspot'
         ],
         'x64AlpineLinux' : [
                 'temurin'
         ],
         'x32Windows'    : [
-                'temurin',
-                'openj9'
+                'hotspot'
         ],
         'x64Windows'    : [
                 'temurin',
-                'openj9',
-                'dragonwell'
+                'hotspot'
         ],
         'ppc64Aix'      : [
                 'temurin',
-                'openj9'
+                'hotspot'
         ],
         'ppc64leLinux'  : [
                 'temurin',
-                'openj9'
+                'hotspot'
         ],
         's390xLinux'    : [
                 'openj9'
         ],
         'aarch64Linux'  : [
                 'temurin',
-                'openj9',
-                'dragonwell',
-                'bisheng'
+                'hotspot'
         ],
         'arm32Linux'  : [
-                'temurin'
-        ],
-        'x64Solaris': [
-                'temurin'
-        ],
-        'sparcv9Solaris': [
-                'temurin'
+                'temurin',
+                'hotspot'
         ]
 ]
 

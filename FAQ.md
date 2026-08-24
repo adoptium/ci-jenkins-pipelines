@@ -94,7 +94,7 @@ Check out [Adopt's guide](docs/UsingOurScripts.md) to setting up your own script
 ## I want to build code from my own fork/branch of openjdk in jenkins
 
 You will need to add some parameters to the `BUILD_ARGS` on the individual
-platform-specific pipeline (or `additionalBuildArgs` if runnibg a top level pipeline) and
+platform-specific pipeline (or `additionalBuildArgs` if running a top level pipeline) and
 specify `--disable-adopt-branch-safety` for example:
 
 `--disable-adopt-branch-safety -r https://github.com/sxa/openjdk-jdk11u -b mybranch`

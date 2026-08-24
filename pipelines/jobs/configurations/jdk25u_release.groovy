@@ -27,7 +27,6 @@ targetConfigurations = [
                 'temurin'
         ],
         'aarch64Linux': [
-                'hotspot',
                 'temurin'
         ],
         'aarch64Mac': [
@@ -36,15 +35,6 @@ targetConfigurations = [
         'riscv64Linux': [
                 'temurin'
         ]
-]
-
-// scmReferences to use for weekly release build
-weekly_release_scmReferences = [
-        'hotspot'        : '',
-        'temurin'        : '',
-        'openj9'         : '',
-        'corretto'       : '',
-        'dragonwell'     : ''
 ]
 
 return this

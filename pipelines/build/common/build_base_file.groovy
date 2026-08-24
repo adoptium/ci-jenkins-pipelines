@@ -82,6 +82,17 @@ class Builder implements Serializable {
         PUBLISH_ARTIFACTS_TIMEOUT : 3
     ]
 
+    // Workaround to handle different versions of Badge plugin
+    def appendSummaryText(summary, text) {
+        try {
+                def currentText = summary.getText() ?: ""
+                summary.setText(currentText + text)
+        } catch (Exception e) {
+                echo "setText failed, trying deprecated appendText: ${e.message}"
+                summary.appendText(text, false)
+        }
+    }
+
     /*
     Returns an IndividualBuildConfig that is passed down to the downstream job.
     It uses several helper functions to pull in and parse the build configuration for the job.
@@ -105,6 +116,8 @@ class Builder implements Serializable {
         def additionalNodeLabels = formAdditionalBuildNodeLabels(platformConfig, variant)
 
         def additionalTestLabels = formAdditionalTestLabels(platformConfig, variant)
+
+        def additionalTestParams = formAdditionalTestParams(platformConfig, variant)
 
         def archLabel = getArchLabel(platformConfig, variant)
 
@@ -176,6 +189,7 @@ class Builder implements Serializable {
             BUILD_ARGS: buildArgs,
             NODE_LABEL: "${additionalNodeLabels}&&${platformConfig.os}&&${archLabel}",
             ADDITIONAL_TEST_LABEL: "${additionalTestLabels}",
+            ADDITIONAL_TEST_PARAMS: additionalTestParams,
             KEEP_TEST_REPORTDIR: keepTestReportDir,
             ACTIVE_NODE_TIMEOUT: activeNodeTimeout,
             CODEBUILD: platformConfig.codebuild as Boolean,
@@ -614,6 +628,28 @@ class Builder implements Serializable {
         return labels
     }
 
+    /**
+    * Builds up additional test params
+    * @param configuration
+    * @param variant
+    * @return params Map
+    */                      
+    def formAdditionalTestParams(Map<String, ?> configuration, String variant) {
+        def params = [:]
+        
+        if (configuration.containsKey('additionalTestParams')) {
+            def additionalTestParams
+        
+            additionalTestParams = (configuration.additionalTestParams as Map<String, ?>).get(variant)
+        
+            if (additionalTestParams != null) {
+                params = additionalTestParams
+            }   
+        }
+                
+        return params
+    }  
+
     /*
     Retrieves the configureArgs attribute from the build configurations.
     These eventually get passed to ./makejdk-any-platform.sh and bash configure.
@@ -776,11 +812,17 @@ class Builder implements Serializable {
     /*
     Call job to push artifacts to github. Usually it's only executed on a nightly build
     */
-    def publishBinary(IndividualBuildConfig config=null) {
+    def publishBinary(IndividualBuildConfig config=null, String jobResult, String jobUrl) {
         def timestamp = new Date().format('yyyy-MM-dd-HH-mm', TimeZone.getTimeZone('UTC'))
         def javaVersion=determineReleaseToolRepoVersion()
         def stageName = 'BETA publish'
         def releaseComment = 'BETA publish'
+        def releaseWarning = ''
+        if ( jobResult != "SUCCESS" && jobResult != "UNSTABLE" ) {
+            // Build was not successful, add warning and link to build job
+            releaseWarning = '<a href=' + jobUrl + '><span style="color:red;">WARNING: pipeline status was <b>' + jobResult + '</b></span></a> : '
+        }
+        
         def tag = "${javaToBuild}-${timestamp}"
         if (publishName) {
             tag = publishName
@@ -828,7 +870,7 @@ class Builder implements Serializable {
         releaseToolUrl += "&TAG=${tag}&UPSTREAM_JOB_NAME=${urlJobName}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
 
         context.echo "return releaseToolUrl is ${releaseToolUrl}"
-        return ["${releaseToolUrl}", "${releaseComment}"]
+        return ["${releaseToolUrl}", "${releaseComment}", "${releaseWarning}"]
     }
 
     /*
@@ -852,11 +894,14 @@ class Builder implements Serializable {
                         currentBuild.setKeepLog(keepReleaseLogs)
                         currentBuild.setDisplayName(publishName)
                     }
-                    releaseSummary.appendText('<b>RELEASE PUBLISH BINARIES:</b><ul>', false)
+                    appendSummaryText(releaseSummary, '<b>RELEASE PUBLISH BINARIES:</b><ul>')
                 } else {
-                    releaseSummary.appendText('<b>NIGHTLY PUBLISH BINARIES:</b><ul>', false)
+                    appendSummaryText(releaseSummary, '<b>NIGHTLY PUBLISH BINARIES:</b><ul>')
                 }
             }
+
+            // Flag indicating whether TAP test collections have been generated
+            def generatedTapsCollection = false
 
             def jobs = [:]
 
@@ -973,14 +1018,20 @@ class Builder implements Serializable {
                                             throw new Exception("[ERROR] Archive artifact timeout (${pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName}has been reached. Exiting...")
                                         }
 
-                                        copyArtifactSuccess = true
-                                        if (release) {
-                                            def (String releaseToolUrl, String releaseComment) = publishBinary(config)
-                                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
+                                        if ("${config.VARIANT}" == "temurin" && enableTests) {
+                                            // Temurin generates test tap collections, that should appear in the summary
+                                            generatedTapsCollection = true
                                         }
+
+                                        copyArtifactSuccess = true
                                     }
                             }
                             context.println '[NODE SHIFT] OUT OF CONTROLLER NODE!'
+
+                            if (release && copyArtifactSuccess) {
+                                def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(config, downstreamJob.getResult(), downstreamJob.getAbsoluteUrl())
+                                appendSummaryText(releaseSummary, "<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} ${config.VARIANT} ${publishName} ${config.TARGET_OS} ${config.ARCHITECTURE}</a></li>")
+                            }
 
                             if (propagateFailures) {
                                 String previousPipelineStatus = currentBuild.result
@@ -1014,17 +1065,20 @@ class Builder implements Serializable {
                         flatten: true,
                         optional: true
                     )
-                    // Archive tap files as a single tar file
-                    context.sh """
-                        cd ${tarDir}/
-                        tar -czf ${tarTap} *.tap
-                    """
-                    try {
-                        context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                            context.archiveArtifacts artifacts: "${tarDir}/${tarTap}"
+                    // Archive tap files as a single tar file if we have any
+                    def tapExists = context.sh(script: "ls -l ${tarDir}/*.tap", returnStatus:true)
+                    if (tapExists == 0) {
+                        context.sh """
+                            cd ${tarDir}/
+                            tar -czf ${tarTap} *.tap
+                        """
+                        try {
+                            context.timeout(time: pipelineTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                                context.archiveArtifacts artifacts: "${tarDir}/${tarTap}"
+                            }
+                        } catch (FlowInterruptedException e) {
+                            throw new Exception("[ERROR] Archive AQAvitTapFiles.tar.gz timeout Exiting...")
                         }
-                    } catch (FlowInterruptedException e) {
-                        throw new Exception("[ERROR] Archive AQAvitTapFiles.tar.gz timeout Exiting...")
                     }
                 }
             }
@@ -1034,32 +1088,32 @@ class Builder implements Serializable {
             if (publish || release) {
                 if (release) {
                     context.println 'NOT PUBLISHING RELEASE AUTOMATICALLY, PLEASE SEE THE RERUN RELEASE PUBLISH BINARIES LINKS'
-                    if (context.JENKINS_URL.contains('adoptium')) {
-                        releaseSummary.appendText('</ul>', false)
-                        releaseSummary.appendText("<b>TAP files COLLECTION and RELEASE:</b><ul>")
+                    if (generatedTapsCollection) {
+                        appendSummaryText(releaseSummary, '</ul>')
+                        appendSummaryText(releaseSummary, "<b>TAP files COLLECTION and RELEASE:</b><ul>")
                         def urlJobName = URLEncoder.encode("${env.JOB_NAME}", 'UTF-8')
                         def tapCollectionUrl = "${context.JENKINS_URL}job/TAP_Collection/parambuild?Release_PipelineJob_Name=${urlJobName}"
-                        releaseSummary.appendText("<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
-                        String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
+                        appendSummaryText(releaseSummary, "<li><a href=${tapCollectionUrl}> RELEASE TAPs COLLECTION</a></li>")
+                        String releaseToolUrl = "${context.JENKINS_URL}job/build-scripts/job/release/job/refactor_openjdk_release_tool/parambuild?RELEASE=${release}&UPSTREAM_JOB_NAME=TAP_Collection&UPLOAD_TESTRESULTS_ONLY=true&dryrun=false"
                         def tag = publishName
                         tag = URLEncoder.encode(tag, 'UTF-8')
                         def artifactsToCopy = '**/AQAvitTapFiles.tar.gz'
                         artifactsToCopy = URLEncoder.encode(artifactsToCopy, 'UTF-8')
                         def javaVersion=determineReleaseToolRepoVersion()
                         releaseToolUrl += "&VERSION=${javaVersion}&TAG=${tag}&ARTIFACTS_TO_COPY=${artifactsToCopy}"
-                        releaseSummary.appendText("<li><a href=${releaseToolUrl}> RELEASE TEST RESULTS TAPs Link</a></li>")
+                        appendSummaryText(releaseSummary, "<li><a href=${releaseToolUrl}> RELEASE TEST RESULTS TAPs Link</a></li>")
                     }
                 } else {
                     try {
                         context.timeout(time: pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
-                            def (String releaseToolUrl, String releaseComment) = publishBinary()
-                            releaseSummary.appendText("<li><a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
+                            def (String releaseToolUrl, String releaseComment, String releaseWarning) = publishBinary(null, currentBuild.result, "${context.BUILD_URL}")
+                            appendSummaryText(releaseSummary, "<li>${releaseWarning}<a href=${releaseToolUrl}> ${releaseComment} Rerun Link</a></li>")
                         }
                     } catch (FlowInterruptedException e) {
                         throw new Exception("[ERROR] Publish binary timeout (${pipelineTimeouts.PUBLISH_ARTIFACTS_TIMEOUT} HOURS) has been reached OR the downstream publish job failed. Exiting...")
                     }
                 }
-                releaseSummary.appendText('</ul>', false)
+                appendSummaryText(releaseSummary, '</ul>')
             }
         }
     }

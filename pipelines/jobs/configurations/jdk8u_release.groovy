@@ -8,9 +8,6 @@ targetConfigurations = [
         'x64AlpineLinux' : [
                 'temurin'
         ],
-        'x32Windows'    : [
-                'temurin'
-        ],
         'x64Windows'    : [
                 'temurin'
         ],
@@ -24,12 +21,6 @@ targetConfigurations = [
                 'temurin'
         ],
         'arm32Linux'  : [
-                'temurin'
-        ],
-        'x64Solaris': [
-                'temurin'
-        ],
-        'sparcv9Solaris': [
                 'temurin'
         ]
 ]

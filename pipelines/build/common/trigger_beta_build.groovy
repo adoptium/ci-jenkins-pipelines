@@ -15,17 +15,10 @@ limitations under the License.
 
 import java.nio.file.NoSuchFileException
 import groovy.json.JsonOutput
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.Month
-import java.time.DayOfWeek
-import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalAdjusters
 
 /*
   Detect new upstream OpenJDK source build tag, and trigger a "beta" pipeline build
-  if the given build has not already been published, and the given version is
-  not GA yet (existance of -ga tag).
+  if the given build has not already been published.
 
   The "Force" option can be used to re-build and re-publish the existing latest build.
 */
@@ -34,6 +27,10 @@ def variant="${params.VARIANT}"
 def mirrorRepo="${params.MIRROR_REPO}"
 def version="${params.JDK_VERSION}".toInteger()
 def binariesRepo="${params.BINARIES_REPO}"
+
+// GitHub issue configuration for release status checking
+def releaseStatusGithubRepo = "adoptium/temurin"
+def releaseStatusSearchPhrase = "Release Status per Platform"
 
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
@@ -48,34 +45,112 @@ def evaluationTargetConfigurations = overrideEvaluationTargetConfigurations
 def latestAdoptTag
 def publishJobTag
 
-// Is the current day within the release period of from the previous Saturday to the following Sunday
-// from the release Tuesday ?
-def isDuringReleasePeriod() {
-    def releasePeriod = false
-    def now = ZonedDateTime.now(ZoneId.of('UTC'))
-    def month = now.getMonth()
+// Check if a GitHub issue containing the configured search phrase is open
+// and was created by an authorized user from release-managers.json
+// Returns true if such an issue is open (release ongoing), false otherwise
+// NOTE: On any error or failure, assumes release IS ongoing (fail-safe to disable tests)
+def isReleaseOngoing(String githubRepo, String searchPhrase) {
+    def releaseOngoing = false
 
-    // Is it a release month? CPU updates in Jan, Apr, Jul, Oct
-    // New major versions are released in Mar and Sept
-    if (month == Month.JANUARY || month == Month.MARCH || month == Month.APRIL || month == Month.JULY || month == Month.SEPTEMBER || month == Month.OCTOBER) {
-        // Yes, calculate release Tuesday, which is the closest Tuesday to the 17th
-        def day17th = now.withDayOfMonth(17)
-        def dayOfWeek17th = day17th.getDayOfWeek()
-        def releaseTuesday
-        if (dayOfWeek17th == DayOfWeek.SATURDAY || dayOfWeek17th == DayOfWeek.SUNDAY || dayOfWeek17th == DayOfWeek.MONDAY || dayOfWeek17th == DayOfWeek.TUESDAY) {
-            releaseTuesday = day17th.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY))
+    try {
+        echo "Checking GitHub ${githubRepo} for open issue containing: '${searchPhrase}'"
+
+        // First, fetch the list of authorized users from release-managers.json
+        def authUsersUrl = "https://raw.githubusercontent.com/adoptium/temurin/main/.github/workflows/release-managers.json"
+        def rcAuth = sh(script: "curl -s -o release-managers.json '${authUsersUrl}'", returnStatus: true)
+
+        if (rcAuth != 0) {
+            echo "ERROR: Failed to fetch authorized users list. Assuming release IS ongoing (fail-safe)."
+            return true
+        }
+
+        // Extract the authorized_users array from the JSON using jq
+        def authorizedUsers = sh(script: "jq -r '.authorized_users[]' release-managers.json | tr '\\n' ' '", returnStdout: true).trim()
+
+        if (authorizedUsers == "") {
+            echo "ERROR: No authorized users found in release-managers.json. Assuming release IS ongoing (fail-safe)."
+            return true
+        }
+
+        echo "Authorized users: ${authorizedUsers}"
+
+        // Use GitHub Issues API directly (better rate limits than Search API)
+        // List open issues and filter by title locally
+        def issuesUrl = "https://api.github.com/repos/${githubRepo}/issues?state=open&per_page=100"
+
+        // Fetch the open issues
+        def rc = sh(script: "curl -s -o issue_search.json '${issuesUrl}'", returnStatus: true)
+
+        if (rc == 0) {
+            // Filter issues by title containing the search phrase using jq
+            // Save to file to avoid shell variable issues with control characters in JSON
+            def rcFilter = sh(script: "jq '[.[] | select(.title | contains(\"${searchPhrase}\"))]' issue_search.json > matching_issues.json", returnStatus: true)
+            
+            if (rcFilter != 0) {
+                echo "ERROR: Failed to filter issues. Assuming release IS ongoing (fail-safe)."
+                return true
+            }
+
+            // Count matching issues from the file
+            def issueCount = sh(script: "jq 'length' matching_issues.json", returnStdout: true).trim()
+
+            // Check if issueCount is valid (not null, not empty, and is a number)
+            if (issueCount == "" || issueCount == "null" || !issueCount.isInteger()) {
+                echo "ERROR: Could not parse issue count from filtered results. Assuming release IS ongoing (fail-safe)."
+                return true
+            }
+
+            if (issueCount.toInteger() > 0) {
+                echo "Found ${issueCount} open issue(s) containing '${searchPhrase}' in ${githubRepo}"
+
+                // Check all matching issues to see if any were created by an authorized user
+                // Extract all issue creators using jq from the file
+                def allCreators = sh(script: "jq -r '.[].user.login' matching_issues.json", returnStdout: true).trim()
+
+                if (allCreators != "") {
+                    def creators = allCreators.split('\n')
+                    echo "Checking ${creators.size()} issue(s) for authorized creators..."
+
+                    for (int i = 0; i < creators.size(); i++) {
+                        def issueCreator = creators[i].trim()
+                        def issueTitle = sh(script: "jq -r '.[${i}].title' matching_issues.json", returnStdout: true).trim()
+
+                        echo "Issue ${i + 1}: '${issueTitle}' created by '${issueCreator}'"
+
+                        // Check if the creator is in the authorized users list
+                        def isAuthorized = sh(script: "echo '${authorizedUsers}' | grep -w '${issueCreator}'", returnStatus: true)
+
+                        if (isAuthorized == 0) {
+                            echo "Issue creator '${issueCreator}' is authorized. Release is ongoing."
+                            releaseOngoing = true
+                            break  // Found an authorized issue, no need to check further
+                        } else {
+                            echo "Issue creator '${issueCreator}' is NOT in the authorized users list."
+                        }
+                    }
+
+                    if (!releaseOngoing) {
+                        echo "None of the matching issues were created by authorized users. Release is NOT ongoing."
+                    }
+                } else {
+                    echo "ERROR: Could not determine issue creators. Assuming release IS ongoing (fail-safe)."
+                    return true
+                }
+            } else {
+                echo "No open issues found containing '${searchPhrase}' in ${githubRepo}"
+            }
         } else {
-            releaseTuesday = day17th.with(TemporalAdjusters.previous(DayOfWeek.TUESDAY))
+            echo "ERROR: Failed to query GitHub API for issue status. Assuming release IS ongoing (fail-safe)."
+            return true
         }
-
-        // Release period no trigger from prior week previous Saturday to following Sunday
-        def days = ChronoUnit.DAYS.between(releaseTuesday, now)
-        if (days >= -10 && days <= 5) {
-            releasePeriod = true
-        }
+    } catch (Exception e) {
+        echo "ERROR: Exception checking GitHub issue status: ${e.message}"
+        echo "Assuming release IS ongoing due to error (fail-safe)."
+        return true
     }
 
-    return releasePeriod
+    echo "Is release ongoing (based on GitHub issue and authorized user)? ${releaseOngoing}"
+    return releaseOngoing
 }
 
 // Load the given targetConfigurations from the pipeline config
@@ -114,6 +189,47 @@ def loadTargetConfigurations(String javaVersion, String variant, String configSe
     return targetConfigurationsForVariant
 }
 
+// Verify the given published release tag contains the given asset architecture
+def checkJDKAssetExistsForArch(String binariesRepo, String version, String releaseTag, String arch) {
+    def assetExists = false
+
+    echo "Verifying ${version} JDK asset for ${arch} in release: ${releaseTag}"
+
+    def escRelease = releaseTag.replaceAll("\\+", "%2B")
+    def releaseAssetsUrl = binariesRepo.replaceAll("github.com","api.github.com/repos") + "/releases/tags/${escRelease}"
+
+    // Get list of assets, concatenate into a single string
+    def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json '+releaseAssetsUrl, returnStatus: true)
+    def releaseAssets = ""
+    if (rc == 0) {
+        releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
+    }
+
+    if (releaseAssets == "") {
+        echo "No release assets for ${releaseAssetsUrl}"
+    } else {
+        // Work out the JDK artifact filetype
+        def filetype
+        if (arch.contains("windows")) {
+            filetype = "\\.zip"
+        } else {
+            filetype = "\\.tar\\.gz"
+        }
+
+        def findAsset = releaseAssets =~/.*jdk_${arch}_[^"]*${filetype}".*/
+        if (findAsset) {
+            assetExists = true
+        }
+    }
+
+    if (assetExists) {
+        echo "${arch} JDK asset for version ${version} tag ${releaseTag} exists"
+    } else {
+        echo "${arch} JDK asset for version ${version} tag ${releaseTag} NOT FOUND"
+    }
+    return assetExists
+}
+
 node('worker') {
     def adopt_tag_search
     if (version == 8) {
@@ -147,53 +263,56 @@ node('worker') {
     // binariesRepoTag is the resulting published github binaries release tag created by the Adoptium "publish job"
     def binariesRepoTag = publishJobTag + "-beta"
 
-    if (isDuringReleasePeriod()) {
-        echo "We are within a release period (previous Saturday to the following Sunday around the release Tuesday), so testing is disabled."
+    // Check if release is ongoing by querying for GitHub issue
+    if (isReleaseOngoing(releaseStatusGithubRepo, releaseStatusSearchPhrase)) {
+        echo "Release is ongoing (GitHub issue containing '${releaseStatusSearchPhrase}' is open in ${releaseStatusGithubRepo}), so testing is disabled."
         enableTesting = false
     }
 
     if (!params.FORCE_MAIN && !params.FORCE_EVALUATION) {
         // Determine this versions potential GA tag, so as to not build and publish a GA version
-        def gaTag
         def versionStr
         if (version > 8) {
             versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("+"))
         } else {
             versionStr = latestAdoptTag.substring(0, latestAdoptTag.indexOf("-"))
         }
-        gaTag=versionStr+"-ga"
-        echo "Expected GA tag to check for = ${gaTag}"
    
-        // If "-ga" tag exists, then we don't want to trigger a MAIN build 
-        def gaTagCheck=sh(script:'git ls-remote --sort=-v:refname --tags "'+mirrorRepo+'" | grep -v "\\^{}" | grep "'+gaTag+'"', returnStatus:true)
-        if (gaTagCheck == 0) {
-            echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
+        // Check binaries repo for existance of the given release tag having being already built?
+        def jdkAssetToCheck = "x64_linux"
+        if (mirrorRepo.contains("aarch32-jdk8u")) {
+            // aarch32-jdk8u built in its own pipeline
+            jdkAssetToCheck = "arm_linux"
+        } else if (mirrorRepo.contains("alpine-jdk8u")) {
+            // alpine-jdk8u built in its own pipeline
+            jdkAssetToCheck = "x64_alpine-linux"
+        } else if (version == 8 && mainTargetConfigurations.contains("x64Solaris")) {
+            // Solaris built in own pipeline
+            jdkAssetToCheck = "x64_solaris"
+        } else if (version == 8 && mainTargetConfigurations.contains("sparcv9Solaris")) {
+            // Solaris built in own pipeline
+            jdkAssetToCheck = "sparcv9_solaris"
         }
 
-        // Check binaries repo for existance of the given release?
-        echo "Checking if ${binariesRepoTag} is already published?"
-        def desiredRepoTagURL="${binariesRepo}/releases/tag/${binariesRepoTag}"
-        def httpCode=sh(script:"curl -s -o /dev/null -w '%{http_code}' "+desiredRepoTagURL, returnStdout:true)
+        echo "Checking if ${binariesRepoTag} is already published for JDK asset ${jdkAssetToCheck} ?"
+        def assetExists = checkJDKAssetExistsForArch(binariesRepo, versionStr, binariesRepoTag, jdkAssetToCheck)
 
-        if (httpCode == "200") {
+        if (assetExists) {
             echo "Build tag ${binariesRepoTag} is already published - nothing to do"
-        } else if (httpCode == "404") {
-            echo "New unpublished build tag ${binariesRepoTag} - triggering builds"
-            if (gaTagCheck == 0) {
-                echo "Version "+versionStr+" already has a GA tag so not triggering a MAIN build"
-            } else {
-                triggerMainBuild = true
-            }
-            triggerEvaluationBuild = true
         } else {
-            def error =  "Unexpected HTTP code ${httpCode} when querying for existing build tag at $desiredRepoTagURL"
-            echo "${error}"
-            throw new Exception("${error}")
+            echo "New unpublished build tag ${binariesRepoTag} - triggering builds"
+            triggerMainBuild = true
+            triggerEvaluationBuild = true
         }
     } else {
         echo "FORCE triggering specified builds.."
         triggerMainBuild = params.FORCE_MAIN
         triggerEvaluationBuild = params.FORCE_EVALUATION
+        if (params.BUILD_HEAD) {
+            echo "FORCE building HEAD rather than latest tag"
+            latestAdoptTag = ""
+            publishJobTag = ""
+        } 
     }
 
     // If we are going to trigger, then load the targetConfigurations
@@ -231,13 +350,26 @@ if (triggerMainBuild || triggerEvaluationBuild) {
     // Trigger pipeline builds for main & evaluation of the new build tag and publish with the "ea" tag
     def jobs = [:]
     def pipelines = [:]
+    def solarisBuildJob = false
 
-    if (triggerMainBuild) {
-        pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+    // Trigger Main pipeline as long as we have a non-empty target configuration
+    if (triggerMainBuild && mainTargetConfigurations != "{}") {
+        if (version == 8 && (mainTargetConfigurations.contains("x64Solaris") || mainTargetConfigurations.contains("sparcv9Solaris"))) {
+            // Special case to handle building jdk8u Solaris
+            if (mainTargetConfigurations.contains("x64Solaris")) {
+                pipelines["main"] = "build-scripts/jobs/jdk8u/jdk8u-solaris-x64-temurin-simplepipe"
+            } else {
+                pipelines["main"] = "build-scripts/jobs/jdk8u/jdk8u-solaris-sparcv9-temurin-simplepipe"
+            }
+            solarisBuildJob = true
+        } else {
+            pipelines["main"] = "build-scripts/openjdk${version}-pipeline"
+        }
         echo "main build targetConfigurations:"
         echo JsonOutput.prettyPrint(mainTargetConfigurations)
     }
-    if (triggerEvaluationBuild) {
+    // Trigger Evaluation as long as we have a non-empty target configuration
+    if (triggerEvaluationBuild && evaluationTargetConfigurations != "{}") {
         pipelines["evaluation"] = "build-scripts/evaluation-openjdk${version}-pipeline"
         echo "evaluation build targetConfigurations:"
         echo JsonOutput.prettyPrint(evaluationTargetConfigurations)
@@ -250,14 +382,36 @@ if (triggerMainBuild || triggerEvaluationBuild) {
                 stage("Trigger build pipeline - ${pipeline}") {
                     echo "Triggering ${pipeline} for $latestAdoptTag"
 
-                    def jobParams = [
-                            string(name: 'releaseType',             value: "Weekly"),
+                    def jobParams
+                    if (solarisBuildJob) {
+                        def dryRun
+                        if (params.PUBLISH) {
+                            dryRun = false
+                        } else {
+                            dryRun = true
+                        }
+                        jobParams = [
+                            booleanParam(name: 'RELEASE',           value: false),
+                            string(name: 'SCM_REF',                 value: "$latestAdoptTag"),
+                            booleanParam(name: 'ENABLE_TESTS',      value: enableTesting),
+                            booleanParam(name: 'DRY_RUN',           value: dryRun)
+                        ]
+                    } else {
+                        def releaseType
+                        if (params.PUBLISH) {
+                            releaseType = "Weekly"
+                        } else {
+                            releaseType = "Weekly Without Publish"
+                        }
+                        jobParams = [
+                            string(name: 'releaseType',             value: releaseType),
                             string(name: 'scmReference',            value: "$latestAdoptTag"),
                             string(name: 'overridePublishName',     value: "$publishJobTag"),
                             booleanParam(name: 'aqaAutoGen',        value: true),
                             booleanParam(name: 'enableTests',       value: enableTesting),
                             string(name: 'additionalConfigureArgs', value: "$additionalConfigureArgs")
                         ]
+                    }
 
                     // Specify the required targetConfigurations
                     if (pipeline_type == "main") {

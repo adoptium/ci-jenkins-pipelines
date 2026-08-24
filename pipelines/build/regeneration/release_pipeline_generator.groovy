@@ -7,7 +7,7 @@ file used as jenkinsfile to generator official release pipeline
 */
 
 // ensure releaseVersions is updated before create releaseTag
-def releaseVersions = [8,11,17,21,23]
+def releaseVersions = [8,11,17,21,25,26]
 
 
 // Regenerate release-openjdkX-pipeline per each jdk version listed in releaseVersions
@@ -77,7 +77,11 @@ node('worker') {
                     JAVA_VERSION                : javaVersion,
                     JOB_NAME                    : "release-openjdk${javaVersion}-pipeline",
                     SCRIPT                      : "${scriptFolderPath}/openjdk_pipeline.groovy",
-                    adoptScripts                : true // USE_ADOPT_SHELL_SCRIPTS
+                    adoptScripts                : true, // USE_ADOPT_SHELL_SCRIPTS
+                    enableInstallers            : true,
+                    enableSigner                : true,
+                    cleanWorkspaceBeforeBuild   : true,
+                    cleanWorkspaceAfterBuild    : true
                 ]
 
                 def target
@@ -100,6 +104,19 @@ node('worker') {
                 }
 
                 config.put('targetConfigurations', target.targetConfigurations)
+
+                if (DEFAULTS_JSON.containsKey('enableInstallers')) {
+                    config.put('enableInstallers', DEFAULTS_JSON['enableInstallers'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('enableSigner')) {
+                    config.put('enableSigner', DEFAULTS_JSON['enableSigner'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('cleanReleaseWorkspaceBeforeBuild')) {
+                    config.put('cleanWorkspaceBeforeBuild', DEFAULTS_JSON['cleanReleaseWorkspaceBeforeBuild'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('cleanReleaseWorkspaceAfterBuild')) {
+                    config.put('cleanWorkspaceAfterBuild', DEFAULTS_JSON['cleanReleaseWorkspaceAfterBuild'] as Boolean)
+                }
 
                 config.put('defaultsJson', DEFAULTS_JSON)
                 config.put('adoptDefaultsJson', ADOPT_DEFAULTS_JSON)

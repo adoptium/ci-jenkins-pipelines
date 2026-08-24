@@ -7,7 +7,7 @@ class Config22 {
                 additionalNodeLabels: 'xcode15.0.1',
                 additionalTestLabels: [
                         openj9      : '!sw.os.osx.10_11',
-                        temurin     : '!sw.os.osx.10_14'
+                        temurin     : 'sw.os.osx.10_15_plus'
                 ],
                 test                : 'default',
                 configureArgs       : '--enable-dtrace',
@@ -58,7 +58,7 @@ class Config22 {
                 configureArgs       : [
                         'openj9'    : '--enable-headless-only=yes',
                         'temurin'   : '--enable-headless-only=yes --with-jobs=4'
-                ],  
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
@@ -125,7 +125,7 @@ class Config22 {
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace --with-jobs=4'
-                ],  
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.6.1810-b03'
                 ]

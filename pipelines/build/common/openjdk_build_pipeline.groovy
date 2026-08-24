@@ -77,7 +77,7 @@ class Build {
         API_REQUEST_TIMEOUT : 1,
         NODE_CLEAN_TIMEOUT : 1,
         NODE_CHECKOUT_TIMEOUT : 1,
-        BUILD_JDK_TIMEOUT : 8,
+        BUILD_JDK_TIMEOUT : 12,
         BUILD_ARCHIVE_TIMEOUT : 3,
         CONTROLLER_CLEAN_TIMEOUT : 1,
         DOCKER_CHECKOUT_TIMEOUT : 1,
@@ -104,6 +104,17 @@ class Build {
         this.context = context
         this.currentBuild = currentBuild
         this.env = env
+    }
+
+    // Workaround to handle different versions of Badge plugin
+    def appendSummaryText(summary, text) {
+        try {
+                def currentText = summary.getText() ?: ""
+                summary.setText(currentText + text)
+        } catch (Exception e) {
+                echo "setText failed, trying deprecated appendText: ${e.message}"
+                summary.appendText(text, false)
+        }
     }
 
     /*
@@ -157,25 +168,6 @@ class Build {
         return jobParams
     }
 
-    def getAQATestJobParams(testType) {
-        def jobParams = getCommonTestJobParams()
-        def (level, group) = testType.tokenize('.')
-        jobParams.put('LEVELS', level)
-        jobParams.put('GROUPS', group)
-        def variant
-        switch (buildConfig.VARIANT) {
-            case 'openj9': variant = 'j9'; break
-            case 'corretto': variant = 'corretto'; break
-            case 'dragonwell': variant = 'dragonwell'; break;
-            case 'fast_startup': variant = 'fast_startup'; break;
-            case 'bisheng': variant = 'bisheng'; break;
-            default: variant = 'hs'
-        }
-        def jobName = "Test_openjdk${jobParams['JDK_VERSIONS']}_${variant}_${testType}_${jobParams['ARCH_OS_LIST']}"
-        jobParams.put('TEST_JOB_NAME', jobName)
-        return jobParams
-    }
-
     def getCommonTestJobParams() {
         def jobParams = [:]
         String jdk_Version = getJavaVersionNumber() as String
@@ -197,121 +189,10 @@ class Build {
 
         def arch_os = "${arch}_${buildConfig.TARGET_OS}"
         jobParams.put('ARCH_OS_LIST', arch_os)
-        jobParams.put('LIGHT_WEIGHT_CHECKOUT', false)
+        jobParams.put('LIGHT_WEIGHT_CHECKOUT', true)
         return jobParams
     }
-    /*
-    Retrieve the corresponding OpenJDK source code repository branch. This is used the downstream tests to determine what source code branch the tests should run against.
-    */
-    private getJDKBranch() {
-        def jdkBranch
-
-        if (buildConfig.SCM_REF) {
-            // We need to override the SCM ref on jdk8 arm builds change aarch64-shenandoah-jdk8u282-b08 to jdk8u282-b08
-            if (buildConfig.JAVA_TO_BUILD == 'jdk8u' &&  buildConfig.VARIANT == 'temurin' && (buildConfig.ARCHITECTURE == 'aarch64' || buildConfig.ARCHITECTURE == 'arm')) {
-                jdkBranch = buildConfig.OVERRIDE_FILE_NAME_VERSION
-            } else {
-                jdkBranch = buildConfig.SCM_REF
-            }
-        } else {
-            if (buildConfig.VARIANT == 'corretto') {
-                jdkBranch = 'develop'
-            } else if (buildConfig.VARIANT == 'openj9') {
-                jdkBranch = 'openj9'
-            } else if (buildConfig.VARIANT == 'hotspot') {
-                jdkBranch = 'master'
-            } else if (buildConfig.VARIANT == 'temurin') {
-                // jdk(head) now contains version branched stabilisation branches, eg.dev_jdk23
-                if (getJavaVersionNumber() >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u') && buildConfig.JAVA_TO_BUILD != "jdk") {
-                    jdkBranch = 'dev_'+buildConfig.JAVA_TO_BUILD
-                } else {
-                    jdkBranch = 'dev'
-                }
-            } else if (buildConfig.VARIANT == 'dragonwell') {
-                jdkBranch = 'master'
-            } else if (buildConfig.VARIANT == 'fast_startup') {
-                jdkBranch = 'master'
-            } else if (buildConfig.VARIANT == 'bisheng') {
-                jdkBranch = 'master'
-            } else {
-                throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
-            }
-        }
-
-        return jdkBranch
-    }
-
-    /*
-    Retrieve the corresponding OpenJDK source code repository. This is used the downstream tests to determine what source code the tests should run against.
-    */
-    private getJDKRepo() {
-        def jdkRepo
-        def suffix
-        def javaNumber = getJavaVersionNumber()
-
-        switch(buildConfig.VARIANT) {
-            case 'corretto':
-                suffix = "corretto/corretto-${javaNumber}"
-                break
-            case 'openj9':
-                def openj9JavaToBuild = buildConfig.JAVA_TO_BUILD
-                if (openj9JavaToBuild.endsWith('u')) {
-                    // OpenJ9 extensions repo does not use the "u" suffix
-                    openj9JavaToBuild = openj9JavaToBuild.substring(0, openj9JavaToBuild.length() - 1)
-                }
-                suffix = "ibmruntimes/openj9-openjdk-${openj9JavaToBuild}"
-                break
-            case 'temurin':
-                if (buildConfig.ARCHITECTURE == 'arm' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
-                    suffix = 'adoptium/aarch32-jdk8u'
-                } else if (buildConfig.TARGET_OS == 'alpine-linux' && buildConfig.JAVA_TO_BUILD == 'jdk8u') {
-                    suffix = 'adoptium/alpine-jdk8u'
-                } else if (buildConfig.ARCHITECTURE == 'riscv64' && buildConfig.JAVA_TO_BUILD == 'jdk11u') {
-                    suffix = 'adoptium/riscv-port-jdk11u'
-                } else {
-                    // jdk(head) repo now contains the version branched stabilisation branches, eg.dev_jdk23
-                    if (javaNumber >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u')) {
-                        suffix = "adoptium/jdk"
-                    } else {
-                        suffix = "adoptium/${buildConfig.JAVA_TO_BUILD}"
-                    }
-                }
-                break
-            case 'hotspot':
-                if (buildConfig.ARCHITECTURE == "riscv64"
-                     && (buildConfig.JAVA_TO_BUILD == "jdk8u"
-                        || buildConfig.JAVA_TO_BUILD == "jdk11u")) {
-                    suffix = "openjdk/riscv-port-${buildConfig.JAVA_TO_BUILD}";
-                } else {
-                    // jdk(head) repo now contains the version branched stabilisation branches, eg.jdk23
-                    if (javaNumber >= 23 && !buildConfig.JAVA_TO_BUILD.endsWith('u')) {
-                        suffix = "openjdk/jdk"
-                    } else {
-                        suffix = "openjdk/${buildConfig.JAVA_TO_BUILD}"
-                    }
-                }
-                break
-            case 'dragonwell':
-                suffix = "alibaba/dragonwell${javaNumber}"
-                break
-            case 'fast_startup':
-                suffix = 'adoptium/jdk11u-fast-startup-incubator'
-                break
-            case 'bisheng':
-                suffix = "openeuler-mirror/bishengjdk-${javaNumber}"
-                break
-            default:
-                throw new Exception("Unrecognised build variant: ${buildConfig.VARIANT} ")
-        }
-
-        jdkRepo = "https://github.com/${suffix}"
-        if (buildConfig.BUILD_ARGS.count('--ssh') > 0) {
-            jdkRepo = "git@github.com:${suffix}"
-        }
-
-        return jdkRepo
-    }
-
+    
     /*
       If the given result is not SUCCESS then set the current stage result and build result accordingly
     */
@@ -356,21 +237,40 @@ class Build {
                     }
                 }
 
+                def testJobParamsMap = [
+                    UPSTREAM_JOB_NUMBER: "${env.BUILD_NUMBER}",
+                    UPSTREAM_JOB_NAME: "${env.JOB_NAME}",
+                    SDK_RESOURCE: 'upstream',
+                    JDK_VERSION: "${jobParams.JDK_VERSIONS}",
+                    LABEL_ADDITION: "${additionalTestLabel}",
+                    KEEP_REPORTDIR: "${buildConfig.KEEP_TEST_REPORTDIR}",
+                    ACTIVE_NODE_TIMEOUT: "${buildConfig.ACTIVE_NODE_TIMEOUT}",
+                    DYNAMIC_COMPILE: "true",
+                    VENDOR_TEST_REPOS: "${vendorTestRepos}",
+                    VENDOR_TEST_BRANCHES: "${vendorTestBranches}",
+                    TIME_LIMIT: '1'
+                ]
+
+                def additionalTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
+                if (Map.isInstance(additionalTestParams)) {
+                    additionalTestParams.each { additionalParam, additionalParamValue ->
+                        testJobParamsMap[(additionalParam)] = additionalParamValue.toString()
+                    }
+                }
+                
+                def testJobParams = []
+                testJobParamsMap.each { paramKey, paramValue ->
+                    if (paramValue == 'true' || paramValue == 'false') {
+                        testJobParams << context.booleanParam(name: paramKey, value: paramValue.toBoolean())
+                    } else {
+                        testJobParams << context.string(name: paramKey, value: paramValue)
+                    }
+                }
+
                 def testJob = context.build job: jobName,
                     propagate: false,
-                    parameters: [
-                            context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                            context.string(name: 'JDK_VERSION', value: "${jobParams.JDK_VERSIONS}"),
-                            context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                            context.booleanParam(name: 'KEEP_REPORTDIR', value: buildConfig.KEEP_TEST_REPORTDIR),
-                            context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                            context.booleanParam(name: 'DYNAMIC_COMPILE', value: true),
-                            context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
-                            context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
-                            context.string(name: 'TIME_LIMIT', value: '1')
-                    ]
+                    parameters: testJobParams
+                    
                 currentBuild.result = testJob.getResult()
                 setStageResult("smoke test", testJob.getResult())
                 return testJob.getResult()
@@ -380,287 +280,111 @@ class Build {
             throw new Exception('[ERROR] Smoke Tests failed indicating a problem with the build artifact. No further tests will run until Smoke test failures are fixed. ')
         }
     }
+
     /*
     Run the downstream test jobs based off the configuration passed down from the top level pipeline jobs.
     If a test job doesn't exist, it will be created dynamically.
     */
-    def runAQATests() {
-        def testStages = [:]
-        def jdkBranch = getJDKBranch()
-        def jdkRepo = getJDKRepo()
-        def openj9Branch = (buildConfig.SCM_REF && buildConfig.VARIANT == 'openj9') ? buildConfig.SCM_REF : 'master'
-
-        def vendorTestRepos = ''
-        def vendorTestBranches = ''
-        def vendorTestDirs = ''
-        List testList = buildConfig.TEST_LIST
-        def enableTestDynamicParallel = Boolean.valueOf(buildConfig.ENABLE_TESTDYNAMICPARALLEL)
+    def runAQATests(jdkFileName) {
         def aqaBranch = 'master'
-        def useTestEnvProperties = false
-        if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
-            aqaBranch = buildConfig.AQA_REF
-            useTestEnvProperties = true
+        def build_type = 'nightly'
+        def jobParams = getCommonTestJobParams()
+        def testImageName = jdkFileName.replace('-jdk_', '-testimage_')
+       // def staticLibName = jdkFileName.replace('-jdk_', '-static-libs_')
+        def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName}"
+        if (!(jobParams.JDK_VERSIONS == '8' && buildConfig.VARIANT == 'temurin')) {
+            sdkUrl += " ${env.BUILD_URL}/artifact/workspace/target/${testImageName}"
         }
 
-        def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
-        def parallel = 'None'
-        def numMachinesPerTest = ''
-        def testTime = ''
-        // Enable time based parallel. Set expected completion time to 120 mins
-        if (enableTestDynamicParallel) {
-            testTime = '120'
-            parallel = 'Dynamic'
-        }
-        def testLabel = ''
-
-        testList.each { testType ->
-            // For each requested test, i.e 'sanity.openjdk', 'sanity.system', 'sanity.perf', 'sanity.external', call test job
-            try {
-                testStages["${testType}"] = {
-                    context.println "Running test: ${testType}"
-                    context.stage("${testType}") {
-                        def jobParams = getAQATestJobParams(testType)
-                        def jobName = jobParams.TEST_JOB_NAME
-                        def keep_test_reportdir = buildConfig.KEEP_TEST_REPORTDIR
-                        def rerunIterations = '1'
-                        if ("${testType}".contains('dev') || "${testType}".contains('external')) {
-                            rerunIterations = '0'
-                        }
-                        if (("${testType}".contains('openjdk')) || ("${testType}".contains('jck')) || (testType  == 'dev.functional')) {
-                            // Keep test reportdir always for JUnit targets
-                            keep_test_reportdir = true
-                        }
-
-                        def DYNAMIC_COMPILE = false
-                        if (("${testType}".contains('functional')) || ("${testType}".contains('external'))) {
-                            DYNAMIC_COMPILE = true
-                        }
-                        def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-                        // Eclipse Adoptium Temurin label speciall requirements for special.system on linux
-                        if (testType  == 'dev.openjdk' || (testType  == 'special.system' && jobName.contains('linux') && buildConfig.VARIANT == 'temurin')) {
-                            context.println "${testType} need extra label sw.tool.docker"
-                            if (additionalTestLabel == '') {
-                                additionalTestLabel = 'sw.tool.docker'
-                            } else {
-                                additionalTestLabel += '&&sw.tool.docker'
-                            }
-                        }
-
-                        // Eclipse Adoptium Temurin reproducible comparing on x64 mac required to run on aarch64 mac
-                        if (testType  == 'special.system' && jobName.contains('x86-64_mac') && buildConfig.VARIANT == 'temurin') {
-                            testLabel = 'ci.role.test&&hw.arch.aarch64&&(sw.os.osx||sw.os.mac)'
-                        }
-                        if (testType  == 'special.system' || testType  == 'dev.system') {
-                            def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
-                            vendorTestBranches = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_branch'] : DEFAULTS_JSON['repository']['build_branch']
-                            vendorTestRepos = useAdoptShellScripts ? ADOPT_DEFAULTS_JSON['repository']['build_url'] :  DEFAULTS_JSON['repository']['build_url']
-                            vendorTestRepos = vendorTestRepos - ('.git')
-                            vendorTestDirs = '/test/system'
-                            // Use BUILD_REF override if specified
-                            vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
-                        }
-
-
-                        String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
-                        def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
-
-                        // Create test job if AQA_AUTO_GEN is set to true, the job doesn't exist or is not runnable
-                        if (aqaAutoGen || !JobHelper.jobIsRunnable(jobName as String)) {
-                            // use Test_Job_Auto_Gen if it is runnable. Otherwise, use testJobTemplate from aqa-tests repo
-                            if (JobHelper.jobIsRunnable('Test_Job_Auto_Gen')) {
-                                def updatedParams = []
-                                // loop through all the params and set string and boolean accordingly
-                                jobParams.each { param ->
-                                    def value = param.value.toString()
-                                    if (value == 'true' || value == 'false') {
-                                        updatedParams << context.booleanParam(name: param.key, value: value.toBoolean())
-                                    } else {
-                                        updatedParams << context.string(name: param.key, value: value)
-                                    }
-                                }
-                                context.println "Use Test_Job_Auto_Gen to generate AQA test job with parameters: ${updatedParams}"
-                                context.catchError {
-                                    context.build job: 'Test_Job_Auto_Gen', propagate: false, parameters: updatedParams
-                                }
-                            } else {
-                                context.node('worker') {
-                                    context.sh('curl -Os https://raw.githubusercontent.com/adoptium/aqa-tests/master/buildenv/jenkins/testJobTemplate')
-                                    def templatePath = 'testJobTemplate'
-                                    if (!JobHelper.jobIsRunnable(jobName as String)) {
-                                        context.println "AQA test job: ${jobName} doesn't exist, use testJobTemplate to generate job : ${jobName}"
-                                    } else {
-                                        context.println "Use testJobTemplate to regenerate job: ${jobName}, note: default job parameters may change."
-                                    }
-                                    context.jobDsl targets: templatePath, ignoreExisting: false, additionalParameters: jobParams
-                                }
-                            }
-                        }
-
-                        def testJobParams = [
-                        context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
-                        context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
-                        context.string(name: 'SDK_RESOURCE', value: 'upstream'),
-                        context.string(name: 'JDK_REPO', value: jdkRepo),
-                        context.string(name: 'JDK_BRANCH', value: jdkBranch),
-                        context.string(name: 'OPENJ9_BRANCH', value: openj9Branch),
-                        context.string(name: 'LABEL', value:  testLabel),
-                        context.string(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                        context.booleanParam(name: 'KEEP_REPORTDIR', value: keep_test_reportdir),
-                        context.string(name: 'PARALLEL', value: parallel),
-                        context.string(name: 'NUM_MACHINES', value: "${numMachinesPerTest}"),
-                        context.string(name: 'TEST_TIME', value: testTime),
-                        context.booleanParam(name: 'USE_TESTENV_PROPERTIES', value: useTestEnvProperties),
-                        context.booleanParam(name: 'GENERATE_JOBS', value: aqaAutoGen),
-                        context.string(name: 'ADOPTOPENJDK_BRANCH', value: aqaBranch),
-                        context.string(name: 'ACTIVE_NODE_TIMEOUT', value: "${buildConfig.ACTIVE_NODE_TIMEOUT}"),
-                        context.booleanParam(name: 'DYNAMIC_COMPILE', value: DYNAMIC_COMPILE),
-                        context.string(name: 'VENDOR_TEST_REPOS', value: vendorTestRepos),
-                        context.string(name: 'VENDOR_TEST_BRANCHES', value: vendorTestBranches),
-                        context.string(name: 'VENDOR_TEST_DIRS', value: vendorTestDirs),
-                        context.string(name: 'RERUN_ITERATIONS', value: "${rerunIterations}")
-                        ]
-
-                        // If TIME_LIMIT is set, override target job default TIME_LIMIT value.
-                        if (jobParams.any{mapEntry -> mapEntry.key.equals("TIME_LIMIT")}) {
-                            testJobParams.add(context.string(name: 'TIME_LIMIT', value: jobParams["TIME_LIMIT"]))
-                        }
-
-                        def testJob = context.build job: jobName,
-                                        propagate: false,
-                                        parameters: testJobParams,
-                                        wait: true
-                        currentBuild.result = testJob.getResult()
-                        setStageResult("${testType}", testJob.getResult())
-                        context.node('worker') {
-                            //Copy Taps files from downstream test jobs if files available. 
-                            context.sh 'rm -f workspace/target/AQAvitTaps/*.tap'
-                            try {
-                                context.timeout(time: 2, unit: 'HOURS') {
-                                    context.copyArtifacts(
-                                        projectName:jobName,
-                                        selector:context.specific("${testJob.getNumber()}"),
-                                        filter: "**/${jobName}*.tap",
-                                        target: 'workspace/target/AQAvitTaps/',
-                                        fingerprintArtifacts: true,
-                                        flatten: true
-                                    )
-                                }
-                            } catch (Exception e) {
-                                context.echo "Cannot run copyArtifacts from job ${jobName}. Exception: ${e.message}. Skipping copyArtifacts..."
-                            }
-                            context.archiveArtifacts allowEmptyArchive: true, artifacts: 'workspace/target/AQAvitTaps/*.tap', fingerprint: true
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                context.println "Failed to execute test: ${e.message}"
-                currentBuild.result = 'FAILURE'
+        // If SBOM created then need to pass to aqa-tests for special.system reproducible verification test
+        if (buildConfig.BUILD_ARGS?.contains('--create-sbom')) {
+            def sbomName = jdkFileName.replace('-jdk_', '-sbom_')
+            if (buildConfig.TARGET_OS == 'windows') {
+                sbomName = sbomName.replace('.zip', '.json')
+            } else {
+                sbomName = sbomName.replace('.tar.gz', '.json')
             }
+            sdkUrl += " ${env.BUILD_URL}/artifact/workspace/target/${sbomName}"
         }
-        return testStages
+
+        def aqaTestPipelineJobName = "AQA_Test_Pipeline"
+        def releaseAppendix = ''
+        if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
+            aqaBranch = buildConfig.AQA_REF  
+            releaseAppendix = "_RELEASE" 
+        }
+        if (Boolean.valueOf(buildConfig.RELEASE)) {
+            build_type = 'release'
+            aqaTestPipelineJobName = "AQA_Test_Pipeline${releaseAppendix}"
+        } else if (Boolean.valueOf(buildConfig.WEEKLY)) {
+            build_type = 'weekly'
+        }
+
+        try {
+            
+            def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF}${releaseAppendix} : ${jobParams.ARCH_OS_LIST}"
+            context.echo " Temurin AQA_Test_Pipeline${releaseAppendix} job : ${displayName}"                                    
+            def aqaJob = context.build job: "${aqaTestPipelineJobName}",
+                propagate: false,
+                parameters: [
+                    context.string(name: 'SDK_RESOURCE', value: 'customized'),
+                    context.string(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                    context.string(name: 'ADOPTOPENJDK_BRANCH', value: "${aqaBranch}"),
+                    context.string(name: 'JDK_VERSIONS', value: "${jobParams.JDK_VERSIONS}"),
+                    context.string(name: 'BUILD_TYPE', value: "${build_type}"),
+                    context.string(name: 'VARIANT', value: "${buildConfig.VARIANT}"),
+                    context.string(name: 'PLATFORMS', value: "${jobParams.ARCH_OS_LIST}"),
+                    context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}")
+                ],
+                wait: false,
+                waitForStart: true
+            if (aqaJob?.absoluteUrl && aqaJob?.number) {
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${aqaJob.absoluteUrl}'>${aqaTestPipelineJobName} #${aqaJob.number}</a>"
+            } else {
+                def aqaJobUrl = "${context.JENKINS_URL}job/${aqaTestPipelineJobName}/"
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${aqaJobUrl}'>${aqaTestPipelineJobName} (no build number available)</a>"
+            }
+
+        } catch (Exception e) {
+            context.println "Failed to execute test: ${e.message}"
+            currentBuild.result = 'FAILURE'
+        }
     }
 
     // Temurin remote jck trigger
-    def remoteTriggerJckTests(String platform, String jdkFileName) {
-        def jdkVersion = getJavaVersionNumber()
-        // We just need the JDK for Jck tests
+    def remoteTriggerJckTests(String jdkFileName) {
+        def jobParams = getCommonTestJobParams()
         def sdkUrl = "${env.BUILD_URL}/artifact/workspace/target/${jdkFileName}"
-        context.echo "sdkUrl is ${sdkUrl}"
-        def remoteTargets = [:]
-        def additionalTestLabel = buildConfig.ADDITIONAL_TEST_LABEL
-        def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
-        def setupJCKRun = false
-        if (buildConfig.SCM_REF && buildConfig.AQA_REF && sdkUrl.contains("release")) {
-            setupJCKRun = true
+        def build_type = 'weekly'
+        if (Boolean.valueOf(buildConfig.RELEASE)) {
+            build_type = 'release'
         }
-        // Determine from the platform the Jck jtx exclude platform
-        def excludePlat
-        def excludeRoot = "/home"
-        if (platform.contains("aix")) {
-            excludePlat = "aix"
-        } else if (platform.contains("mac")) {
-            excludePlat = "mac"
-            excludeRoot = "/Users"
-        } else if (platform.contains("windows")) {
-            excludePlat = "windows"
-            excludeRoot = "c:/Users"
-        } else if (platform.contains("solaris")) {
-            excludePlat = "solaris"
-            excludeRoot = "/export/home"
-        } else {
-            excludePlat = "linux"
-        }
+        try {
 
-        def appOptions="customJtx=${excludeRoot}/jenkins/jck_run/jdk${jdkVersion}/${excludePlat}/temurin.jtx"
-
-        if (configureArguments.contains('--enable-headless-only=yes')) {
-            // Headless platforms have no auto-manuals, so do not exclude any tests
-            appOptions=""
-        }
-
-        def targets = ['serial': 'sanity.jck,extended.jck,special.jck']
-
-        if ("${platform}" == 'x86-64_linux' || "${platform}" == 'x86-64_windows' || "${platform}" == 'x86-64_mac') {
-            // Primary platforms run extended.jck in Parallel
-            targets['serial']   = 'sanity.jck,special.jck'
-            targets['parallel'] = 'extended.jck'
-        }
-
-        /*
-        Here we limit the win32 testing to the burstable nodes (a subset of the available windows nodes).
-        This prevents win32 tests from occupying all the Windows nodes before we can test core platform win64.
-        */
-        if ("${platform}" == 'x86-32_windows') {
-            context.println "Windows 32bit JCK tests need the extra label hw.cpu.burstable"
-            if (additionalTestLabel == '') {
-                additionalTestLabel = 'hw.cpu.burstable'
+            def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF} : ${build_type} : ${jobParams.ARCH_OS_LIST}"
+            context.echo " Temurin AQA_Test_Pipeline_JCK job : ${displayName}"                                    
+            def jckJob = context.build job: 'AQA_Test_Pipeline_JCK',
+                propagate: false,
+                parameters: [
+                    context.string(name: 'SDK_RESOURCE', value: 'customized'),
+                    context.string(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
+                    context.string(name: 'JDK_VERSIONS', value: "${jobParams.JDK_VERSIONS}"),
+                    context.string(name: 'PLATFORMS', value: "${jobParams.ARCH_OS_LIST}"),
+                    context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
+                    context.string(name: 'BUILD_TYPE', value: "${build_type}")
+                ],
+                wait: false,
+                waitForStart: true
+            if (jckJob?.absoluteUrl && jckJob?.number) {
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${jckJob.absoluteUrl}'>AQA_Test_Pipeline_JCK #${jckJob.number}</a>"
             } else {
-                additionalTestLabel += '&&hw.cpu.burstable'
+                def jckJobUrl = "${context.JENKINS_URL}job/AQA_Test_Pipeline_JCK/"
+                context.currentBuild.description = (context.currentBuild.description ?: '') + "<br><a href='${jckJobUrl}'>AQA_Test_Pipeline_JCK (no build number available)</a>"
             }
-        }
 
-        targets.each { targetMode, targetTests -> 
-            try {
-                context.println "Remote trigger: ${targetTests}"
-                remoteTargets["${targetTests}"] = {
-                    def displayName = "jdk${jdkVersion} : ${buildConfig.SCM_REF} : ${platform} : ${targetTests}"
-                    def parallel = 'None'
-                    def num_machines = '1'
-                    if ("${targetMode}" == 'parallel') {
-                         parallel = 'Dynamic'
-                         num_machines = '2'
-                    }
-                    context.catchError {
-                        context.triggerRemoteJob abortTriggeredJob: true,
-                            blockBuildUntilComplete: false,
-                            job: 'AQA_Test_Pipeline',
-                            parameters: context.MapParameters(parameters: [context.MapParameter(name: 'SDK_RESOURCE', value: 'customized'),
-                                                                    context.MapParameter(name: 'TARGETS', value: "${targetTests}"),
-                                                                    context.MapParameter(name: 'JCK_GIT_REPO', value: "git@github.com:temurin-compliance/JCK${jdkVersion}-unzipped.git"),
-                                                                    context.MapParameter(name: 'CUSTOMIZED_SDK_URL', value: "${sdkUrl}"),
-                                                                    context.MapParameter(name: 'JDK_VERSIONS', value: "${jdkVersion}"),
-                                                                    context.MapParameter(name: 'PARALLEL', value: parallel),
-                                                                    context.MapParameter(name: 'NUM_MACHINES', value: "${num_machines}"),
-                                                                    context.MapParameter(name: 'PLATFORMS', value: "${platform}"),
-                                                                    context.MapParameter(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                                                                    context.MapParameter(name: 'APPLICATION_OPTIONS', value: "${appOptions}"),
-                                                                    context.MapParameter(name: 'LABEL_ADDITION', value: additionalTestLabel),
-                                                                    context.MapParameter(name: 'cause', value: "Remote triggered by job ${env.BUILD_URL}"), // Label is lowercase on purpose to map to the Jenkins target reporting system
-                                                                    context.MapParameter(name: 'AUTO_AQA_GEN', value: "${aqaAutoGen}"),
-                                                                    context.MapParameter(name: 'SETUP_JCK_RUN', value: "${setupJCKRun}")]),
-                            remoteJenkinsName: 'temurin-compliance',
-                            shouldNotFailBuild: true,
-                            token: 'RemoteTrigger',
-                            useCrumbCache: true,
-                            useJobInfoCache: true
-                    }
-                }
-            } catch (Exception e) {
-                context.println "Failed to remote trigger jck tests: ${e.message}"
-            }
+        } catch (Exception e) {
+            context.println "Failed to remote trigger jck tests: ${e.message}"
         }
-
-        return remoteTargets
     }
 
     def compareReproducibleBuild(String nonDockerNodeName) {
@@ -997,9 +721,13 @@ class Build {
                 // Determine suitable node to run on
                 def verifyNode
                 if (buildConfig.TARGET_OS == "windows") {
-                    verifyNode = "ci.role.test&&sw.os.windows"
+                    if (buildConfig.ARCHITECTURE == "aarch64") {
+                        verifyNode = "((ci.role.test&&sw.os.windows)||(ci.agent.dynamic&&sw.os.windows.11))"
+                    } else {
+                        verifyNode = "((ci.role.test&&sw.os.windows)||(ci.agent.dynamic&&sw.os.windows.2022))"
+                    }
                 } else {
-                    verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)&&!sw.os.osx.10_14"
+                    verifyNode = "ci.role.test&&(sw.os.osx||sw.os.mac)"
                 }
                 if (buildConfig.ARCHITECTURE == "aarch64") {
                     verifyNode = verifyNode + "&&hw.arch.aarch64"
@@ -1017,7 +745,7 @@ class Build {
                             context.string(name: 'TARGET_ARCH', value: "${buildConfig.ARCHITECTURE}"),
                             context.string(name: 'NODE_LABEL', value: "${verifyNode}")
                     ]
-            } catch (e) { 
+            } catch (e) {
                 context.println("Failed to sign_verification for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ${e}")
                 currentBuild.result = 'FAILURE'
                 setStageResult("sign verification", 'FAILURE')
@@ -1055,6 +783,49 @@ class Build {
                 try {
                     context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
                         context.archiveArtifacts artifacts: 'workspace/target/*.sig'
+                    }
+               } catch (FlowInterruptedException e) {
+                    throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
+                }
+            }
+        }
+    }
+
+    // Kick off the sign_temurin_jsf job to sign the SBOM
+    private void jsfSignSBOM() {
+        context.stage('SBOM JSF Sign') {
+
+            context.println "Running build_sign_sbom_libraries to build the SBOM libraries"
+            def buildSBOMLibrariesJob = context.build job: 'build_sign_sbom_libraries',
+                propagate: true
+
+            def paramsJsf = [
+                  context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                  context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                  context.string(name: 'UPSTREAM_DIR', value: 'workspace/target'),
+                  context.string(name: 'SBOM_LIBRARY_JOB_NUMBER', value: "${buildSBOMLibrariesJob.getNumber()}")
+           ]
+
+            context.println "RUNNING sign_temurin_jsf for ${buildConfig.TARGET_OS}/${buildConfig.ARCHITECTURE} ..."
+            def signSBOMJob = context.build job: 'build-scripts/release/sign_temurin_jsf',
+               propagate: true,
+               parameters: paramsJsf
+
+            context.node('worker') {
+                // Remove any previous workspace artifacts
+                context.sh 'rm -rf workspace/target/* || true'
+                context.copyArtifacts(
+                    projectName: 'build-scripts/release/sign_temurin_jsf',
+                    selector: context.specific("${signSBOMJob.getNumber()}"),
+                    filter: '**/*sbom*.json',
+                    fingerprintArtifacts: true,
+                    target: 'workspace/target/',
+                    flatten: true)
+
+                // Archive SBOM signatures in Jenkins
+                try {
+                    context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
+                        context.archiveArtifacts artifacts: 'workspace/target/*sbom*.json'
                     }
                } catch (FlowInterruptedException e) {
                     throw new Exception("[ERROR] Archive artifact timeout (${buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT} HOURS) for ${downstreamJobName} has been reached. Exiting...")
@@ -1346,6 +1117,8 @@ class Build {
                 type = 'sources'
             } else if (file.contains('-sbom')) {
                 type = 'sbom'
+            } else if (file.contains('-jmods')) {
+                type = 'jmods'
             }
             context.println "writeMetaData for " + file
 
@@ -1361,8 +1134,9 @@ class Build {
                                             """.stripIndent(), returnStdout: true, returnStatus: false).replaceAll('\n', '')
             } else {
                 context.println "Windows detected - running bat to generate SHA256 sums in writeMetadata"
-                hash = context.bat(script: "sha256sum ${file} | cut -f1 -d' '") // .replaceAll('\n', '')
+                hash = context.bat(script: "@sha256sum ${file}", returnStdout: true, returnStatus: false).split(' ').first()
             }
+            context.println "archive sha256 = ${hash}"
 
             data.binary_type = type
             data.sha256 = hash
@@ -1522,6 +1296,59 @@ class Build {
         batOrSh('git rev-parse HEAD')
     }
 
+    /*
+     Build the comma separated list of files to be Eclipse signed
+     */
+    def getEclipseSigningFileList(base_path) {
+        def target_os = "${buildConfig.TARGET_OS}"
+
+        def sign_count = 0
+        def files_to_sign = ""
+
+        def folders = ["hotspot/variant-server",
+                       "support/modules_cmds",
+                       "support/modules_libs"
+                      ]
+
+        if (target_os == "mac") {
+            // jpackage resources are only signed for Mac
+            folders.add("jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources")
+        }
+
+        folders.each { folder ->
+            if (context.fileExists("${base_path}/${folder}")) {
+                def files
+                if (target_os == "mac") {
+                    files = context.sh(script: "find '${base_path}/${folder}/' -perm +111 -type f -o -name '*.dylib' -type f || find '${base_path}/${folder}/' -perm /111 -type f -o -name '*.dylib'  -type f", returnStdout:true).trim().split('\n')
+                } else if (target_os == "windows") {
+                    files = context.bat(script: "@find '${base_path}/${folder}/' -type f -name '*.exe' -o -name '*.dll'", returnStdout:true).trim().split('\n')
+                }
+
+                files.each { file ->
+                    if (file.trim() != "") {
+                        if (target_os == "mac") {
+                            files_to_sign = files_to_sign + file + ","
+                            sign_count += 1
+                        } else if (target_os == "windows") {
+                            String filename = context.bat(script: "@basename '${file}'", returnStdout:true).trim()
+                            // Check if file is a Microsoft supplied file that is already signed
+                            if ( !filename.startsWith("api-ms-win") && !filename.startsWith("API-MS-Win") && !filename.startsWith("msvcp") && !filename.startsWith("ucrtbase") && !filename.startsWith("vcruntime") ) {
+                                files_to_sign = files_to_sign + file + ","
+                                sign_count += 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        files_to_sign = files_to_sign.replaceAll("//", "/")
+
+        context.println "${sign_count} files to be signed: $files_to_sign"
+
+        return files_to_sign
+    }
+
     def buildScriptsEclipseSigner() {
         def build_path
         build_path = 'workspace/build/src/build'
@@ -1550,65 +1377,61 @@ class Build {
                                                 set -eu
                                                 echo "Signing JMOD files under build path ${base_path} for base_os ${base_os}"
                                                 TMP_DIR="${base_path}/"
-                                                if [ "${base_os}" == "mac" ]; then
-                                                    ENTITLEMENTS="$WORKSPACE/entitlements.plist"
-                                                    FILES=$(find "${TMP_DIR}" -perm +111 -type f -o -name '*.dylib' -type f || find "${TMP_DIR}" -perm /111 -type f -o -name '*.dylib'  -type f)
-                                                else
-                                                    FILES=$(find "${TMP_DIR}" -type f -name '*.exe' -o -name '*.dll')
-                                                fi
+                                                MAC_ENTITLEMENTS="$WORKSPACE/entitlements.plist"
+                                                FILES=$(find "${TMP_DIR}" -type f)
                                                 for f in $FILES
                                                 do
-                                                    echo "Signing $f using Eclipse Foundation codesign service"
-                                                    dir=$(dirname "$f")
-                                                    file=$(basename "$f")
-                                                    mv "$f" "${dir}/unsigned_${file}"
-                                                    success=false
-                                                    if [ "${base_os}" == "mac" ]; then
-                                                        if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
-                                                            echo "curl command failed, sign of $f failed"
-                                                        else
-                                                            success=true
-                                                        fi
-                                                    else
-                                                        if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign; then
-                                                            echo "curl command failed, sign of $f failed"
-                                                        else
-                                                            success=true
-                                                        fi
-                                                    fi
-                                                    if [ $success == false ]; then
-                                                        # Retry up to 20 times
-                                                        max_iterations=20
-                                                        iteration=1
-                                                        echo "Code Not Signed For File $f"
-                                                        while [ $iteration -le $max_iterations ] && [ $success = false ]; do
-                                                            echo $iteration Of $max_iterations
-                                                            sleep 1
-                                                            if [ "${base_os}" == "mac" ]; then
-                                                                if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
-                                                                    success=true
-                                                                fi
+                                                        dir=$(dirname "$f")
+                                                        file=$(basename "$f")
+                                                        echo "Signing $f using Eclipse Foundation codesign service"
+                                                        mv "$f" "${dir}/unsigned_${file}"
+                                                        success=false
+                                                        if [ "${base_os}" == "mac" ]; then
+                                                            if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$MAC_ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
+                                                                echo "curl command failed, sign of $f failed"
                                                             else
-                                                                if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign; then
-                                                                    success=true
-                                                                fi
+                                                                success=true
                                                             fi
+                                                        else
+                                                            if ! curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign; then
+                                                                echo "curl command failed, sign of $f failed"
+                                                            else
+                                                                success=true
+                                                            fi
+                                                        fi
+                                                        if [ $success == false ]; then
+                                                            # Retry up to 20 times
+                                                            max_iterations=20
+                                                            iteration=1
+                                                            echo "Code Not Signed For File $f"
+                                                            while [ $iteration -le $max_iterations ] && [ $success = false ]; do
+                                                                echo $iteration Of $max_iterations
+                                                                sleep 1
+                                                                if [ "${base_os}" == "mac" ]; then
+                                                                    if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" -F entitlements="@$MAC_ENTITLEMENTS" https://cbi.eclipse.org/macos/codesign/sign; then
+                                                                        success=true
+                                                                    fi
+                                                                else
+                                                                    if curl --fail --silent --show-error -o "$f" -F file="@${dir}/unsigned_${file}" https://cbi.eclipse.org/authenticode/sign; then
+                                                                        success=true
+                                                                    fi
+                                                                fi
 
-                                                            if [ $success = false ]; then
-                                                                echo "curl command failed, $f Failed Signing On Attempt $iteration"
-                                                                iteration=$((iteration+1))
-                                                                if [ $iteration -gt $max_iterations ]
-                                                                then
-                                                                    echo "Errors Encountered During Signing"
-                                                                    exit 1
+                                                                if [ $success = false ]; then
+                                                                    echo "curl command failed, $f Failed Signing On Attempt $iteration"
+                                                                    iteration=$((iteration+1))
+                                                                    if [ $iteration -gt $max_iterations ]
+                                                                    then
+                                                                        echo "Errors Encountered During Signing"
+                                                                        exit 1
+                                                                    fi
+                                                                else
+                                                                    echo "$f Signed OK On Attempt $iteration"
                                                                 fi
-                                                            else
-                                                                echo "$f Signed OK On Attempt $iteration"
-                                                            fi
-                                                        done
-                                                    fi
-                                                    chmod --reference="${dir}/unsigned_${file}" "$f"
-                                                    rm -rf "${dir}/unsigned_${file}"
+                                                            done
+                                                        fi
+                                                        chmod --reference="${dir}/unsigned_${file}" "$f"
+                                                        rm -rf "${dir}/unsigned_${file}"
                                                 done
                                             '''
                                             // groovylint-enable
@@ -1631,19 +1454,41 @@ def postBuildWSclean(
                             // Issue: https://issues.jenkins.io/browse/JENKINS-64779
                             if (context.WORKSPACE != null && !context.WORKSPACE.isEmpty()) {
                                 if (cleanWorkspaceAfter) {
-                                    context.println 'Cleaning workspace non-hidden files: ' + context.WORKSPACE + '/*'
-                                    context.sh(script: 'rm -rf ' + context.WORKSPACE + '/*')
+                                    try {
+                                        context.println "Cleaning workspace non-hidden files: ${context.WORKSPACE}/*"
+                                        if (context.isUnix()) {
+                                          // Linux/macOS cleanup
+                                          context.sh(script: "rm -rf \"${context.WORKSPACE}\"/*")
+                                        } else {
+                                          // Cleanup Using Robocopy MS recommended solution
+                                          // For Removing Files With Corrupted ACLs
+                                          // https://learn.microsoft.com/en-us/troubleshoot/windows-server/backup-and-storage/cannot-delete-file-folder-on-ntfs-file-system
+                                          context.bat """
+                                            mkdir C:\\emptydir >NUL 2>&1
+                                            robocopy C:\\emptydir "${context.WORKSPACE}" /MIR /R:0 /W:0 /NFL /NDL /NJH /NJS /NC /NS /NP >NUL 2>&1
+                                            set RC=%ERRORLEVEL%
+                                            if %RC% LEQ 3 ( exit /b 0 ) else ( exit /b %RC% )
+                                            rmdir C:\\emptydir >NUL 2>&1
+                                          """
+                                        }
+                                    } catch (e) {
+                                        context.println "Warning: Failed to clean workspace non-hidden files ${e}"
+                                    }
 
                                     // Clean remaining hidden files using cleanWs
                                     try {
                                         context.println 'Cleaning workspace hidden files using cleanWs: ' + context.WORKSPACE
                                         context.cleanWs notFailBuild: true, disableDeferredWipeout: true, deleteDirs: true
                                     } catch (e) {
-                                        context.println "Failed to clean ${e}"
+                                        context.println "Warning: Failed to clean ${e}"
                                     }
                                 } else if (cleanWorkspaceBuildOutputAfter) {
-                                    context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
-                                    batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    try {
+                                      context.println 'Cleaning workspace build output files under ' + context.WORKSPACE
+                                      batOrSh('rm -rf ' + context.WORKSPACE + '/workspace/build/src/build ' + context.WORKSPACE + '/workspace/target ' + context.WORKSPACE + '/workspace/build/devkit ' + context.WORKSPACE + '/workspace/build/straceOutput')
+                                    } catch (e) {
+                                        context.println "Warning: Failed to clean workspace build output files ${e}"
+                                    }
                                 }
                             } else {
                                 context.println 'Warning: Unable to clean workspace as context.WORKSPACE is null/empty'
@@ -1664,23 +1509,18 @@ def buildScriptsAssemble(
     cleanWorkspaceBuildOutputAfter,
     buildConfigEnvVars
 ) {
-    def build_path
-
-    build_path = 'workspace/build/src/build'
-    def base_path
-    base_path = build_path
     def assembleBuildArgs
 
-    // Remove jmod directories to be replaced with the stash saved above
-    batOrSh "rm -rf ${base_path}/hotspot/variant-server ${base_path}/support/modules_cmds ${base_path}/support/modules_libs"
-    // JDK 16 + jpackage executables need to be signed as well
-    if (buildConfig.JAVA_TO_BUILD != 'jdk11u') {
-        batOrSh "rm -rf ${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*"
-    }
     context.stage('assemble') {
+      try {
         // This would ideally not be required but it's due to lack of UID mapping in windows containers
         if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE) {
-            context.bat('chmod -R a+rwX ' + '/cygdrive/c/workspace/openjdk-build/workspace/build/src/build/*')
+            def cygwin_workspace = context.WORKSPACE
+            if ( !cygwin_workspace.startsWith("/cygdrive") ) {
+                // Where cygwin_workspace is expected to be something like: C:/workspace/openjdk-build
+                cygwin_workspace = "/cygdrive/" + cygwin_workspace.toLowerCase().charAt(0) + cygwin_workspace.substring(2)
+            }
+            context.bat('chmod -R a+rwX ' + cygwin_workspace + '/workspace/build/src/build/*')
         }
         // Restore signed JMODs
         context.unstash 'signed_jmods'
@@ -1695,7 +1535,7 @@ def buildScriptsAssemble(
                 context.println '[CHECKOUT] Checking out to adoptium/temurin-build...'
                 def repoHandler = new RepoHandler(USER_REMOTE_CONFIGS, ADOPT_DEFAULTS_JSON, buildConfig.CI_REF, buildConfig.BUILD_REF)
                 repoHandler.checkoutAdoptBuild(context)
-                if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+                if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
                     context.bat(script: 'bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                 }
                 printGitRepoInfo()
@@ -1747,7 +1587,9 @@ def buildScriptsAssemble(
             }
             throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
         }
+      } finally {
         postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
+      }
     } // context.stage('assemble')
 } // End of buildScriptsAssemble() 1643-1765
 
@@ -1850,8 +1692,8 @@ def buildScriptsAssemble(
 
                     // Perform a git clean outside of checkout to avoid the Jenkins enforced 10 minute timeout
                     // https://github.com/adoptium/infrastucture/issues/1553
-                    
-                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
+
+                    if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) {
                         context.bat(script: 'bash -c "git config --global safe.directory $(cygpath ' + '\$' + '{WORKSPACE})"')
                     }
                     batOrSh('git clean -fdx')
@@ -1899,15 +1741,10 @@ def buildScriptsAssemble(
                                         }
                                     }
                                     context.println "base_path for jmod signing = ${base_path}."
-                                    context.stash name: 'jmods',
-                                         includes: "${base_path}/hotspot/variant-server/**/*," +
-                                             "${base_path}/support/modules_cmds/**/*," +
-                                             "${base_path}/support/modules_libs/**/*," +
-                                              // JDK 16 + jpackage needs to be signed as well stash the resources folder containing the executables
-                                             "${base_path}/jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/*",
-                                         excludes: "**/*.dat,**/*bfc"
+                                    def files_to_sign_list = getEclipseSigningFileList(base_path)
+                                    context.stash name: 'jmods', includes: "${files_to_sign_list}"
 
-                                    // eclipse-codesign and assemble sections were inlined here before 
+                                    // eclipse-codesign and assemble sections were inlined here before
                                     // https://github.com/adoptium/ci-jenkins-pipelines/pull/1117
 
                                 } else { // Not Windows/Mac JDK11+ (i.e. doesn't require internal signing)
@@ -1979,34 +1816,34 @@ def buildScriptsAssemble(
                 } else {
                     context.println "Skipping writing incomplete metadata for now - will be done in the assemble phase instead"
                 }
-                    
+
             } finally {
-            
-                // Always archive any artifacts including failed make logs..
-                try {
-                    context.timeout(time: buildTimeouts.BUILD_ARCHIVE_TIMEOUT, unit: 'HOURS') {
-                        // We have already archived cross compiled artifacts, so only archive the metadata files
-                        if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
-                            context.println '[INFO] Archiving JSON Files...'
-                            context.archiveArtifacts artifacts: 'workspace/target/*.json'
-                        } else {
-                            context.archiveArtifacts artifacts: 'workspace/target/*'
-                        }
-                    }
-                } catch (FlowInterruptedException e) {
-                    // Set Github Commit Status
-                    if (env.JOB_NAME.contains('pr-tester')) {
-                        updateGithubCommitStatus('FAILED', 'Build FAILED')
-                    }
-                    throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
-                }
-                if ( !enableSigner ) { // Don't clean if we need the workspace for the later assemble phase
-                    postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
-                }
-                // Set Github Commit Status
-                if (env.JOB_NAME.contains('pr-tester')) {
-                    updateGithubCommitStatus('SUCCESS', 'Build PASSED')
-                }
+                // Archive any artifacts including failed make logs, unless doing internal
+                // signing where we will perform this step after the assemble phase
+                if (!((buildConfig.TARGET_OS == 'mac' || buildConfig.TARGET_OS == 'windows') && buildConfig.JAVA_TO_BUILD != 'jdk8u' && enableSigner)) {
+                   try {
+                       context.timeout(time: buildTimeouts.BUILD_ARCHIVE_TIMEOUT, unit: 'HOURS') {
+                          // We have already archived cross compiled artifacts, so only archive the metadata files
+                          if (buildConfig.BUILD_ARGS.contains('--cross-compile')) {
+                              context.println '[INFO] Archiving JSON Files...'
+                              context.archiveArtifacts artifacts: 'workspace/target/*.json'
+                          } else {
+                              context.archiveArtifacts artifacts: 'workspace/target/*'
+                          }
+                       }
+                   } catch (FlowInterruptedException e) {
+                       // Set Github Commit Status
+                       if (env.JOB_NAME.contains('pr-tester')) {
+                           updateGithubCommitStatus('FAILED', 'Build FAILED')
+                       }
+                       throw new Exception("[ERROR] Build archive timeout (${buildTimeouts.BUILD_ARCHIVE_TIMEOUT} HOURS) has been reached. Exiting...")
+                   }
+                   postBuildWSclean(cleanWorkspaceAfter, cleanWorkspaceBuildOutputAfter)
+                   // Set Github Commit Status
+                   if (env.JOB_NAME.contains('pr-tester')) {
+                       updateGithubCommitStatus('SUCCESS', 'Build PASSED')
+                   }
+               }
             }
         }
     }
@@ -2055,7 +1892,7 @@ def buildScriptsAssemble(
         }
     }
 
-    /* 
+    /*
         this function should only be used in pr-tester
     */
     def updateGithubCommitStatus(STATE, MESSAGE) {
@@ -2092,6 +1929,50 @@ def buildScriptsAssemble(
     }
 
     /*
+    This method validates all SBOMs produced by this build.
+    */
+    def validateSbom() {
+        String jobName = "sbom_validator_job"
+
+        try {
+            context.println 'Validating SBOM/s'
+            context.stage('validate SBOM') {
+                // Check sbom validation job exists.
+                String helperRef = buildConfig.HELPER_REF ?: DEFAULTS_JSON['repository']['helper_ref']
+                def JobHelper = context.library(identifier: "openjdk-jenkins-helper@${helperRef}").JobHelper
+                if (!JobHelper.jobIsRunnable(jobName as String)) {
+                    throw new Exception("[ERROR] Jenkins job ${jobName} could not be found.");
+                }
+
+                // Gather parameters.
+                String jdk_Version = getJavaVersionNumber() as String
+                String source_tag = ""
+                if (!buildConfig.SCM_REF.isEmpty()){
+                    source_tag = buildConfig.SCM_REF
+                }
+
+                // Launch job to validate SBOMs
+                def validationJob = context.build job: jobName,
+                    propagate: false,
+                    parameters: [
+                            context.string(name: 'VERSION', value: "${jdk_Version}"),
+                            context.string(name: 'TAG', value: "${source_tag}"),
+                            context.string(name: 'UPSTREAM_JOB_NUMBER', value: "${env.BUILD_NUMBER}"),
+                            context.string(name: 'UPSTREAM_JOB_NAME', value: "${env.JOB_NAME}"),
+                            context.string(name: 'UPSTREAM_DIR', value: "workspace/target")
+                    ]
+                currentBuild.result = validationJob.getResult()
+                setStageResult("validate sbom", validationJob.getResult())
+                return validationJob.getResult()
+            }
+        } catch (e) {
+            context.println("Failed to validate ${buildConfig.TARGET_OS} SBOMs ${e}")
+            currentBuild.result = 'FAILURE'
+            setStageResult("validate sbom", 'FAILURE')
+        }
+    }
+
+    /*
     Main function. This is what is executed remotely via the helper file kick_off_build.groovy, which is in turn executed by the downstream jobs.
     Running in downstream build job jdk-*-*-* called by kick_off_build.groovy
     */
@@ -2112,6 +1993,7 @@ def buildScriptsAssemble(
                 def enableInstallers = Boolean.valueOf(buildConfig.ENABLE_INSTALLERS)
                 def enableSigner = Boolean.valueOf(buildConfig.ENABLE_SIGNER)
                 def enableTCK = Boolean.valueOf(buildConfig.RELEASE) || Boolean.valueOf(buildConfig.WEEKLY)
+                if ('jdk'.equalsIgnoreCase(buildConfig.JAVA_TO_BUILD.trim())) { enableTCK = false }
                 def useAdoptShellScripts = Boolean.valueOf(buildConfig.USE_ADOPT_SHELL_SCRIPTS)
                 def cleanWorkspace = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE)
                 def cleanWorkspaceAfter = Boolean.valueOf(buildConfig.CLEAN_WORKSPACE_AFTER)
@@ -2162,7 +2044,7 @@ def buildScriptsAssemble(
 
 
                         context.println "[NODE SHIFT] MOVING INTO DOCKER NODE MATCHING LABELNAME ${label}..."
-                        if ( ! ( "${buildConfig.DOCKER_IMAGE}" ==~ /^[A-Za-z0-9\/\.\-_:]*$/ ) ||
+                        if ( ! ( "${buildConfig.DOCKER_IMAGE}" ==~ /^[A-Za-z0-9\/\.\-_:@]*$/ ) ||
                              ! ( "${buildConfig.DOCKER_ARGS}"  ==~ /^[A-Za-z0-9\/\.\-_=\ ]*$/ ) ) {
                              throw new Exception("[ERROR] Dubious characters in DOCKER* image or parameters: ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS} - aborting");
                         }
@@ -2183,34 +2065,63 @@ def buildScriptsAssemble(
                                             try {
                                                 context.cleanWs notFailBuild: true
                                             } catch (e) {
-                                                context.println "Failed to clean ${e}"
+                                                context.println "Warning: Failed to clean ${e}"
                                             }
                                             cleanWorkspace = false
+                                        }
+                                        // For Windows build also clean alternative(shorter path length) workspace
+                                        if ( buildConfig.TARGET_OS == 'windows' ) {
+                                            context.ws(workspace) {
+                                                try {
+                                                    context.println "Windows build cleaning" + context.WORKSPACE
+                                                    context.cleanWs notFailBuild: true
+                                                } catch (e) {
+                                                    context.println "Warning: Failed to clean ${e}"
+                                                }
+                                            }
                                         }
                                     }
                                 } catch (FlowInterruptedException e) {
                                     throw new Exception("[ERROR] Controller clean workspace timeout (${buildTimeouts.CONTROLLER_CLEAN_TIMEOUT} HOURS) has been reached. Exiting...")
                                 }
                             }
-                            if (!("${buildConfig.DOCKER_IMAGE}".contains('rhel'))) {
+
+                            // Target docker image to use, this may get aliased to a target tag using docker tag as target cannot contain a digest
+                            def docker_image_target = buildConfig.DOCKER_IMAGE
+
+                            if (!("${docker_image_target}".contains('rhel'))) {
                                 // Pull the docker image from DockerHub
                                 try {
                                     context.timeout(time: buildTimeouts.DOCKER_PULL_TIMEOUT, unit: 'HOURS') {
                                         if (buildConfig.DOCKER_CREDENTIAL) {
                                             context.docker.withRegistry(buildConfig.DOCKER_REGISTRY, buildConfig.DOCKER_CREDENTIAL) {
                                                 if (buildConfig.DOCKER_ARGS) {
-                                                    context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
+                                                    context.sh(script: "docker pull ${docker_image_target} ${buildConfig.DOCKER_ARGS}")
                                                 } else {
-                                                    context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                                    context.docker.image(docker_image_target).pull()
                                                 }
                                             }
-                                            def long_docker_image_name = context.sh(script: "docker image ls | grep ${buildConfig.DOCKER_IMAGE} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
-                                            context.sh(script: "docker tag '${long_docker_image_name}' '${buildConfig.DOCKER_IMAGE}'", returnStdout:false)
+                                            def imageParts = docker_image_target.tokenize('@')
+                                            def imageName = imageParts[0]
+                                            def imageDigest = imageParts.size() > 1 ? imageParts[1] : "latest"
+                                            def long_docker_image_name = context.sh(script: "docker image ls --digests| grep ${imageName} | grep ${imageDigest} | head -n1 | awk '{print \$1}'", returnStdout:true).trim()
+                                            def source_tag
+                                            if (docker_image_target.contains('@')) {
+                                                source_tag = "@${imageDigest}"
+                                                // docker_image target contains a digest(sha) which cannot be a target tag
+                                                // create a new target tag name based on syntax: <imageName>_<sha256>
+                                                docker_image_target = imageName + "_" + imageDigest.replaceAll(":","_")
+                                                context.println "Mapped ${buildConfig.DOCKER_IMAGE} to target tag ${docker_image_target}, as it contains a digest"
+                                            } else {
+                                                // ":latest"
+                                                source_tag = ":${imageDigest}"
+                                            }
+                                            context.sh(script: "docker tag '${long_docker_image_name}${source_tag}' '${docker_image_target}'", returnStdout:false)
                                         } else {
                                             if (buildConfig.DOCKER_ARGS) {
-                                                context.sh(script: "docker pull ${buildConfig.DOCKER_IMAGE} ${buildConfig.DOCKER_ARGS}")
+                                                context.sh(script: "docker pull ${docker_image_target} ${buildConfig.DOCKER_ARGS}")
                                             } else {
-                                                context.docker.image(buildConfig.DOCKER_IMAGE).pull()
+                                                context.docker.image(docker_image_target).pull()
                                             }
                                         }
                                     }
@@ -2219,11 +2130,12 @@ def buildScriptsAssemble(
                                 }
                             }
                             // Store the pulled docker image digest as 'buildinfo'
-                            if ( buildConfig.TARGET_OS == 'windows' && buildConfig.DOCKER_IMAGE ) { 
-                                dockerImageDigest = context.sh(script: "docker inspect --format={{.Id}} ${buildConfig.DOCKER_IMAGE} | /bin/cut -d: -f2", returnStdout:true)
+                            if ( buildConfig.TARGET_OS == 'windows' && docker_image_target ) {
+                                dockerImageDigest = context.sh(script: "docker inspect --format={{.Id}} ${docker_image_target} | /bin/cut -d: -f2", returnStdout:true)
                             } else {
-                                dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${buildConfig.DOCKER_IMAGE}", returnStdout:true)
+                                dockerImageDigest = context.sh(script: "docker inspect --format='{{.RepoDigests}}' ${docker_image_target}", returnStdout:true)
                             }
+                            context.println "Target docker image digest = ${dockerImageDigest}"
 
                             // Use our dockerfile if DOCKER_FILE is defined
                             if (buildConfig.DOCKER_FILE) {
@@ -2248,7 +2160,7 @@ def buildScriptsAssemble(
                                 }
 
                                 context.println "openjdk_build_pipeline: building in docker image from docker file " + buildConfig.DOCKER_FILE
-                                context.docker.build("build-image", "--build-arg image=${buildConfig.DOCKER_IMAGE} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
+                                context.docker.build("build-image", "--build-arg image=${docker_image_target} -f ${buildConfig.DOCKER_FILE} .").inside(buildConfig.DOCKER_ARGS) {
                                     buildScripts(
                                         cleanWorkspace,
                                         cleanWorkspaceAfter,
@@ -2272,9 +2184,9 @@ def buildScriptsAssemble(
                                 if (buildConfig.TARGET_OS == 'windows') {
                                     context.println "openjdk_build_pipeline: running exploded build in docker on Windows"
                                     context.echo("Switched to using non-default workspace path ${workspace}")
-                                    context.println "openjdk_build_pipeline: building in windows docker image " + buildConfig.DOCKER_IMAGE
+                                    context.println "openjdk_build_pipeline: building in windows docker image " + docker_image_target
                                     context.ws(workspace) {
-                                        context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                        context.docker.image(docker_image_target).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScripts(
                                                 cleanWorkspace,
                                                 cleanWorkspaceAfter,
@@ -2286,8 +2198,8 @@ def buildScriptsAssemble(
                                         }
                                     }
                                 } else {
-                                    context.println "openjdk_build_pipeline: running initial build in docker on non-windows with image " + buildConfig.DOCKER_IMAGE
-                                    context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                    context.println "openjdk_build_pipeline: running initial build in docker on non-windows with image " + docker_image_target
+                                    context.docker.image(docker_image_target).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                         buildScripts(
                                             cleanWorkspace,
                                             cleanWorkspaceAfter,
@@ -2305,7 +2217,7 @@ def buildScriptsAssemble(
                                     context.ws(workspace) {
                                         context.println "Signing with non-default workspace location ${workspace}"
                                         context.println "openjdk_build_pipeline: running assemble phase (invocation 1)"
-                                            context.docker.image(buildConfig.DOCKER_IMAGE).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
+                                            context.docker.image(docker_image_target).inside(buildConfig.DOCKER_ARGS+" "+dockerRunArg) {
                                             buildScriptsAssemble(
                                                 cleanWorkspaceAfter,
                                                 cleanWorkspaceBuildOutputAfter,
@@ -2344,7 +2256,7 @@ def buildScriptsAssemble(
                                         enableSigner,
                                         envVars
                                     )
-                                    if ( enableSigner && internalSigningRequired ) {
+                                    if ( enableSigner && internalSigningRequired && buildConfig.JAVA_TO_BUILD != 'jdk8u' ) {
                                         buildScriptsEclipseSigner()
                                         context.println "openjdk_build_pipeline: running assemble phase (invocation 2)"
                                         buildScriptsAssemble(
@@ -2364,7 +2276,7 @@ def buildScriptsAssemble(
                                     enableSigner,
                                     envVars
                                 )
-                                if ( enableSigner && internalSigningRequired ) {
+                                if ( enableSigner && internalSigningRequired && buildConfig.JAVA_TO_BUILD != 'jdk8u' ) {
                                     buildScriptsEclipseSigner()
                                     context.println "openjdk_build_pipeline: running assemble phase (invocation 3)"
                                     buildScriptsAssemble(
@@ -2404,10 +2316,14 @@ def buildScriptsAssemble(
                         throw new Exception("[ERROR] Installer job timeout (${buildTimeouts.INSTALLER_JOBS_TIMEOUT} HOURS) has been reached OR the downstream installer job failed. Exiting...")
                     }
                 }
-                if (!env.JOB_NAME.contains('pr-tester') && context.JENKINS_URL.contains('adopt')) {
+                if (!env.JOB_NAME.contains('pr-tester') && buildConfig.VARIANT == 'temurin' && enableSigner) {
                     try {
                         context.println "openjdk_build_pipeline: Running GPG signing process"
+                        if (buildConfig.BUILD_ARGS.contains('--create-sbom')) {
+                            jsfSignSBOM()
+                        }
                         gpgSign()
+
                     } catch (Exception e) {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
@@ -2427,44 +2343,49 @@ def buildScriptsAssemble(
                     }
                 }
 
+                // Validate the SBOM.
+                if (buildConfig.BUILD_ARGS.contains('--create-sbom')) {
+                    try {
+                        if (validateSbom() == 'SUCCESS') {
+                            context.println "openjdk_build_pipeline: SBOMs created by this build passed validation."
+                        } else {
+                            context.println('[ERROR] SBOMs created by this build failed validation.')
+                            currentBuild.result = 'FAILURE'
+                        }
+                    } catch (Exception e) {
+                        context.println(e.message)
+                        currentBuild.result = 'FAILURE'
+                    }
+                } else {
+                    context.println('openjdk_build_pipeline: Skipping sbom validation because --create-sbom was not found in BUILD_ARGS.')
+                }
+
                 // Run Smoke Tests and AQA Tests
-                if (enableTests) {
-                  if (currentBuild.currentResult != "SUCCESS") {
-                    context.println('[ERROR] Build stages were not successful, not running AQA tests')
-                  } else {
+
+                if (currentBuild.currentResult != "SUCCESS") {
+                    context.println('[ERROR] Build stages were not successful, not running Smoke tests')
+                } else {
                     try {
                         //Only smoke tests succeed TCK and AQA tests will be triggerred.
                         context.println "openjdk_build_pipeline: running smoke tests"
                         if (runSmokeTests() == 'SUCCESS') {
                             context.println "openjdk_build_pipeline: smoke tests OK - running full AQA suite"
                             // Remote trigger Eclipse Temurin JCK tests
-                            if (buildConfig.VARIANT == 'temurin' && enableTCK) {
-                                def platform = ''
-                                if (buildConfig.ARCHITECTURE.contains('x64')) {
-                                    platform = 'x86-64_' + buildConfig.TARGET_OS
-                                } else {
-                                    platform = buildConfig.ARCHITECTURE + '_' + buildConfig.TARGET_OS
+                            if (enableTests) {
+                                if (buildConfig.VARIANT == 'temurin' && enableTCK) {
+                                    remoteTriggerJckTests(filename)
                                 }
-                                if ( !(buildConfig.JAVA_TO_BUILD == 'jdk8u' && platform == 's390x_linux') ) {
-                                    context.echo "openjdk_build_pipeline: Remote trigger Eclipse Temurin AQA_Test_Pipeline job with ${platform} ${buildConfig.JAVA_TO_BUILD}"
-                                    def remoteTargets = remoteTriggerJckTests(platform, filename)
-                                    context.parallel remoteTargets
-                                }
-                            }
-
-                            if (buildConfig.TEST_LIST.size() > 0) {
-                                def testStages = runAQATests()
-                                context.parallel testStages
+                                runAQATests(filename)
                             }
                         } else {
-                            context.println('[ERROR]Smoke tests are not successful! AQA and Tck tests are blocked ')
+                            context.println('[ERROR]Smoke tests are not successful! AQA and TCK tests are blocked ')
                         }
                     } catch (Exception e) {
                         context.println(e.message)
                         currentBuild.result = 'FAILURE'
                     }
-                  }
                 }
+                
 
                 // Compare reproducible build if needed
                 if (enableReproducibleCompare) {
@@ -2475,6 +2396,7 @@ def buildScriptsAssemble(
             } catch (Exception e) {
                 currentBuild.result = 'FAILURE'
                 context.println "Execution error: ${e}"
+
                 def sw = new StringWriter()
                 def pw = new PrintWriter(sw)
                 e.printStackTrace(pw)

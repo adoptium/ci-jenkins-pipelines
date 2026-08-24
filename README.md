@@ -13,12 +13,12 @@ Adoptium, this is done with the jenkins instance at [ci.adoptium.net](https://ci
 documentation.
 2. The `pipelines` folder contains the Groovy pipeline scripts for Jenkins
 (e.g. build | test | checksum | release).
-3. The `tools` folder contains `pipelines/` analysis scripts that deliever success/failure trends and build scripts for code-tool dependancies for the build and test process (e.g. asmtools | jcov | jtharness | jtreg | sigtest).
+3. The `tools` folder contains `pipelines/` analysis scripts that deliver success/failure trends and build scripts for code-tool dependancies for the build and test process (e.g. asmtools | jcov | jtharness | jtreg | sigtest).
 
 For those who prefer diagrams, there is an overview of the information below
-including it's interactions with the scripts in other repositories in our
-[docs/ARCHITECTURE.md] file and specific ones on the pipeline types in
-[docs/diagram.md]. If you want to set up these pipelines in your own jenkins
+including its interactions with the scripts in other repositories in our
+[Architecture](docs/ARCHITECTURE.md) file and specific ones on the pipeline types in
+[Architecture diagram](docs/diagram.md). If you want to set up these pipelines in your own jenkins
 instance, see
 [this guide](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/docs/UsingOurScripts.md).
 
@@ -39,12 +39,11 @@ and the subjobs later on are the "platform specific pipelines"
 
 These were historically used for regular builds of each of our release
 platforms using the current state of the master branch of the codebase -
-which is it's default behaviour - but is now run each time there is a new
+which is its default behaviour - but is now run each time there is a new
 tag in the upstream openjdk codebase.  These are triggered by the
 `betaTrigger_XXea` jobs in the
 [build-scripts/utils](https://ci.adoptium.net/job/build-scripts/job/utils/)
-folder.  Note that JDK8 for, which comes from a separate codebase and
-therefore is tagged separately, is triggered via a separate
+folder.  Note that JDK8 for Linux ARM32 comes from a separate codebase, is tagged separately, and is triggered via a separate
 [betaTrigger_8ea_arm32Linux](https://ci.adoptium.net/job/build-scripts/job/utils/job/betaTrigger_8ea_arm32Linux/)
 job.
 
@@ -58,7 +57,7 @@ Once complete, the openjdkXX-pipelines which will, by default, invoke the
 separate
 ([refactor_openjdk_release_tool](https://ci.adoptium.net/job/build-scripts/job/release/job/refactor_openjdk_release_tool/))
 job which will publish them as an `ea-beta`-suffixed release in github  under e.g.
-[temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true}).
+[temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true).
 
 ### release-openjdkXX-pipeline
 
@@ -83,7 +82,7 @@ A couple of points to note on the release configurations:
 
 - [jdk8u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk8u_release.groovy),
   [jdk11u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk11u_release.groovy)
-  and [jdk17u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk11u_release.groovy)
+  and [jdk17u_release.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/jobs/configurations/jdk17u_release.groovy)
   do not automatically run the win32 (`x32Windows`) builds - they get
   triggered manually during a release cycle in order to prioritise the
   x64Windows builds during the release cycle on the machines.
@@ -97,8 +96,7 @@ A couple of points to note on the release configurations:
 These are similar to the openjdkXX-pipeline jobs, and are triggered from the
 same betaTrigger_XXea jobs.  The evaluation pipelines are for platforms
 which the Adoptium team are looking to potentially release at some point,
-but they are not yet reliable or sufficiently tested.
-which are not in the release.
+but they are not yet reliable or sufficiently tested and are not in the release.
 
 ### weekly-openjdkXX-pipeline / weekly-evaluation-openjdkXX-pipeline
 
@@ -158,7 +156,7 @@ about the new branch process for jdk23+_
 Inside the jdkXX folders there are pipelines which perform a build of one
 variant (e.g.  Temurin) for on JDK version on one platform, for example
 [jdk21u-linux-aarch64-temurin](https://ci.adoptium.net/job/build-scripts/job/jobs/job/jdk21u/job/jdk21u-linux-aarch64-temurin/)
-which are reponsible for running the build using
+which are responsible for running the build using
 [kick_off_build.groovy](https://github.com/adoptium/ci-jenkins-pipelines/blob/master/pipelines/build/common/kick_off_build.groovy)
 and initiating the tests and other jobs against the completed build if
 successful.  A "Smoke Test" job such as
@@ -166,11 +164,11 @@ successful.  A "Smoke Test" job such as
 which is similar to our test jobs but runs the tests from the temurin-build
 [buildAndPackage directory](https://github.com/adoptium/temurin-build/tree/master/test/functional/buildAndPackage)
 which is initiated after the
-build perfoms some basic tests against the build artefacts and acts as a
+build performs some basic tests against the build artefacts and acts as a
 gate to kicking off the subsequent steps.  Once complete, the
 openjdkXX-pipelines which run the early access builds will generally invoke
 the jobs to publish them as a release in github (e.g.
-[temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true}).
+[temurin-21-binaries](https://github.com/adoptium/temurin21-binaries/releases?q=ea-beta&expanded=true).
 
 ## Job generation
 
@@ -191,11 +189,11 @@ to generate the subjobs for each platform/variant combination.  Both of
 these pipelines are triggered on a change (PR merge) to the
 ci-jenkins-pipelines repository. They will pause themselves if a pipeline is
 not running so as to avoid interfering with a currently executing pipeline.
-T
+
 Similarly there is an evaluation-pipeline-generator and
 evaluation-pipeline_jobs_generator_jdkXX for generating the evaluation jobs,
 a trestle-pipeline-generator for those jobs, plus release-pipeline-generator
-andand release_pipeline_jobs_generator_jdkXX for release jobs (the release
+and release_pipeline_jobs_generator_jdkXX for release jobs (the release
 generators are not triggered automatically but are re-run manually at
 certain points during each release cycle
 
@@ -321,7 +319,7 @@ Example values: [`null`]
 
 - `adopt_build_number:`
 Example values: [`0`]
-If the `ADOPT_BUILD_NUMBER` parameter is used to build te JDK that value will appear here, otherwise a default value of 0 appears.
+If the `ADOPT_BUILD_NUMBER` parameter is used to build the JDK that value will appear here, otherwise a default value of 0 appears.
 
 - `major:`
 Example values: [`8`, `11`, `15`, `16`]
@@ -345,7 +343,7 @@ Example values: [`202008210941`, `202010120348`, `202007272039`]
 - `scmRef:`
 Example values: [`dragonwell-8.4.4_jdk8u262-b10`, `jdk-16+19_adopt-61198-g59e3baa94ac`, `jdk-11.0.9+10_adopt-197-g11f44f68c5`, `23f997ca1`]
 
-A reference the the base JDK repository being build, usually including a GitHub commit reference, i.e. `jdk-16+19_adopt-61198-g59e3baa94ac` links to <https://github.com/adoptium/jdk/commit/59e3baa94ac> via the commit SHA **59e3baa94ac**.
+A reference to the base JDK repository being build, usually including a GitHub commit reference, i.e. `jdk-16+19_adopt-61198-g59e3baa94ac` links to <https://github.com/adoptium/jdk/commit/59e3baa94ac> via the commit SHA **59e3baa94ac**.
 
 Values that only contain a commit reference such as `23f997ca1` are OpenJ9 commits on their respective JDK repositories, for example **23f997ca1** links to the commit <https://github.com/ibmruntimes/openj9-openjdk-jdk14/commit/23f997ca1>.
 

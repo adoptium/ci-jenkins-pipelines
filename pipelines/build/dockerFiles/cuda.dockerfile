@@ -1,8 +1,8 @@
 ARG image
 ARG cuda_ver=12.2.0
-ARG cuda_distro=ubuntu20.04
+ARG cuda_distro=ubi8
 
-FROM nvidia/cuda:${cuda_ver}-devel-${cuda_distro} as cuda
+FROM nvcr.io/nvidia/cuda:${cuda_ver}-devel-${cuda_distro} as cuda
 FROM $image
 
 # Install cuda headers https://github.com/eclipse/openj9/blob/master/buildenv/docker/mkdocker.sh#L586-L593

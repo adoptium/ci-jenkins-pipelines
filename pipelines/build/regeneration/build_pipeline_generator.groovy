@@ -48,7 +48,7 @@ node('worker') {
         }
 
         timestamps {
-            def retiredVersions = [9, 10, 12, 13, 14, 15, 16, 18, 19, 20]
+            def retiredVersions = [9, 10, 12, 13, 14, 15, 16, 18, 19, 20, 22, 23, 24]
             def generatedPipelines = []
 
             // Load git url and branch and gitBranch. These determine where we will be pulling user configs from.
@@ -78,11 +78,15 @@ node('worker') {
         Load scriptFolderPath. This is the folder where the openjdk_pipeline.groovy code is located compared to the repository root.
         These are the top level pipeline jobs.
         */
+            def scriptRepoUri = repoUri
+            def scriptRepoBranch = repoBranch
             def scriptFolderPath = (params.SCRIPT_FOLDER_PATH) ?: DEFAULTS_JSON['scriptDirectories']['upstream']
 
             if (!fileExists(scriptFolderPath)) {
                 println "[WARNING] ${scriptFolderPath} does not exist in your chosen repository. Updating it to use Adopt's instead"
                 checkoutAdoptPipelines()
+                scriptRepoUri = ADOPT_DEFAULTS_JSON['repository']['pipeline_url']
+                scriptRepoBranch = ADOPT_DEFAULTS_JSON['repository']['pipeline_branch']
                 scriptFolderPath = ADOPT_DEFAULTS_JSON['scriptDirectories']['upstream']
                 println "[SUCCESS] The path is now ${scriptFolderPath} relative to ${ADOPT_DEFAULTS_JSON['repository']['pipeline_url']}"
                 checkoutUserPipelines()
@@ -129,8 +133,10 @@ node('worker') {
             }
 
             println '[INFO] Running generator script with the following configuration:'
-            println "REPOSITORY_URL = $repoUri"
-            println "REPOSITORY_BRANCH = $repoBranch"
+            println "USER REPOSITORY_URL = $repoUri"
+            println "USER REPOSITORY_BRANCH = $repoBranch"
+            println "SCRIPT REPOSITORY_URL = $scriptRepoUri"
+            println "SCRIPT REPOSITORY_BRANCH = $scriptRepoBranch"
             println "JOB_ROOT = $jobRoot"
             println "SCRIPT_FOLDER_PATH = $scriptFolderPath"
             println "NIGHTLY_FOLDER_PATH = $nightlyFolderPath"
@@ -153,8 +159,8 @@ node('worker') {
 
                 def config = [
                     TEST                : false,
-                    GIT_URL             : repoUri,
-                    BRANCH              : repoBranch,
+                    GIT_URL             : scriptRepoUri,
+                    BRANCH              : scriptRepoBranch,
                     BUILD_FOLDER        : jobRoot,
                     CHECKOUT_CREDENTIALS: checkoutCreds,
                     JAVA_VERSION        : javaVersion,
@@ -163,7 +169,11 @@ node('worker') {
                     disableJob          : false,
                     pipelineSchedule    : '0 0 31 2 0', // 31st Feb, so will never run,
                     adoptScripts        : false,
-                    releaseType         : 'Nightly Without Publish'
+                    releaseType         : 'Nightly Without Publish',
+                    enableInstallers    : true,
+                    enableSigner        : true,
+                    cleanWorkspaceBeforeBuild   : true,
+                    cleanWorkspaceAfterBuild    : true
                 ]
 
                 def target
@@ -218,6 +228,19 @@ node('worker') {
                 config.put('enableReproducibleCompare', DEFAULTS_JSON['testDetails']['enableReproducibleCompare'] as Boolean)
                 config.put('enableTests', DEFAULTS_JSON['testDetails']['enableTests'] as Boolean)
                 config.put('enableTestDynamicParallel', DEFAULTS_JSON['testDetails']['enableTestDynamicParallel'] as Boolean)
+
+                if (DEFAULTS_JSON.containsKey('enableInstallers')) {
+                    config.put('enableInstallers', DEFAULTS_JSON['enableInstallers'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('enableSigner')) {
+                    config.put('enableSigner', DEFAULTS_JSON['enableSigner'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('cleanWorkspaceBeforeBuild')) {
+                    config.put('cleanWorkspaceBeforeBuild', DEFAULTS_JSON['cleanWorkspaceBeforeBuild'] as Boolean)
+                }
+                if (DEFAULTS_JSON.containsKey('cleanWorkspaceAfterBuild')) {
+                    config.put('cleanWorkspaceAfterBuild', DEFAULTS_JSON['cleanWorkspaceAfterBuild'] as Boolean)
+                }
 
                 println "[INFO] JDK${javaVersion}: nightly pipelineSchedule = ${config.pipelineSchedule}"
 

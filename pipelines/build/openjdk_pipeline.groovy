@@ -26,7 +26,7 @@ Map<String, ?> DEFAULTS_JSON = null
 def findGaCommitSHA(String jdkVersion, String jdkBranch, Boolean annotatedTag) {
     // Determine OpenJDK and Adoptium mirror repository
     def repo
-    // Is it a jdk-23+ stablizationjdk branch version? ie.jdk-23, jdk-24, ... 
+    // Is it a jdk-23+ stabilisation jdk branch version? ie.jdk-23, jdk-24, ... 
     if (jdkVersion.toInteger() >= 23 && !jdkBranch.contains(".0")) {
         // jdk-23+ first release is a branch within the jdk(head) repository
         repo = "jdk"
@@ -95,7 +95,12 @@ def resolveGaTag(String jdkVersion, String jdkBranch) {
         def annotatedTagFilter = (annotatedTag ? "| grep '\\^{}'" : "| grep -v '\\^{}'")
         def foundRepo = resolveGaCommit.get(0)
         def foundSHA  = resolveGaCommit.get(1)
-        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${foundRepo} ${annotatedTagFilter} | grep \"${foundSHA}\" | grep -v \"${jdkBranch}\" | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
+        // Find upstream target actual tag, ignore any other "-ga" tags, must be a real build tag
+        // Use version prefix with "+" (e.g. "jdk-17.0.20+" from "jdk-17.0.20-ga") to avoid matching
+        // sibling tags on the same commit (e.g. jdk-17.0.20.1+0 shares the same commit as jdk-17.0.20+8)
+        def versionPrefix = jdkBranch.replaceAll('-ga$', '')
+        def versionFilter = (jdkVersion.toInteger() > 8) ? "| grep -F \"${versionPrefix}+\"" : ""
+        def upstreamTag = sh(returnStdout: true, script:"git ls-remote --tags ${foundRepo} ${annotatedTagFilter} | grep \"${foundSHA}\" | grep -v \"${jdkBranch}\" | grep -v '\\-ga' ${versionFilter} | tr -s '\\t ' ' ' | cut -d' ' -f2 | sed \"s,refs/tags/,,\" | sed \"s,\\^{},,\" | tr -d '\\n'")
         if (upstreamTag != "") {
             println "[INFO] Resolved ${jdkBranch} to upstream build tag ${upstreamTag}"
             resolvedTag = upstreamTag
@@ -183,7 +188,20 @@ node('worker') {
       ])
     }
 
+    /*
+    Changes dir to the user's repo. Use closures as functions aren't accepted inside node blocks
+    */
+    def checkoutUserPipelines = { ->
+        checkout([$class: 'GitSCM',
+        branches: [ [ name: DEFAULTS_JSON['repository']['pipeline_branch'] ] ],
+        userRemoteConfigs: [ [ url: DEFAULTS_JSON['repository']['pipeline_url'] ] ]
+      ])
+    }
+
     scmVars = checkout scm
+
+    // Check User pipelines first
+    checkoutUserPipelines()
 
     String helperRef = DEFAULTS_JSON['repository']['helper_ref']
     library(identifier: "openjdk-jenkins-helper@${helperRef}")
@@ -197,7 +215,7 @@ node('worker') {
 
         checkoutAdoptPipelines()
         configureBuild = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['baseFileDirectories']['upstream']}"
-        checkout scm
+        checkoutUserPipelines()
     }
 
     // Load buildConfigFilePath. This is where jdkxx_pipeline_config.groovy is located. It contains the build configurations for each platform, architecture and variant.
@@ -230,7 +248,7 @@ node('worker') {
         } else {
             buildConfigurations = load "${WORKSPACE}/${ADOPT_DEFAULTS_JSON['configDirectories']['build']}/${javaToBuild}_pipeline_config.groovy"
         }
-        checkout scm
+        checkoutUserPipelines()
     }
 }
 

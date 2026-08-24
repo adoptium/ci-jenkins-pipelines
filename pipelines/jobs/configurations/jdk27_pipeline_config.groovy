@@ -1,4 +1,4 @@
-class Config24 {
+class Config27 {
 
     final Map<String, Map<String, ?>> buildConfigurations = [
         x64Mac    : [
@@ -6,10 +6,14 @@ class Config24 {
                 arch                : 'x64',
                 additionalNodeLabels: 'xcode15.0.1',
                 additionalTestLabels: [
-                        openj9      : '!sw.os.osx.10_11',
-                        temurin     : '!sw.os.osx.10_14'
+                        openj9      : '!sw.os.osx.10_11'
                 ],
-                test                : 'default',
+                test: [
+                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
+                ],
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'gha']
+                ],
                 configureArgs       : '--enable-dtrace',
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
@@ -27,15 +31,19 @@ class Config24 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'dev.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
                 additionalTestLabels: [
-                        openj9      : '!(centos6||rhel6)',
-                        temurin     : '!(centos6||rhel6)'
+                        openj9      : '!sw.tool.glibc.2_12',
+                        temurin     : '!sw.tool.glibc.2_12'
+                ],
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
                 ],
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace',
                         'temurin'   : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
+                        'temurin'   : '--create-source-archive --create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01',
+                        'hotspot'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01'
                 ]
         ],
 
@@ -67,12 +75,18 @@ class Config24 {
         x64Windows: [
                 os                  : 'windows',
                 arch                : 'x64',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
                 ],
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
+                ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
                 ]
         ],
 
@@ -90,6 +104,9 @@ class Config24 {
                 cleanWorkspaceAfterBuild: true,
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
+                ],
+                additionalTestParams: [
+                        temurin     : [TIME_LIMIT: '30']
                 ]
         ],
 
@@ -99,7 +116,7 @@ class Config24 {
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01'
                 ]
         ],
 
@@ -114,7 +131,7 @@ class Config24 {
                         'openj9'      : '--enable-dtrace'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b03'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01'
                 ]
         ],
 
@@ -130,7 +147,8 @@ class Config24 {
                         'temurin'   : '--enable-dtrace --with-jobs=4'
                 ],
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.6.1810-b03'
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.6.1810-b01',
+                        'hotspot'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-14.2.0-Centos7.6.1810-b01'
                 ]
         ],
 
@@ -155,23 +173,45 @@ class Config24 {
                 test                : 'default',
                 configureArgs       : '--enable-headless-only=yes --enable-dtrace',
                 buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
+                        'temurin'   : '--create-jre-image --create-sbom --use-adoptium-devkit gcc-14.2.0-Fedora_28-b00'
                 ]
         ],
 
         aarch64Windows: [
                 os                  : 'windows',
                 arch                : 'aarch64',
+                dockerImage         : 'windows2022_build_image',
+                dockerRegistry      : 'https://adoptium.azurecr.io',
+                dockerCredential    : 'bbb9fa70-a1de-4853-b564-5f02193329ac',
                 crossCompile        : 'x64',
                 additionalNodeLabels: 'win2022&&vs2022',
                 test                : 'default',
+                additionalTestParams: [
+                        temurin     : [CLOUD_PROVIDER: 'azure']
+                ],
                 buildArgs       : [
-                        'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.0'
+                        'temurin'   : '--create-jre-image --create-sbom --cross-compile --use-adoptium-devkit vs2022_redist_14.40.33807_10.0.26100.1742'
+                ]
+        ],
+
+        arm32Linux    : [
+                os                  : 'linux',
+                arch                : 'arm',
+                crossCompile        : 'aarch64',
+                dockerImage         : 'adoptopenjdk/ubuntu1604_build_image',
+                dockerArgs          : '--platform linux/arm/v7',
+                test                : 'default',
+                configureArgs       : [
+                        'openj9'    : '--enable-dtrace',
+                        'temurin'   : '--enable-dtrace --with-jobs=4'
+                ],
+                buildArgs           : [
+                        'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
         ]
   ]
 
 }
 
-Config24 config = new Config24()
+Config27 config = new Config27()
 return config.buildConfigurations
