@@ -359,7 +359,7 @@ class Build {
         if (Boolean.valueOf(buildConfig.RELEASE)) {
             build_type = 'release'
         }
-        def aqaAutoGen = buildConfig.AQA_AUTO_GEN ?: false
+def aqaAutoGen = Boolean.valueOf(buildConfig.AQA_AUTO_GEN as String)
         try {
 
             def displayName = "jdk${jobParams.JDK_VERSIONS} : ${buildConfig.SCM_REF} : ${build_type} : ${jobParams.ARCH_OS_LIST}"
