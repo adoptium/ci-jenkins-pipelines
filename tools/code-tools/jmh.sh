@@ -8,6 +8,7 @@
 # shellcheck disable=SC2035,SC2155
 set -euo pipefail
 WORKSPACE=$PWD
+export SOURCE_DATE_EPOCH=0
 
 function hashJars() {
   pushd "${1}"
@@ -49,7 +50,7 @@ function buildJmh {
   mv -v ./jmh-samples/target/benchmarks.jar "${dirName}/jmh-samples-benchmarks.jar" # avoiding flat clash
   mv -v ./jmh-core-benchmarks/target/benchmarks.jar "${dirName}"
   hashJars "${dirName}"
-  tar -czf "${dirName}.tar.gz" "${dirName}"
+  tar --mtime="@0" -czf "${dirName}.tar.gz" "${dirName}"
   rm -rf "${dirName}"
   mvn clean
   git checkout master

@@ -7,6 +7,7 @@
 # shellcheck disable=SC2035,SC2116
 
 set -eu
+export SOURCE_DATE_EPOCH=0
 
 readonly JTREG_5='jtreg5.1-b01'
 readonly JTREG_6='jtreg-6+1'
@@ -155,8 +156,8 @@ buildJTReg()
 
     createWin32FolderWithJTRegBinaries
 
-    tar -cvf jtreg.tar jtreg
-    gzip -9 jtreg.tar
+    tar --mtime="@0" -cvf jtreg.tar jtreg
+    gzip -n -9 jtreg.tar
     mv jtreg.tar.gz "$WORKSPACE/$version.tar.gz"
     createChecksum "$WORKSPACE/$version.tar.gz" "$WORKSPACE"
     git reset --hard HEAD

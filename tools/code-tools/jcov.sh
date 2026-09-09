@@ -11,6 +11,7 @@
 # shellcheck disable=SC2035,SC2155
 set -euo pipefail
 WORKSPACE=$PWD
+export SOURCE_DATE_EPOCH=0
 
 function hashArtifacts() {
   echo "Creating checksums all jcov*.tar.gz"
@@ -155,7 +156,7 @@ pushd $REPO_DIR
   popd
   pushd $BUILD_PATH/jcov*/
     getReadme > readme.txt
-    tar -czf ../../$rc.tar.gz *.jar readme.txt
+    tar --mtime="@0" -czf ../../$rc.tar.gz *.jar readme.txt
   popd
   echo "Manually renaming $rc.tar.gz  as $main_file.tar.gz to provide latest-stable-recommended file"
   ln -fv $rc.tar.gz  $main_file.tar.gz
@@ -171,7 +172,7 @@ pushd $REPO_DIR
   popd
   pushd $BUILD_PATH/jcov*/
     getReadme > readme.txt
-    tar -czf ../../$main_file-$tip_shortened.tar.gz *.jar readme.txt
+    tar --mtime="@0" -czf ../../$main_file-$tip_shortened.tar.gz *.jar readme.txt
   popd
   echo "Manually renaming $main_file-$tip_shortened.tar.gz as $main_file-tip..tar.gz to provide latest-unstable-recommended file"
   ln -fv $main_file-$tip_shortened.tar.gz $main_file-tip.tar.gz

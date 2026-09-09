@@ -10,6 +10,7 @@
 # shellcheck disable=SC2035,SC2155
 set -euo pipefail
 WORKSPACE=$PWD
+export SOURCE_DATE_EPOCH=0
 
 function generateArtifact() {
     local  branchOrTag=${1}
@@ -32,7 +33,7 @@ function generateArtifact() {
             --exclude='**asmtools*.jar.html' \
             --exclude='**asmtools*.jar.md' \
             --exclude='**src.tar.gz' \
-        -czf src.tar.gz asmtools
+        --mtime="@0" -czf src.tar.gz asmtools
       popd
       echo "Running asmtools $branchOrTag tests by $JAVA_HOME"
       mvn test 2>&1 | tee $testLog || echo "Test now correctly fails, this have to be fixed upstream"
@@ -48,7 +49,7 @@ function generateArtifact() {
         if [ -e surefire-reports ] ; then
           local testResults=$(echo $mainArtifact | sed "s/.jar/-tests.tar.gz/")
           echo "Compressing and archiving test results as $testResults"
-          tar -czf $testResults surefire-reports
+          tar --mtime="@0" -czf $testResults surefire-reports
           echo "Copying maven/target/$testResults file to RESULTS_DIR($RESULTS_DIR)"
           cp  $testResults $RESULTS_DIR
           pushd ..

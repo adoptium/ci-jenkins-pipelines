@@ -8,6 +8,7 @@
 # shellcheck disable=SC2035,SC2155
 set -euo pipefail
 WORKSPACE=$PWD
+export SOURCE_DATE_EPOCH=0
 
 function hashArtifacts() {
   echo "Creating checksums all sigtest*.zip"
