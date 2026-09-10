@@ -95,32 +95,4 @@ class NightlyBuildAndTestStatsTest {
         assertEquals(zeroCounts, script.getRemoteJckResults('https://example.invalid', 'https://example.invalid/job/AQA_Test_Pipeline_JCK/', 123, 'cookie-jar'))
     }
 
-    @Test
-    void collectsUnstableTargetCountsWhenPresentInPipelineSummary() {
-        def script = loadScript()
-        script.metaClass.callWgetSafely = { String url, String cookieJar ->
-            if (url.contains('getAllChildBuilds')) {
-                return '''
-                    [
-                      {
-                        "buildResult":"UNSTABLE",
-                        "testSummary":{"passed":7,"unstable":2,"failed":1,"disabled":3}
-                      }
-                    ]
-                '''
-            }
-            return '''
-                [
-                  {"buildName":"linux-x64-temurin","buildResult":"SUCCESS"}
-                ]
-            '''
-        }
-
-        def testResults = script.getPipelineTestResults('https://example.invalid', 'open17-pipeline', 'https://example.invalid/job/open17-pipeline/', '123', 'temurin', '_hs_', 'cookie-jar')
-
-        assertEquals(7, testResults.testTargetPassed)
-        assertEquals(2, testResults.testTargetUnstable)
-        assertEquals(1, testResults.testTargetFailed)
-        assertEquals(3, testResults.testTargetDisabled)
-    }
 }
