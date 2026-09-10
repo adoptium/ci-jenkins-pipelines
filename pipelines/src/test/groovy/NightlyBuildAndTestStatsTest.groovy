@@ -69,6 +69,15 @@ class NightlyBuildAndTestStatsTest {
     }
 
     @Test
+    void formatsRoundedPercentagesWithoutTrailingZeros() {
+        def script = loadScript()
+
+        assertEquals('33.3', script.formatPassRatePercentage(1, 3))
+        assertEquals('66.7', script.formatPassRatePercentage(2, 3))
+        assertEquals('50', script.formatPassRatePercentage(1, 2))
+    }
+
+    @Test
     void groupsRemoteJckTargetsIntoCoreAndDevAndCountsExplicitFailures() {
         def script = loadScript()
         script.metaClass.callWgetSafely = { String url, String cookieJar ->
