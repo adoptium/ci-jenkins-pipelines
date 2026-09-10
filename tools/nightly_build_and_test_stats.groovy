@@ -15,6 +15,7 @@ limitations under the License.
 /* groovylint-disable NestedBlockDepth */
 
 import groovy.json.JsonSlurper
+import java.math.RoundingMode
 import java.time.LocalDateTime
 import java.time.Instant
 import java.time.ZoneId
@@ -23,6 +24,98 @@ import java.time.temporal.ChronoUnit
 
 def noAqaTestsRunString() {
     return "No AQA tests run"
+}
+
+def createStatusCounts() {
+    return [success: 0, warning: 0, failure: 0]
+}
+
+def totalStatusCounts(Map counts) {
+    return counts.success + counts.warning + counts.failure
+}
+
+def mergeStatusCounts(Map targetCounts, Map sourceCounts) {
+    targetCounts.success += sourceCounts.success
+    targetCounts.warning += sourceCounts.warning
+    targetCounts.failure += sourceCounts.failure
+}
+
+def formatPassRatePercentage(Integer passed, Integer total) {
+    if (total == 0) {
+        return "0"
+    }
+    return ((passed * 100.0) / total)
+        .setScale(1, RoundingMode.HALF_UP)
+        .stripTrailingZeros()
+        .toPlainString()
+}
+
+def formatStatusBreakdown(Map counts) {
+    def parts = []
+    if (counts.success > 0) {
+        parts << "${counts.success} :white_check_mark:"
+    }
+    if (counts.warning > 0) {
+        parts << "${counts.warning} :warning:"
+    }
+    if (counts.failure > 0) {
+        parts << "${counts.failure} :x:"
+    }
+    return "(${parts.join(' · ')})"
+}
+
+def formatPassRateSection(String label, Map counts) {
+    def total = totalStatusCounts(counts)
+    if (total == 0) {
+        return ""
+    }
+    return "**${label}**: ${formatPassRatePercentage(counts.success, total)}% pass ${formatStatusBreakdown(counts)}"
+}
+
+def formatAqaSummary(Map jobCounts, Map targetCounts, Map remoteCounts) {
+    def sections = []
+
+    def aqaSections = [
+        formatPassRateSection("Jobs", jobCounts),
+        formatPassRateSection("Targets", targetCounts)
+    ].findAll { it }
+    if (aqaSections) {
+        sections << "**AQA Tests** | ${aqaSections.join('&nbsp; |&nbsp; ')}"
+    }
+
+    def remoteSections = [
+        formatPassRateSection("Core", remoteCounts.core),
+        formatPassRateSection("Dev", remoteCounts.dev)
+    ].findAll { it }
+    if (remoteSections) {
+        sections << "**AQA Remote Tests** | ${remoteSections.join('&nbsp; |&nbsp; ')}"
+    }
+
+    if (!sections) {
+        return " _"+noAqaTestsRunString()+"._"
+    }
+
+    return "\n" + sections.join("\n")
+}
+
+def getRemoteJckTargetGroup(String target) {
+    if (["sanity", "special", "extended"].contains(target)) {
+        return "core"
+    }
+    if (target == "dev") {
+        return "dev"
+    }
+    return null
+}
+
+def incrementStatusCounts(Map counts, String buildResult) {
+    if (buildResult == "SUCCESS") {
+        counts.success += 1
+    } else if (buildResult == "UNSTABLE") {
+        counts.warning += 1
+    } else if (buildResult != null) {
+        counts.failure += 1
+    }
 }
 
 def getPlatformConversionMap() {
@@ -660,20 +753,29 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
     }
 }
 
-// Get remote JCK target pass/fail counts for a single AQA_Test_Pipeline_JCK build.
-// Returns [failed, total] for completed targets only; null buildResult means still running.
+// Get remote JCK target grouped pass/warn/fail counts for a single AQA_Test_Pipeline_JCK build.
+// Returns counts for completed targets only; null buildResult means still running.
 def getRemoteJckResults(String trssUrl, String jckBuildUrl, Integer buildNum, String cookieJar) {
     def jckJson = callWgetSafely("${trssUrl}/api/getRemoteJckBuildInfo?url=${jckBuildUrl}\\&buildName=AQA_Test_Pipeline_JCK\\&buildNum=${buildNum}", cookieJar)
+    def groupedCounts = [core: createStatusCounts(), dev: createStatusCounts()]
     if (jckJson.length() <= 2) {
-        return [0, 0]
+        return groupedCounts
     }
     def parsed = new JsonSlurper().parseText(jckJson)
     if (!(parsed instanceof List) || parsed.size() == 0) {
-        return [0, 0]
+        return groupedCounts
     }
-    def total  = parsed.count { it.buildResult != null }
-    def failed = parsed.count { it.buildResult != null && it.buildResult != 'SUCCESS' }
-    return [failed, total]
+
+    parsed.each { remoteJob ->
+        if (remoteJob.buildResult != null) {
+            def group = getRemoteJckTargetGroup(remoteJob.target)
+            if (group != null) {
+                incrementStatusCounts(groupedCounts[group], remoteJob.buildResult)
+            }
+        }
+    }
+
+    return groupedCounts
 }
 
 // Get the Pipeline Test job results...
@@ -752,12 +854,9 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
         testVariant = "_${variant}_"
     }
 
-    def failedTestJobNum    = 0
-    def testJobTotal        = 0
-    def failedTestTargetNum = 0
-    def testTargetTotal     = 0
-    def remoteTargetFailed  = 0
-    def remoteTargetTotal   = 0
+    def testJobCounts = createStatusCounts()
+    def testTargetCounts = createStatusCounts()
+    def remoteTargetCounts = [core: createStatusCounts(), dev: createStatusCounts()]
 
     // Find all "Done" or "Streaming" pipeline jobs for this release EA tag
     def buildUrls
@@ -772,10 +871,11 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
         buildUrls.each { buildUrlTuple ->
             (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrlTuple
             def testResults = getPipelineTestResults(trssUrl, featureRelease+"-pipeline", probableBuildUrl, probableBuildIdForTRSS, buildVariant, testVariant, cookieJar)
-            failedTestJobNum    += testResults.testJobFailure
-            testJobTotal        += testResults.testJobNumber
-            failedTestTargetNum += testResults.testTargetFailed
-            testTargetTotal     += (testResults.testTargetPassed + testResults.testTargetFailed)
+            testJobCounts.success += testResults.testJobSuccess
+            testJobCounts.warning += testResults.testJobUnstable
+            testJobCounts.failure += testResults.testJobFailure
+            testTargetCounts.success += testResults.testTargetPassed
+            testTargetCounts.failure += testResults.testTargetFailed
 
             // Only temurin/hotspot pipelines run JCK; openj9 is intentionally excluded.
             if (variant == 'temurin' || variant == 'hotspot') {
@@ -783,47 +883,24 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
                 if (jckBuilds.length() > 2) {
                     def jckBuildsJson = new JsonSlurper().parseText(jckBuilds)
                     echo "Found ${jckBuildsJson.size()} AQA_Test_Pipeline_JCK build(s) under pipeline ${probableBuildIdForTRSS}"
-                    def pipelineJckFailed = 0
-                    def pipelineJckTotal  = 0
+                    def pipelineJckCounts = [core: createStatusCounts(), dev: createStatusCounts()]
                     jckBuildsJson.each { jckBuild ->
                         if (jckBuild.buildResult != null) {
-                            def (jckFailed, jckTotal) = getRemoteJckResults(trssUrl, jckBuild.url, jckBuild.buildNum as Integer, cookieJar)
-                            pipelineJckFailed += jckFailed
-                            pipelineJckTotal  += jckTotal
-                            echo "  JCK build ${jckBuild.buildNum} (${jckBuild.buildResult}): remoteTargets failed=${jckFailed} total=${jckTotal}"
+                            def jckCounts = getRemoteJckResults(trssUrl, jckBuild.url, jckBuild.buildNum as Integer, cookieJar)
+                            mergeStatusCounts(pipelineJckCounts.core, jckCounts.core)
+                            mergeStatusCounts(pipelineJckCounts.dev, jckCounts.dev)
+                            echo "  JCK build ${jckBuild.buildNum} (${jckBuild.buildResult}): remoteTargets core=${jckCounts.core} dev=${jckCounts.dev}"
                         }
                     }
-                    remoteTargetFailed += pipelineJckFailed
-                    remoteTargetTotal  += pipelineJckTotal
-                    echo "JCK RemoteTargets for pipeline ${probableBuildIdForTRSS}: failed=${pipelineJckFailed} total=${pipelineJckTotal}"
+                    mergeStatusCounts(remoteTargetCounts.core, pipelineJckCounts.core)
+                    mergeStatusCounts(remoteTargetCounts.dev, pipelineJckCounts.dev)
+                    echo "JCK RemoteTargets for pipeline ${probableBuildIdForTRSS}: core=${pipelineJckCounts.core} dev=${pipelineJckCounts.dev}"
                 }
             }
         }
     }
 
-    if (testJobTotal == 0 && remoteTargetTotal == 0) {
-        return " _"+noAqaTestsRunString()+"._"
-    } else if ((failedTestJobNum + failedTestTargetNum + remoteTargetFailed) == 0) {
-        def successMsg = "\n_AQA tests successful: "+testJobTotal+" jobs & "+testTargetTotal+" targets run."
-        if (remoteTargetTotal > 0) {
-            successMsg += " RemoteTargets=0/"+remoteTargetTotal
-        }
-        successMsg += "_"
-        return successMsg
-    } else {
-        def summary = "\n_AQA test failures:"
-        if (failedTestJobNum > 0) {
-            summary += " TestJobs="+failedTestJobNum+"/"+testJobTotal
-        }
-        if (failedTestTargetNum > 0) {
-            summary += " TestTargets="+failedTestTargetNum+"/"+testTargetTotal
-        }
-        if (remoteTargetTotal > 0) {
-            summary += " RemoteTargets="+remoteTargetFailed+"/"+remoteTargetTotal
-        }
-        summary += "._"
-        return summary
-    }
+    return formatAqaSummary(testJobCounts, testTargetCounts, remoteTargetCounts)
 }
 
 
@@ -1316,4 +1393,3 @@ node('worker') {
         cleanWs notFailBuild: true
     }
 }
-
