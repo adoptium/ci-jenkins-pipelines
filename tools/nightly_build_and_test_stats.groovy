@@ -75,7 +75,7 @@ def formatPassRateSection(String label, Map counts) {
     if (total == 0) {
         return ""
     }
-    return "_${label}_: ${formatPassRatePercentage(counts.success, total)}% ${formatStatusBreakdown(counts)}"
+    return "${label}: ${formatPassRatePercentage(counts.success, total)}% ${formatStatusBreakdown(counts)}"
 }
 
 def formatAqaSummary(Map jobCounts, Map targetCounts, Map remoteCounts) {
@@ -86,7 +86,7 @@ def formatAqaSummary(Map jobCounts, Map targetCounts, Map remoteCounts) {
         formatPassRateSection("Targets", targetCounts)
     ].findAll { it }
     if (aqaSections) {
-        sections << "_AQA Tests_: ${aqaSections.join(' ')}"
+        sections << "_AQA Tests: ${aqaSections.join(' ')}_"
     }
 
     def remoteSections = [
@@ -95,7 +95,7 @@ def formatAqaSummary(Map jobCounts, Map targetCounts, Map remoteCounts) {
         formatPassRateSection("Other", remoteCounts.other)
     ].findAll { it }
     if (remoteSections) {
-        sections << "_AQA Remote Tests_: ${remoteSections.join(' ')}"
+        sections << "_AQA Remote Tests: ${remoteSections.join(' ')}_"
     }
 
     if (!sections) {
