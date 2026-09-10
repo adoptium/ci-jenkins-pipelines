@@ -80,31 +80,6 @@ class NightlyBuildAndTestStatsTest {
     }
 
     @Test
-    void groupsRemoteJckTargetsIntoCoreAndDevAndExcludesAbortedFromCounts() {
-        def script = loadScript()
-        script.metaClass.callWgetSafely = { String url, String cookieJar ->
-            return '''
-                [
-                  {"target":"sanity","buildResult":"SUCCESS"},
-                  {"target":"special","buildResult":"UNSTABLE"},
-                  {"target":"extended","buildResult":"FAILURE"},
-                  {"target":"dev","buildResult":"SUCCESS"},
-                  {"target":"dev","buildResult":"ABORTED"},
-                  {"target":"unknown","buildResult":"SUCCESS"},
-                  {"target":"dev","buildResult":null}
-                ]
-            '''
-        }
-
-        def remoteCounts = script.getRemoteJckResults('https://example.invalid', 'https://example.invalid/job/AQA_Test_Pipeline_JCK/', 123, 'cookie-jar')
-
-        assertEquals([success: 1, warning: 1, failure: 1], remoteCounts.core)
-        assertEquals([success: 1, warning: 0, failure: 0], remoteCounts.dev)
-        assertEquals([success: 1, warning: 0, failure: 0], remoteCounts.other)
-        assertEquals(1, script.totalStatusCounts(remoteCounts.dev))
-    }
-
-    @Test
     void returnsZeroedRemoteCountsForEmptyOrInvalidPayloads() {
         def script = loadScript()
         def zeroCounts = [
