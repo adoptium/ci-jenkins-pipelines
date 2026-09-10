@@ -26,6 +26,10 @@ def noAqaTestsRunString() {
     return "No AQA tests run"
 }
 
+def getRemoteJckTargetGroups() {
+    return [sanity: "core", special: "core", extended: "core", dev: "dev"]
+}
+
 def createStatusCounts() {
     return [success: 0, warning: 0, failure: 0]
 }
@@ -103,13 +107,7 @@ def formatAqaSummary(Map jobCounts, Map targetCounts, Map remoteCounts) {
 }
 
 def getRemoteJckTargetGroup(String target) {
-    if (["sanity", "special", "extended"].contains(target)) {
-        return "core"
-    }
-    if (target == "dev") {
-        return "dev"
-    }
-    return "other"
+    return getRemoteJckTargetGroups().get(target, "other")
 }
 
 def incrementStatusCounts(Map counts, String buildResult) {
@@ -117,7 +115,7 @@ def incrementStatusCounts(Map counts, String buildResult) {
         counts.success += 1
     } else if (buildResult == "UNSTABLE") {
         counts.warning += 1
-    } else if (["FAILURE", "FAILED", "ABORTED"].contains(buildResult)) {
+    } else if (["FAILURE", "FAILED"].contains(buildResult)) {
         counts.failure += 1
     }
 }

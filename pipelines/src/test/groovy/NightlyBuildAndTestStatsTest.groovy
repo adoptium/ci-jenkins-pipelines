@@ -99,7 +99,7 @@ class NightlyBuildAndTestStatsTest {
         def remoteCounts = script.getRemoteJckResults('https://example.invalid', 'https://example.invalid/job/AQA_Test_Pipeline_JCK/', 123, 'cookie-jar')
 
         assertEquals([success: 1, warning: 1, failure: 1], remoteCounts.core)
-        assertEquals([success: 1, warning: 0, failure: 1], remoteCounts.dev)
+        assertEquals([success: 1, warning: 0, failure: 0], remoteCounts.dev)
         assertEquals([success: 1, warning: 0, failure: 0], remoteCounts.other)
     }
 
