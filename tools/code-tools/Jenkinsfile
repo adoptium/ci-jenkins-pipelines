@@ -1,4 +1,4 @@
-// Build once a day
+// Build once a day, or when tools/code-tools/ sources change
 CRON_SETTINGS = '''H H * * *'''
 NODE_LABEL = 'dockerBuild&&linux&&x64'
 
@@ -6,12 +6,22 @@ pipeline {
     agent none
     triggers {
         cron(CRON_SETTINGS)
+        pollSCM('H/15 * * * *')
     }
     options {
         buildDiscarder logRotator(daysToKeepStr: '30', numToKeepStr: '10')
     }
     stages {
         stage('Build') {
+            when {
+                anyOf {
+                    triggeredBy 'TimerTrigger'
+                    changeset 'tools/code-tools/**'
+                }
+            }
+            environment {
+                TIP_ONLY = "${currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') ? 'true' : 'false'}"
+            }
             parallel {
                 stage('asmtools') {
                     agent {

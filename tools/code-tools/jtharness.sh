@@ -42,20 +42,22 @@ pushd $REPO_DIR
   latestRelease=`git tag -l | sort -Vr | head -n 1`
   rc=$main_file-$latestRelease
 
-  # latest released
-  git checkout $latestRelease
-  export JAVA_HOME=$jdk11
-  pushd build
-    ant test | tee ../$rc.jar.txt || true
-    ant build
-  popd
-  mv  ../$BUILD_PATH/$main_file.jar $rc.jar
-  echo "Manually renaming $rc.jar as $main_file.jar to provide latest-stable-recommended file"
-  ln -fv $rc.jar $main_file.jar
-  pushd build
-    ant clean
-  popd
-  rm -rf ../$BUILD_PATH
+  if [ "${TIP_ONLY:-false}" != "true" ]; then
+    # latest released
+    git checkout $latestRelease
+    export JAVA_HOME=$jdk11
+    pushd build
+      ant test | tee ../$rc.jar.txt || true
+      ant build
+    popd
+    mv  ../$BUILD_PATH/$main_file.jar $rc.jar
+    echo "Manually renaming $rc.jar as $main_file.jar to provide latest-stable-recommended file"
+    ln -fv $rc.jar $main_file.jar
+    pushd build
+      ant clean
+    popd
+    rm -rf ../$BUILD_PATH
+  fi
 
   # tip
   git checkout master

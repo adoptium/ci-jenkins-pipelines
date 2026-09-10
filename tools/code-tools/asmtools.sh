@@ -125,21 +125,23 @@ pushd $REPO_DIR
   latestRelease=$(git tag -l | tail -n 2 | head -n 1)
   generateArtifact "master" "$jdk21"
   masterVersion=$(getVersion)
-  generateArtifact "8.0-b09" "$jdk17"
-  at8Version=$(getVersion)
-  generateArtifact "at7" "$jdk08"
-  at7Version=$(getVersion)
-  renameLegacyCoreArtifacts
-  releaseCandidate7=asmtools-core-$at7Version.jar
-  releaseName7=asmtools07.jar
-  releaseCandidate8=asmtools-$at8Version.jar
-  releaseName8=asmtools08.jar
+  if [ "${TIP_ONLY:-false}" != "true" ]; then
+    generateArtifact "8.0-b09" "$jdk17"
+    at8Version=$(getVersion)
+    generateArtifact "at7" "$jdk08"
+    at7Version=$(getVersion)
+    renameLegacyCoreArtifacts
+    releaseCandidate7=asmtools-core-$at7Version.jar
+    releaseName7=asmtools07.jar
+    releaseCandidate8=asmtools-$at8Version.jar
+    releaseName8=asmtools08.jar
+    echo "Manually renaming  $releaseCandidate7 as $releaseName7 to provide latest-7-stable-recommended file"
+    ln -fv $releaseCandidate7 $releaseName7
+    echo "Manually renaming  $releaseCandidate8 as $releaseName8 to provide latest-8-stable-recommended file"
+    ln -fv $releaseCandidate8 $releaseName8
+  fi
   releaseCandidate=asmtools-$masterVersion.jar
   releaseName=asmtools.jar
-  echo "Manually renaming  $releaseCandidate7 as $releaseName7 to provide latest-7-stable-recommended file"
-  ln -fv $releaseCandidate7 $releaseName7
-  echo "Manually renaming  $releaseCandidate8 as $releaseName8 to provide latest-8-stable-recommended file"
-  ln -fv $releaseCandidate8 $releaseName8
   echo "Manually renaming  $releaseCandidate as $releaseName to provide latest-stable-recommended file"
   ln -fv $releaseCandidate $releaseName
   hashArtifacts

@@ -65,18 +65,20 @@ pushd $REPO_DIR
   latestRelease=`git tag -l | sort -Vr | head -n 1`
   rc=$main_name-$latestRelease.jar
 
-  # latest released
-  buildJcstress "${jdk11}" "${latestRelease}" "${rc}"
-  echo "Manually renaming $rc as $main_file to provide latest-stable-recommended file"
-  ln -fv $rc $main_file
+  if [ "${TIP_ONLY:-false}" != "true" ]; then
+    # latest released
+    buildJcstress "${jdk11}" "${latestRelease}" "${rc}"
+    echo "Manually renaming $rc as $main_file to provide latest-stable-recommended file"
+    ln -fv $rc $main_file
+
+    # 20240222
+    buildJcstress "${jdk11}" "c565311051494f4b9f78ec86eac6282f1de977e2" "jcstress-20240222.jar"
+  fi
 
   # tip
   buildJcstress "${jdk11}" "master" "${main_name}-${tip_shortened}.jar"
   echo "Manually renaming $main_name-$tip_shortened.jar as $main_name-tip.jar to provide latest-unstable-recommended file"
   ln -fv $main_name-$tip_shortened.jar $main_name-tip.jar
-
-  # 20240222
-  buildJcstress "${jdk11}" "c565311051494f4b9f78ec86eac6282f1de977e2" "jcstress-20240222.jar"
 
   hashArtifacts
 popd

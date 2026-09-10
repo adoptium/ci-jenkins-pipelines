@@ -74,14 +74,18 @@ pushd $REPO_DIR
   tip_shortened=`echo ${tip:0:7}`
   latestRelease=`git tag -l | sort -Vr | head -n 1`
 
-  # latest released
-  buildJmh "${jdk11}" "${latestRelease}"
+  if [ "${TIP_ONLY:-false}" != "true" ]; then
+    # latest released
+    buildJmh "${jdk11}" "${latestRelease}"
+  fi
 
   # tip
   buildJmh "${jdk17}" "master"
 
   # version less latest release and version full tip
-  cp -v "jmh-${latestRelease}.tar.gz" "jmh.tar.gz"
+  if [ "${TIP_ONLY:-false}" != "true" ]; then
+    cp -v "jmh-${latestRelease}.tar.gz" "jmh.tar.gz"
+  fi
   cp -v "jmh-master.tar.gz" "jmh-${tip_shortened}.tar.gz"
 
   hashTars

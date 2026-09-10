@@ -146,21 +146,23 @@ pushd $REPO_DIR
   latestRelease=`git tag -l  | sed "s/rc/b000/g" | sort -Vr  | sed "s/b000/rc/" | head -n 1`
   rc=$main_file-$latestRelease
 
-  # latest released
-  resetRepo "$latestRelease"
-  getAsmDeps "8.0.1"
-  getJavatest
-  pushd build
-    export JAVA_HOME="$jdk08"
-    ant $ASM_PROPS build
-  popd
-  pushd $BUILD_PATH/jcov*/
-    getReadme > readme.txt
-    tar --mtime="@0" -czf ../../$rc.tar.gz *.jar readme.txt
-  popd
-  echo "Manually renaming $rc.tar.gz  as $main_file.tar.gz to provide latest-stable-recommended file"
-  ln -fv $rc.tar.gz  $main_file.tar.gz
-  cleanRepo
+  if [ "${TIP_ONLY:-false}" != "true" ]; then
+    # latest released
+    resetRepo "$latestRelease"
+    getAsmDeps "8.0.1"
+    getJavatest
+    pushd build
+      export JAVA_HOME="$jdk08"
+      ant $ASM_PROPS build
+    popd
+    pushd $BUILD_PATH/jcov*/
+      getReadme > readme.txt
+      tar --mtime="@0" -czf ../../$rc.tar.gz *.jar readme.txt
+    popd
+    echo "Manually renaming $rc.tar.gz  as $main_file.tar.gz to provide latest-stable-recommended file"
+    ln -fv $rc.tar.gz  $main_file.tar.gz
+    cleanRepo
+  fi
 
   # tip
   resetRepo master
