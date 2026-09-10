@@ -61,6 +61,9 @@ def formatStatusBreakdown(Map counts) {
     if (counts.failure > 0) {
         parts << "${counts.failure} :x:"
     }
+    if (!parts) {
+        return ""
+    }
     return "(${parts.join(' · ')})"
 }
 

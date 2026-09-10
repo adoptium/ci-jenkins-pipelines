@@ -53,6 +53,22 @@ class NightlyBuildAndTestStatsTest {
     }
 
     @Test
+    void returnsNoAqaTestsRunWhenAllCountsAreZero() {
+        def script = loadScript()
+
+        def summary = script.formatAqaSummary(
+                [success: 0, warning: 0, failure: 0],
+                [success: 0, warning: 0, failure: 0],
+                [
+                    core: [success: 0, warning: 0, failure: 0],
+                    dev : [success: 0, warning: 0, failure: 0]
+                ]
+        )
+
+        assertEquals(' _No AQA tests run._', summary)
+    }
+
+    @Test
     void groupsRemoteJckTargetsIntoCoreAndDev() {
         def script = loadScript()
         script.metaClass.callWgetSafely = { String url, String cookieJar ->
@@ -73,5 +89,20 @@ class NightlyBuildAndTestStatsTest {
 
         assertEquals([success: 1, warning: 1, failure: 1], remoteCounts.core)
         assertEquals([success: 1, warning: 0, failure: 1], remoteCounts.dev)
+    }
+
+    @Test
+    void returnsZeroedRemoteCountsForEmptyOrInvalidPayloads() {
+        def script = loadScript()
+        def zeroCounts = [
+            core: [success: 0, warning: 0, failure: 0],
+            dev : [success: 0, warning: 0, failure: 0]
+        ]
+
+        script.metaClass.callWgetSafely = { String url, String cookieJar -> '[]' }
+        assertEquals(zeroCounts, script.getRemoteJckResults('https://example.invalid', 'https://example.invalid/job/AQA_Test_Pipeline_JCK/', 123, 'cookie-jar'))
+
+        script.metaClass.callWgetSafely = { String url, String cookieJar -> '{"error":"missing"}' }
+        assertEquals(zeroCounts, script.getRemoteJckResults('https://example.invalid', 'https://example.invalid/job/AQA_Test_Pipeline_JCK/', 123, 'cookie-jar'))
     }
 }
