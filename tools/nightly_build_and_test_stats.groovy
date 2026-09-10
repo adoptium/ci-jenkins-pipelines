@@ -120,6 +120,10 @@ def incrementStatusCounts(Map counts, String buildResult) {
     }
 }
 
+def isCountedRemoteJckBuildResult(String buildResult) {
+    return ["SUCCESS", "UNSTABLE", "FAILURE", "FAILED"].contains(buildResult)
+}
+
 def getPlatformConversionMap() {
     // A map to convert from a standard platform format to the variants used by builds, tests, and assets.
     def platformConversionMap = [x64Linux:           ["linux-x64", "x86-64_linux", "x64_linux"],
@@ -769,7 +773,7 @@ def getRemoteJckResults(String trssUrl, String jckBuildUrl, Integer buildNum, St
     }
 
     parsed.each { remoteJob ->
-        if (remoteJob.buildResult != null) {
+        if (isCountedRemoteJckBuildResult(remoteJob.buildResult)) {
             def group = getRemoteJckTargetGroup(remoteJob.target)
             incrementStatusCounts(groupedCounts[group], remoteJob.buildResult)
         }

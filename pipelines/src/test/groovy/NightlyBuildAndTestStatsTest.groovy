@@ -80,7 +80,7 @@ class NightlyBuildAndTestStatsTest {
     }
 
     @Test
-    void groupsRemoteJckTargetsIntoCoreAndDevAndCountsExplicitFailures() {
+    void groupsRemoteJckTargetsIntoCoreAndDevAndExcludesAbortedFromCounts() {
         def script = loadScript()
         script.metaClass.callWgetSafely = { String url, String cookieJar ->
             return '''
@@ -101,6 +101,7 @@ class NightlyBuildAndTestStatsTest {
         assertEquals([success: 1, warning: 1, failure: 1], remoteCounts.core)
         assertEquals([success: 1, warning: 0, failure: 0], remoteCounts.dev)
         assertEquals([success: 1, warning: 0, failure: 0], remoteCounts.other)
+        assertEquals(1, script.totalStatusCounts(remoteCounts.dev))
     }
 
     @Test
