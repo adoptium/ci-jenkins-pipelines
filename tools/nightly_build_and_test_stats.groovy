@@ -116,7 +116,7 @@ def incrementStatusCounts(Map counts, String buildResult) {
         counts.success += 1
     } else if (buildResult == "UNSTABLE") {
         counts.warning += 1
-    } else if (buildResult != null) {
+    } else if (["FAILURE", "FAILED"].contains(buildResult)) {
         counts.failure += 1
     }
 }
@@ -877,6 +877,7 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
             testJobCounts.success += testResults.testJobSuccess
             testJobCounts.warning += testResults.testJobUnstable
             testJobCounts.failure += testResults.testJobFailure
+            // Target summaries only expose passed/failed/disabled counts; disabled targets are excluded from pass-rate totals.
             testTargetCounts.success += testResults.testTargetPassed
             testTargetCounts.failure += testResults.testTargetFailed
 
