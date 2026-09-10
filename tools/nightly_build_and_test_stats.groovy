@@ -88,7 +88,8 @@ def formatAqaSummary(Map jobCounts, Map targetCounts, Map remoteCounts) {
 
     def remoteSections = [
         formatPassRateSection("Core", remoteCounts.core),
-        formatPassRateSection("Dev", remoteCounts.dev)
+        formatPassRateSection("Dev", remoteCounts.dev),
+        formatPassRateSection("Other", remoteCounts.other)
     ].findAll { it }
     if (remoteSections) {
         sections << "**AQA Remote Tests** | ${remoteSections.join('&nbsp; |&nbsp; ')}"
@@ -108,7 +109,7 @@ def getRemoteJckTargetGroup(String target) {
     if (target == "dev") {
         return "dev"
     }
-    return null
+    return "other"
 }
 
 def incrementStatusCounts(Map counts, String buildResult) {
@@ -760,7 +761,7 @@ def getReproducibilityPercentage(String jdkVersion, String trssId, String trssUR
 // Returns counts for completed targets only; null buildResult means still running.
 def getRemoteJckResults(String trssUrl, String jckBuildUrl, Integer buildNum, String cookieJar) {
     def jckJson = callWgetSafely("${trssUrl}/api/getRemoteJckBuildInfo?url=${jckBuildUrl}\\&buildName=AQA_Test_Pipeline_JCK\\&buildNum=${buildNum}", cookieJar)
-    def groupedCounts = [core: createStatusCounts(), dev: createStatusCounts()]
+    def groupedCounts = [core: createStatusCounts(), dev: createStatusCounts(), other: createStatusCounts()]
     if (jckJson.length() <= 2) {
         return groupedCounts
     }
@@ -772,9 +773,7 @@ def getRemoteJckResults(String trssUrl, String jckBuildUrl, Integer buildNum, St
     parsed.each { remoteJob ->
         if (remoteJob.buildResult != null) {
             def group = getRemoteJckTargetGroup(remoteJob.target)
-            if (group != null) {
-                incrementStatusCounts(groupedCounts[group], remoteJob.buildResult)
-            }
+            incrementStatusCounts(groupedCounts[group], remoteJob.buildResult)
         }
     }
 
@@ -862,7 +861,7 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
 
     def testJobCounts = createStatusCounts()
     def testTargetCounts = createStatusCounts()
-    def remoteTargetCounts = [core: createStatusCounts(), dev: createStatusCounts()]
+    def remoteTargetCounts = [core: createStatusCounts(), dev: createStatusCounts(), other: createStatusCounts()]
 
     // Find all "Done" or "Streaming" pipeline jobs for this release EA tag
     def buildUrls
@@ -891,18 +890,20 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
                 if (jckBuilds.length() > 2) {
                     def jckBuildsJson = new JsonSlurper().parseText(jckBuilds)
                     echo "Found ${jckBuildsJson.size()} AQA_Test_Pipeline_JCK build(s) under pipeline ${probableBuildIdForTRSS}"
-                    def pipelineJckCounts = [core: createStatusCounts(), dev: createStatusCounts()]
+                    def pipelineJckCounts = [core: createStatusCounts(), dev: createStatusCounts(), other: createStatusCounts()]
                     jckBuildsJson.each { jckBuild ->
                         if (jckBuild.buildResult != null) {
                             def jckCounts = getRemoteJckResults(trssUrl, jckBuild.url, jckBuild.buildNum as Integer, cookieJar)
                             mergeStatusCounts(pipelineJckCounts.core, jckCounts.core)
                             mergeStatusCounts(pipelineJckCounts.dev, jckCounts.dev)
-                            echo "  JCK build ${jckBuild.buildNum} (${jckBuild.buildResult}): remoteTargets core=${jckCounts.core} dev=${jckCounts.dev}"
+                            mergeStatusCounts(pipelineJckCounts.other, jckCounts.other)
+                            echo "  JCK build ${jckBuild.buildNum} (${jckBuild.buildResult}): remoteTargets core=${jckCounts.core} dev=${jckCounts.dev} other=${jckCounts.other}"
                         }
                     }
                     mergeStatusCounts(remoteTargetCounts.core, pipelineJckCounts.core)
                     mergeStatusCounts(remoteTargetCounts.dev, pipelineJckCounts.dev)
-                    echo "JCK RemoteTargets for pipeline ${probableBuildIdForTRSS}: core=${pipelineJckCounts.core} dev=${pipelineJckCounts.dev}"
+                    mergeStatusCounts(remoteTargetCounts.other, pipelineJckCounts.other)
+                    echo "JCK RemoteTargets for pipeline ${probableBuildIdForTRSS}: core=${pipelineJckCounts.core} dev=${pipelineJckCounts.dev} other=${pipelineJckCounts.other}"
                 }
             }
         }

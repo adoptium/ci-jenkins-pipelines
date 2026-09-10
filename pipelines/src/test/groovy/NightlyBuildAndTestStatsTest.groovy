@@ -42,7 +42,8 @@ class NightlyBuildAndTestStatsTest {
                 [success: 12, warning: 0, failure: 0],
                 [
                     core: [success: 3, warning: 1, failure: 0],
-                    dev : [success: 0, warning: 0, failure: 0]
+                    dev : [success: 0, warning: 0, failure: 0],
+                    other: [success: 0, warning: 0, failure: 0]
                 ]
         )
 
@@ -61,7 +62,8 @@ class NightlyBuildAndTestStatsTest {
                 [success: 0, warning: 0, failure: 0],
                 [
                     core: [success: 0, warning: 0, failure: 0],
-                    dev : [success: 0, warning: 0, failure: 0]
+                    dev : [success: 0, warning: 0, failure: 0],
+                    other: [success: 0, warning: 0, failure: 0]
                 ]
         )
 
@@ -98,6 +100,7 @@ class NightlyBuildAndTestStatsTest {
 
         assertEquals([success: 1, warning: 1, failure: 1], remoteCounts.core)
         assertEquals([success: 1, warning: 0, failure: 1], remoteCounts.dev)
+        assertEquals([success: 1, warning: 0, failure: 0], remoteCounts.other)
     }
 
     @Test
@@ -105,7 +108,8 @@ class NightlyBuildAndTestStatsTest {
         def script = loadScript()
         def zeroCounts = [
             core: [success: 0, warning: 0, failure: 0],
-            dev : [success: 0, warning: 0, failure: 0]
+            dev : [success: 0, warning: 0, failure: 0],
+            other: [success: 0, warning: 0, failure: 0]
         ]
 
         script.metaClass.callWgetSafely = { String url, String cookieJar -> '[]' }
