@@ -15,7 +15,6 @@ limitations under the License.
 /* groovylint-disable NestedBlockDepth */
 
 import groovy.json.JsonSlurper
-import java.math.RoundingMode
 import java.time.LocalDateTime
 import java.time.Instant
 import java.time.ZoneId
@@ -48,10 +47,10 @@ def formatPassRatePercentage(Integer passed, Integer total) {
     if (total == 0) {
         return "0"
     }
-    return ((passed * 100.0) / total)
-        .setScale(1, RoundingMode.HALF_UP)
-        .stripTrailingZeros()
-        .toPlainString()
+    def tenths = ((passed * 1000L) + total.intdiv(2)).intdiv(total)
+    def wholePercent = tenths.intdiv(10)
+    def decimalDigit = tenths % 10
+    return decimalDigit == 0 ? "${wholePercent}" : "${wholePercent}.${decimalDigit}"
 }
 
 def formatStatusBreakdown(Map counts) {
