@@ -28,7 +28,9 @@ class NightlyBuildAndTestStatsTest {
             new File('tools/nightly_build_and_test_stats.groovy')
         ]
 
-        return candidates.find { it.exists() }
+        def scriptFile = candidates.find { it.exists() }
+        assert scriptFile != null : 'Could not find tools/nightly_build_and_test_stats.groovy from the current test working directory'
+        return scriptFile
     }
 
     @Test
