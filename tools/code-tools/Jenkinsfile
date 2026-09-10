@@ -1,5 +1,5 @@
-// Build once a day, or when tools/code-tools/ sources change
-CRON_SETTINGS = '''H H * * *'''
+// Build once a week, or when tools/code-tools/ sources change
+CRON_SETTINGS = '''H H * * 0'''
 NODE_LABEL = 'dockerBuild&&linux&&x64'
 
 pipeline {
