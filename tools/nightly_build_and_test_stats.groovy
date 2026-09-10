@@ -789,6 +789,7 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
     def testJobUnstable = 0
     def testJobFailure = 0
     def testTargetPassed = 0
+    def testTargetUnstable = 0
     def testTargetFailed = 0
     def testTargetDisabled = 0
     def testJobNumber = 0
@@ -809,6 +810,7 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
         }
         if (testJob.testSummary != null) {
             testTargetPassed += testJob.testSummary.passed
+            testTargetUnstable += (testJob.testSummary.unstable ?: 0)
             testTargetFailed += testJob.testSummary.failed
             testTargetDisabled += testJob.testSummary.disabled
         }
@@ -837,6 +839,7 @@ def getPipelineTestResults(String trssUrl, String pipelineName, String pipelineU
                       testJobUnstable:    testJobUnstable,
                       testJobFailure:     testJobFailure,
                       testTargetPassed:   testTargetPassed,
+                      testTargetUnstable: testTargetUnstable,
                       testTargetFailed:   testTargetFailed,
                       testTargetDisabled: testTargetDisabled,
                       testJobNumber:      testJobNumber
@@ -877,8 +880,9 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
             testJobCounts.success += testResults.testJobSuccess
             testJobCounts.warning += testResults.testJobUnstable
             testJobCounts.failure += testResults.testJobFailure
-            // Target summaries only expose passed/failed/disabled counts; disabled targets are excluded from pass-rate totals.
+            // Disabled targets are excluded from pass-rate totals.
             testTargetCounts.success += testResults.testTargetPassed
+            testTargetCounts.warning += testResults.testTargetUnstable
             testTargetCounts.failure += testResults.testTargetFailed
 
             // Only temurin/hotspot pipelines run JCK; openj9 is intentionally excluded.
