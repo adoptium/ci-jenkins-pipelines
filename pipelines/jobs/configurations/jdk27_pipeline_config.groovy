@@ -1,25 +1,6 @@
 class Config27 {
 
     final Map<String, Map<String, ?>> buildConfigurations = [
-        x64Mac    : [
-                os                  : 'mac',
-                arch                : 'x64',
-                additionalNodeLabels: 'xcode15.0.1',
-                additionalTestLabels: [
-                        openj9      : '!sw.os.osx.10_11'
-                ],
-                test: [
-                        weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'dev.system', 'special.system']
-                ],
-                additionalTestParams: [
-                        temurin     : [CLOUD_PROVIDER: 'gha']
-                ],
-                configureArgs       : '--enable-dtrace',
-                buildArgs           : [
-                        'temurin'   : '--create-jre-image --create-sbom'
-                ]
-        ],
-
         x64Linux  : [
                 os                  : 'linux',
                 arch                : 'x64',
