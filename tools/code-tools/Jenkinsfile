@@ -1,4 +1,7 @@
-// Build once a week, or when tools/code-tools/ sources change
+// Single job: cron triggers tip-only build; SCM change triggers full build.
+// For full builds, previously published versioned artifacts are preserved
+// (same filename = keep old, regenerate its checksum) so their SHA values
+// never change unless the source actually changed.
 CRON_SETTINGS = '''H H * * 0'''
 NODE_LABEL = 'dockerBuild&&linux&&x64'
 
@@ -24,90 +27,146 @@ pipeline {
             }
             parallel {
                 stage('asmtools') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('asmtools')
-                    }
+                    agent { label NODE_LABEL }
+                    steps { build('asmtools') }
                 }
                 stage('jcstress') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('jcstress')
-                    }
+                    agent { label NODE_LABEL }
+                    steps { build('jcstress') }
                 }
                 stage('jtreg') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('jtreg')
-                    }
+                    agent { label NODE_LABEL }
+                    steps { build('jtreg') }
                 }
                 stage('jtharness') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('jtharness')
-                    }
+                    agent { label NODE_LABEL }
+                    steps { build('jtharness') }
                 }
                 stage('sigtest') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('sigtest')
-                    }
+                    agent { label NODE_LABEL }
+                    steps { build('sigtest') }
                 }
                 stage('jcov') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('jcov')
-                    }
+                    agent { label NODE_LABEL }
+                    steps { build('jcov') }
                 }
                 stage('jmh') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('jmh')
-                    }
+                    agent { label NODE_LABEL }
+                    steps { build('jmh') }
                 }
                 stage('temurin-sbom') {
-                    agent {
-                        label NODE_LABEL
-                    }
-                    steps {
-                        build('temurin-sbom')
-                    }
+                    agent { label NODE_LABEL }
+                    steps { build('temurin-sbom') }
                 }
             }
         }
     }
 }
 
-def build(stageName) {
+def isTipArtifact(String filename) {
+    // Tip artifacts contain 'tip' or 'master' in the name, or are named with
+    // a short hex commit SHA (7-10 hex chars) as the version segment.
+    return filename ==~ /.*?(tip|master).*/ ||
+           filename ==~ /.*-[0-9a-f]{7,10}\..*/
+}
+
+def copyLastSuccessfulArtifacts(String stageName) {
+    // Copy artifacts from the last successful build of this job into
+    // previous/<stageName>/ so we can compare after the new build.
+    try {
+        copyArtifacts(
+            projectName: env.JOB_NAME,
+            selector: lastSuccessful(),
+            filter: "${stageName}/**",
+            target: 'previous',
+            optional: true,   // no-op on first ever run
+            flatten: false
+        )
+        echo "Copied previous artifacts for ${stageName} into previous/${stageName}/"
+    } catch (Exception e) {
+        echo "No previous artifacts found for ${stageName} (first run?): ${e.message}"
+    }
+}
+
+def restoreVersionedArtifacts(String stageName) {
+    // For each non-tip artifact just built, if a same-named file exists in
+    // previous/ replace the new file with the old one and regenerate its
+    // sha256sum.txt so the published hash stays stable.
+    sh """
+        set -euo pipefail
+        prev_dir="previous/${stageName}"
+        if [ ! -d "\${prev_dir}" ]; then
+            echo "No previous artifacts directory for ${stageName}, keeping all new artifacts."
+            exit 0
+        fi
+
+        find "${stageName}" -maxdepth 1 -type f | while read -r new_file; do
+            filename=\$(basename "\${new_file}")
+
+            # Always keep new tip artifacts
+            if echo "\${filename}" | grep -qE '(tip|master)' || \
+               echo "\${filename}" | grep -qE '-[0-9a-f]{7,10}\\.'; then
+                echo "TIP artifact, keeping new: \${filename}"
+                continue
+            fi
+
+            # Skip checksum files - we'll regenerate them
+            if echo "\${filename}" | grep -qE '\\.sha256sum\\.txt\$'; then
+                continue
+            fi
+
+            prev_file="\${prev_dir}/\${filename}"
+            if [ -f "\${prev_file}" ]; then
+                echo "VERSIONED artifact exists in previous build, restoring old: \${filename}"
+                cp -f "\${prev_file}" "\${new_file}"
+                # Regenerate checksum from the restored file
+                sha256sum "\${new_file}" > "\${new_file}.sha256sum.txt"
+            else
+                echo "NEW versioned artifact (not in previous build), keeping: \${filename}"
+            fi
+        done
+    """
+}
+
+def build(String stageName) {
     cleanWs()
     docker.image('adoptopenjdk/centos7_build_image').inside {
         try {
             checkout scm
+
+            // Full build only: copy down previous artifacts before building
+            if (env.TIP_ONLY == 'false') {
+                copyLastSuccessfulArtifacts(stageName)
+            }
+
             script {
                 def toolsUrl = "https://github.com/openjdk/${stageName}"
-                if ( stageName == 'temurin-sbom' ) {
-                    toolsUrl = "https://github.com/adoptium/temurin-build.git"
+                if (stageName == 'temurin-sbom') {
+                    toolsUrl = 'https://github.com/adoptium/temurin-build.git'
                 }
-                checkout([$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${stageName}"]], submoduleCfg: [], userRemoteConfigs: [[url: toolsUrl]]])
+                checkout([$class: 'GitSCM',
+                    branches: [[name: 'master']],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: stageName]],
+                    submoduleCfg: [],
+                    userRemoteConfigs: [[url: toolsUrl]]])
             }
-            sh label: "${stageName}", script: "./tools/code-tools/${stageName}.sh"
-            archiveArtifacts artifacts: "**/temurin-*-sbom.jar, ${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt,${stageName}/${stageName}*.tar.gz.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/*.zip.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md, ${stageName}/${stageName}*.zip, ${stageName}/javatest*.jar, ${stageName}/javatest*sum*.txt", followSymlinks: false
+
+            sh label: stageName, script: "./tools/code-tools/${stageName}.sh"
+
+            // Full build only: restore old versioned artifacts where unchanged
+            if (env.TIP_ONLY == 'false') {
+                restoreVersionedArtifacts(stageName)
+            }
+
+            archiveArtifacts(
+                artifacts: "**/temurin-*-sbom.jar, ${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt, ${stageName}/${stageName}*.tar.gz.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/*.zip.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md, ${stageName}/${stageName}*.zip, ${stageName}/javatest*.jar, ${stageName}/javatest*sum*.txt",
+                followSymlinks: false
+            )
         } catch (Exception e) {
-            slackSend channel: 'jenkins', color: 'danger', message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}", teamDomain: 'adoptium'
+            slackSend(channel: 'jenkins', color: 'danger',
+                message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}",
+                teamDomain: 'adoptium')
             throw new Exception("[ERROR] ${stageName} FAILED\n${e}")
         }
     }
