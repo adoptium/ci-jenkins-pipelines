@@ -75,7 +75,7 @@ def formatPassRateSection(String label, Map counts) {
     if (total == 0) {
         return ""
     }
-    return "*${label}*: ${formatPassRatePercentage(counts.success, total)}% pass ${formatStatusBreakdown(counts)}"
+    return "*${label}: ${formatPassRatePercentage(counts.success, total)}%* ${formatStatusBreakdown(counts)}"
 }
 
 def formatAqaSummary(Map jobCounts, Map targetCounts, Map remoteCounts) {
