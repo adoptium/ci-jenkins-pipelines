@@ -1,7 +1,4 @@
 targetConfigurations = [
-        'x64Mac'      : [
-                'temurin'
-        ],
         'x64Linux'    : [
                 'temurin'
         ],
