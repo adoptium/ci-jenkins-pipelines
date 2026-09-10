@@ -116,7 +116,7 @@ def incrementStatusCounts(Map counts, String buildResult) {
         counts.success += 1
     } else if (buildResult == "UNSTABLE") {
         counts.warning += 1
-    } else if (["FAILURE", "FAILED"].contains(buildResult)) {
+    } else if (["FAILURE", "FAILED", "ABORTED"].contains(buildResult)) {
         counts.failure += 1
     }
 }
