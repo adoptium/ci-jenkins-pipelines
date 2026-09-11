@@ -2,13 +2,10 @@
 // For full builds, previously published versioned artifacts are preserved
 // (same filename = keep old, regenerate its checksum) so their SHA values
 // never change unless the source actually changed.
-CRON_SETTINGS = '''H 6 * * 1'''
-NODE_LABEL = 'dockerBuild&&linux&&x64'
-
 pipeline {
     agent none
     triggers {
-        cron(CRON_SETTINGS)
+        cron('H 6 * * 1')
         pollSCM('H/15 * * * *')
     }
     parameters {
@@ -20,19 +17,19 @@ pipeline {
     }
     stages {
         stage('Check') {
-            agent { label NODE_LABEL }
+            agent { label 'dockerBuild&&linux&&x64' }
             steps {
                 script {
-                    def isTimer    = currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause')
-                    def isOverride = params.OVERRIDE_TIP_ONLY != 'auto'
-                    def isRelevantChange = currentBuild.changeSets.any { cs ->
+                    List isTimer    = currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause')
+                    boolean isOverride = params.OVERRIDE_TIP_ONLY != 'auto'
+                    boolean isRelevantChange = currentBuild.changeSets.any { cs ->
                         cs.items.any { item ->
                             item.affectedFiles.any { f -> f.path.startsWith('tools/code-tools/') }
                         }
                     }
                     if (!isTimer && !isOverride && !isRelevantChange) {
                         currentBuild.result = 'ABORTED'
-                        error('No changes in tools/code-tools/ — aborting build.')
+                        error('No changes in tools/code-tools/ - aborting build.')
                     }
                 }
             }
@@ -40,42 +37,42 @@ pipeline {
         stage('Build') {
             environment {
                 TIP_ONLY = """${
-                    params.OVERRIDE_TIP_ONLY != 'auto'
-                        ? params.OVERRIDE_TIP_ONLY
-                        : (currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') ? 'true' : 'false')
+                    params.OVERRIDE_TIP_ONLY == 'auto'
+                        ? (currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') ? 'true' : 'false')
+                        : params.OVERRIDE_TIP_ONLY
                 }"""
             }
             parallel {
                 stage('asmtools') {
-                    agent { label NODE_LABEL }
+                    agent { label 'dockerBuild&&linux&&x64' }
                     steps { build('asmtools') }
                 }
                 stage('jcstress') {
-                    agent { label NODE_LABEL }
+                    agent { label 'dockerBuild&&linux&&x64' }
                     steps { build('jcstress') }
                 }
                 stage('jtreg') {
-                    agent { label NODE_LABEL }
+                    agent { label 'dockerBuild&&linux&&x64' }
                     steps { build('jtreg') }
                 }
                 stage('jtharness') {
-                    agent { label NODE_LABEL }
+                    agent { label 'dockerBuild&&linux&&x64' }
                     steps { build('jtharness') }
                 }
                 stage('sigtest') {
-                    agent { label NODE_LABEL }
+                    agent { label 'dockerBuild&&linux&&x64' }
                     steps { build('sigtest') }
                 }
                 stage('jcov') {
-                    agent { label NODE_LABEL }
+                    agent { label 'dockerBuild&&linux&&x64' }
                     steps { build('jcov') }
                 }
                 stage('jmh') {
-                    agent { label NODE_LABEL }
+                    agent { label 'dockerBuild&&linux&&x64' }
                     steps { build('jmh') }
                 }
                 stage('temurin-sbom') {
-                    agent { label NODE_LABEL }
+                    agent { label 'dockerBuild&&linux&&x64' }
                     steps { build('temurin-sbom') }
                 }
             }
@@ -83,28 +80,21 @@ pipeline {
     }
 }
 
-def isTipArtifact(String filename) {
-    // Tip artifacts contain 'tip' or 'master' in the name, or are named with
-    // a short hex commit SHA (7-10 hex chars) as the version segment.
-    return filename ==~ /.*?(tip|master).*/ ||
-           filename ==~ /.*-[0-9a-f]{7,10}\..*/
-}
-
-def copyLastSuccessfulArtifacts(String stageName) {
+void copyLastSuccessfulArtifacts(String stageName) {
     // Find the last successful build that actually archived artifacts for this
     // stage. lastSuccessful() alone is not safe because a build triggered by an
     // SCM change outside tools/code-tools/** skips the Build stage, succeeds
     // with no artifacts, and would then be selected — causing all prior
     // versioned artifacts to be lost.
     script {
-        def job = Jenkins.get().getItemByFullName(env.JOB_NAME)
-        def sourceBuild = null
+        hudson.model.Job job = Jenkins.get().getItemByFullName(env.JOB_NAME)
+        hudson.model.Run sourceBuild = null
         if (job != null) {
-            for (build in job.builds) {
-                if (build.number >= currentBuild.number.toInteger()) continue
-                if (build.result?.toString() != 'SUCCESS') continue
+            for (hudson.model.Run build in job.builds) {
+                if (build.number >= currentBuild.number.toInteger()) { continue }
+                if (build.result?.toString() != 'SUCCESS') { continue }
                 // Check that this build actually has artifacts for this stage
-                if (build.artifacts.any { it.relativePath.startsWith("${stageName}/") }) {
+                if (build.artifacts.any { hudson.model.Run.Artifact artifact -> artifact.relativePath.startsWith("${stageName}/") }) {
                     sourceBuild = build
                     break
                 }
@@ -125,7 +115,7 @@ def copyLastSuccessfulArtifacts(String stageName) {
     }
 }
 
-def restoreVersionedArtifacts(String stageName) {
+void restoreVersionedArtifacts(String stageName) {
     // 1. Copy all previous versioned artifacts (non-tip) into the stage dir
     //    so they are present regardless of whether they were rebuilt.
     // 2. For any versioned artifact that WAS rebuilt, replace it with the
@@ -187,7 +177,7 @@ def restoreVersionedArtifacts(String stageName) {
     """
 }
 
-def build(String stageName) {
+void build(String stageName) {
     cleanWs()
     docker.image('adoptopenjdk/centos7_build_image').inside {
         try {
@@ -199,7 +189,7 @@ def build(String stageName) {
             copyLastSuccessfulArtifacts(stageName)
 
             script {
-                def toolsUrl = "https://github.com/openjdk/${stageName}"
+                String toolsUrl = "https://github.com/openjdk/${stageName}"
                 if (stageName == 'temurin-sbom') {
                     toolsUrl = 'https://github.com/adoptium/temurin-build.git'
                 }
@@ -222,11 +212,11 @@ def build(String stageName) {
                 artifacts: "**/temurin-*-sbom.jar, ${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt, ${stageName}/${stageName}*.tar.gz.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/*.zip.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md, ${stageName}/${stageName}*.zip, ${stageName}/javatest*.jar, ${stageName}/javatest*sum*.txt",
                 followSymlinks: false
             )
-        } catch (Exception e) {
+        } catch (hudson.AbortException e) {
             slackSend(channel: 'jenkins', color: 'danger',
                 message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}",
                 teamDomain: 'adoptium')
-            throw new Exception("[ERROR] ${stageName} FAILED\n${e}")
+            throw new hudson.AbortException("[ERROR] ${stageName} FAILED\n${e}")
         }
     }
 }
