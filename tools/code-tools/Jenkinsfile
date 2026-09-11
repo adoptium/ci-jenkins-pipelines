@@ -98,9 +98,11 @@ def copyLastSuccessfulArtifacts(String stageName) {
 }
 
 def restoreVersionedArtifacts(String stageName) {
-    // For each non-tip artifact just built, if a same-named file exists in
-    // previous/ replace the new file with the old one and regenerate its
-    // sha256sum.txt so the published hash stays stable.
+    // 1. Copy all previous versioned artifacts (non-tip) into the stage dir
+    //    so they are present regardless of whether they were rebuilt.
+    // 2. For any versioned artifact that WAS rebuilt, replace it with the
+    //    previous version to keep the SHA stable.
+    // Tip artifacts produced by the build are always kept as-is.
     sh """
         set -euo pipefail
         prev_dir="previous/${stageName}"
@@ -109,6 +111,26 @@ def restoreVersionedArtifacts(String stageName) {
             exit 0
         fi
 
+        # Step 1: copy all previous versioned artifacts into the stage dir
+        # (this covers the tip-only case where they were never rebuilt)
+        find "\${prev_dir}" -maxdepth 1 -type f | while read -r prev_file; do
+            filename=\$(basename "\${prev_file}")
+
+            # Never overwrite newly built tip artifacts with old ones
+            if echo "\${filename}" | grep -qE '(tip|master)' || \
+               echo "\${filename}" | grep -qE '-[0-9a-f]{7,10}\\.'; then
+                echo "TIP artifact, skipping copy from previous: \${filename}"
+                continue
+            fi
+
+            dest="${stageName}/\${filename}"
+            if [ ! -f "\${dest}" ]; then
+                echo "VERSIONED not rebuilt, copying from previous: \${filename}"
+                cp -f "\${prev_file}" "\${dest}"
+            fi
+        done
+
+        # Step 2: for versioned artifacts that WERE rebuilt, restore old version
         find "${stageName}" -maxdepth 1 -type f | while read -r new_file; do
             filename=\$(basename "\${new_file}")
 
@@ -119,14 +141,14 @@ def restoreVersionedArtifacts(String stageName) {
                 continue
             fi
 
-            # Skip checksum files - we'll regenerate them
+            # Skip checksum files
             if echo "\${filename}" | grep -qE '\\.sha256sum\\.txt\$'; then
                 continue
             fi
 
             prev_file="\${prev_dir}/\${filename}"
             if [ -f "\${prev_file}" ]; then
-                echo "VERSIONED artifact exists in previous build, restoring old: \${filename}"
+                echo "VERSIONED rebuilt, restoring old: \${filename}"
                 cp -f "\${prev_file}" "\${new_file}"
             else
                 echo "NEW versioned artifact (not in previous build), keeping: \${filename}"
