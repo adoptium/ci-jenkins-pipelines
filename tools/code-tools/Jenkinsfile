@@ -169,7 +169,9 @@ def restoreVersionedArtifacts(String stageName) {
                 continue
             fi
 
-            # Skip checksum files
+            # Skip checksum files — Step 1 already restored the previous
+            # checksum by copying it from previous/ before this loop ran,
+            # so the correct old checksum is already in place.
             if echo "\${filename}" | grep -qE '\\.sha256sum\\.txt\$'; then
                 continue
             fi
