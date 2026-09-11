@@ -19,14 +19,25 @@ pipeline {
         buildDiscarder logRotator(daysToKeepStr: '30', numToKeepStr: '10')
     }
     stages {
-        stage('Build') {
-            when {
-                anyOf {
-                    triggeredBy 'TimerTrigger'
-                    changeset 'tools/code-tools/**'
-                    expression { params.OVERRIDE_TIP_ONLY != 'auto' }
+        stage('Check') {
+            agent { label NODE_LABEL }
+            steps {
+                script {
+                    def isTimer    = currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause')
+                    def isOverride = params.OVERRIDE_TIP_ONLY != 'auto'
+                    def isRelevantChange = currentBuild.changeSets.any { cs ->
+                        cs.items.any { item ->
+                            item.affectedFiles.any { f -> f.path.startsWith('tools/code-tools/') }
+                        }
+                    }
+                    if (!isTimer && !isOverride && !isRelevantChange) {
+                        currentBuild.result = 'ABORTED'
+                        error('No changes in tools/code-tools/ — aborting build.')
+                    }
                 }
             }
+        }
+        stage('Build') {
             environment {
                 TIP_ONLY = """${
                     params.OVERRIDE_TIP_ONLY != 'auto'
@@ -80,20 +91,37 @@ def isTipArtifact(String filename) {
 }
 
 def copyLastSuccessfulArtifacts(String stageName) {
-    // Copy artifacts from the last successful build of this job into
-    // previous/<stageName>/ so we can compare after the new build.
-    try {
-        copyArtifacts(
-            projectName: env.JOB_NAME,
-            selector: lastSuccessful(),
-            filter: "${stageName}/**",
-            target: 'previous',
-            optional: true,   // no-op on first ever run
-            flatten: false
-        )
-        echo "Copied previous artifacts for ${stageName} into previous/${stageName}/"
-    } catch (Exception e) {
-        echo "No previous artifacts found for ${stageName} (first run?): ${e.message}"
+    // Find the last successful build that actually archived artifacts for this
+    // stage. lastSuccessful() alone is not safe because a build triggered by an
+    // SCM change outside tools/code-tools/** skips the Build stage, succeeds
+    // with no artifacts, and would then be selected — causing all prior
+    // versioned artifacts to be lost.
+    script {
+        def job = Jenkins.get().getItemByFullName(env.JOB_NAME)
+        def sourceBuild = null
+        if (job != null) {
+            for (build in job.builds) {
+                if (build.number >= currentBuild.number.toInteger()) continue
+                if (build.result?.toString() != 'SUCCESS') continue
+                // Check that this build actually has artifacts for this stage
+                if (build.artifacts.any { it.relativePath.startsWith("${stageName}/") }) {
+                    sourceBuild = build
+                    break
+                }
+            }
+        }
+        if (sourceBuild != null) {
+            echo "Copying artifacts from build #${sourceBuild.number} for ${stageName}"
+            copyArtifacts(
+                projectName: env.JOB_NAME,
+                selector: specific("${sourceBuild.number}"),
+                filter: "${stageName}/**",
+                target: 'previous',
+                flatten: false
+            )
+        } else {
+            echo "No previous build with artifacts found for ${stageName} (first run?)"
+        }
     }
 }
 
