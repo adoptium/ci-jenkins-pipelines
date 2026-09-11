@@ -128,8 +128,6 @@ def restoreVersionedArtifacts(String stageName) {
             if [ -f "\${prev_file}" ]; then
                 echo "VERSIONED artifact exists in previous build, restoring old: \${filename}"
                 cp -f "\${prev_file}" "\${new_file}"
-                # Regenerate checksum from the restored file
-                sha256sum "\${new_file}" > "\${new_file}.sha256sum.txt"
             else
                 echo "NEW versioned artifact (not in previous build), keeping: \${filename}"
             fi
