@@ -2,7 +2,7 @@
 // For full builds, previously published versioned artifacts are preserved
 // (same filename = keep old, regenerate its checksum) so their SHA values
 // never change unless the source actually changed.
-CRON_SETTINGS = '''H H * * 0'''
+CRON_SETTINGS = '''H 6 * * 1'''
 NODE_LABEL = 'dockerBuild&&linux&&x64'
 
 pipeline {
