@@ -8,6 +8,7 @@
 # shellcheck disable=SC2035,SC2155
 set -euo pipefail
 WORKSPACE=$PWD
+export SOURCE_DATE_EPOCH=0
 
 function hashArtifacts() {
   echo "Creating checksums all sigtest*.zip"
@@ -75,17 +76,19 @@ pushd $REPO_DIR
   latestReleaseNumber=`echo $latestRelease | sed s/$main_file//g`
   rc=$main_file-$latestRelease
 
-  # latest released
-  resetRepo "$latestRelease" true
-  pushd build
-    ant test | tee ../$rc.zip.txt || true
-    ant build
-  popd
-  mv  ../$BUILD_PATH/$main_file-$latestReleaseNumber.zip $rc.zip
-  mv  ../$BUILD_PATH/$main_file-examples-$latestReleaseNumber.zip $rc-exmaples.zip
-  echo "Manually renaming $rc.zip as $main_file.zip to provide latest-stable-recommended file"
-  ln -fv $rc.zip $main_file.zip
-  cleanRepo
+  if [ "${TIP_ONLY:-false}" != "true" ]; then
+    # latest released
+    resetRepo "$latestRelease" true
+    pushd build
+      ant test | tee ../$rc.zip.txt || true
+      ant build
+    popd
+    mv  ../$BUILD_PATH/$main_file-$latestReleaseNumber.zip $rc.zip
+    mv  ../$BUILD_PATH/$main_file-examples-$latestReleaseNumber.zip $rc-exmaples.zip
+    echo "Manually renaming $rc.zip as $main_file.zip to provide latest-stable-recommended file"
+    ln -fv $rc.zip $main_file.zip
+    cleanRepo
+  fi
 
   # tip
   resetRepo master true
