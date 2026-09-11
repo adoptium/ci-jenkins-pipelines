@@ -81,37 +81,22 @@ pipeline {
 }
 
 void copyLastSuccessfulArtifacts(String stageName) {
-    // Find the last successful build that actually archived artifacts for this
-    // stage. lastSuccessful() alone is not safe because a build triggered by an
-    // SCM change outside tools/code-tools/** skips the Build stage, succeeds
-    // with no artifacts, and would then be selected — causing all prior
-    // versioned artifacts to be lost.
-    script {
-        hudson.model.Job job = Jenkins.get().getItemByFullName(env.JOB_NAME)
-        hudson.model.Run sourceBuild = null
-        if (job != null) {
-            for (hudson.model.Run build in job.builds) {
-                if (build.number >= currentBuild.number.toInteger()) { continue }
-                if (build.result?.toString() != 'SUCCESS') { continue }
-                // Check that this build actually has artifacts for this stage
-                if (build.artifacts.any { hudson.model.Run.Artifact artifact -> artifact.relativePath.startsWith("${stageName}/") }) {
-                    sourceBuild = build
-                    break
-                }
-            }
-        }
-        if (sourceBuild != null) {
-            echo "Copying artifacts from build #${sourceBuild.number} for ${stageName}"
-            copyArtifacts(
-                projectName: env.JOB_NAME,
-                selector: specific("${sourceBuild.number}"),
-                filter: "${stageName}/**",
-                target: 'previous',
-                flatten: false
-            )
-        } else {
-            echo "No previous build with artifacts found for ${stageName} (first run?)"
-        }
+    // The Check stage aborts any build that is not a cron trigger, a manual
+    // override, or an SCM change inside tools/code-tools/**. This means every
+    // SUCCESS build has actually run the Build stage and archived artifacts,
+    // so lastSuccessful() is safe to use here without a raw Jenkins API walk.
+    try {
+        copyArtifacts(
+            projectName: env.JOB_NAME,
+            selector: lastSuccessful(),
+            filter: "${stageName}/**",
+            target: 'previous',
+            optional: true,   // no-op on first ever run
+            flatten: false
+        )
+        echo "Copied previous artifacts for ${stageName} into previous/${stageName}/"
+    } catch (hudson.AbortException e) {
+        echo "No previous artifacts found for ${stageName} (first run?): ${e.message}"
     }
 }
 
