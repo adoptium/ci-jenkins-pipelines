@@ -172,13 +172,10 @@ void restoreVersionedArtifacts(String stageName) {
                 continue
             fi
 
-            # Skip checksum files — Step 1 already restored the previous
-            # checksum by copying it from previous/ before this loop ran,
-            # so the correct old checksum is already in place.
-            if echo "\${filename}" | grep -qE '\\.sha256sum\\.txt\$'; then
-                continue
-            fi
-
+            # Restore both the artifact and its checksum file together.
+            # Step 1 did not overwrite the newly generated checksum (the file
+            # already existed), so we must restore it here alongside the artifact
+            # to keep them in sync.
             prev_file="\${prev_dir}/\${rel_path}"
             if [ -f "\${prev_file}" ]; then
                 echo "VERSIONED rebuilt, restoring old: \${rel_path}"
