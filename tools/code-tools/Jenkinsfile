@@ -143,10 +143,10 @@ def build(String stageName) {
         try {
             checkout scm
 
-            // Full build only: copy down previous artifacts before building
-            if (env.TIP_ONLY == 'false') {
-                copyLastSuccessfulArtifacts(stageName)
-            }
+            // Always copy previous artifacts — in tip-only mode the versioned
+            // ones are restored as-is; in full mode they are rebuilt then
+            // compared and old ones kept where the filename matches.
+            copyLastSuccessfulArtifacts(stageName)
 
             script {
                 def toolsUrl = "https://github.com/openjdk/${stageName}"
@@ -163,10 +163,10 @@ def build(String stageName) {
 
             sh label: stageName, script: "./tools/code-tools/${stageName}.sh"
 
-            // Full build only: restore old versioned artifacts where unchanged
-            if (env.TIP_ONLY == 'false') {
-                restoreVersionedArtifacts(stageName)
-            }
+            // Always restore versioned artifacts from previous build:
+            //   TIP_ONLY=true  → versioned were not rebuilt, restore all of them
+            //   TIP_ONLY=false → versioned were rebuilt, keep old where filename matches
+            restoreVersionedArtifacts(stageName)
 
             archiveArtifacts(
                 artifacts: "**/temurin-*-sbom.jar, ${stageName}/*.tar.gz, ${stageName}/${stageName}*.jar, ${stageName}/${stageName}*.jar.*.txt, ${stageName}/${stageName}*.tar.gz.*.txt, ${stageName}/*.tar.gz.*sum*.txt, ${stageName}/*.zip.*sum*.txt, ${stageName}/${stageName}*.jar.html, ${stageName}/${stageName}*.jar.md, ${stageName}/${stageName}*.zip, ${stageName}/javatest*.jar, ${stageName}/javatest*sum*.txt",
