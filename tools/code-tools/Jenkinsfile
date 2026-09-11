@@ -11,6 +11,10 @@ pipeline {
         cron(CRON_SETTINGS)
         pollSCM('H/15 * * * *')
     }
+    parameters {
+        choice(name: 'OVERRIDE_TIP_ONLY', choices: ['auto', 'true', 'false'],
+               description: 'auto: determined by trigger (cron=tip-only, SCM=full); true/false: force override for testing')
+    }
     options {
         buildDiscarder logRotator(daysToKeepStr: '30', numToKeepStr: '10')
     }
@@ -20,10 +24,15 @@ pipeline {
                 anyOf {
                     triggeredBy 'TimerTrigger'
                     changeset 'tools/code-tools/**'
+                    expression { params.OVERRIDE_TIP_ONLY != 'auto' }
                 }
             }
             environment {
-                TIP_ONLY = "${currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') ? 'true' : 'false'}"
+                TIP_ONLY = """${
+                    params.OVERRIDE_TIP_ONLY != 'auto'
+                        ? params.OVERRIDE_TIP_ONLY
+                        : (currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause') ? 'true' : 'false')
+                }"""
             }
             parallel {
                 stage('asmtools') {
