@@ -134,9 +134,12 @@ void restoreVersionedArtifacts(String stageName) {
         find "\${prev_dir}" -maxdepth 1 -type f | while read -r prev_file; do
             filename=\$(basename "\${prev_file}")
 
-            # Never overwrite newly built tip artifacts with old ones
+            # Never overwrite newly built tip artifacts with old ones.
+            # The hex-SHA pattern requires at least one a-f letter so that
+            # pure-digit date suffixes like -20240222 are not mistaken for
+            # commit SHAs and incorrectly treated as tip artifacts.
             if echo "\${filename}" | grep -qE '(tip|master)' || \
-               echo "\${filename}" | grep -qE '-[0-9a-f]{7,10}\\.'; then
+               echo "\${filename}" | grep -qE '-([0-9a-f]*[a-f][0-9a-f]{6,9}|[0-9a-f]{6,9}[a-f][0-9a-f]*)\\.'; then
                 echo "TIP artifact, skipping copy from previous: \${filename}"
                 continue
             fi
@@ -152,9 +155,12 @@ void restoreVersionedArtifacts(String stageName) {
         find "${stageName}" -maxdepth 1 -type f | while read -r new_file; do
             filename=\$(basename "\${new_file}")
 
-            # Always keep new tip artifacts
+            # Always keep new tip artifacts.
+            # The hex-SHA pattern requires at least one a-f letter so that
+            # pure-digit date suffixes like -20240222 are not mistaken for
+            # commit SHAs and incorrectly treated as tip artifacts.
             if echo "\${filename}" | grep -qE '(tip|master)' || \
-               echo "\${filename}" | grep -qE '-[0-9a-f]{7,10}\\.'; then
+               echo "\${filename}" | grep -qE '-([0-9a-f]*[a-f][0-9a-f]{6,9}|[0-9a-f]{6,9}[a-f][0-9a-f]*)\\.'; then
                 echo "TIP artifact, keeping new: \${filename}"
                 continue
             fi
