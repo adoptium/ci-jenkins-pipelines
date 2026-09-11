@@ -20,7 +20,7 @@ pipeline {
             agent { label 'dockerBuild&&linux&&x64' }
             steps {
                 script {
-                    List isTimer    = currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause')
+                    List isTimer = currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause')
                     boolean isOverride = params.OVERRIDE_TIP_ONLY != 'auto'
                     boolean isRelevantChange = currentBuild.changeSets.any { cs ->
                         cs.items.any { item ->
@@ -101,11 +101,11 @@ void copyLastSuccessfulArtifacts(String stageName) {
 }
 
 void restoreVersionedArtifacts(String stageName) {
-    // 1. Copy all previous versioned artifacts (non-tip) into the stage dir
-    //    so they are present regardless of whether they were rebuilt.
-    // 2. For any versioned artifact that WAS rebuilt, replace it with the
-    //    previous version to keep the SHA stable.
-    // Tip artifacts produced by the build are always kept as-is.
+    // 1. Copy all previous versioned artifacts into the stage dir,
+    //    preserving relative paths. Only copies files not already present
+    //    so newly built tip artifacts are never overwritten.
+    // 2. For any versioned artifact that WAS rebuilt, restore the previous
+    //    version (and its checksum) to keep the SHA stable.
     sh """
         set -euo pipefail
         prev_dir="previous/${stageName}"
@@ -123,15 +123,11 @@ void restoreVersionedArtifacts(String stageName) {
             echo "\${filename}" | grep -qE '-([0-9a-f]*[a-f][0-9a-f]{6,9}|[0-9a-f]{6,9}[a-f][0-9a-f]*)\\.'; return \$?
         }
 
-        # Step 1: copy all previous versioned artifacts into the stage dir,
-        # preserving relative paths (handles nested dirs like temurin-sbom/cyclonedx-lib).
-        # Only copies files not already present so newly built tip artifacts
-        # are never overwritten.
+        # Step 1: copy all previous versioned artifacts into the stage dir.
         find "\${prev_dir}" -type f | while read -r prev_file; do
             rel_path="\${prev_file#\${prev_dir}/}"
             filename=\$(basename "\${rel_path}")
 
-            # Never overwrite newly built tip artifacts with old ones.
             if is_tip "\${filename}"; then
                 echo "TIP artifact, skipping copy from previous: \${rel_path}"
                 continue
@@ -145,22 +141,18 @@ void restoreVersionedArtifacts(String stageName) {
             fi
         done
 
-        # Step 2: for versioned artifacts that WERE rebuilt, restore old version,
-        # preserving relative paths.
+        # Step 2: for versioned artifacts that WERE rebuilt, restore old version.
+        # Restores both the artifact and its checksum file together to keep
+        # them in sync (Step 1 cannot overwrite already-present files).
         find "\${stage_dir}" -type f | while read -r new_file; do
             rel_path="\${new_file#\${stage_dir}/}"
             filename=\$(basename "\${rel_path}")
 
-            # Always keep new tip artifacts.
             if is_tip "\${filename}"; then
                 echo "TIP artifact, keeping new: \${rel_path}"
                 continue
             fi
 
-            # Restore both the artifact and its checksum file together.
-            # Step 1 did not overwrite the newly generated checksum (the file
-            # already existed), so we must restore it here alongside the artifact
-            # to keep them in sync.
             prev_file="\${prev_dir}/\${rel_path}"
             if [ -f "\${prev_file}" ]; then
                 echo "VERSIONED rebuilt, restoring old: \${rel_path}"
@@ -215,7 +207,7 @@ void build(String stageName) {
             slackSend(channel: 'jenkins', color: 'danger',
                 message: "${env.JOB_NAME} : #${env.BUILD_NUMBER} : ${stageName}() FAILED with following error message:\n${e}",
                 teamDomain: 'adoptium')
-            throw new hudson.AbortException("[ERROR] ${stageName} FAILED\n${e}")
+            error("[ERROR] ${stageName} FAILED\n${e}")
         }
     }
 }
