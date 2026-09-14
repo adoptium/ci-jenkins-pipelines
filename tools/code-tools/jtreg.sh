@@ -7,6 +7,7 @@
 # shellcheck disable=SC2035,SC2116
 
 set -eu
+export SOURCE_DATE_EPOCH=0
 
 readonly JTREG_5='jtreg5.1-b01'
 readonly JTREG_6='jtreg-6+1'
@@ -155,8 +156,8 @@ buildJTReg()
 
     createWin32FolderWithJTRegBinaries
 
-    tar -cvf jtreg.tar jtreg
-    gzip -9 jtreg.tar
+    tar --mtime="@0" -cvf jtreg.tar jtreg
+    gzip -n -9 jtreg.tar
     mv jtreg.tar.gz "$WORKSPACE/$version.tar.gz"
     createChecksum "$WORKSPACE/$version.tar.gz" "$WORKSPACE"
     git reset --hard HEAD
@@ -188,20 +189,22 @@ clearWorkspace
 echo 'Starting build process...'
 export WORKSPACE="$WORKSPACE/jtreg"
 cd "$WORKSPACE"
-buildJTReg "$JTREG_5"
-buildJTReg "$JTREG_6"
-buildJTReg "$JTREG_6_1"
-buildJTReg "$JTREG_7"
-buildJTReg "$JTREG_7_1"
-buildJTReg "$JTREG_7_2"
-buildJTReg "$JTREG_7_3"
-buildJTReg "$JTREG_7_3_1"
-buildJTReg "$JTREG_7_4"
-buildJTReg "$JTREG_7_5_1"
-buildJTReg "$JTREG_7_5_2"
-buildJTReg "$JTREG_8"
-buildJTReg "$JTREG_8_1"
-buildJTReg "$JTREG_8_2_1"
-buildJTReg "$JTREG_8_3"
+if [ "${TIP_ONLY:-false}" != "true" ]; then
+  buildJTReg "$JTREG_5"
+  buildJTReg "$JTREG_6"
+  buildJTReg "$JTREG_6_1"
+  buildJTReg "$JTREG_7"
+  buildJTReg "$JTREG_7_1"
+  buildJTReg "$JTREG_7_2"
+  buildJTReg "$JTREG_7_3"
+  buildJTReg "$JTREG_7_3_1"
+  buildJTReg "$JTREG_7_4"
+  buildJTReg "$JTREG_7_5_1"
+  buildJTReg "$JTREG_7_5_2"
+  buildJTReg "$JTREG_8"
+  buildJTReg "$JTREG_8_1"
+  buildJTReg "$JTREG_8_2_1"
+  buildJTReg "$JTREG_8_3"
+fi
 buildJTReg
 echo '...finished with build process.'
