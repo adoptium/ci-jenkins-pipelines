@@ -927,16 +927,8 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
 
 node('worker') {
     def githubTokenCredentialId = params.GITHUB_TOKEN_CREDENTIAL ?: ''
-    if (githubTokenCredentialId) {
-        withCredentials([string(credentialsId: githubTokenCredentialId, variable: 'GITHUB_TOKEN')]) {
-            runPipeline()
-        }
-    } else {
-        runPipeline()
-    }
-}
-
-def runPipeline() {
+    def credList = githubTokenCredentialId ? [string(credentialsId: githubTokenCredentialId, variable: 'GITHUB_TOKEN')] : []
+    withCredentials(credList) {
     try{
         // Create a cookie jar file with the current Jenkins session cookie
         // This allows wget to authenticate using the running job's session
@@ -1424,4 +1416,5 @@ def runPipeline() {
         sh "rm -f '${WORKSPACE}/.jenkins-cookies' || true"
         cleanWs notFailBuild: true
     }
+    } // withCredentials
 }
