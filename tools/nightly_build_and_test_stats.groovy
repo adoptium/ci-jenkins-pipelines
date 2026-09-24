@@ -484,8 +484,12 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     // Transform to browser URL for use in Slack message link
     status['assetsUrl'] = releaseAssetsUrl.replaceAll("api.github.com","github.com").replaceAll("/repos/","/").replaceAll("/tags/","/")
 
+    // Build GitHub auth args in the shell to avoid Groovy string interpolation of the secret.
+    // GITHUB_AUTH_ARGS is set to "-H Authorization:..." only when GITHUB_TOKEN is present.
+    def githubAuthArgs = '${GITHUB_TOKEN:+-H} ${GITHUB_TOKEN:+Authorization: token $GITHUB_TOKEN}'
+
     // Get list of assets, concatenate into a single string
-    def rc = sh(script: 'rm -f releaseAssets.json && curl -L ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} -o releaseAssets.json ' + releaseAssetsUrl, returnStatus: true)
+    def rc = sh(script: 'rm -f releaseAssets.json && curl -L ' + githubAuthArgs + ' -o releaseAssets.json ' + releaseAssetsUrl, returnStatus: true)
     def releaseAssets = ""
     if (rc == 0) {
         releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
@@ -508,7 +512,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
         } else {
             def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
             echo "    Loading pipeline config file: ${targetConfigPath}"
-            rc = sh(script: 'curl -L --fail ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} -O ' + targetConfigPath, returnStatus: true)
+            rc = sh(script: 'curl -L --fail ' + githubAuthArgs + ' -O ' + targetConfigPath, returnStatus: true)
             if (rc != 0) {
                 echo "Error loading ${targetConfigPath}"
                 status['assets'] = "Error loading ${targetConfigPath}"
