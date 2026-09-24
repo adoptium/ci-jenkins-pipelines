@@ -529,13 +529,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
                 status['assets'] = "Error loading ${targetConfigPath}"
             } else {
                 // Load the targetConfiguration
-                def configFileObj = new File("${WORKSPACE}/${configFile}")
-                if (configFileObj.exists() && configFileObj.length() > 0) {
-                    load configFile
-                } else {
-                    echo "Error: config file ${configFile} is empty or missing after download"
-                    status['assets'] = "Error loading ${targetConfigPath}"
-                }
+                load configFile
             }
         }
 
