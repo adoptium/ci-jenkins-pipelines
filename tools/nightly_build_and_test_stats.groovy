@@ -485,8 +485,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     status['assetsUrl'] = releaseAssetsUrl.replaceAll("api.github.com","github.com").replaceAll("/repos/","/").replaceAll("/tags/","/")
 
     // Get list of assets, concatenate into a single string
-    def githubAuthHeader = env.GITHUB_TOKEN ? "-H 'Authorization: token ${env.GITHUB_TOKEN}'" : ""
-    def rc = sh(script: "rm -f releaseAssets.json && curl -L ${githubAuthHeader} -o releaseAssets.json ${releaseAssetsUrl}", returnStatus: true)
+    def rc = sh(script: 'rm -f releaseAssets.json && curl -L ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} -o releaseAssets.json ' + releaseAssetsUrl, returnStatus: true)
     def releaseAssets = ""
     if (rc == 0) {
         releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
@@ -509,7 +508,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
         } else {
             def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
             echo "    Loading pipeline config file: ${targetConfigPath}"
-            rc = sh(script: "curl -L --fail ${githubAuthHeader} -O ${targetConfigPath}", returnStatus: true)
+            rc = sh(script: 'curl -L --fail ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} -O ' + targetConfigPath, returnStatus: true)
             if (rc != 0) {
                 echo "Error loading ${targetConfigPath}"
                 status['assets'] = "Error loading ${targetConfigPath}"
