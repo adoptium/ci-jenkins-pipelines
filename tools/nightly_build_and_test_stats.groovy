@@ -509,13 +509,19 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
         } else {
             def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
             echo "    Loading pipeline config file: ${targetConfigPath}"
-            rc = sh(script: "curl -L ${githubAuthHeader} -O ${targetConfigPath}", returnStatus: true)
+            rc = sh(script: "curl -L --fail ${githubAuthHeader} -O ${targetConfigPath}", returnStatus: true)
             if (rc != 0) {
                 echo "Error loading ${targetConfigPath}"
                 status['assets'] = "Error loading ${targetConfigPath}"
             } else {
                 // Load the targetConfiguration
-                load configFile
+                def configFileObj = new File("${WORKSPACE}/${configFile}")
+                if (configFileObj.exists() && configFileObj.length() > 0) {
+                    load configFile
+                } else {
+                    echo "Error: config file ${configFile} is empty or missing after download"
+                    status['assets'] = "Error loading ${targetConfigPath}"
+                }
             }
         }
 
@@ -912,6 +918,17 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
 
 
 node('worker') {
+    def githubTokenCredentialId = params.GITHUB_TOKEN_CREDENTIAL ?: ''
+    if (githubTokenCredentialId) {
+        withCredentials([string(credentialsId: githubTokenCredentialId, variable: 'GITHUB_TOKEN')]) {
+            runPipeline()
+        }
+    } else {
+        runPipeline()
+    }
+}
+
+def runPipeline() {
     try{
         // Create a cookie jar file with the current Jenkins session cookie
         // This allows wget to authenticate using the running job's session
