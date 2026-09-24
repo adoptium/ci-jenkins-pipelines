@@ -484,8 +484,23 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
     // Transform to browser URL for use in Slack message link
     status['assetsUrl'] = releaseAssetsUrl.replaceAll("api.github.com","github.com").replaceAll("/repos/","/").replaceAll("/tags/","/")
 
+    // curl wrapper: adds Authorization header only when GITHUB_TOKEN is set.
+    // Defined as a shell function so the token is never interpolated by Groovy.
+    def curlGitHub = { String extraArgs, String url ->
+        sh(script: """
+            github_curl() {
+                if [ -n "\${GITHUB_TOKEN}" ]; then
+                    curl -L -H "Authorization: token \${GITHUB_TOKEN}" \$@
+                else
+                    curl -L \$@
+                fi
+            }
+            github_curl ${extraArgs} ${url}
+        """, returnStatus: true)
+    }
+
     // Get list of assets, concatenate into a single string
-    def rc = sh(script: 'rm -f releaseAssets.json && curl -L -o releaseAssets.json '+releaseAssetsUrl, returnStatus: true)
+    def rc = curlGitHub('-o releaseAssets.json', releaseAssetsUrl)
     def releaseAssets = ""
     if (rc == 0) {
         releaseAssets = sh(script: "cat releaseAssets.json | grep '\"name\"' | tr '\\n' '#'", returnStdout: true)
@@ -508,7 +523,7 @@ def verifyReleaseContent(String version, String release, String variant, Map sta
         } else {
             def targetConfigPath = "${params.BUILD_CONFIG_URL}/${configFile}"
             echo "    Loading pipeline config file: ${targetConfigPath}"
-            rc = sh(script: "curl -LO ${targetConfigPath}", returnStatus: true)
+            rc = curlGitHub('--fail -O', targetConfigPath)
             if (rc != 0) {
                 echo "Error loading ${targetConfigPath}"
                 status['assets'] = "Error loading ${targetConfigPath}"
@@ -911,6 +926,9 @@ def getFailedTestSummary(String trssUrl, String variant, String featureRelease, 
 
 
 node('worker') {
+    def githubTokenCredentialId = params.GITHUB_TOKEN_CREDENTIAL ?: ''
+    def credList = githubTokenCredentialId ? [string(credentialsId: githubTokenCredentialId, variable: 'GITHUB_TOKEN')] : []
+    withCredentials(credList) {
     try{
         // Create a cookie jar file with the current Jenkins session cookie
         // This allows wget to authenticate using the running job's session
@@ -1398,4 +1416,5 @@ node('worker') {
         sh "rm -f '${WORKSPACE}/.jenkins-cookies' || true"
         cleanWs notFailBuild: true
     }
+    } // withCredentials
 }
