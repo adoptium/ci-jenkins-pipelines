@@ -473,12 +473,16 @@ def getPlatformBuildUrls(String trssUrl, String featureRelease, String variant, 
     }
 
     def buildVariant = variant == "hotspot" ? "temurin" : variant
+    def buildVersion = ["aarch32-jdk8u", "alpine-jdk8u"].contains(featureRelease) ? "jdk8u" : featureRelease
     def childBuilds = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipelineId}", cookieJar)
+    if (!childBuilds) {
+        return buildUrls
+    }
     def childBuildsJson = new JsonSlurper().parseText(childBuilds)
     getPlatformConversionMap().each { platform, names ->
         def latestTimestamp = -1
         childBuildsJson.each { build ->
-            if (build.buildName == "${featureRelease}-${names[0]}-${buildVariant}" && build.buildUrl &&
+            if (build.buildName == "${buildVersion}-${names[0]}-${buildVariant}" && build.buildUrl &&
                 (build.timestamp ?: 0) > latestTimestamp) {
                 buildUrls[platform] = build.buildUrl
                 latestTimestamp = build.timestamp ?: 0
@@ -1429,7 +1433,8 @@ node('worker') {
 
                     // Print out formatted missing artifacts if any missing
                     if (missingAssets.size() > 0) {
-                        def platformBuildUrls = getPlatformBuildUrls(trssUrl, featureRelease, variant, probableBuildIdForTRSS, cookieJar)
+                        def buildVersion = tipReleases.contains(featureRelease) ? "jdk" : featureRelease
+                        def platformBuildUrls = getPlatformBuildUrls(trssUrl, buildVersion, variant, probableBuildIdForTRSS, cookieJar)
                         missingMsg = formatMissingArtifacts(missingAssets, platformBuildUrls, probableBuildUrl)
                         echo "===> ${missingMsg}"
                     }

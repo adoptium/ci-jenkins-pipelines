@@ -40,6 +40,28 @@ class NightlyBuildAndTestStatsTest {
         Assertions.assertEquals([:], script.getPlatformBuildUrls('https://trss.adoptium.net', 'jdk21u', 'temurin', '', 'cookies'))
         script.metaClass.callWgetSafely = { String url, String cookieJar -> '[]' }
         Assertions.assertEquals([:], script.getPlatformBuildUrls('https://trss.adoptium.net', 'jdk21u', 'temurin', 'pipeline-id', 'cookies'))
+        script.metaClass.callWgetSafely = { String url, String cookieJar -> '' }
+        Assertions.assertEquals([:], script.getPlatformBuildUrls('https://trss.adoptium.net', 'jdk21u', 'temurin', 'pipeline-id', 'cookies'))
+    }
+
+    @Test
+    void usesJdk8JobNamesForPortReleaseLabelsAndJdkForHead() {
+        def script = loadScript()
+        script.metaClass.callWgetSafely = { String url, String cookieJar ->
+            JsonOutput.toJson([
+                [buildName: 'jdk8u-alpine-linux-x64-temurin', buildUrl: 'https://ci.adoptium.net/job/alpine/1/'],
+                [buildName: 'jdk8u-linux-arm-temurin', buildUrl: 'https://ci.adoptium.net/job/arm/1/'],
+                [buildName: 'jdk-mac-x64-temurin', buildUrl: 'https://ci.adoptium.net/job/head/1/']
+            ])
+        }
+        ['alpine-jdk8u', 'aarch32-jdk8u'].each { release ->
+            Assertions.assertEquals([
+                x64AlpineLinux: 'https://ci.adoptium.net/job/alpine/1/',
+                arm32Linux: 'https://ci.adoptium.net/job/arm/1/'
+            ], script.getPlatformBuildUrls('https://trss.adoptium.net', release, 'temurin', 'pipeline-id', 'cookies'))
+        }
+        Assertions.assertEquals([x64Mac: 'https://ci.adoptium.net/job/head/1/'],
+            script.getPlatformBuildUrls('https://trss.adoptium.net', 'jdk', 'temurin', 'pipeline-id', 'cookies'))
     }
 
     @Test
