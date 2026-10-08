@@ -466,6 +466,50 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
     return functionBuildUrls
 }
 
+def getPlatformBuildUrls(String trssUrl, String featureRelease, String variant, String pipelineId, String cookieJar) {
+    def buildUrls = [:]
+    if (!pipelineId) {
+        return buildUrls
+    }
+
+    def buildVariant = variant == "hotspot" ? "temurin" : variant
+    def childBuilds = callWgetSafely("${trssUrl}/api/getChildBuilds?parentId=${pipelineId}", cookieJar)
+    def childBuildsJson = new JsonSlurper().parseText(childBuilds)
+    getPlatformConversionMap().each { platform, names ->
+        def latestTimestamp = -1
+        childBuildsJson.each { build ->
+            if (build.buildName == "${featureRelease}-${names[0]}-${buildVariant}" && build.buildUrl &&
+                (build.timestamp ?: 0) > latestTimestamp) {
+                buildUrls[platform] = build.buildUrl
+                latestTimestamp = build.timestamp ?: 0
+            }
+        }
+    }
+    return buildUrls
+}
+
+def formatMissingArtifacts(List missingAssets, Map buildUrls, String pipelineUrl) {
+    if (!missingAssets) {
+        return ""
+    }
+    def filesByPlatform = [:]
+    missingAssets.each { missing ->
+        // arch : imageType : fileType
+        def parts = missing.split("[ :]+")
+        if (!filesByPlatform.containsKey(parts[0])) {
+            filesByPlatform[parts[0]] = []
+        }
+        filesByPlatform[parts[0]].add(parts[1] + parts[2])
+    }
+    def message = " :"
+    filesByPlatform.each { platform, files ->
+        def buildUrl = buildUrls[platform] ?: pipelineUrl
+        def label = buildUrl ? "<${buildUrl}|${platform}>" : platform
+        message += "\n    *${label}*: ${files.join(', ')}"
+    }
+    return message
+}
+
 // Verify the given release contains all the expected assets
 def verifyReleaseContent(String version, String release, String variant, Map status) {
     echo "Verifying ${version} assets in release: ${release}"
@@ -1366,41 +1410,28 @@ node('worker') {
                     def missingMsg = ""
                     def missingAssets = []
                     if (status['assets'] != 'Complete') {
+                        if (nonTagBuildReleases.contains(featureRelease)) {
+                            def buildUrls = getBuildUrls(trssUrl, variant, featureRelease, "", "", true, [], cookieJar)
+                            if (buildUrls.size() > 0) {
+                                (probableBuildUrl, probableBuildIdForTRSS, probableBuildStatus) = buildUrls[0]
+                            }
+                        }
                         slackColor = 'danger'
                         health = "Unhealthy"
                         errorMsg += "\nArtifact status: "+status['assets']
                         if ( (probableBuildStatus == "Streaming") || (probableBuildStatus == "NotDone") ) {
                             errorMsg += ", <" + probableBuildUrl + "|Build is in progress>"
                         } else {
-                            errorMsg += ", *No build is in progress*"
+                            errorMsg += probableBuildUrl ? ", *<${probableBuildUrl}|No build is in progress>*" : ", *No build is in progress*"
                         }
                         missingAssets = status['missingAssets']
                     }
 
                     // Print out formatted missing artifacts if any missing
                     if (missingAssets.size() > 0) {
-                        missingMsg += " :"
-                        // Collate by arch, array is sequenced by architecture
-                        def archName = ""
-                        def missingFiles = ""
-                        missingAssets.each { missing ->
-                            // arch : imageType : fileType
-                            def missingFile = missing.split("[ :]+")
-                            if (missingFile[0] != archName) {
-                                if (archName != "") {
-                                    missingMsg += "\n    *${archName}*: ${missingFiles}"
-                                    echo "===> ${missingMsg}"
-                                }
-                                archName = missingFile[0]
-                                missingFiles = missingFile[1]+missingFile[2]
-                            } else {
-                                missingFiles += ", "+missingFile[1]+missingFile[2]
-                            }
-                        }
-                        if (missingFiles != "") {
-                            missingMsg += "\n    *${archName}*: ${missingFiles}"
-                            echo "===> ${missingMsg}"
-                        }
+                        def platformBuildUrls = getPlatformBuildUrls(trssUrl, featureRelease, variant, probableBuildIdForTRSS, cookieJar)
+                        missingMsg = formatMissingArtifacts(missingAssets, platformBuildUrls, probableBuildUrl)
+                        echo "===> ${missingMsg}"
                     }
 
                     def releaseLink = "<" + status['assetsUrl'] + "|${releaseName}>"
