@@ -264,6 +264,8 @@ class Build {
                     DYNAMIC_COMPILE: "true",
                     VENDOR_TEST_REPOS: "${vendorTestRepos}",
                     VENDOR_TEST_BRANCHES: "${vendorTestBranches}",
+                    OPENJ9_REPO: 'https://github.com/eclipse-openj9/openj9.git',
+                    OPENJ9_BRANCH: 'main',
                     TIME_LIMIT: '1'
                 ]
 
