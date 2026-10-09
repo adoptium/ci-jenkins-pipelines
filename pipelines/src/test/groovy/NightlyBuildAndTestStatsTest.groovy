@@ -8,6 +8,79 @@ class NightlyBuildAndTestStatsTest {
         return new GroovyShell().parse(new File('../tools/nightly_build_and_test_stats.groovy'))
     }
 
+    private Map pipeline(int number, Map targets, String tag = 'jdk-21.0.13+8_adopt') {
+        return [
+            _id: "pipeline-${number}", buildUrl: "https://ci.adoptium.net/job/openjdk21-pipeline/${number}/",
+            timestamp: number, status: 'Done', buildNum: number,
+            buildParams: [
+                [name: 'releaseType', value: 'Weekly'],
+                [name: 'overridePublishName', value: 'jdk-21.0.13+8-ea'],
+                [name: 'scmReference', value: tag],
+                [name: 'targetConfigurations', value: JsonOutput.toJson(targets)]
+            ]
+        ]
+    }
+
+    @Test
+    void selectsLatestPipelineConfiguredForEachPlatformAndVariant() {
+        def script = loadScript()
+        def history = [
+            pipeline(500, [aarch64Windows: ['temurin'], x64Mac: ['temurin']]),
+            pipeline(504, [aarch64Windows: ['temurin']], 'another-tag'),
+            pipeline(501, [aarch64Windows: ['openj9'], x64Linux: ['temurin']]),
+            pipeline(499, [aarch64Windows: ['temurin']]),
+            pipeline(502, [x64Linux: ['temurin'], aarch64WindowsOther: ['temurin']])
+        ]
+        def childRequests = []
+        script.metaClass.echo = { Object message -> }
+        script.metaClass.callWgetSafely = { String url, String cookieJar ->
+            if (url.contains('getBuildHistory')) {
+                return JsonOutput.toJson(history)
+            }
+            childRequests.add(url.toString())
+            Assertions.assertTrue(url.endsWith('parentId=pipeline-500') || url.endsWith('parentId=pipeline-502'))
+            return JsonOutput.toJson([
+                [buildName: 'jdk21u-windows-aarch64-temurin', buildUrl: 'https://ci.adoptium.net/job/windows/10/', buildResult: 'FAILURE']
+            ])
+        }
+
+        Assertions.assertEquals('https://ci.adoptium.net/job/openjdk21-pipeline/502/',
+            script.getBuildUrls('https://trss.adoptium.net', 'temurin', 'jdk21u', 'jdk-21.0.13+8-ea',
+                'jdk-21.0.13+8_adopt', true, [], 'cookies')[0][0])
+        def urls = script.getMissingArtifactBuildUrls('https://trss.adoptium.net', 'jdk21u', 'jdk21u', 'temurin',
+            'jdk-21.0.13+8-ea', 'jdk-21.0.13+8_adopt', [
+                'aarch64Windows : All : .All', 'x64Mac : jdk : .tar.gz', 'x64Linux : All : .All',
+                'aarch64Windows : jdk : .tar.gz', 'ppc64Aix : All : .All'
+            ], 'cookies')
+
+        Assertions.assertEquals([
+            aarch64Windows: 'https://ci.adoptium.net/job/windows/10/',
+            x64Mac: 'https://ci.adoptium.net/job/openjdk21-pipeline/500/',
+            x64Linux: 'https://ci.adoptium.net/job/openjdk21-pipeline/502/'
+        ], urls)
+        Assertions.assertEquals(2, childRequests.size())
+        Assertions.assertEquals(' :\n    *ppc64Aix*: All.All',
+            script.formatMissingArtifacts(['ppc64Aix : All : .All'], urls, ''))
+    }
+
+    @Test
+    void fallsBackToConfiguredPipelineWhenChildLookupIsUnavailable() {
+        def script = loadScript()
+        script.metaClass.echo = { Object message -> }
+        script.metaClass.callWgetSafely = { String url, String cookieJar ->
+            url.contains('getBuildHistory') ? JsonOutput.toJson([
+                pipeline(502, [x64Linux: ['temurin']]),
+                pipeline(500, [aarch64Windows: ['temurin']])
+            ]) : ''
+        }
+        def urls = script.getMissingArtifactBuildUrls('https://trss.adoptium.net', 'jdk21u', 'jdk21u', 'temurin',
+            'jdk-21.0.13+8-ea', 'jdk-21.0.13+8_adopt', ['aarch64Windows : All : .All'], 'cookies')
+
+        Assertions.assertEquals([aarch64Windows: 'https://ci.adoptium.net/job/openjdk21-pipeline/500/'], urls)
+        Assertions.assertEquals(' :\n    *<https://ci.adoptium.net/job/openjdk21-pipeline/500/|aarch64Windows>*: All.All',
+            script.formatMissingArtifacts(['aarch64Windows : All : .All'], urls, ''))
+    }
+
     @Test
     void findsLatestPlatformBuildIncludingFailures() {
         def script = loadScript()

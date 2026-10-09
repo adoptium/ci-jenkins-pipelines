@@ -397,8 +397,8 @@ def releaseToolOutput = callWgetSafely(wgetUrlForReleaseTool, cookieJar)
 
 // Return our best guess at the urls for the Weekly EA pipelines that generated builds from a specific tag.
 // Optionally only return the "latest".
-// This pipeline is expected to have attempted to build JDKs for all supported platforms.
-def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, List requiredStatus, String cookieJar) {
+// Optionally require a specific platform in targetConfigurations.
+def getBuildUrls(String trssUrl, String variant, String featureRelease, String publishName, String scmRef, Boolean latestOnly, List requiredStatus, String cookieJar, String platform = "") {
     def functionBuildUrls = []
     def featureReleaseInt = (featureRelease == "aarch32-jdk8u" || featureRelease == "alpine-jdk8u") ? 8 : featureRelease.replaceAll("[a-z]","").toInteger()
     def pipelineName = "openjdk${featureReleaseInt}-pipeline"
@@ -418,6 +418,7 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
             def buildScmRef = ""
             def containsX64AlpineLinux = false
             def containsVariant = false
+            def containsPlatform = !platform
             def releaseType = ""
 
             job.buildParams.each { buildParam ->
@@ -428,13 +429,17 @@ def getBuildUrls(String trssUrl, String variant, String featureRelease, String p
                 } else if (buildParam.name == "targetConfigurations") {
                     containsX64AlpineLinux = (buildParam.value.contains("x64AlpineLinux"))
                     containsVariant        = (buildParam.value.contains(variant))
+                    if (platform) {
+                        def targets = new JsonSlurper().parseText(buildParam.value)
+                        containsPlatform = targets[platform]?.contains(variant) ?: false
+                    }
                 } else if (buildParam.name == "releaseType") {
                     releaseType = buildParam.value
                 }
             }
 
             // Is there a job for the required tag?
-            if (releaseType == "Weekly" && containsVariant && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus.size() == 0 || requiredStatus.contains(job.status))) {
+            if (releaseType == "Weekly" && containsVariant && containsPlatform && overridePublishName == publishName && buildScmRef == scmRef && job.status != null && (requiredStatus.size() == 0 || requiredStatus.contains(job.status))) {
                 if (featureReleaseInt == 8) {
                     // alpine-jdk8u cannot be distinguished from jdk8u by the scmRef alone, so check for "x64AlpineLinux" in the targetConfiguration
                     if ((featureRelease == "alpine-jdk8u" && containsX64AlpineLinux) || (featureRelease != "alpine-jdk8u" && !containsX64AlpineLinux)) {
@@ -512,6 +517,23 @@ def formatMissingArtifacts(List missingAssets, Map buildUrls, String pipelineUrl
         message += "\n    *${label}*: ${files.join(', ')}"
     }
     return message
+}
+
+def getMissingArtifactBuildUrls(String trssUrl, String featureRelease, String buildVersion, String variant, String publishName, String scmRef, List missingAssets, String cookieJar) {
+    def urls = [:]
+    def childUrlsByPipeline = [:]
+    def platforms = missingAssets.collect { it.split("[ :]+")[0] }.unique()
+    platforms.each { platform ->
+        def pipelines = getBuildUrls(trssUrl, variant, featureRelease, publishName, scmRef, true, [], cookieJar, platform)
+        if (pipelines) {
+            def (pipelineUrl, pipelineId) = pipelines[0]
+            if (!childUrlsByPipeline.containsKey(pipelineId)) {
+                childUrlsByPipeline[pipelineId] = getPlatformBuildUrls(trssUrl, buildVersion, variant, pipelineId, cookieJar)
+            }
+            urls[platform] = childUrlsByPipeline[pipelineId][platform] ?: pipelineUrl
+        }
+    }
+    return urls
 }
 
 // Verify the given release contains all the expected assets
@@ -1426,7 +1448,7 @@ node('worker') {
                         if ( (probableBuildStatus == "Streaming") || (probableBuildStatus == "NotDone") ) {
                             errorMsg += ", <" + probableBuildUrl + "|Build is in progress>"
                         } else {
-                            errorMsg += probableBuildUrl ? ", *<${probableBuildUrl}|No build is in progress>*" : ", *No build is in progress*"
+                            errorMsg += ", *No build is in progress*"
                         }
                         missingAssets = status['missingAssets']
                     }
@@ -1434,8 +1456,11 @@ node('worker') {
                     // Print out formatted missing artifacts if any missing
                     if (missingAssets.size() > 0) {
                         def buildVersion = tipReleases.contains(featureRelease) ? "jdk" : featureRelease
-                        def platformBuildUrls = getPlatformBuildUrls(trssUrl, buildVersion, variant, probableBuildIdForTRSS, cookieJar)
-                        missingMsg = formatMissingArtifacts(missingAssets, platformBuildUrls, probableBuildUrl)
+                        def nonTagBuild = nonTagBuildReleases.contains(featureRelease)
+                        def publishName = nonTagBuild ? "" : status['expectedReleaseName'].replaceAll("-beta", "")
+                        def scmRef = nonTagBuild ? "" : status['upstreamTag']+"_adopt"
+                        def platformBuildUrls = getMissingArtifactBuildUrls(trssUrl, featureRelease, buildVersion, variant, publishName, scmRef, missingAssets, cookieJar)
+                        missingMsg = formatMissingArtifacts(missingAssets, platformBuildUrls, "")
                         echo "===> ${missingMsg}"
                     }
 
