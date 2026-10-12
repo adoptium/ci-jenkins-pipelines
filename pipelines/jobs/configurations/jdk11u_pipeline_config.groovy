@@ -120,7 +120,7 @@ class Config11 {
                 additionalTestLabels: 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 configureArgs       : [
-                        'temurin'   : '--disable-ccache'
+                        'temurin'   : '--enable-headless-only=yes --disable-ccache'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -134,7 +134,7 @@ class Config11 {
                 test                : 'default',
                 configureArgs       : [
                         'openj9'    : '--enable-dtrace=auto',
-                        'temurin'   : '--enable-dtrace=auto --disable-ccache'
+                        'temurin'   : '--enable-headless-only=yes --enable-dtrace=auto --disable-ccache'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
@@ -160,7 +160,7 @@ class Config11 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
-                        'temurin'     : '--enable-dtrace=auto --disable-ccache',
+                        'temurin'     : '--enable-headless-only=yes --enable-dtrace=auto --disable-ccache',
                         'openj9'      : '--enable-dtrace=auto'
                 ],
                 buildArgs           : [

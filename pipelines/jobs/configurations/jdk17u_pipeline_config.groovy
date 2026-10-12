@@ -107,6 +107,9 @@ class Config17 {
                 test                : 'default',
                 additionalTestLabels: 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
+                configureArgs       : [
+                        'temurin'   : '--enable-headless-only=yes'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -117,7 +120,9 @@ class Config17 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
-                configureArgs       : '--enable-dtrace',
+                configureArgs       : [
+                        'temurin'   : '--enable-headless-only=yes --enable-dtrace'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]
@@ -128,6 +133,9 @@ class Config17 {
                 arch                : 'ppc64le',
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
+                configureArgs       : [
+                        'temurin'   : '--enable-headless-only=yes'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace'
                 ]

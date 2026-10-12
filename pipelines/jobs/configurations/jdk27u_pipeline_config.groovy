@@ -83,6 +83,9 @@ class Config27 {
                         temurin      : 'sw.os.aix.7_2TL5'
                 ],
                 cleanWorkspaceAfterBuild: true,
+                configureArgs       : [
+                        'temurin'   : '--enable-headless-only=yes'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ],
@@ -96,6 +99,9 @@ class Config27 {
                 arch                : 's390x',
                 dockerImage         : 'rhel7_build_image',
                 test                : 'default',
+                configureArgs       : [
+                        'temurin'   : '--enable-headless-only=yes'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01'
                 ]
@@ -109,7 +115,8 @@ class Config27 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'special.system']
                 ],
                 configureArgs       : [
-                        'openj9'      : '--enable-dtrace'
+                        'openj9'      : '--enable-dtrace',
+                        'temurin'     : '--enable-headless-only=yes'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-14.2.0-Centos7.9.2009-b01'

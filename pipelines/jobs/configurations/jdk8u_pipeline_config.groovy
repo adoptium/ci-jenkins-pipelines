@@ -114,7 +114,7 @@ class Config8 {
                 additionalTestLabels : 'sw.os.aix.7_2',
                 cleanWorkspaceAfterBuild: true,
                 configureArgs       : [
-                        'temurin'   : '--disable-ccache'
+                        'temurin'   : '--disable-headful --disable-ccache'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom'
@@ -130,7 +130,7 @@ class Config8 {
                 ],
                 dockerImage         : 'rhel7_build_image',
                 configureArgs       : [
-                        'temurin'   : '--disable-ccache'
+                        'temurin'   : '--disable-headful --disable-ccache'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
@@ -167,7 +167,7 @@ class Config8 {
                 dockerImage         : 'adoptopenjdk/centos7_build_image',
                 test                : 'default',
                 configureArgs       : [
-                        'temurin'   : '--disable-ccache'
+                        'temurin'   : '--disable-headful --disable-ccache'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-sbom --enable-sbom-strace'
