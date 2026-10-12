@@ -102,6 +102,9 @@ class Config21 {
                         temurin      : 'sw.os.aix.7_2'
                 ],
                 cleanWorkspaceAfterBuild: true,
+                configureArgs       : [
+                        'temurin'   : '--enable-headless-only=yes'
+                ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom'
                 ]
@@ -113,6 +116,9 @@ class Config21 {
                 dockerImage         : 'rhel7_build_image',
                 test: [
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'special.system']
+                ],
+                configureArgs       : [
+                        'temurin'   : '--enable-headless-only=yes'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b04'
@@ -127,7 +133,8 @@ class Config21 {
                         weekly : ['sanity.openjdk', 'sanity.system', 'extended.system', 'sanity.perf', 'sanity.functional', 'extended.functional', 'extended.openjdk', 'extended.perf', 'special.functional', 'special.openjdk', 'dev.functional', 'special.system']
                 ],
                 configureArgs       : [
-                        'openj9'      : '--enable-dtrace'
+                        'openj9'      : '--enable-dtrace',
+                        'temurin'     : '--enable-headless-only=yes'
                 ],
                 buildArgs           : [
                         'temurin'   : '--create-jre-image --create-sbom --enable-sbom-strace --use-adoptium-devkit gcc-11.3.0-Centos7.9.2009-b04'
