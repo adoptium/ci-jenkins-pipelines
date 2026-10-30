@@ -390,7 +390,7 @@ def aqaAutoGen = Boolean.valueOf(buildConfig.AQA_AUTO_GEN as String)
                     context.string(name: 'JDK_VERSIONS', value: "${jobParams.JDK_VERSIONS}"),
                     context.string(name: 'PLATFORMS', value: "${jobParams.ARCH_OS_LIST}"),
                     context.string(name: 'PIPELINE_DISPLAY_NAME', value: "${displayName}"),
-                    context.booleanParam(name: 'AQA_AUTO_GEN', value: aqaAutoGen),
+                    context.booleanParam(name: 'AUTO_AQA_GEN', value: aqaAutoGen),
                     context.string(name: 'BUILD_TYPE', value: "${build_type}")
                 ],
                 wait: false,
