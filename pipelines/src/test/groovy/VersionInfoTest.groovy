@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test
 // jscpd:ignore-start
 
 /** Test Class for VersionInfo.
- * @author Adoptium Temurin
  */
 class VersionInfoTest {
 
