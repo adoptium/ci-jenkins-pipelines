@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test
 // jscpd found too many duplicates (22.45%) over threshold (0%)
 // jscpd:ignore-start
 
+/** Test Class for VersionInfo.
+ * @author Adoptium Temurin
+ */
 class VersionInfoTest {
 
     @Test
