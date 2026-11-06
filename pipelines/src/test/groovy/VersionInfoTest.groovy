@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test
 // jscpd found too many duplicates (22.45%) over threshold (0%)
 // jscpd:ignore-start
 
+/** Test Class for VersionInfo.
+ */
 class VersionInfoTest {
 
     @Test
@@ -179,8 +181,8 @@ class VersionInfoTest {
         Assertions.assertEquals('11.0.9.1+1', parsed.version)
         Assertions.assertNull(parsed.opt)
         Assertions.assertNull(parsed.adopt_build_number)
-        Assertions.assertEquals('11.0.9+101', parsed.semver)
-        Assertions.assertEquals('11.0.9.101', parsed.msi_product_version)
+        Assertions.assertEquals('11.0.9+100000001', parsed.semver)
+        Assertions.assertEquals('11.0.9.10001', parsed.msi_product_version)
     }
 
     // jdk-11.0.9.1+1 AdoptBuildNumber "2"
@@ -196,8 +198,37 @@ class VersionInfoTest {
         Assertions.assertEquals('11.0.9.1+1', parsed.version)
         Assertions.assertNull(parsed.opt)
         Assertions.assertEquals(2, parsed.adopt_build_number)
-        Assertions.assertEquals('11.0.9+101.2', parsed.semver)
-        Assertions.assertEquals('11.0.9.101', parsed.msi_product_version)
+        Assertions.assertEquals('11.0.9+100000001.2', parsed.semver)
+        Assertions.assertEquals('11.0.9.10001', parsed.msi_product_version)
+    }
+
+    // jdk-27.0.1.0.2+1 (additional version number)
+    @Test
+    void parsesJdk223FormatAdditionalVersionNumber() {
+        VersionInfo parsed = new VersionInfo(this).parse('27.0.1.0.2+1', null)
+        Assertions.assertEquals(27, parsed.major)
+        Assertions.assertEquals(0, parsed.minor)
+        Assertions.assertEquals(1, parsed.security)
+        Assertions.assertEquals(0, parsed.patch)
+        Assertions.assertEquals([2], parsed.additional_version_numbers)
+        Assertions.assertEquals(1, parsed.build)
+        Assertions.assertNull(parsed.pre)
+        Assertions.assertEquals('27.0.1.0.2+1', parsed.version)
+        Assertions.assertNull(parsed.opt)
+        Assertions.assertNull(parsed.adopt_build_number)
+        Assertions.assertEquals('27.0.1+2000001', parsed.semver)
+        Assertions.assertEquals('27.0.1.2001', parsed.msi_product_version)
+    }
+
+    // jdk-27.0.1.1.2.3.4+5 (patch and all three additional version numbers)
+    @Test
+    void parsesJdk223FormatAllAdditionalVersionNumbers() {
+        VersionInfo parsed = new VersionInfo(this).parse('27.0.1.1.2.3.4+5', null)
+        Assertions.assertEquals(1, parsed.patch)
+        Assertions.assertEquals([2, 3, 4], parsed.additional_version_numbers)
+        Assertions.assertEquals(5, parsed.build)
+        Assertions.assertEquals('27.0.1+102030405', parsed.semver)
+        Assertions.assertEquals('27.0.1.12305', parsed.msi_product_version)
     }
 
     // jdk-11.0.9-ea+11
