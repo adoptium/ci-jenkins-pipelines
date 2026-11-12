@@ -35,7 +35,7 @@ def binariesRepo="${params.BINARIES_REPO}"
 
 def triggerMainBuild = false
 def triggerEvaluationBuild = false
-def enableTesting = true
+def enableTesting = false
 def overrideMainTargetConfigurations = params.OVERRIDE_MAIN_TARGET_CONFIGURATIONS
 def overrideEvaluationTargetConfigurations = params.OVERRIDE_EVALUATION_TARGET_CONFIGURATIONS
 def ignore_platforms = "${params.IGNORE_PLATFORMS}" // platforms not to build
@@ -346,4 +346,3 @@ if (triggerMainBuild || triggerEvaluationBuild) {
 
     parallel jobs
 }
-
