@@ -237,6 +237,13 @@ class Build {
         // Use BUILD_REF override if specified
         vendorTestBranches = buildConfig.BUILD_REF ?: vendorTestBranches
 
+        def aqaBranch = 'master'
+        def useTestEnvProperties = false
+        if (buildConfig.SCM_REF && buildConfig.AQA_REF) {
+            aqaBranch = buildConfig.AQA_REF
+            useTestEnvProperties = true
+        }
+
         try {
             context.println 'Running smoke test'
             context.stage('smoke test') {
@@ -266,7 +273,9 @@ class Build {
                     VENDOR_TEST_BRANCHES: "${vendorTestBranches}",
                     OPENJ9_REPO: 'https://github.com/eclipse-openj9/openj9.git',
                     OPENJ9_BRANCH: 'main',
-                    TIME_LIMIT: '1'
+                    TIME_LIMIT: '1',
+                    ADOPTOPENJDK_BRANCH: "${aqaBranch}",
+                    USE_TESTENV_PROPERTIES: "${useTestEnvProperties}"
                 ]
 
                 def additionalTestParams = buildConfig.ADDITIONAL_TEST_PARAMS
