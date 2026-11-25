@@ -851,6 +851,9 @@ def aqaAutoGen = Boolean.valueOf(buildConfig.AQA_AUTO_GEN as String)
                     target: 'workspace/target/',
                     flatten: true)
 
+                // Update the sbom metadata sha256 now that the SBOM has been signed
+                writeMetadata(versionInfo, false)
+
                 // Archive SBOM signatures in Jenkins
                 try {
                     context.timeout(time: buildTimeouts.ARCHIVE_ARTIFACTS_TIMEOUT, unit: 'HOURS') {
